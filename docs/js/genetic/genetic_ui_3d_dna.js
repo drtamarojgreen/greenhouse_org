@@ -141,23 +141,17 @@
                             litColor = lighting.toRGBA(lit);
                         }
 
-                        // Draw main cylinder with gradient for 3D effect
-                        const gradient = ctx.createLinearGradient(
-                            x1 - nx * thickness / 2, y1 - ny * thickness / 2,
-                            x1 + nx * thickness / 2, y1 + ny * thickness / 2
-                        );
-                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); // Darker Shadow edge
-                        gradient.addColorStop(0.3, litColor); // Main color
-                        gradient.addColorStop(0.7, litColor); // Main color
-                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.6)'); // Brighter Highlight edge
+                        // Draw main rectangular rung for 3D effect
+                        ctx.fillStyle = litColor;
+                        ctx.save();
+                        ctx.translate(x1, y1);
+                        ctx.rotate(Math.atan2(dy, dx));
+                        ctx.fillRect(0, -thickness / 2, len, thickness);
 
-                        ctx.strokeStyle = gradient;
-                        ctx.lineWidth = thickness;
-                        ctx.lineCap = 'butt'; // Butt cap for clean join at middle
-                        ctx.beginPath();
-                        ctx.moveTo(x1, y1);
-                        ctx.lineTo(x2, y2);
-                        ctx.stroke();
+                        // Structural groove indentation (shadow line)
+                        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                        ctx.fillRect(0, thickness * 0.1, len, thickness * 0.2);
+                        ctx.restore();
 
                         // Add specular highlight
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';

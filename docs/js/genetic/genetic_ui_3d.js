@@ -468,16 +468,18 @@
                     if (regionVerticesIndices.length > 0) {
                         // NEW: Stable Positioning based on Node ID instead of Math.random()
                         const idNum = typeof node.id === 'string' ? node.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : node.id;
-                        const rndIndex = regionVerticesIndices[idNum % regionVerticesIndices.length];
+
+                        // Implement Cortical Column Arrangement: 5 neurons per column
+                        const colIndex = Math.floor(i / 5);
+                        const subColIdx = i % 5;
+                        const rndIndex = regionVerticesIndices[colIndex % regionVerticesIndices.length];
                         const vertex = this.brainShell.vertices[rndIndex];
 
-                        // Add some internal volume jitter - also stable based on ID
-                        const jitterX = 0.7 + ((idNum * 13) % 100) / 333;
-                        const jitterY = 0.7 + ((idNum * 17) % 100) / 333;
-                        const jitterZ = 0.7 + ((idNum * 19) % 100) / 333;
-                        x = brainOffset + vertex.x * jitterX;
-                        y = vertex.y * jitterY;
-                        z = vertex.z * jitterZ;
+                        // Cortical column stack (radial depth)
+                        const depthOffset = 0.7 + subColIdx * 0.05;
+                        x = brainOffset + vertex.x * depthOffset;
+                        y = vertex.y * depthOffset;
+                        z = vertex.z * depthOffset;
                     }
 
                     // Color mapping
@@ -539,10 +541,18 @@
                 const midY = (fromNeuron.y + toNeuron.y) / 2;
                 const midZ = (fromNeuron.z + toNeuron.z) / 2;
 
-                const cp = {
-                    x: midX * 0.5, // Pull more aggressively towards center
-                    y: midY * 0.5,
-                    z: midZ * 0.5
+                // Implement White Matter Curved Pathways for long-range connections
+                const dist = Math.sqrt((fromNeuron.x - toNeuron.x)**2 + (fromNeuron.y - toNeuron.y)**2 + (fromNeuron.z - toNeuron.z)**2);
+                const isLongRange = dist > 150;
+
+                const cp = isLongRange ? {
+                    x: midX * 0.2, // Curve more towards the center for long range
+                    y: midY * 0.2,
+                    z: midZ * 0.2
+                } : {
+                    x: midX * 0.8,
+                    y: midY * 0.8,
+                    z: midZ * 0.8
                 };
 
                 // Generate Tube Mesh

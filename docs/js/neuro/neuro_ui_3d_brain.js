@@ -99,66 +99,49 @@
             // Draw Faces
             for (let i = 0; i < facesToDraw.length; i++) {
                 const f = facesToDraw[i];
-                // Lighting (Phong)
-                // Diffuse
+                const regionData = regions[f.region] || { color: 'rgba(100,100,100,0.1)', roughness: 0.7, metallic: 0.1 };
+
+                // Lighting (Phong with region-specific properties)
                 const diffuse = Math.max(0, f.nx * lightDir.x + f.ny * lightDir.y + f.nz * lightDir.z);
-
-                // Specular (View Vector is roughly 0,0,1 in camera space, but we are in world space)
-                // Camera is at 0,0,-800 (or similar). View vector is roughly towards -Z.
-                // Reflected Light
-                // R = 2(N.L)N - L
-                const rx = 2 * diffuse * f.nx - lightDir.x;
-                const ry = 2 * diffuse * f.ny - lightDir.y;
-                const rz = 2 * diffuse * f.nz - lightDir.z;
-
-                // View Vector (Approximate towards camera)
-                // Since camera rotates, this is tricky without full matrix.
-                // Simplified: Specular is high when Normal points towards Camera.
-                // Camera vector in World Space depends on rotation.
-                // Let's use a simplified Blinn-Phong or just highlight based on Normal Z (if rotated).
-                // Actually, since we didn't rotate vertices, the normal is in World Space.
-                // The Camera is rotating. We need the Camera Position in World Space.
-                // Camera Rotation Y means Camera is at (sin(rotY)*dist, 0, cos(rotY)*dist).
-
-                // Simplified Specular: Just use diffuse power for "shininess" or a fixed highlight
-                const specular = Math.pow(diffuse, 30); // Sharp highlight
+                const shininess = regionData.roughness < 0.5 ? 60 : 20;
+                const specular = Math.pow(diffuse, shininess) * (regionData.metallic || 0.1);
 
                 // Base Color
                 let r = 100, g = 100, b = 100, a = 0.1;
                 if (f.region && regions[f.region]) {
-                    // Parse rgba
-                    const color = regions[f.region].color; // e.g. 'rgba(100, 150, 255, 0.6)'
+                    const color = regions[f.region].color;
                     const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                     if (match) {
-                        r = parseInt(match[1]);
-                        g = parseInt(match[2]);
-                        b = parseInt(match[3]);
+                        r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]);
                         a = parseFloat(match[4] || 1);
                     }
                 }
 
-                // If this is the target region, use a bright, glowing color and bypass lighting.
                 if (targetRegion && f.region === targetRegion) {
                     const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
-                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
+                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`;
                 } else {
-                    // Apply Lighting for all other regions
                     const ambient = 0.2;
-                    const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
-
+                    const lightIntensity = ambient + diffuse * 0.8;
                     const litR = Math.min(255, r * lightIntensity + specular * 255);
                     const litG = Math.min(255, g * lightIntensity + specular * 255);
                     const litB = Math.min(255, b * lightIntensity + specular * 255);
-
-                    // Depth Fog for Alpha
                     const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
                     ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
                 }
+
                 ctx.beginPath();
                 ctx.moveTo(f.p1.x, f.p1.y);
                 ctx.lineTo(f.p2.x, f.p2.y);
                 ctx.lineTo(f.p3.x, f.p3.y);
                 ctx.fill();
+
+                // Regional Wireframe overlay (low opacity)
+                if (f.region) {
+                    ctx.strokeStyle = `rgba(255,255,255,${0.05 * GreenhouseModels3DMath.applyDepthFog(1, f.depth)})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
             }
 
             // NEW: Topological Projection - Smooth Surface Overlay

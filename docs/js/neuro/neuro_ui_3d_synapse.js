@@ -54,7 +54,7 @@
                     const alpha = Math.round(alphaRaw * 10) / 10;
                     if (alpha <= 0) continue;
 
-                    const colorType = conn.weight > 0 ? 'gold' : 'silver';
+                    const colorType = 'silver';
                     const key = `${colorType}_${alpha}`;
 
                     if (!batches[key]) batches[key] = new Path2D();
@@ -126,7 +126,11 @@
                             intensity += diffuse * 0.5;
                         }
 
-                        const baseColor = conn.weight > 0 ? { r: 255, g: 215, b: 0 } : { r: 176, g: 196, b: 222 };
+                        // Myelination Visual Enhancement (Wider segments for high weights)
+                        const isMyelinated = Math.abs(conn.weight) > 0.7;
+                        if (isMyelinated && (Math.floor(i/16) % 3 === 0)) intensity *= 1.4;
+
+                        const baseColor = { r: 210, g: 210, b: 210 };
                         const litR = Math.min(255, baseColor.r * intensity);
                         const litG = Math.min(255, baseColor.g * intensity);
                         const litB = Math.min(255, baseColor.b * intensity);
@@ -138,6 +142,12 @@
                         ctx.lineTo(v3.x, v3.y);
                         ctx.fill();
                     }
+                }
+
+                // Add directionality markers and varicosities
+                if (avgScale > 0.8) {
+                    this.drawDirectionalityCone(ctx, conn, camera, projection);
+                    this.drawVaricosities(ctx, conn, camera, projection);
                 }
 
                 const seed = (conn.from.id + conn.to.id) * 0.1;
@@ -323,8 +333,8 @@
                 }
             };
 
-            let connectionColor = connection.weight > 0 ? '#FFD700' : '#E0E0E0';
-            const postColor = '#C0C0C0';
+            let connectionColor = '#D0D0D0';
+            const postColor = '#D0D0D0';
 
             // ADHD: Nutritional Deficiency (81) / Lead Toxicity (79) / Hypoxia (86)
             if (adhdActive.has(79)) connectionColor = '#777';
@@ -340,8 +350,19 @@
             ctx.scale(terminalScale, terminalScale);
 
             drawMesh(synapseMeshes.pre, -150 + terminalJitter, connectionColor);
+
+            // 1. Active Zone (Grid of Pegs) at Presynaptic Membrane (y ≈ -150)
+            this.drawActiveZone(ctx, x, y, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
+
+            // 2. Postsynaptic Density (PSD) Plate (y ≈ 150)
+            this.drawPSDPlate(ctx, x, y, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+
             drawMesh(synapseMeshes.post, 150, postColor);
+
+            // 3. Receptors (T-shaped extrusions)
+            this.drawReceptors(ctx, x, y, synapseCamera, connection.weight);
 
             // Alzheimer's: Amyloid Plaque Accumulation (103)
             if (adhdActive.has(103)) {
@@ -417,16 +438,17 @@
                     v.y = -240 - Math.random() * 30;
                     // ADHD: Working Memory Overflow (9)
                     const count = adhdActive.has(9) && Math.random() < 0.5 ? 1 : 5;
+                    const type = ['glutamate', 'gaba', 'dopamine'][Math.floor(Math.random() * 3)];
                     for (let k = 0; k < count; k++) {
                         connection.synapseDetails.particles.push({
                             x: v.x + (Math.random() - 0.5) * 5,
                             y: -150, z: v.z + (Math.random() - 0.5) * 5,
                             life: 1.2, hasBound: false,
-                            age: 0
+                            age: 0, type
                         });
                     }
                 }
-                drawInternal(v, 'vesicle');
+                this.draw3DVesicle(ctx, x, y, synapseCamera, v);
             });
 
             connection.synapseDetails.mitochondria.forEach(m => drawInternal(m, 'mito'));
@@ -488,30 +510,7 @@
                         ctx.fill();
                     }
 
-                    const alpha = p.life;
-                    let particleColor = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
-
-                    // ADHD: Amygdala (73) / Imbalance (55)
-                    if (p.hasBound && adhdActive.has(73)) particleColor = `rgba(255, 0, 0, ${alpha})`;
-                    if (p.hasBound && adhdActive.has(55)) particleColor = `rgba(255, 0, 255, ${alpha})`;
-
-                    if (adhdActive.has(11) && !p.hasBound) { // Emotional (11)
-                        particleColor = `hsla(${(Date.now() * 0.1) % 360}, 100%, 70%, ${alpha})`;
-                    }
-                    if (p.isNoise) particleColor = `rgba(200, 200, 200, ${alpha})`;
-
-                    // ADHD: Lead Toxicity (79)
-                    if (adhdActive.has(79)) particleColor = `rgba(100, 100, 100, ${alpha})`;
-
-                    let pSize = 3;
-                    if (adhdActive.has(21)) pSize = 1 + Math.random() * 5; // Disorganization (21)
-                    if (adhdActive.has(71)) pSize = 1.5; // VMAT2 (71)
-                    if (adhdActive.has(94)) pSize *= (0.5 + Math.random()); // Gut-Brain (94)
-
-                    ctx.fillStyle = particleColor;
-                    ctx.beginPath();
-                    ctx.arc(proj.x + x, proj.y + y, pSize * proj.scale, 0, Math.PI * 2);
-                    ctx.fill();
+                    this.drawShapeCodedParticle(ctx, x, y, proj, p, adhdActive);
                 }
             });
 
@@ -679,6 +678,134 @@
             }
 
             return null;
+        },
+
+        drawDirectionalityCone(ctx, conn, camera, projection) {
+            const t = 0.95;
+            const mt = 1 - t;
+            const p = {
+                x: mt * mt * conn.from.x + 2 * mt * t * conn.controlPoint.x + t * t * conn.to.x,
+                y: mt * mt * conn.from.y + 2 * mt * t * conn.controlPoint.y + t * t * conn.to.y,
+                z: mt * mt * conn.from.z + 2 * mt * t * conn.controlPoint.z + t * t * conn.to.z
+            };
+            const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, camera, projection);
+            if (proj.scale > 0) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, 6 * proj.scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        },
+
+        drawVaricosities(ctx, conn, camera, projection) {
+            [0.3, 0.6].forEach(t => {
+                const mt = 1 - t;
+                const p = {
+                    x: mt * mt * conn.from.x + 2 * mt * t * conn.controlPoint.x + t * t * conn.to.x,
+                    y: mt * mt * conn.from.y + 2 * mt * t * conn.controlPoint.y + t * t * conn.to.y,
+                    z: mt * mt * conn.from.z + 2 * mt * t * conn.controlPoint.z + t * t * conn.to.z
+                };
+                const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, camera, projection);
+                if (proj.scale > 0) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.beginPath();
+                    ctx.ellipse(proj.x, proj.y, 8 * proj.scale, 5 * proj.scale, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        },
+
+        drawActiveZone(ctx, x, y, camera, projParams) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = -2; i <= 2; i++) {
+                for (let j = -2; j <= 2; j++) {
+                    const p = GreenhouseModels3DMath.project3DTo2D(i * 20, -150, j * 20, camera, projParams);
+                    if (p.scale > 0) {
+                        ctx.fillRect(p.x + x - 2 * p.scale, p.y + y - 5 * p.scale, 4 * p.scale, 5 * p.scale);
+                    }
+                }
+            }
+        },
+
+        drawPSDPlate(ctx, x, y, camera, projParams) {
+            const vertices = [
+                { x: -50, y: 155, z: -50 }, { x: 50, y: 155, z: -50 },
+                { x: 50, y: 155, z: 50 }, { x: -50, y: 155, z: 50 }
+            ];
+            const projected = vertices.map(v => GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projParams));
+            if (projected.every(p => p.scale > 0)) {
+                ctx.fillStyle = 'rgba(100, 100, 120, 0.6)';
+                ctx.beginPath();
+                ctx.moveTo(projected[0].x + x, projected[0].y + y);
+                projected.forEach(p => ctx.lineTo(p.x + x, p.y + y));
+                ctx.closePath();
+                ctx.fill();
+            }
+        },
+
+        draw3DVesicle(ctx, x, y, camera, vesicle) {
+            const projParams = { width: 300, height: 250, near: 10, far: 1000 };
+            const p = GreenhouseModels3DMath.project3DTo2D(vesicle.x, vesicle.y, vesicle.z, camera, projParams);
+            if (p.scale > 0) {
+                const r = 3 * p.scale;
+                const grad = ctx.createRadialGradient(p.x + x - r*0.3, p.y + y - r*0.3, r*0.1, p.x + x, p.y + y, r);
+                grad.addColorStop(0, 'rgba(255, 255, 200, 0.8)');
+                grad.addColorStop(1, 'rgba(200, 200, 100, 0.4)');
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(p.x + x, p.y + y, r, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.arc(p.x + x, p.y + y, r * 1.1, 0, Math.PI * 2); ctx.stroke();
+            }
+        },
+
+        drawReceptors(ctx, x, y, camera, weight) {
+            const projParams = { width: 300, height: 250, near: 10, far: 1000 };
+            ctx.fillStyle = 'rgba(200, 100, 255, 0.8)';
+            const tilt = Math.sin(Date.now() * 0.005) * 0.2;
+            for (let i = -2; i <= 2; i++) {
+                const p = GreenhouseModels3DMath.project3DTo2D(i * 30, 150, 0, camera, projParams);
+                if (p.scale > 0) {
+                    const s = p.scale;
+                    ctx.save(); ctx.translate(p.x + x, p.y + y);
+                    ctx.fillRect(-2 * s, 0, 4 * s, 10 * s);
+                    ctx.rotate(tilt); ctx.fillRect(-10 * s, -4 * s, 20 * s, 4 * s);
+                    ctx.restore();
+                }
+            }
+        },
+
+        drawShapeCodedParticle(ctx, x, y, proj, p, adhdActive) {
+            const alpha = p.life;
+            let particleColor = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
+            if (p.hasBound && adhdActive.has(73)) particleColor = `rgba(255, 0, 0, ${alpha})`;
+            if (p.hasBound && adhdActive.has(55)) particleColor = `rgba(255, 0, 255, ${alpha})`;
+            if (adhdActive.has(11) && !p.hasBound) particleColor = `hsla(${(Date.now() * 0.1) % 360}, 100%, 70%, ${alpha})`;
+            if (p.isNoise) particleColor = `rgba(200, 200, 200, ${alpha})`;
+            if (adhdActive.has(79)) particleColor = `rgba(100, 100, 100, ${alpha})`;
+
+            let pSize = 3;
+            if (adhdActive.has(21)) pSize = 1 + Math.random() * 5;
+            if (adhdActive.has(71)) pSize = 1.5;
+            if (adhdActive.has(94)) pSize *= (0.5 + Math.random());
+            const size = pSize * proj.scale;
+
+            ctx.fillStyle = particleColor;
+            ctx.beginPath();
+            if (p.type === 'gaba') {
+                ctx.ellipse(proj.x + x, proj.y + y, size, size * 0.6, 0, 0, Math.PI * 2);
+            } else if (p.type === 'dopamine') {
+                ctx.moveTo(proj.x + x, proj.y + y);
+                ctx.lineTo(proj.x + x, proj.y + y - size);
+                ctx.moveTo(proj.x + x, proj.y + y);
+                ctx.lineTo(proj.x + x - size, proj.y + y + size);
+                ctx.moveTo(proj.x + x, proj.y + y);
+                ctx.lineTo(proj.x + x + size, proj.y + y + size);
+                ctx.stroke();
+            } else {
+                ctx.arc(proj.x + x, proj.y + y, size, 0, Math.PI * 2);
+            }
+            ctx.fill();
         }
     };
 

@@ -300,16 +300,19 @@
                 let x = 0, y = 0, z = 0;
 
                 if (regionVerticesIndices.length > 0) {
-                    // Use a deterministic seed based on ID if possible, or just random for new ones
-                    // For now, random is fine for NEW neurons
-                    const rndIndex = regionVerticesIndices[Math.floor(Math.random() * regionVerticesIndices.length)];
+                    const idNum = typeof n.id === 'string' ? n.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : n.id;
+
+                    // Implement Cortical Column Arrangement: 5 neurons per column
+                    const colIndex = Math.floor(i / 5);
+                    const subColIdx = i % 5;
+                    const rndIndex = regionVerticesIndices[colIndex % regionVerticesIndices.length];
                     const vertex = this.brainShell.vertices[rndIndex];
 
-                    // Add some internal volume jitter (move towards center)
-                    const jitter = 0.8 + Math.random() * 0.2; // 80-100% of radius
-                    x = vertex.x * jitter;
-                    y = vertex.y * jitter;
-                    z = vertex.z * jitter;
+                    // Cortical column stack (radial depth)
+                    const depthOffset = 0.7 + subColIdx * 0.05;
+                    x = vertex.x * depthOffset;
+                    y = vertex.y * depthOffset;
+                    z = vertex.z * depthOffset;
                 }
 
                 // Color mapping - "Cool Science" Palette (Blues/Teals/Purples)
@@ -343,7 +346,15 @@
                 const midY = (fromNeuron.y + toNeuron.y) / 2;
                 const midZ = (fromNeuron.z + toNeuron.z) / 2;
 
-                const cp = {
+                // Implement White Matter Curved Pathways for long-range connections
+                const dist = Math.sqrt((fromNeuron.x - toNeuron.x)**2 + (fromNeuron.y - toNeuron.y)**2 + (fromNeuron.z - toNeuron.z)**2);
+                const isLongRange = dist > 150;
+
+                const cp = isLongRange ? {
+                    x: midX * 0.3, // Curve more towards the center for long range
+                    y: midY * 0.3,
+                    z: midZ * 0.3
+                } : {
                     x: midX * 0.8,
                     y: midY * 0.8,
                     z: midZ * 0.8

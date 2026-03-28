@@ -84,9 +84,14 @@
             facesToDraw.sort((a, b) => b.depth - a.depth);
 
             facesToDraw.forEach(f => {
+                const regionData = regions[f.region] || { color: 'rgba(100,100,100,0.1)', roughness: 0.7, metallic: 0.1 };
                 let nx = f.normal.x, ny = f.normal.y, nz = f.normal.z;
                 if (!f.isFront) { nx = -nx; ny = -ny; nz = -nz; }
                 const diffuse = Math.max(0, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
+
+                const shininess = regionData.roughness < 0.5 ? 60 : 20;
+                const specular = Math.pow(diffuse, shininess) * (regionData.metallic || 0.1);
+
                 let r = 100, g = 100, b = 100, a = 0.1;
                 if (f.region && regions[f.region]) {
                     const match = regions[f.region].color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
@@ -96,10 +101,20 @@
                 if (isTarget) {
                     ctx.fillStyle = `rgba(57, 255, 20, ${GreenhouseModels3DMath.applyDepthFog(0.9, f.depth)})`;
                 } else {
-                    const intensity = 0.3 + diffuse * 0.7;
-                    ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
+                    const intensity = 0.2 + diffuse * 0.8;
+                    const litR = Math.min(255, r * intensity + specular * 255);
+                    const litG = Math.min(255, g * intensity + specular * 255);
+                    const litB = Math.min(255, b * intensity + specular * 255);
+                    ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
                 }
                 ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.fill();
+
+                // Regional Wireframe overlay (low opacity)
+                if (f.region) {
+                    ctx.strokeStyle = `rgba(255,255,255,${0.05 * GreenhouseModels3DMath.applyDepthFog(1, f.depth)})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
             });
 
             // NEW: Topological Projection - Smooth Surface Overlay

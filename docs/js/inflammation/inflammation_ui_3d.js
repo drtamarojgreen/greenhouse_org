@@ -173,7 +173,8 @@
                     y: 300, // Inside the vessel at bottom
                     z: (Math.random() - 0.5) * 100,
                     vx: 3 + Math.random() * 2,
-                    state: 'circulating'
+                    state: 'circulating',
+                    permeabilityShift: 0 // BBB permeability
                 });
             }
             // 3D Capillary/Vessel Segment (Cylinder)

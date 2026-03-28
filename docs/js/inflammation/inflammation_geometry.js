@@ -17,18 +17,19 @@
 
             brainShell.vertices = [];
             brainShell.faces = [];
+            // Reduced color variation for premium/accessible look (Monochromatic Upgrade)
             brainShell.regions = {
-                hypothalamus: { name: 'Hypothalamus', color: 'rgba(255, 200, 50, 0.9)', vertices: [] },
-                hippocampus: { name: 'Hippocampus', color: 'rgba(80, 240, 150, 0.7)', vertices: [] },
-                thalamus: { name: 'Thalamus', color: 'rgba(230, 100, 255, 0.8)', vertices: [] },
-                insula: { name: 'Insula', color: 'rgba(255, 120, 60, 0.7)', vertices: [] },
-                basal_ganglia: { name: 'Basal Ganglia', color: 'rgba(80, 220, 220, 0.6)', vertices: [] },
-                amygdala: { name: 'Amygdala', color: 'rgba(255, 0, 150, 0.8)', vertices: [] },
-                frontal: { name: 'Frontal Lobe', color: 'rgba(255, 100, 100, 0.2)', vertices: [] },
-                parietal: { name: 'Parietal Lobe', color: 'rgba(100, 255, 100, 0.2)', vertices: [] },
-                temporal: { name: 'Temporal Lobe', color: 'rgba(100, 100, 255, 0.2)', vertices: [] },
-                occipital: { name: 'Occipital Lobe', color: 'rgba(255, 255, 100, 0.2)', vertices: [] },
-                cortex: { name: 'Cortex', color: 'rgba(180, 180, 200, 0.25)', vertices: [] }
+                hypothalamus: { name: 'Hypothalamus', color: 'rgba(160, 160, 160, 0.9)', vertices: [] },
+                hippocampus: { name: 'Hippocampus', color: 'rgba(170, 170, 170, 0.7)', vertices: [] },
+                thalamus: { name: 'Thalamus', color: 'rgba(180, 180, 180, 0.8)', vertices: [] },
+                insula: { name: 'Insula', color: 'rgba(190, 190, 190, 0.7)', vertices: [] },
+                basal_ganglia: { name: 'Basal Ganglia', color: 'rgba(150, 150, 150, 0.6)', vertices: [] },
+                amygdala: { name: 'Amygdala', color: 'rgba(140, 140, 140, 0.8)', vertices: [] },
+                frontal: { name: 'Frontal Lobe', color: 'rgba(200, 200, 200, 0.2)', vertices: [] },
+                parietal: { name: 'Parietal Lobe', color: 'rgba(210, 210, 210, 0.2)', vertices: [] },
+                temporal: { name: 'Temporal Lobe', color: 'rgba(190, 190, 190, 0.2)', vertices: [] },
+                occipital: { name: 'Occipital Lobe', color: 'rgba(180, 180, 180, 0.2)', vertices: [] },
+                cortex: { name: 'Cortex', color: 'rgba(210, 210, 210, 0.25)', vertices: [] }
             };
 
             for (let lat = 0; lat <= latBands; lat++) {
@@ -166,19 +167,19 @@
                 });
             };
 
-            // CPK Colors: C=#333, O=#ff4444, N=#4444ff, H=#eee
+            // CPK Colors: C=#333, O=#ff4444, N=#4444ff, H=#eee (Monochromatic Refactor)
             if (type === 'pro-cytokine' || type === 'tnf') {
-                atom(0, 12, 0, '#ff4444', 5); atom(0, 4, 0, '#333333', 6); atom(-6, -4, 4, '#4444ff', 5);
-                atom(8, -8, 4, '#333333', 6); atom(14, -12, 8, '#ff4444', 5);
-                atom(-8, -8, 4, '#333333', 6); atom(-14, -12, 8, '#ff4444', 5);
-                atom(0, -2, 8, '#eee', 3);
+                atom(0, 12, 0, '#D1D5DB', 5); atom(0, 4, 0, '#374151', 6); atom(-6, -4, 4, '#9CA3AF', 5);
+                atom(8, -8, 4, '#374151', 6); atom(14, -12, 8, '#D1D5DB', 5);
+                atom(-8, -8, 4, '#374151', 6); atom(-14, -12, 8, '#D1D5DB', 5);
+                atom(0, -2, 8, '#F3F4F6', 3);
             } else if (type === 'anti-cytokine' || type === 'il10') {
-                atom(-10, 0, 0, '#44ffaa', 6); atom(-18, 5, 2, '#4444ff', 4); atom(-4, -5, -2, '#ff4444', 4);
-                atom(10, 0, 0, '#44ffaa', 6); atom(18, -5, -2, '#4444ff', 4); atom(4, 5, 2, '#ff4444', 4);
+                atom(-10, 0, 0, '#E5E7EB', 6); atom(-18, 5, 2, '#9CA3AF', 4); atom(-4, -5, -2, '#D1D5DB', 4);
+                atom(10, 0, 0, '#E5E7EB', 6); atom(18, -5, -2, '#9CA3AF', 4); atom(4, 5, 2, '#D1D5DB', 4);
             } else if (type === 'neurotransmitter') {
-                atom(0, 0, 0, '#333', 5); atom(0, 10, 0, '#4444ff', 5); atom(8, -4, 0, '#ff4444', 5); atom(4, -8, 4, '#ff4444', 4);
+                atom(0, 0, 0, '#374151', 5); atom(0, 10, 0, '#9CA3AF', 5); atom(8, -4, 0, '#D1D5DB', 5); atom(4, -8, 4, '#D1D5DB', 4);
             } else {
-                atom(0, 0, 0, '#64d2ff', 4); atom(5, 5, 0, '#eee', 2); atom(-5, 5, 0, '#eee', 2);
+                atom(0, 0, 0, '#9CA3AF', 4); atom(5, 5, 0, '#F3F4F6', 2); atom(-5, 5, 0, '#F3F4F6', 2);
             }
             return { vertices, faces };
         },
@@ -196,10 +197,10 @@
                     const wave = Math.sin(x * 0.012 + y * 0.008) * 15;
 
                     const layers = [
-                        { z: wave + 25, type: 'head', color: '#64d2ff' },
-                        { z: wave + 10, type: 'tail', color: '#1a2a3a' },
-                        { z: wave - 10, type: 'tail', color: '#1a2a3a' },
-                        { z: wave - 25, type: 'head', color: '#64d2ff' }
+                        { z: wave + 25, type: 'head', color: '#E5E7EB' },
+                        { z: wave + 10, type: 'tail', color: '#374151' },
+                        { z: wave - 10, type: 'tail', color: '#374151' },
+                        { z: wave - 25, type: 'head', color: '#E5E7EB' }
                     ];
 
                     layers.forEach(l => {
@@ -229,7 +230,7 @@
             const faces = [];
             const somaRadius = 18 * scale;
             const soma = this.generateSphere(somaRadius, 12);
-            vertices.push(...soma.vertices.map(v => ({ ...v, color: '#ffb6c1' }))); // Light Pink soma
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: '#E5E7EB' }))); // Grayscale soma
             faces.push(...soma.faces);
 
             // Internal granules (hallmark of mast cells)
@@ -244,7 +245,7 @@
                 const granule = this.generateSphere(5 * scale, 6);
                 const offset = vertices.length;
                 vertices.push(...granule.vertices.map(v => ({
-                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#990033' // Deep purple/red granules
+                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#4B5563' // Dark Gray granules
                 })));
                 granule.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
             }
@@ -260,7 +261,7 @@
                 const receptor = this.generateSphere(2 * scale, 4);
                 const offset = vertices.length;
                 vertices.push(...receptor.vertices.map(v => ({
-                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#4169e1' // Royal Blue receptors
+                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#9CA3AF' // Silver receptors
                 })));
                 receptor.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
             }
@@ -275,8 +276,8 @@
             const somaRadius = (isAstro ? 12 : 8) * scale;
             const soma = this.generateSphere(somaRadius, 10);
 
-            // Astrocytes: Gold/Yellow; Microglia: Cyan/Blue-ish (Resting) or Red (Active)
-            const baseColor = isAstro ? '#ffcc00' : '#4ca1af';
+            // Monochromatic Glia
+            const baseColor = isAstro ? '#E5E7EB' : '#D1D5DB';
             vertices.push(...soma.vertices.map(v => ({ ...v, color: baseColor })));
             faces.push(...soma.faces);
 
@@ -302,7 +303,7 @@
                     const foot = this.generateSphere(8 * scale, 6);
                     const fOffset = vertices.length;
                     vertices.push(...foot.vertices.map(v => ({
-                        x: v.x + p2.x, y: v.y + p2.y, z: v.z + p2.z, color: '#ffea00'
+                        x: v.x + p2.x, y: v.y + p2.y, z: v.z + p2.z, color: '#F3F4F6'
                     })));
                     foot.faces.forEach(f => faces.push([f[0] + fOffset, f[1] + fOffset, f[2] + fOffset]));
                 }

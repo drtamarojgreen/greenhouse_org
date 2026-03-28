@@ -512,6 +512,7 @@
             const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
 
             // Draw receptor helices (Only draw original placeholder if modular receptors haven't initialized)
+            // Reduced color variation for premium/accessible look (monochromatic palette)
             if (!this.state.receptors || this.state.receptors.length === 0) {
                 for (let i = 0; i < 7; i++) {
                     const angle = (i / 7) * Math.PI * 2;
@@ -522,7 +523,7 @@
                     const bottom = project(rx, 80, rz, cam, { width: w, height: h, near: 10, far: 5000 });
 
                     if (top.scale > 0 && bottom.scale > 0) {
-                        ctx.strokeStyle = '#667eea';
+                        ctx.strokeStyle = '#E5E7EB'; // Light gray
                         ctx.lineWidth = 15 * top.scale;
                         ctx.lineCap = 'round';
                         ctx.beginPath();
@@ -537,7 +538,7 @@
             this.state.lipids.forEach(l => {
                 const p = project(l.x, l.y, l.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    ctx.fillStyle = '#ffcc00';
+                    ctx.fillStyle = '#D1D5DB'; // Medium gray
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 3 * p.scale, 0, Math.PI * 2);
                     ctx.fill();
@@ -547,7 +548,7 @@
             // Draw Ligand (5-HT) in pocket
             const ligandPos = project(0, -20, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (ligandPos.scale > 0) {
-                ctx.fillStyle = '#00ffcc';
+                ctx.fillStyle = '#FFFFFF'; // White for focus
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = '#00ffcc';
                 ctx.beginPath();

@@ -97,6 +97,27 @@
                         ctx.lineWidth = width;
                         ctx.stroke();
 
+                        if (structureType === 'helix') {
+                            // Helical ribbon highlight
+                            ctx.save();
+                            ctx.setLineDash([2, 2]);
+                            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                            ctx.stroke();
+                            ctx.restore();
+                        } else if (structureType === 'sheet') {
+                            // Arrow head for beta sheet directionality
+                            if (i === projected.length - 2) {
+                                ctx.save();
+                                ctx.translate(p2.x, p2.y);
+                                ctx.rotate(Math.atan2(p2.y - p1.y, p2.x - p1.x));
+                                ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+                                ctx.beginPath();
+                                ctx.moveTo(0, 0); ctx.lineTo(-10, -5); ctx.lineTo(-10, 5); ctx.closePath();
+                                ctx.fill();
+                                ctx.restore();
+                            }
+                        }
+
                         // Draw joint for smoothness
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();

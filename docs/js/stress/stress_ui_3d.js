@@ -47,15 +47,15 @@
                 }
             }
 
-            // Initialize HPA Pathway nodes with meshes and regulators
+            // Initialize HPA Pathway nodes with meshes and regulators (Monochromatic Upgrade)
             const Geo = window.GreenhouseNeuroGeometry;
             this.hpaNodes = [
-                { id: 'pfc', label: 'label_pfc', x: -80, y: 180, z: 20, color: '#44aaff', type: 'regulator', function: 'inhibitor', mesh: Geo.generateSphere(25, 12) },
-                { id: 'amygdala', label: 'label_amygdala', x: 80, y: 150, z: 0, color: '#ff4444', type: 'regulator', function: 'excitor', mesh: Geo.generateSphere(20, 12) },
-                { id: 'hippocampus', label: 'label_hippocampus', x: -60, y: 100, z: -40, color: '#44ffaa', type: 'regulator', function: 'inhibitor', mesh: Geo.generateSphere(22, 12) },
-                { id: 'hypothalamus', label: 'label_hypothalamus', x: 0, y: 50, z: 0, color: '#ffcc00', type: 'core', mesh: Geo.generateSphere(25, 12) },
-                { id: 'pituitary', label: 'label_pituitary', x: 0, y: -20, z: 40, color: '#ff9900', type: 'core', mesh: Geo.generateSphere(18, 12) },
-                { id: 'adrenals', label: 'label_adrenal_glands', x: 0, y: -200, z: -20, color: '#ff3300', type: 'core', mesh: Geo.generateSphere(35, 12) }
+                { id: 'pfc', label: 'label_pfc', x: -80, y: 180, z: 20, color: '#D0D0D0', type: 'regulator', function: 'inhibitor', mesh: Geo.generateSphere(25, 12) },
+                { id: 'amygdala', label: 'label_amygdala', x: 80, y: 150, z: 0, color: '#B0B0B0', type: 'regulator', function: 'excitor', mesh: Geo.generateSphere(20, 12) },
+                { id: 'hippocampus', label: 'label_hippocampus', x: -60, y: 100, z: -40, color: '#C0C0C0', type: 'regulator', function: 'inhibitor', mesh: Geo.generateSphere(22, 12) },
+                { id: 'hypothalamus', label: 'label_hypothalamus', x: 0, y: 50, z: 0, color: '#E0E0E0', type: 'core', mesh: Geo.generateSphere(25, 12) },
+                { id: 'pituitary', label: 'label_pituitary', x: 0, y: -20, z: 40, color: '#CCCCCC', type: 'core', mesh: Geo.generateSphere(18, 12) },
+                { id: 'adrenals', label: 'label_adrenals', x: 0, y: -200, z: -20, color: '#A0A0A0', type: 'core', mesh: Geo.generateSphere(35, 12) }
             ];
 
             // Load pathway metadata and pre-cache HPA
@@ -175,6 +175,13 @@
             const viewMode = ['macro', 'pathway', 'systemic'][Math.round(viewModeVal)] || 'systemic';
             const activePathId = state.factors.activePathway || 'hpa';
 
+            // Allostatic Load Visual (Buckling Pillar)
+            let buckling = 0;
+            if (viewMode === 'systemic') {
+                const load = state.metrics.allostaticLoad || 0.5;
+                buckling = Math.sin(Date.now() * 0.001) * load * 15;
+            }
+
             if (viewMode === 'pathway') {
                 if (this.currentPathwayId !== activePathId) {
                     this.fetchPathway(activePathId);
@@ -185,7 +192,7 @@
             } else if (viewMode === 'macro' && window.GreenhouseStressMacro) {
                 window.GreenhouseStressMacro.render(ctx, state, camera, projection, this);
             } else if (viewMode === 'systemic' && window.GreenhouseStressSystemic) {
-                window.GreenhouseStressSystemic.render(ctx, state, camera, projection, this);
+                window.GreenhouseStressSystemic.render(ctx, state, camera, projection, this, buckling);
             }
         },
 

@@ -100,18 +100,18 @@
             };
 
             this.colors = {
-                A: '#FF6B6B',
-                U: '#4ECDC4',
-                G: '#FFE66D',
-                C: '#1A535C',
-                PSI: '#818CF8', // Enhancement 7
-                BACKBONE: '#A3BFFA',
-                ENZYME: 'rgba(255, 255, 255, 0.2)',
-                METHYL: '#FF0000',
-                GLOW: '#667EEA',
-                METAL: '#A5F3FC',
-                PROTEIN: '#F472B6',
-                RIBOSOME: '#9333EA',
+                A: '#D0D0D0',
+                U: '#B0B0B0',
+                G: '#C0C0C0',
+                C: '#A0A0A0',
+                PSI: '#CCCCCC', // Enhancement 7
+                BACKBONE: '#EEEEEE',
+                ENZYME: 'rgba(200, 200, 200, 0.2)',
+                METHYL: '#FF3333',
+                GLOW: '#D1D5DB',
+                METAL: '#9CA3AF',
+                PROTEIN: '#6B7280',
+                RIBOSOME: '#4B5563',
                 ATP: '#FBDF11',
                 DECAY: '#EF4444'
             };
@@ -416,6 +416,15 @@
         update(dt) {
             this.simTime += dt * 0.002;
 
+            // Enhancement: Mechanical Enzyme Animators (AlkB physically moving)
+            this.enzymes.forEach(e => {
+                const target = this.rnaStrand[e.targetIndex];
+                if (target && e.state === 'approaching') {
+                    const dy = target.y - e.y;
+                    if (Math.abs(dy) > 5) e.y += Math.sign(dy) * e.speed * (dt/16);
+                }
+            });
+
             // Modular Physics Updates
             if (this.foldingEngine) this.foldingEngine.update(dt);
             if (this.environmentManager) this.environmentManager.update(dt);
@@ -454,13 +463,14 @@
                     base.x += fold.x;
                 }
 
-                // Handle vertical spacing for breaks
+                // Handle vertical spacing for breaks (Literal structural breaks)
                 if (!base.connected && i < this.rnaStrand.length - 1) {
                     const idealY = base.y + 60;
                     this.rnaStrand[i + 1].y += (idealY - this.rnaStrand[i + 1].y) * 0.1;
                 } else if (i < this.rnaStrand.length - 1) {
                     const idealY = base.y + 40;
-                    this.rnaStrand[i + 1].y += (idealY - this.rnaStrand[i + 1].y) * 0.1;
+                    // Literal Conformational Snapping when repaired
+                    this.rnaStrand[i + 1].y += (idealY - this.rnaStrand[i + 1].y) * 0.2;
                 }
 
                 // Decay flash

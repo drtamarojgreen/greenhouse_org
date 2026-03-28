@@ -104,17 +104,32 @@
                     }
                 }
 
-                // Highlighting Active Region
+                // Highlighting Active Region (Cognitive Load: Working memory as physical gears)
                 if (targetRegion && f.region === targetRegion) {
-                    const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 400);
+                    const now = Date.now();
+                    const load = options.cognitiveLoad || 0.5;
+                    const pulse = 0.6 + 0.4 * Math.sin(now / 400);
+
+                    // Interlocking Gear Geometry Cues (Structural Upgrade)
+                    const gearAngle = (now * 0.002) % (Math.PI * 2);
+                    const isGearTeeth = Math.sin((f.p1.x + f.p1.y) * 0.1 + gearAngle) > 0.8;
+
+                    // Physical Gear Displacement
+                    let gearOffset = 0;
+                    if (isGearTeeth) {
+                        gearOffset = 15 * load * p1.scale;
+                        f.p1.y += gearOffset; f.p2.y += gearOffset; f.p3.y += gearOffset;
+                    }
+
                     const fog = GreenhouseModels3DMath.applyDepthFog(pulse, f.depth);
-                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green
+                    // Monochromatic Glow (White/Silver)
+                    ctx.fillStyle = isGearTeeth ? `rgba(220, 220, 220, ${fog})` : `rgba(240, 240, 240, ${fog})`;
 
                     // Additive Glow Effect
                     ctx.save();
                     ctx.globalCompositeOperation = 'lighter';
                     ctx.shadowBlur = 10 * pulse;
-                    ctx.shadowColor = 'rgba(57, 255, 20, 0.8)';
+                    ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
                     ctx.beginPath();
                     ctx.moveTo(f.p1.x, f.p1.y);
                     ctx.lineTo(f.p2.x, f.p2.y);

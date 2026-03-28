@@ -202,12 +202,25 @@
                 ctx.fillText(isM1 ? 'PHENOTYPE: M1' : 'PHENOTYPE: M2', 0, -20 * p.scale);
             }
 
+            // Structural Upgrade: Dynamic Glial Morphing (Inflammation Model)
+            // As activation (0.0 -> 1.0) increases, microglia morph from ramified to amoeboid
+            const morphFactor = isAstro ? 0 : activation;
+
             g.mesh.faces.forEach(f => {
                 const v1 = g.mesh.vertices[f[0]], v2 = g.mesh.vertices[f[1]], v3 = g.mesh.vertices[f[2]];
                 const rot = (v, ay) => ({ x: v.x * Math.cos(ay) - v.z * Math.sin(ay), y: v.y, z: v.x * Math.sin(ay) + v.z * Math.cos(ay) });
                 const ry = g.rotationY + Date.now() * 0.001 * (isM1 ? 2 : 1);
 
-                const r1 = rot(v1, ry), r2 = rot(v2, ry), r3 = rot(v3, ry);
+                // Apply morphological morphing: Retract branches, expand soma
+                const morph = (v) => {
+                    const isSoma = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z) < 15;
+                    const scaleFactor = isSoma ? (1 + morphFactor * 1.5) : (1 - morphFactor * 0.7);
+                    return { x: v.x * scaleFactor, y: v.y * scaleFactor, z: v.z * scaleFactor };
+                };
+
+                const m1 = morph(v1), m2 = morph(v2), m3 = morph(v3);
+                const r1 = rot(m1, ry), r2 = rot(m2, ry), r3 = rot(m3, ry);
+
                 ctx.beginPath();
                 ctx.fillStyle = color;
                 // Reactive Microglia (M1) look more amoeboid/jagged

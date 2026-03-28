@@ -124,6 +124,12 @@
                         ctx.closePath();
                         ctx.fill();
 
+                        // Centromere toroidal structure (Conceptual)
+                        if (f.center && Math.sqrt(f.center.x**2 + f.center.y**2) < 20) {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                            ctx.fill();
+                        }
+
                         // Add subtle edge highlight for definition
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
                         ctx.lineWidth = 0.5;

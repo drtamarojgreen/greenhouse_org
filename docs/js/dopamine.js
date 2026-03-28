@@ -251,12 +251,13 @@
     };
 
     G.setupReceptors = function () {
+        // Reduced color variation for premium/accessible look (monochromatic palette)
         G.state.receptors = [
-            { type: 'D1', x: -200, y: 0, z: 0, color: '#ff4d4d', il3Size: 20, tailLength: 60, helixRadius: 15 },
-            { type: 'D2', x: -100, y: 0, z: 0, color: '#4d79ff', il3Size: 50, tailLength: 15, helixRadius: 18 },
-            { type: 'D3', x: 0, y: 0, z: 0, color: '#4dff4d', il3Size: 45, tailLength: 15, helixRadius: 16 },
-            { type: 'D4', x: 100, y: 0, z: 0, color: '#ffff4d', il3Size: 40, tailLength: 20, helixRadius: 14 },
-            { type: 'D5', x: 200, y: 0, z: 0, color: '#ff4dff', il3Size: 22, tailLength: 55, helixRadius: 15 }
+            { type: 'D1', x: -200, y: 0, z: 0, color: '#E5E7EB', il3Size: 20, tailLength: 60, helixRadius: 15 },
+            { type: 'D2', x: -100, y: 0, z: 0, color: '#D1D5DB', il3Size: 50, tailLength: 15, helixRadius: 18 },
+            { type: 'D3', x: 0, y: 0, z: 0, color: '#9CA3AF', il3Size: 45, tailLength: 15, helixRadius: 16 },
+            { type: 'D4', x: 100, y: 0, z: 0, color: '#6B7280', il3Size: 40, tailLength: 20, helixRadius: 14 },
+            { type: 'D5', x: 200, y: 0, z: 0, color: '#E5E7EB', il3Size: 22, tailLength: 55, helixRadius: 15 }
         ];
     };
 

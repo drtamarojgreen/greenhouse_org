@@ -20,19 +20,20 @@
 
         // Category Definitions for Visuals (Enhancement 1: Neural regions added)
         // Note: All nodes are spheres per explicit user request.
+        // Reduced color variation for premium/accessible look (monochromatic palette)
         categories: {
-            'hpa': { label: 'stress_cat_hpa', color: '#ff9500', orbit: 110, speed: 0.0001, total: 5, shape: 'sphere' },
-            'env': { label: 'stress_cat_env', color: '#ff4d4d', orbit: 140, speed: 0.0002, total: 26, shape: 'sphere' },
-            'limbic': { label: 'stress_cat_limbic', color: '#ff2d55', orbit: 170, speed: -0.00015, total: 6, shape: 'sphere' },
-            'psych': { label: 'stress_cat_psych', color: '#ffcc00', orbit: 200, speed: -0.0001, total: 25, shape: 'sphere' },
-            'cortical': { label: 'stress_cat_cortical', color: '#5856d6', orbit: 230, speed: 0.00008, total: 3, shape: 'sphere' },
-            'philo': { label: 'stress_cat_philo', color: '#a18cd1', orbit: 260, speed: 0.00005, total: 25, shape: 'sphere' },
-            'brainstem': { label: 'stress_cat_autonomic', color: '#4cd964', orbit: 290, speed: -0.00012, total: 10, shape: 'sphere' },
-            'research': { label: 'stress_cat_biological_defense', color: '#64d2ff', orbit: 320, speed: -0.0002, total: 30, shape: 'sphere' },
-            'interv': { label: 'stress_cat_interv', color: '#30b0c7', orbit: 350, speed: 0.00015, total: 4, shape: 'sphere' },
-            'therapy': { label: 'stress_cat_therapy', color: '#00c7be', orbit: 380, speed: -0.00018, total: 8, shape: 'sphere' },
-            'lifestyle': { label: 'stress_cat_lifestyle', color: '#a2845e', orbit: 410, speed: 0.00012, total: 7, shape: 'sphere' },
-            'system': { label: 'stress_cat_system', color: '#8e8e93', orbit: 440, speed: -0.0001, total: 6, shape: 'sphere' }
+            'hpa': { label: 'stress_cat_hpa', color: '#E5E7EB', orbit: 110, speed: 0.0001, total: 5, shape: 'sphere' },
+            'env': { label: 'stress_cat_env', color: '#D1D5DB', orbit: 140, speed: 0.0002, total: 26, shape: 'sphere' },
+            'limbic': { label: 'stress_cat_limbic', color: '#9CA3AF', orbit: 170, speed: -0.00015, total: 6, shape: 'sphere' },
+            'psych': { label: 'stress_cat_psych', color: '#6B7280', orbit: 200, speed: -0.0001, total: 25, shape: 'sphere' },
+            'cortical': { label: 'stress_cat_cortical', color: '#4B5563', orbit: 230, speed: 0.00008, total: 3, shape: 'sphere' },
+            'philo': { label: 'stress_cat_philo', color: '#374151', orbit: 260, speed: 0.00005, total: 25, shape: 'sphere' },
+            'brainstem': { label: 'stress_cat_autonomic', color: '#1F2937', orbit: 290, speed: -0.00012, total: 10, shape: 'sphere' },
+            'research': { label: 'stress_cat_biological_defense', color: '#F9FAFB', orbit: 320, speed: -0.0002, total: 30, shape: 'sphere' },
+            'interv': { label: 'stress_cat_interv', color: '#F3F4F6', orbit: 350, speed: 0.00015, total: 4, shape: 'sphere' },
+            'therapy': { label: 'stress_cat_therapy', color: '#E5E7EB', orbit: 380, speed: -0.00018, total: 8, shape: 'sphere' },
+            'lifestyle': { label: 'stress_cat_lifestyle', color: '#D1D5DB', orbit: 410, speed: 0.00012, total: 7, shape: 'sphere' },
+            'system': { label: 'stress_cat_system', color: '#9CA3AF', orbit: 440, speed: -0.0001, total: 6, shape: 'sphere' }
         },
 
         initVisuals() {
@@ -70,7 +71,7 @@
             this.initialized = true;
         },
 
-        render(ctx, state, camera, projection, ui3d) {
+        render(ctx, state, camera, projection, ui3d, buckling = 0) {
             const Math3D = window.GreenhouseModels3DMath;
             const Geo = window.GreenhouseNeuroGeometry;
             const config = window.GreenhouseStressConfig;
@@ -166,7 +167,7 @@
                 }
             });
 
-            // 2. Render Central Resilience Crystal (The "Self")
+            // 2. Render Central Resilience Crystal (The "Self") - with Buckling (Enhancement 12)
             // Re-use cp from Step 0
             if (cp.scale > 0) {
                 // Pulse based on total active factors (system activation)
@@ -187,10 +188,17 @@
                         const v1 = this.crystalMesh.vertices[face[0]];
                         const v2 = this.crystalMesh.vertices[face[1]];
                         const v3 = this.crystalMesh.vertices[face[2]];
-                        // Simple projection for wireframe lines relative to center
-                        const p1 = Math3D.project3DTo2D(v1.x, v1.y, v1.z, camera, projection);
-                        const p2 = Math3D.project3DTo2D(v2.x, v2.y, v2.z, camera, projection);
-                        const p3 = Math3D.project3DTo2D(v3.x, v3.y, v3.z, camera, projection);
+
+                        // Apply Buckling Deformation based on allostatic load
+                        const applyBuckle = (v) => ({
+                            x: v.x + (v.y > 0 ? buckling : 0),
+                            y: v.y,
+                            z: v.z
+                        });
+
+                        const p1 = Math3D.project3DTo2D(applyBuckle(v1).x, v1.y, v1.z, camera, projection);
+                        const p2 = Math3D.project3DTo2D(applyBuckle(v2).x, v2.y, v2.z, camera, projection);
+                        const p3 = Math3D.project3DTo2D(applyBuckle(v3).x, v3.y, v3.z, camera, projection);
 
                         ctx.beginPath();
                         ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.closePath();

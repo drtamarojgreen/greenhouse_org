@@ -372,10 +372,21 @@
                         }
                     }
 
-                    // 4. Procedural Gyri/Sulci Noise (The brain surface 'wrinkles')
-                    // This is key to removing the 'soccer ball' look
-                    const noise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.03 +
-                        (Math.sin(x * 25) * Math.cos(y * 25)) * 0.01;
+                    // 4. Region-Specific Surface Noise
+                    const regionKey = this.getRegionKey(x, y, z);
+                    let freq = 12;
+                    if (regionKey === 'pfc') freq = 18;
+                    else if (regionKey === 'occipitalLobe') freq = 8;
+                    else if (regionKey === 'cerebellum') freq = 30;
+
+                    const noise = (Math.sin(x * freq) * Math.cos(y * freq) * Math.sin(z * freq)) * 0.03 +
+                        (Math.sin(x * freq * 2) * Math.cos(y * freq * 2)) * 0.01;
+
+                    // Specialized Cerebellum Folia (Striated)
+                    if (regionKey === 'cerebellum') {
+                        const folia = Math.sin(z * 0.4) * 0.04;
+                        x *= (1 + folia); y *= (1 + folia); z *= (1 + folia);
+                    }
 
                     x = x * radius * (1 + noise);
                     y = y * radius * (1 + noise);
@@ -392,15 +403,16 @@
                     brainShell.faces.push({ indices: [second, second + 1, first + 1], region: null });
                 }
             }
+            // Define Regions (Reduced color variation for premium/accessible look)
             brainShell.regions = {
-                pfc: { color: 'rgba(100, 150, 255, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc') },
-                amygdala: { color: 'rgba(255, 100, 100, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala') },
-                hippocampus: { color: 'rgba(100, 255, 150, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus') },
-                temporalLobe: { color: 'rgba(255, 165, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe') },
-                parietalLobe: { color: 'rgba(147, 112, 219, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe') },
-                occipitalLobe: { color: 'rgba(255, 192, 203, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe') },
-                cerebellum: { color: 'rgba(64, 224, 208, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum') },
-                brainstem: { color: 'rgba(255, 215, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem') }
+                pfc: { color: 'rgba(200, 200, 220, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc') },
+                amygdala: { color: 'rgba(180, 180, 180, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala') },
+                hippocampus: { color: 'rgba(190, 190, 190, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus') },
+                temporalLobe: { color: 'rgba(210, 210, 210, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe') },
+                parietalLobe: { color: 'rgba(215, 215, 215, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe') },
+                occipitalLobe: { color: 'rgba(205, 205, 205, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe') },
+                cerebellum: { color: 'rgba(170, 170, 170, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum') },
+                brainstem: { color: 'rgba(160, 160, 160, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem') }
             };
 
             // Define topological cut planes for smooth boundary rendering
@@ -415,6 +427,40 @@
                 { axis: 'x', value: -0.4, label: 'Temporal L' }
             ];
             this.computeRegionsAndBoundaries(brainShell);
+            this.applyBoundaryBeveling(brainShell);
+        },
+
+        getRegionKey(x, y, z) {
+            // Logic based on normalized coordinates (-1 to 1)
+            if (z > 0.4 && y > -0.2) return 'pfc';
+            if (z < -0.5 && y > -0.2) return 'occipitalLobe';
+            if (Math.abs(x) > 0.4 && y < 0.1 && z > -0.4 && z < 0.4) return 'temporalLobe';
+            if (y > 0.4 && z > -0.4 && z < 0.4) return 'parietalLobe';
+            if (y < -0.3 && z < -0.4) return 'cerebellum';
+            if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) return 'brainstem';
+            if (Math.abs(x) < 0.3 && Math.abs(y) < 0.3 && Math.abs(z) < 0.3) return 'amygdala';
+            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.5 && y < 0 && z > -0.2 && z < 0.2) return 'hippocampus';
+            return null;
+        },
+
+        applyBoundaryBeveling(brainShell) {
+            // Move boundary vertices inward to create grooves
+            const boundaryVertexIndices = new Set();
+            brainShell.boundaries.forEach(b => {
+                boundaryVertexIndices.add(b.i1);
+                boundaryVertexIndices.add(b.i2);
+            });
+
+            boundaryVertexIndices.forEach(idx => {
+                const v = brainShell.vertices[idx];
+                const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+                if (len > 0) {
+                    const depth = 3;
+                    v.x -= (v.x / len) * depth;
+                    v.y -= (v.y / len) * depth;
+                    v.z -= (v.z / len) * depth;
+                }
+            });
         },
 
         getRegionVertices(brainShell, regionKey) {

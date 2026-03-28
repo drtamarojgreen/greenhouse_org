@@ -25,50 +25,51 @@
          */
         enhanceRegions(brain) {
             // Add new regions to the regions object
+            // Enhanced regions with reduced color variation for premium look
             const newRegions = {
                 dlPFC: {
                     name: 'Dorsal PFC',
-                    color: 'rgba(100, 180, 255, 0.7)',
+                    color: 'rgba(200, 200, 210, 0.7)',
                     vertices: []
                 },
                 vmPFC: {
                     name: 'Ventromedial PFC',
-                    color: 'rgba(120, 160, 255, 0.7)',
+                    color: 'rgba(210, 210, 220, 0.7)',
                     vertices: []
                 },
                 ofc: {
                     name: 'Orbitofrontal Cortex',
-                    color: 'rgba(80, 140, 255, 0.7)',
+                    color: 'rgba(190, 190, 200, 0.7)',
                     vertices: []
                 },
                 acc: {
                     name: 'Anterior Cingulate Cortex',
-                    color: 'rgba(100, 255, 255, 0.6)',
+                    color: 'rgba(220, 220, 230, 0.6)',
                     vertices: []
                 },
                 subgenualACC: {
                     name: 'Subgenual ACC (Area 25)',
-                    color: 'rgba(80, 220, 220, 0.7)',
+                    color: 'rgba(180, 180, 190, 0.7)',
                     vertices: []
                 },
                 insula: {
                     name: 'Insula',
-                    color: 'rgba(255, 100, 255, 0.6)',
+                    color: 'rgba(215, 215, 225, 0.6)',
                     vertices: []
                 },
                 striatum: {
                     name: 'Striatum',
-                    color: 'rgba(200, 100, 255, 0.6)',
+                    color: 'rgba(170, 170, 180, 0.6)',
                     vertices: []
                 },
                 nucleusAccumbens: {
                     name: 'Nucleus Accumbens',
-                    color: 'rgba(180, 80, 255, 0.8)',
+                    color: 'rgba(160, 160, 170, 0.8)',
                     vertices: []
                 },
                 cortex: {
                     name: 'Cortex',
-                    color: 'rgba(120, 120, 120, 0.3)',
+                    color: 'rgba(230, 230, 240, 0.3)',
                     vertices: []
                 }
             };
@@ -162,8 +163,19 @@
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
             // Project all vertices first
+            const now = Date.now();
+            const arousal = (activeROI && activeROI.arousal) || 0; // High arousal introduces stiffness
+
             const projectedVertices = vertices.map(v => {
-                return GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
+                let x = v.x, y = v.y, z = v.z;
+
+                // Threat detection alters physical shape (High arousal introdues stiffness and rapid contraction)
+                if (arousal > 0.7) {
+                    const pulse = 1.0 + Math.sin(now * 0.01) * 0.05 * arousal;
+                    x *= pulse; y *= pulse; z *= pulse;
+                }
+
+                return GreenhouseModels3DMath.project3DTo2D(x, y, z, camera, projection);
             });
 
             // Prepare Faces with Depth and Normals

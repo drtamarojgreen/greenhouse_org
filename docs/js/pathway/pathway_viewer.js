@@ -942,18 +942,31 @@
                 projected: GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection)
             }));
 
-            // Draw edges
-            this.ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)';
-            this.ctx.lineWidth = 1.5;
+            // Draw edges (Physical "Cables" for habit pathways)
             this.pathwayEdges.forEach(edge => {
                 const source = projectedNodes.find(n => n.id === edge.source);
                 const target = projectedNodes.find(n => n.id === edge.target);
                 if (source && target && source.projected.scale > 0 && target.projected.scale > 0) {
+                    // Topographical Terrain Mapping (Cables/Canyons)
+                    // INGRIANED habits are thick fortified cables; new ones are fragile wireframes.
+                    const habitStrength = (edge.metadata && edge.metadata.strength) || 0.5;
+                    const isIngrained = habitStrength > 0.8;
+
+                    this.ctx.strokeStyle = isIngrained ? 'rgba(100, 100, 150, 0.6)' : 'rgba(76, 161, 175, 0.2)';
+                    this.ctx.lineWidth = (isIngrained ? 8 : 1.5) * source.projected.scale;
+
+                    if (!isIngrained) {
+                        this.ctx.save();
+                        this.ctx.setLineDash([2, 2]); // Fragile wireframe
+                    }
+
                     // Base line
                     this.ctx.beginPath();
                     this.ctx.moveTo(source.projected.x, source.projected.y);
                     this.ctx.lineTo(target.projected.x, target.projected.y);
                     this.ctx.stroke();
+
+                    if (!isIngrained) this.ctx.restore();
 
                     // Animated Flow Particle
                     const flowPos = (time % 1);

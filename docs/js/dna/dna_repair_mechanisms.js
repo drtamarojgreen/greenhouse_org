@@ -22,10 +22,11 @@
             this.consumeATP(2, pair.x, 0, 0);
         }
 
-        // Recognition by Glycosylase
+        // Recognition by Glycosylase (Mechanical Enzyme Animator)
         if (t === 100) {
             this.spawnParticles(pair.x, 0, 0, 20, '#ff00ff');
             this.consumeATP(10, pair.x, 0, 0);
+            this.state.activeEnzyme = { name: 'Glycosylase', x: -500, targetX: pair.x, y: 0 };
         }
 
         // Removal of damaged base (creating AP site)
@@ -177,6 +178,7 @@
             this.consumeATP(5, pair.x, 0, 0);
         }
         if (t > 50 && t < 300) {
+            // Visualize literal structural breaks and mismatched alignments
             this.state.basePairs.forEach(p => {
                 if (p.index < targetIdx) { p.x -= 0.2; p.offsetY -= 0.1; }
                 if (p.index > targetIdx) { p.x += 0.2; p.offsetY += 0.1; }

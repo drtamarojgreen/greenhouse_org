@@ -61,8 +61,8 @@
             rise: 14,
             rotationPerPair: 0.5,
             colors: {
-                A: '#00D9FF', T: '#FF0055', C: '#FFD500', G: '#00FF66',
-                backbone: '#EEEEEE', enzyme: '#9d00ff', damage: '#FF0000'
+                A: '#D0D0D0', T: '#B0B0B0', C: '#C0C0C0', G: '#A0A0A0',
+                backbone: '#EEEEEE', enzyme: '#CCCCCC', damage: '#FF3333'
             }
         },
 
@@ -275,7 +275,17 @@
                 const p2 = project(p.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p1.scale <= 0 || p2.scale <= 0) continue;
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
-                const drawB = (sp, ep, type, dam) => { if (!type) return; ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; if (dam) { ctx.shadowBlur = 15; ctx.shadowColor = '#ff0000'; } ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.shadowBlur = 0; };
+
+                // Enhanced Base Pair Rungs (Rectangular Solids / Rungs)
+                const drawB = (sp, ep, type, dam) => {
+                    if (!type) return;
+                    const avgScale = (p1.scale + p2.scale) / 2;
+                    ctx.fillStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff');
+                    const dx = ep.x - sp.x, dy = ep.y - sp.y, dist = Math.sqrt(dx*dx + dy*dy);
+                    ctx.save(); ctx.translate(sp.x, sp.y); ctx.rotate(Math.atan2(dy, dx));
+                    ctx.fillRect(0, -3 * avgScale, dist, 6 * avgScale); // Solid rectangular rung
+                    ctx.restore();
+                };
 
                 if (!p.isReplicating) {
                     drawB(p1, { x: midX, y: midY }, p.base1, p.isDamaged);
