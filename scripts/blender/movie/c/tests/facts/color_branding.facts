@@ -1,0 +1,6 @@
+Situation: Logo Botanical Palette
+Is frame = 50
+Is target_actor = GreenhouseLogo
+Is expected_r = 0.298
+Is expected_g = 0.686
+Is expected_b = 0.314

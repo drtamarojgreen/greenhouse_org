@@ -1,4 +1,8 @@
 #include "AssetManager.hpp"
+#include "SceneNodes.hpp"
+#include "SceneLoader.hpp"
+#include "Renderer.hpp"
+#include <filesystem>
 
 // Total C++ Production Suite (100% Asset-Aware)
 int main(int argc, char* argv[]) {
@@ -17,42 +21,25 @@ int main(int argc, char* argv[]) {
 
     for (int f = start; f <= end; ++f) {
         std::map<std::string, float> states;
-        for (auto scene : timeline) scene->animate(f, states);
+        for (auto scene : timeline) {
+            scene->animate(f, states);
+        }
 
         renderer.clear();
         
         // Render all actors and structures in the native pool
         for (auto& [name, mesh] : manager.assets) {
-            float lx = states[name + "_lx"];
-            float lz = states[name + "_lz"];
-            
-            mesh.transform(lx, 0, lz);
-            renderer.render_mesh(mesh);
-            mesh.transform(-lx, 0, -lz); // State reset
-        }
-
-    for (int f = start; f <= end; ++f) {
-        std::map<std::string, float> states;
-        for (auto scene : timeline) scene->animate(f, states);
-
-        renderer.clear();
-        
-        // Render characters from asset pool
-        for (auto& [name, mesh] : assets) {
-            float lx = states[name + "_lx"];
-            float lz = states[name + "_lz"];
+            // Apply states if they exist
+            float lx = states.count(name + "_lx") ? states[name + "_lx"] : 0.0f;
+            float ly = states.count(name + "_ly") ? states[name + "_ly"] : 0.0f;
+            float lz = states.count(name + "_lz") ? states[name + "_lz"] : 0.0f;
             
             // Temporary transform (modifies mesh in-place for rasterization)
-            mesh.transform(lx, 0, lz);
+            mesh.transform(lx, ly, lz);
             renderer.render_mesh(mesh);
-            mesh.transform(-lx, 0, -lz); // Reset
+            mesh.transform(-lx, -ly, -lz); // State reset
         }
-        
-        char filename[128];
-        sprintf(filename, "renders/frames/frame_%05d.ppm", f);
-        renderer.save_ppm(filename);
-    }
-        
+
         char filename[128];
         sprintf(filename, "renders/frames/frame_%05d.ppm", f);
         renderer.save_ppm(filename);
