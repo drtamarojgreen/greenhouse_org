@@ -27,10 +27,10 @@ def setup_scene(master):
                 bsdf.inputs['Base Color'].default_value = (0.7, 0.9, 1.0, 1)
                 bsdf.inputs['Roughness'].default_value = 0.05
                 bsdf.inputs['Specular IOR Level'].default_value = 1.0
-        # Crystal formations as primary light sources
-        for i in range(12):
-            cx, cy = random.uniform(-8, 8), random.uniform(-8, 8)
-            c = create_proc_crystal((cx, cy, -0.9), scale=random.uniform(1.0, 2.5))
+        # Point 142: Strategic Crystal Grid (Ordered rim lighting)
+        crystal_grid_res = [(-6, -6, -0.9), (6, -6, -0.9), (-6, 6, -0.9), (6, 6, -0.9), (0, 8, -0.9), (0, -8, -0.9)]
+        for i, loc in enumerate(crystal_grid_res):
+            c = create_proc_crystal(loc, scale=2.0)
             c.name = f"IceCrystal_{i}"
         # Enclosing rock walls
         for i in range(6):

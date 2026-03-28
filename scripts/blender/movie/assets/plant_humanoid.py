@@ -88,6 +88,7 @@ def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
     node_bump_skin = nodes.new(type='ShaderNodeBump')
     links.new(node_porosity.outputs['Fac'], node_bump_skin.inputs['Height'])
     links.new(node_dist_inv.outputs[0], node_bump_skin.inputs['Strength'])
+    # Point 79: Initialize Normal Chain
     links.new(node_bump_skin.outputs['Normal'], node_bsdf.inputs['Normal'])
 
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
@@ -117,9 +118,10 @@ def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
 
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
     node_ramp.color_ramp.elements[0].position = 0.3
-    node_ramp.color_ramp.elements[0].color = (*[c*0.3 for c in color], 1)
+    # Point 155: Increased color vibrancy (Brightness boost)
+    node_ramp.color_ramp.elements[0].color = (*[min(1.0, c*0.6) for c in color], 1)
     node_ramp.color_ramp.elements[1].position = 0.7
-    node_ramp.color_ramp.elements[1].color = (*color, 1)
+    node_ramp.color_ramp.elements[1].color = (*[min(1.0, c*1.4) for c in color], 1)
     links.new(style.get_mix_output(node_mix_noise), node_ramp.inputs['Fac'])
 
     node_geom = nodes.new(type='ShaderNodeNewGeometry')
@@ -138,6 +140,8 @@ def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
     node_bump.inputs['Strength'].default_value = 0.5
     links.new(node_mapping.outputs['Vector'], node_voronoi.inputs['Vector'])
     links.new(node_voronoi.outputs['Distance'], node_bump.inputs['Height'])
+    # Point 79: Chain bump nodes for surface complexity
+    links.new(node_bump_skin.outputs['Normal'], node_bump.inputs['Normal'])
 
     # Subsurface (Guarded for Blender 5.0 naming drift)
     style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.15)
@@ -151,6 +155,7 @@ def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
     node_bump_peel = nodes.new(type='ShaderNodeBump')
     node_bump_peel.inputs['Strength'].default_value = 0.8
     links.new(node_peel_noise.outputs['Fac'], node_bump_peel.inputs['Height'])
+    # Point 79: Continue Normal Chain
     links.new(node_bump.outputs['Normal'], node_bump_peel.inputs['Normal'])
     links.new(node_bump_peel.outputs['Normal'], node_bsdf.inputs['Normal'])
 
@@ -195,22 +200,27 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
 
     node_color_mix = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
     fac_sock_col, in1_sock_col, in2_sock_col = style.get_mix_sockets(node_color_mix)
-    if in1_sock_col: in1_sock_col.default_value = (*[c*0.7 for c in color], 1)
-    if in2_sock_col: in2_sock_col.default_value = (*color, 1)
+    # Point 155: Increased color vibrancy
+    if in1_sock_col: in1_sock_col.default_value = (*[min(1.0, c*0.8) for c in color], 1)
+    if in2_sock_col: in2_sock_col.default_value = (*[min(1.0, c*1.5) for c in color], 1)
     links.new(node_wave.outputs['Fac'], fac_sock_col)
     links.new(style.get_mix_output(node_color_mix), node_bsdf.inputs['Base Color'])
 
-    # Subsurface
-    style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.3)
+    # Point 91: Blender 5.0 Botanical Translucency
+    style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.4)
+    style.set_principled_socket(node_bsdf, "Transmission Weight", 0.2)
 
-    # Leaf Venation
-    node_musgrave = nodes.new(type='ShaderNodeTexNoise')
-    node_musgrave.inputs['Scale'].default_value = 20.0
+    # Leaf Venation (Enhanced with Voronoi Veins)
+    node_voronoi_vein = nodes.new(type='ShaderNodeTexVoronoi')
+    node_voronoi_vein.feature = 'DISTANCE_TO_EDGE'
+    node_voronoi_vein.inputs['Scale'].default_value = 50.0
+    links.new(node_mapping.outputs['Vector'], node_voronoi_vein.inputs['Vector'])
+
     node_venation_mix = style.create_mix_node(mat.node_tree, blend_type='MULTIPLY', data_type='RGBA')
     fac_sock_ven, in1_sock_ven, in2_sock_ven = style.get_mix_sockets(node_venation_mix)
-    if fac_sock_ven: fac_sock_ven.default_value = 0.2
+    if fac_sock_ven: fac_sock_ven.default_value = 0.3
     links.new(style.get_mix_output(node_color_mix), in1_sock_ven)
-    links.new(node_musgrave.outputs['Fac'], in2_sock_ven)
+    links.new(node_voronoi_vein.outputs['Distance'], in2_sock_ven)
     links.new(style.get_mix_output(node_venation_mix), node_bsdf.inputs['Base Color'])
 
     # Plant Fuzz

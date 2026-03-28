@@ -59,14 +59,19 @@ def create_forest_clearing():
     bark_mat = bpy.data.materials.get("BarkMat_Herbaceous") or bpy.data.materials.new("BarkMat_Forest")
     leaf_mat = bpy.data.materials.get("LeafMat_Herbaceous") or bpy.data.materials.new("LeafMat_Forest")
     
-    # Dense trees in a ring around the center
-    for i in range(80):
-        angle = random.uniform(0, 2*math.pi)
-        radius = random.uniform(8, 25)
-        x = math.cos(angle) * radius
-        y = math.sin(angle) * radius
-        z = -0.5 + (radius/20.0)
-        tree = create_procedural_tree((x, y, z), bark_mat, leaf_mat)
+    # Point 142: Strategic Forest Ring (Architectural framing)
+    tree_positions = []
+    for r in [12, 18, 25]: # Concentric rings
+        num_trees = int(r * 1.5)
+        for i in range(num_trees):
+            angle = (i / num_trees) * 2 * math.pi
+            # Add slight jitter but maintain the ring structure
+            x = math.cos(angle) * r + random.uniform(-0.5, 0.5)
+            y = math.sin(angle) * r + random.uniform(-0.5, 0.5)
+            tree_positions.append((x, y, -0.5 + (r/20.0)))
+
+    for loc in tree_positions:
+        tree = create_procedural_tree(loc, bark_mat, leaf_mat)
         tree.parent = clearing
         
     return clearing
@@ -106,22 +111,25 @@ def create_bioluminescent_cave():
     bsdf_glow.inputs['Emission Color'].default_value = (0.1, 0.8, 0.9, 1)
     bsdf_glow.inputs['Emission Strength'].default_value = 5.0
     
-    for i in range(40):
-        angle = random.uniform(0, 2*math.pi)
-        radius = random.uniform(4, 15)
-        x = math.cos(angle) * radius
-        y = math.sin(angle) * radius
-        
+    # Point 142: Strategic Mushroom Grid (Ordered bioluminescence)
+    shroom_grid = []
+    for r in [6, 10, 14]:
+        num_s = int(r * 1.2)
+        for i in range(num_s):
+            angle = (i / num_s) * 2 * math.pi
+            shroom_grid.append((math.cos(angle) * r, math.sin(angle) * r, -0.5))
+
+    for i, loc in enumerate(shroom_grid):
         bm_shroom = bmesh.new()
         bmesh.ops.create_cone(bm_shroom, segments=8, radius1=0.2, radius2=0.01, depth=0.8)
-        mesh_shroom = bpy.data.meshes.new("ShroomMesh")
+        mesh_shroom = bpy.data.meshes.new(f"ShroomMesh_{i}")
         bm_shroom.to_mesh(mesh_shroom)
         bm_shroom.free()
         
-        shroom = bpy.data.objects.new("GlowShroom", mesh_shroom)
+        shroom = bpy.data.objects.new(f"GlowShroom_{i}", mesh_shroom)
         bpy.context.scene.collection.objects.link(shroom)
         shroom.parent = cave
-        shroom.location = (x, y, -0.5 + random.uniform(0, 0.3))
+        shroom.location = (loc[0], loc[1], loc[2] + 0.1)
         shroom.data.materials.append(mat_glow)
         
     return cave

@@ -32,31 +32,27 @@ def setup_scene(master):
     cam_pos = (-6, -6, 1.4)
     target_pos = (0, 0, 2.0)
     
-    for i in range(8):
-        r_name = f"VolcanoRock_{i}"
-        if not bpy.data.objects.get(r_name):
-            r = place_random_prop(
-                None,
-                lambda l: create_proc_rock_formation(l, scale=random.uniform(1.0, 3.0), style_type="jagged"),
-                (-10, 10), (-8, 8), (-0.8, -0.8),
-                cam_pos, target_pos, seed=i
-            )
-            if r: r.name = r_name
+    from scene_utils import place_prop_on_grid
 
-    for i in range(4):
-        dt_name = f"VolcanoDeadTree_{i}"
-        if not bpy.data.objects.get(dt_name):
-            dt = place_random_prop(
-                None,
-                lambda l: create_proc_dead_tree(l, scale=random.uniform(0.8, 1.5)),
-                (-8, 8), (-8, 8), (-1, -1),
-                cam_pos, target_pos, seed=i+10
-            )
-            if dt: dt.name = dt_name
+    # Point 142: Strategic Volcano Grid (Ordered chaos)
+    rock_grid = [(-10, 0, -0.8), (10, 0, -0.8)]
+    place_prop_on_grid(
+        None,
+        lambda l: create_proc_rock_formation(l, scale=2.5, style_type="jagged"),
+        rock_grid, cam_pos, target_pos, width=5.0
+    )
+
+    tree_grid = [(-8, 8, -1), (8, 8, -1)]
+    place_prop_on_grid(
+        None,
+        lambda l: create_proc_dead_tree(l, scale=1.2),
+        tree_grid, cam_pos, target_pos, width=5.0
+    )
 
     # Lava fissure: emissive planes on the ground
     import bmesh
-    for i in range(4):
+    fissure_grid = [(-4, 4, -0.98), (4, 4, -0.98)]
+    for i, loc in enumerate(fissure_grid):
         lr_name = f"LavaFissure_{i}"
         if not bpy.data.objects.get(lr_name):
             def create_lava_plane(loc):
@@ -64,21 +60,17 @@ def setup_scene(master):
                 obj = bpy.data.objects.new(lr_name, mesh)
                 bpy.context.scene.collection.objects.link(obj)
                 obj.location = loc
-                obj.rotation_euler[2] = random.uniform(0, 3.14)
+                obj.rotation_euler[2] = 0.78 * i # Ordered rotation
                 bm_l = bmesh.new()
                 bmesh.ops.create_grid(bm_l, x_segments=1, y_segments=1, size=1.0)
                 for v in bm_l.verts:
-                    v.co.x *= random.uniform(0.2, 0.5)
-                    v.co.y *= random.uniform(1.0, 3.0)
+                    v.co.x *= 0.4
+                    v.co.y *= 2.5
                 bm_l.to_mesh(mesh)
                 bm_l.free()
                 return obj
 
-            fissure = place_random_prop(
-                None, create_lava_plane,
-                (-6, 6), (-6, 6), (-0.98, -0.98),
-                cam_pos, target_pos, seed=i+20
-            )
+            fissure = create_lava_plane(loc)
             lava_mat = bpy.data.materials.get("LavaMat") or bpy.data.materials.new("LavaMat")
             lava_mat.use_nodes = True
             bsdf = lava_mat.node_tree.nodes.get("Principled BSDF") or lava_mat.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
@@ -112,9 +104,23 @@ def setup_scene(master):
     if master.h1 and master.h1.type == 'ARMATURE':
         # Point 43: Hammering motion (Bone-based)
         torso = master.h1.pose.bones.get("Torso")
-        if torso:
-            for f in range(start_f + 100, end_f, 20):
-                torso.rotation_euler[0] = 0
-                torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+        arm_r = master.h1.pose.bones.get("Arm.R")
+        if torso and arm_r:
+            for f in range(start_f + 100, end_f, 24):
+                # Wind up
+                torso.rotation_euler[0] = math.radians(-10)
+                arm_r.rotation_euler[0] = math.radians(-45)
+                master.h1.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=0, frame=f)
+                master.h1.keyframe_insert(data_path='pose.bones["Arm.R"].rotation_euler', index=0, frame=f)
+
+                # Sharp Strike (Crisp impact)
                 torso.rotation_euler[0] = math.radians(20)
-                torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 10)
+                arm_r.rotation_euler[0] = math.radians(60)
+                master.h1.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=0, frame=f + 12)
+                master.h1.keyframe_insert(data_path='pose.bones["Arm.R"].rotation_euler', index=0, frame=f + 12)
+
+                # Constant interpolation for the strike frame to ensure sharpness
+                for fc in style.get_action_curves(master.h1.animation_data.action, obj=master.h1):
+                    if "Arm.R" in fc.data_path or "Torso" in fc.data_path:
+                        for kp in fc.keyframe_points:
+                            if int(kp.co[0]) == f + 12: kp.interpolation = 'CONSTANT'

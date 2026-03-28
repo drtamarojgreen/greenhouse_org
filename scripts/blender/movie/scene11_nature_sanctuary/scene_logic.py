@@ -49,18 +49,17 @@ def setup_scene(master):
                 scale=random.uniform(0.8, 1.5), style_type="smooth")
             r.name = f"OasisRock_{i}"
 
-    # Dense Foliage with corridor clearance (Point 142)
+    # Point 142: Strategic Sanctuary Grid (Concentric order)
     cam_pos_sanct = (-6, -10, 2.6)
     target_pos_sanct = (0, 0, 1.5)
-    bushes = []
-    for i in range(10):
-        b = place_random_prop(
-            None,
-            lambda l: plant_humanoid.create_procedural_bush(l, name=f"SanctuaryBush_{i}", size=random.uniform(0.5, 2.0)),
-            (-10, 10), (-10, 10), (0, 0),
-            cam_pos_sanct, target_pos_sanct, seed=i
-        )
-        if b: bushes.append(b)
+    from scene_utils import place_prop_on_grid
+
+    bush_grid_sanct = [(-6, 6, 0), (6, 6, 0), (0, 10, 0)]
+    bushes = place_prop_on_grid(
+        None,
+        lambda l: plant_humanoid.create_procedural_bush(l, name=f"SanctuaryBush_Grid", size=1.5),
+        bush_grid_sanct, cam_pos_sanct, target_pos_sanct, width=4.5
+    )
 
     # Visibility and Transitions
     for b in bushes:

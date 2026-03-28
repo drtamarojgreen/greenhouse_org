@@ -25,11 +25,10 @@ def setup_scene(master):
             if bsdf:
                 bsdf.inputs['Base Color'].default_value = (0.9, 0.95, 1.0, 1)
                 bsdf.inputs['Roughness'].default_value = 0.4
-        # Ice shard crystals scattered around
-        for i in range(10):
-            c = create_proc_crystal(
-                (random.uniform(-12, 12), random.uniform(-12, 12), -0.9),
-                scale=random.uniform(0.5, 1.5))
+        # Point 142: Strategic Lab Grid (Ordered rim lighting)
+        crystal_grid = [(-8, -8, -0.9), (8, -8, -0.9), (-10, 10, -0.9), (10, 10, -0.9), (0, 12, -0.9)]
+        for i, loc in enumerate(crystal_grid):
+            c = create_proc_crystal(loc, scale=2.0)
             c.name = f"IceShard_{i}"
             # Frost-white material tweak
             for mat in c.data.materials:
@@ -37,12 +36,12 @@ def setup_scene(master):
                 if bsdf:
                     bsdf.inputs['Base Color'].default_value = (0.9, 0.95, 1.0, 1)
                     bsdf.inputs['Emission Color'].default_value = (0.6, 0.8, 1.0, 1)
-                    bsdf.inputs['Emission Strength'].default_value = 0.5
-        # Snow-dusted boulders
-        for i in range(5):
-            r = create_proc_rock_formation(
-                (random.uniform(-10, 10), random.uniform(-10, 10), -0.9),
-                scale=random.uniform(0.8, 2.0), style_type="smooth")
+                    bsdf.inputs['Emission Strength'].default_value = 2.0 # Boosted for rim effect
+
+        # Strategic snow-dusted boulders
+        boulder_grid_lab = [(-12, 0, -0.9), (12, 0, -0.9), (0, -12, -0.9)]
+        for i, loc in enumerate(boulder_grid_lab):
+            r = create_proc_rock_formation(loc, scale=2.5, style_type="smooth")
             r.name = f"TundraRock_{i}"
 
     # Lab Assets

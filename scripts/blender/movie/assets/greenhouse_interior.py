@@ -33,7 +33,8 @@ def create_terracotta_material():
     node_out = nodes.new('ShaderNodeOutputMaterial'); node_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
     node_noise = nodes.new('ShaderNodeTexNoise'); node_noise.inputs['Scale'].default_value = 20.0
     node_ramp = nodes.new('ShaderNodeValToRGB'); elements = node_ramp.color_ramp.elements
-    elements[0].color, elements[1].color = (0.35, 0.12, 0.05, 1), (0.65, 0.28, 0.12, 1)
+    # Point 155: Increased color vibrancy for terracotta
+    elements[0].color, elements[1].color = (0.55, 0.22, 0.1, 1), (0.85, 0.45, 0.2, 1)
     links.new(node_noise.outputs['Fac'], node_ramp.inputs['Fac']); links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface']); node_bsdf.inputs['Roughness'].default_value = 0.85
     return mat

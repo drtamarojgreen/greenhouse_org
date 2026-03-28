@@ -28,24 +28,24 @@ def setup_scene(master):
         for mat in marsh.data.materials:
             bsdf = mat.node_tree.nodes.get("Principled BSDF")
             if bsdf: bsdf.inputs['Base Color'].default_value = (0.08, 0.1, 0.07, 1) # Dark muddy green
+        from scene_utils import place_prop_on_grid
+
         # Scattered shallow water pools with corridor clearance
         cam_pos_s = (-7, -7, 1.2)
         target_pos_s = (0, 0, 1.5)
-        for i in range(5):
-            w = place_random_prop(
-                None,
-                lambda l: create_proc_water_body(l, size=random.uniform(2, 5), type="pond"),
-                (-8, 8), (-8, 8), (-0.9, -0.9),
-                cam_pos_s, target_pos_s, seed=i
-            )
-            if w: w.name = f"MarshPool_{i}"
-        # Weeping dead trees around the perimeter
-        for i in range(6):
-            import mathutils
-            angle = (i / 6) * 2 * 3.1415
-            dt = create_proc_dead_tree(
-                (math.cos(angle)*10, math.sin(angle)*10, -1),
-                scale=random.uniform(0.8, 1.4))
+
+        # Point 142: Strategic Marsh Grid (Ordered perimeter)
+        pool_grid = [(-8, 0, -0.9), (8, 0, -0.9)]
+        place_prop_on_grid(
+            None,
+            lambda l: create_proc_water_body(l, size=3.5, type="pond"),
+            pool_grid, cam_pos_s, target_pos_s, width=5.0
+        )
+
+        # Weeping dead trees around the perimeter (Specific coordinates)
+        tree_coords = [(-12, 12, -1), (12, 12, -1), (0, 15, -1)]
+        for i, loc in enumerate(tree_coords):
+            dt = create_proc_dead_tree(loc, scale=1.3)
             dt.name = f"MarshTree_{i}"
 
     # Mood-Based Fog (Thick in Shadow)
@@ -70,17 +70,24 @@ def setup_scene(master):
         master.place_character(gnome, (5, 5, 0), (0, 0, 0), start_f + 101)
         master.place_character(gnome, (2, 2, 0), (0, 0, 0), end_f)
 
+        # Point 142: High-tension gnome entry
+        style.animate_gnome_aggression(gnome, start_f + 101, end_f)
+
     # Characters shiver and recoil (Bone-based)
     for char in [master.h1, master.h2]:
-        if not char: continue
+        if not char or char.type != 'ARMATURE': continue
         torso_bone = char.pose.bones.get("Torso")
         if torso_bone:
-            style.insert_looping_noise(torso_bone, "location", index=0, strength=0.05, scale=2.0, frame_start=2101, frame_end=2500)
-            # Recoil
+            # Recoil (Point 142: Sharp recoil from entry)
             torso_bone.location.y = 0
-            torso_bone.keyframe_insert(data_path="location", index=1, frame=2101)
-            torso_bone.location.y = -0.5
-            torso_bone.keyframe_insert(data_path="location", index=1, frame=2200)
+            char.keyframe_insert(data_path='pose.bones["Torso"].location', index=1, frame=start_f + 101)
+            torso_bone.location.y = -0.8
+            char.keyframe_insert(data_path='pose.bones["Torso"].location', index=1, frame=start_f + 115)
+            # Constant interpolation for sharp reaction
+            for fc in style.get_action_curves(char.animation_data.action, obj=char):
+                if "Torso" in fc.data_path and fc.array_index == 1:
+                    for kp in fc.keyframe_points:
+                        if int(kp.co[0]) == start_f + 115: kp.interpolation = 'CONSTANT'
 
     # Point 142: Use new light rig names
     style.animate_light_flicker("LightShaftBeam", 1901, 2500, strength=0.4)

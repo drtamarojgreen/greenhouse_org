@@ -35,7 +35,7 @@ def setup_scene(master):
     # Position characters (Point 142)
     master.place_character(master.h1, (-1.75, -0.3, 0), (0, 0, 0), start_frame)
     master.place_character(master.h2, (1.75, 0.3, 0), (0, 0, 0), start_frame)
-    master.place_character(master.gnome, (4.5, 4.5, 0), (0, 0, math.radians(225)), start_frame)
+    master.place_character(master.gnome, (5.0, 5.0, 0), (0, 0, math.radians(225)), start_frame)
 
     # Metadata
     # Shot ID: S19_01
@@ -58,7 +58,7 @@ def setup_scene(master):
     style.animate_plant_advance(master, start_frame, end_frame)
 
     # Point 142: Gnome starts to retreat incrementally on both X and Y
-    master.gnome.location = (4.5, 4.5, 0)
-    master.gnome.keyframe_insert(data_path="location", frame=start_frame)
     master.gnome.location = (5.0, 5.0, 0)
+    master.gnome.keyframe_insert(data_path="location", frame=start_frame)
+    master.gnome.location = (5.8, 5.8, 0)
     master.gnome.keyframe_insert(data_path="location", frame=end_frame)
