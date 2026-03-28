@@ -275,8 +275,8 @@
                         ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
                         ctx.fill();
                     } else {
-                        // GPCR 7-TM Bundle
-                        ctx.strokeStyle = '#aaa';
+                        // GPCR 7-TM architecture with semi-transparent wireframes
+                        ctx.strokeStyle = 'rgba(170, 170, 170, 0.4)';
                         ctx.lineWidth = 12 * p.scale;
                         for (let j = 0; j < 7; j++) {
                             const hAngle = (j / 7) * Math.PI * 2;
@@ -289,7 +289,27 @@
                                 ctx.moveTo(hTop.x, hTop.y);
                                 ctx.lineTo(hBottom.x, hBottom.y);
                                 ctx.stroke();
+
+                                // Internal helical wireframe
+                                ctx.save();
+                                ctx.setLineDash([2, 4]);
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+                                ctx.restore();
                             }
+                        }
+
+                        // Emotional equilibrium as physical interlocking stability
+                        if (r.state === 'Active') {
+                            ctx.strokeStyle = '#00ffcc';
+                            ctx.lineWidth = 2 * p.scale;
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 45 * p.scale, 0, Math.PI * 2);
+                            ctx.stroke();
+                        } else {
+                            // Shudder/lose alignment when structural integrity is challenged
+                            const shudder = Math.sin(Date.now() * 0.05) * 2;
+                            p.x += shudder;
                         }
                     }
                     ctx.globalAlpha = 1.0;

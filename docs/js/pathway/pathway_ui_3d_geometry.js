@@ -32,6 +32,10 @@
                     let y = cosTheta * radius;
                     let z = sinPhi * sinTheta * radius;
 
+                    // Topographical Terrain Mapping: Deeply ingrained habits physically carve "canyons"
+                    const canyon = Math.abs(x) < 20 && Math.abs(z) < 100 ? 0.8 : 1.0;
+                    x *= canyon; z *= canyon;
+
                     // Brain Shape Deformations
                     const fissure = 1 - Math.exp(-Math.abs(x / radius) * 5) * 0.3;
                     if (y > 0) y *= fissure;
@@ -168,8 +172,9 @@
                 const yBase = startPos.y + direction.y * length * t;
                 const zBase = startPos.z + direction.z * length * t;
 
-                // Taper logic
-                const currentRadius = radius * (1 - t * 0.4);
+                // Neuroplasticity: Gradually thicken and build structural support
+                const thickness = 1.0 + Math.sin(t * Math.PI) * 0.5;
+                const currentRadius = radius * (1 - t * 0.4) * thickness;
 
                 for (let j = 0; j <= radial; j++) {
                     const phi = (j / radial) * Math.PI * 2;

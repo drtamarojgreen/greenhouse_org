@@ -89,19 +89,59 @@
 
                         const width = baseWidth * ((p1.scale + p2.scale) / 2);
 
-                        ctx.beginPath();
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
+                        if (structureType === 'helix') {
+                            // Secondary structure ribbon: Alpha Helix (Coiled Strip)
+                            ctx.save();
+                            ctx.translate(p1.x, p1.y);
+                            const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+                            ctx.rotate(angle);
+                            const len = Math.sqrt(Math.pow(p2.x-p1.x, 2) + Math.pow(p2.y-p1.y, 2));
 
-                        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
-                        ctx.lineWidth = width;
-                        ctx.stroke();
+                            const steps = 4;
+                            for (let j = 0; j < steps; j++) {
+                                const t1 = j / steps;
+                                const t2 = (j + 1) / steps;
+                                const y1 = Math.sin(t1 * Math.PI * 2 + i) * width/2;
+                                const y2 = Math.sin(t2 * Math.PI * 2 + i) * width/2;
+                                ctx.beginPath();
+                                ctx.moveTo(t1 * len, y1); ctx.lineTo(t2 * len, y2);
+                                ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+                                ctx.lineWidth = width/2; ctx.stroke();
 
-                        // Draw joint for smoothness
-                        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-                        ctx.beginPath();
-                        ctx.arc(p2.x, p2.y, width / 2, 0, Math.PI * 2);
-                        ctx.fill();
+                                // Hydrogen bond (dashed)
+                                if (i % 4 === 0 && j === 0) {
+                                    ctx.setLineDash([2, 2]);
+                                    ctx.beginPath(); ctx.moveTo(0, y1); ctx.lineTo(0, y1 + 20);
+                                    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+                                    ctx.setLineDash([]);
+                                }
+                            }
+                            ctx.restore();
+                        } else if (structureType === 'sheet') {
+                            // Secondary structure ribbon: Beta Sheet (Arrow)
+                            ctx.save();
+                            ctx.translate(p1.x, p1.y);
+                            const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+                            ctx.rotate(angle);
+                            const len = Math.sqrt(Math.pow(p2.x-p1.x, 2) + Math.pow(p2.y-p1.y, 2));
+
+                            ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+                            ctx.beginPath();
+                            ctx.moveTo(0, -width/2); ctx.lineTo(len * 0.8, -width/2);
+                            ctx.lineTo(len * 0.8, -width); ctx.lineTo(len, 0);
+                            ctx.lineTo(len * 0.8, width); ctx.lineTo(len * 0.8, width/2);
+                            ctx.lineTo(0, width/2); ctx.closePath();
+                            ctx.fill();
+                            ctx.restore();
+                        } else {
+                            // Coil: Thin Tube
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+                            ctx.lineWidth = width/2;
+                            ctx.stroke();
+                        }
                     }
                 }
             } else if (mode === 'ball-and-stick') {
@@ -229,16 +269,35 @@
             }
 
             helices.forEach((hPos, i) => {
-                const p1 = GreenhouseModels3DMath.project3DTo2D(hPos.x, hPos.y, hPos.z, camera, projectionParams);
-                const p2 = GreenhouseModels3DMath.project3DTo2D(hPos.x, hPos.targetY, hPos.z, camera, projectionParams);
+                const tilt = 0.2 * (i % 2 === 0 ? 1 : -1);
+                const p1 = GreenhouseModels3DMath.project3DTo2D(hPos.x + Math.sin(tilt) * 40, hPos.y, hPos.z, camera, projectionParams);
+                const p2 = GreenhouseModels3DMath.project3DTo2D(hPos.x - Math.sin(tilt) * 40, hPos.targetY, hPos.z, camera, projectionParams);
 
                 if (p1.scale > 0 && p2.scale > 0) {
-                    ctx.strokeStyle = `hsl(${(i * 50) % 360}, 70%, 60%)`;
-                    ctx.lineWidth = 6 * ((p1.scale + p2.scale) / 2);
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
+                    // GPCR: 7 actual helix ribbons
+                    ctx.save();
+                    ctx.translate(p1.x, p1.y);
+                    const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+                    ctx.rotate(angle);
+                    const len = Math.sqrt(Math.pow(p2.x-p1.x, 2) + Math.pow(p2.y-p1.y, 2));
+
+                    const width = 10 * ((p1.scale + p2.scale) / 2);
+                    const color = `hsl(${(i * 50) % 360}, 70%, 60%)`;
+
+                    for (let j = 0; j < 5; j++) {
+                        const t1 = j / 5; const t2 = (j + 1) / 5;
+                        const off1 = Math.sin(t1 * Math.PI * 4) * width;
+                        const off2 = Math.sin(t2 * Math.PI * 4) * width;
+                        ctx.beginPath(); ctx.moveTo(t1 * len, off1); ctx.lineTo(t2 * len, off2);
+                        ctx.strokeStyle = color; ctx.lineWidth = width/2; ctx.stroke();
+
+                        // Cross-links
+                        if (j === 2) {
+                            ctx.beginPath(); ctx.moveTo(t1 * len, 0); ctx.lineTo(t1 * len, 50);
+                            ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+                        }
+                    }
+                    ctx.restore();
                 }
             });
 

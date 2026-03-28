@@ -112,66 +112,42 @@
                         case 3: color1 = baseColors.G; color2 = baseColors.C; break;
                     }
 
-                    // Enhanced cylinder drawing with lighting
-                    const drawEnhancedCylinder = (x1, y1, x2, y2, color, depth) => {
-                        // Calculate normal for lighting (perpendicular to line)
+                    // Enhanced rectangular rung drawing
+                    const drawRung = (x1, y1, x2, y2, color, depth) => {
                         const dx = x2 - x1;
                         const dy = y2 - y1;
                         const len = Math.sqrt(dx * dx + dy * dy);
                         const nx = -dy / len;
                         const ny = dx / len;
 
-                        // Apply lighting if available
-                        let litColor = color;
-                        if (lighting) {
-                            const baseColor = lighting.parseColor(color);
-                            const material = config.get('materials.dna');
-                            const normal = { x: nx, y: ny, z: 0 };
-                            const position = { x: (x1 + x2) / 2, y: (y1 + y2) / 2, z: depth };
+                        ctx.save();
+                        ctx.translate(x1, y1);
+                        const angle = Math.atan2(dy, dx);
+                        ctx.rotate(angle);
 
-                            const lit = lighting.calculateLighting(normal, position, camera, {
-                                baseColor: baseColor,
-                                metallic: material.metallic,
-                                roughness: material.roughness,
-                                emissive: material.emissive,
-                                emissiveIntensity: material.emissiveIntensity,
-                                alpha: material.alpha
-                            });
+                        // Rectangular rung geometry
+                        const h = thickness;
+                        const w = len;
 
-                            litColor = lighting.toRGBA(lit);
-                        }
+                        const grad = ctx.createLinearGradient(0, -h/2, 0, h/2);
+                        grad.addColorStop(0, 'rgba(255,255,255,0.2)');
+                        grad.addColorStop(0.5, color);
+                        grad.addColorStop(1, 'rgba(0,0,0,0.3)');
 
-                        // Draw main cylinder with gradient for 3D effect
-                        const gradient = ctx.createLinearGradient(
-                            x1 - nx * thickness / 2, y1 - ny * thickness / 2,
-                            x1 + nx * thickness / 2, y1 + ny * thickness / 2
-                        );
-                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); // Darker Shadow edge
-                        gradient.addColorStop(0.3, litColor); // Main color
-                        gradient.addColorStop(0.7, litColor); // Main color
-                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.6)'); // Brighter Highlight edge
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(0, -h/2, w, h);
 
-                        ctx.strokeStyle = gradient;
-                        ctx.lineWidth = thickness;
-                        ctx.lineCap = 'butt'; // Butt cap for clean join at middle
-                        ctx.beginPath();
-                        ctx.moveTo(x1, y1);
-                        ctx.lineTo(x2, y2);
-                        ctx.stroke();
+                        // Top face highlight
+                        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                        ctx.fillRect(0, -h/2, w, h/4);
 
-                        // Add specular highlight
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-                        ctx.lineWidth = thickness * 0.2;
-                        ctx.beginPath();
-                        ctx.moveTo(x1 + nx * thickness * 0.15, y1 + ny * thickness * 0.15);
-                        ctx.lineTo(x2 + nx * thickness * 0.15, y2 + ny * thickness * 0.15);
-                        ctx.stroke();
+                        ctx.restore();
                     };
 
                     // Draw two halves with depth
                     const avgDepth = (p1.depth + p2.depth) / 2;
-                    drawEnhancedCylinder(p1.x, p1.y, midX, midY, color1, avgDepth);
-                    drawEnhancedCylinder(midX, midY, p2.x, p2.y, color2, avgDepth);
+                    drawRung(p1.x, p1.y, midX, midY, color1, avgDepth);
+                    drawRung(midX, midY, p2.x, p2.y, color2, avgDepth);
                 }
             }
 
@@ -196,41 +172,28 @@
                         const avgScale = (p1.scale + p2.scale) / 2;
                         const thickness = 10 * avgScale; // Thicker backbone
 
-                        // Calculate perpendicular for gradient
-                        const dx = p2.x - p1.x;
-                        const dy = p2.y - p1.y;
-                        const len = Math.sqrt(dx * dx + dy * dy);
-                        const nx = -dy / len;
-                        const ny = dx / len;
+                        // Use actual tube mesh from geometry if possible
+                        if (window.GreenhouseGeneticGeometry) {
+                            const cp = { x: (n1.x + n2.x)/2, y: (n1.y + n2.y)/2, z: (n1.z + n2.z)/2 };
+                            const tube = window.GreenhouseGeneticGeometry.generateTubeMesh(n1, n2, cp, 4, 6);
+                            const projectedTube = tube.vertices.map(v => GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection));
 
-                        // Create gradient for 3D tube effect
-                        const gradient = ctx.createLinearGradient(
-                            p1.x - nx * thickness / 2, p1.y - ny * thickness / 2,
-                            p1.x + nx * thickness / 2, p1.y + ny * thickness / 2
-                        );
-
-                        const baseColor = lighting ? lighting.parseColor(strandColor) : { r: 255, g: 255, b: 255, a: 1 };
-                        gradient.addColorStop(0, `rgba(${baseColor.r * 0.2}, ${baseColor.g * 0.2}, ${baseColor.b * 0.2}, 0.9)`);
-                        gradient.addColorStop(0.4, strandColor);
-                        gradient.addColorStop(0.6, strandColor);
-                        gradient.addColorStop(1, `rgba(${Math.min(255, baseColor.r * 1.8)}, ${Math.min(255, baseColor.g * 1.8)}, ${Math.min(255, baseColor.b * 1.8)}, 0.95)`);
-
-                        ctx.strokeStyle = gradient;
-                        ctx.lineWidth = thickness;
-                        ctx.lineCap = 'round';
-                        ctx.lineJoin = 'round';
-                        ctx.beginPath();
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-
-                        // Add specular highlight
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-                        ctx.lineWidth = thickness * 0.3;
-                        ctx.beginPath();
-                        ctx.moveTo(p1.x + nx * thickness * 0.2, p1.y + ny * thickness * 0.2);
-                        ctx.lineTo(p2.x + nx * thickness * 0.2, p2.y + ny * thickness * 0.2);
-                        ctx.stroke();
+                            ctx.fillStyle = strandColor;
+                            tube.faces.forEach(f => {
+                                const v1 = projectedTube[f[0]], v2 = projectedTube[f[1]], v3 = projectedTube[f[2]];
+                                if (v1.scale > 0 && v2.scale > 0 && v3.scale > 0) {
+                                    ctx.beginPath(); ctx.moveTo(v1.x, v1.y); ctx.lineTo(v2.x, v2.y); ctx.lineTo(v3.x, v3.y); ctx.fill();
+                                }
+                            });
+                        } else {
+                            // Fallback gradient tube
+                            const dx = p2.x - p1.x; const dy = p2.y - p1.y;
+                            const len = Math.sqrt(dx * dx + dy * dy);
+                            const nx = -dy / len; const ny = dx / len;
+                            const gradient = ctx.createLinearGradient(p1.x - nx * thickness / 2, p1.y - ny * thickness / 2, p1.x + nx * thickness / 2, p1.y + ny * thickness / 2);
+                            gradient.addColorStop(0, 'rgba(0,0,0,0.5)'); gradient.addColorStop(0.5, strandColor); gradient.addColorStop(1, 'rgba(255,255,255,0.4)');
+                            ctx.strokeStyle = gradient; ctx.lineWidth = thickness; ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                        }
                     }
                 }
             }

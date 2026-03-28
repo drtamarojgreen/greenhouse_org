@@ -191,7 +191,16 @@
                 const type = Math.floor(Math.random() * 4);
                 let b1, b2;
                 switch (type) { case 0: b1 = 'A'; b2 = 'T'; break; case 1: b1 = 'T'; b2 = 'A'; break; case 2: b1 = 'C'; b2 = 'G'; break; case 3: b1 = 'G'; b2 = 'C'; break; }
-                this.state.basePairs.push({ index: i, x: x, angle: angle, base1: b1, base2: b2, isDamaged: false, isBroken: false, offsetY: 0 });
+
+                // Bio-mechanical track state
+                this.state.basePairs.push({
+                    index: i, x: x, angle: angle,
+                    base1: b1, base2: b2,
+                    isDamaged: false, isBroken: false,
+                    offsetY: 0,
+                    kinkAngle: 0, // Structural distortion
+                    vibration: 0
+                });
             }
         },
 
@@ -275,9 +284,31 @@
                 const p2 = project(p.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p1.scale <= 0 || p2.scale <= 0) continue;
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
-                const drawB = (sp, ep, type, dam) => { if (!type) return; ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; if (dam) { ctx.shadowBlur = 15; ctx.shadowColor = '#ff0000'; } ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.shadowBlur = 0; };
+                const drawB = (sp, ep, type, dam) => {
+                    if (!type) return;
+                    ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff');
+                    ctx.lineWidth = 5 * p1.scale;
+
+                    if (dam) {
+                        ctx.shadowBlur = 15; ctx.shadowColor = '#ff0000';
+                        // Visual kink/structural break
+                        ctx.beginPath();
+                        ctx.moveTo(sp.x, sp.y);
+                        ctx.lineTo(sp.x + (ep.x-sp.x)*0.4, sp.y + (ep.y-sp.y)*0.6);
+                        ctx.lineTo(ep.x, ep.y);
+                        ctx.stroke();
+                    } else {
+                        ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
+                    }
+                    ctx.shadowBlur = 0;
+                };
 
                 if (!p.isReplicating) {
+                    // Apply mechanical vibration/kink to projected points
+                    if (p.isDamaged) {
+                        p1.y += Math.sin(Date.now() * 0.02) * 5;
+                        p2.y += Math.cos(Date.now() * 0.02) * 5;
+                    }
                     drawB(p1, { x: midX, y: midY }, p.base1, p.isDamaged);
                     drawB({ x: midX, y: midY }, p2, p.base2, p.isDamaged);
                 } else {

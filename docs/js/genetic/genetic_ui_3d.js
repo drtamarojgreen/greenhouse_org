@@ -1428,7 +1428,15 @@
                         const g = Math.floor(baseColor[1] * brightness);
                         const b = Math.floor(baseColor[2] * brightness);
 
-                        ctx.fillStyle = isPulse ? `rgba(255, 255, 255, ${alpha * 2})` : `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                        // High detail features
+                        const isMyelinated = Math.abs(weight) > 0.7;
+                        let color = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+
+                        if (isMyelinated && segmentIndex % 3 === 0) {
+                            color = `rgba(255, 255, 255, ${alpha + 0.2})`;
+                        }
+
+                        ctx.fillStyle = isPulse ? `rgba(255, 255, 255, ${alpha * 2})` : color;
                         ctx.strokeStyle = ctx.fillStyle;
                         ctx.lineWidth = 0.2;
 
@@ -1438,6 +1446,15 @@
                         ctx.lineTo(p3.x, p3.y);
                         ctx.closePath();
                         ctx.fill();
+
+                        // Directionality: Arrow cone at the end
+                        if (fIdx === mesh.faces.length - 1) {
+                           const pEnd = projectedVertices[faceIndices[0]];
+                           ctx.fillStyle = color;
+                           ctx.beginPath();
+                           ctx.arc(pEnd.x, pEnd.y, 5 * pEnd.scale, 0, Math.PI * 2);
+                           ctx.fill();
+                        }
                     }
                 });
             });

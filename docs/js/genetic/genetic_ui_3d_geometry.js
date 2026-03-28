@@ -3,6 +3,19 @@
 
     const GreenhouseGeneticGeometry = {
 
+        getRegionAt(x, y, z) {
+            // Normalize coords for region checking (assuming radius 1 here)
+            if (z > 0.4 && y > -0.2) return 'pfc';
+            if (z < -0.5 && y > -0.2) return 'occipitalLobe';
+            if (Math.abs(x) > 0.4 && y < 0.1 && z > -0.4 && z < 0.4) return 'temporalLobe';
+            if (y > 0.4 && z > -0.4 && z < 0.4) return 'parietalLobe';
+            if (y < -0.3 && z < -0.4) return 'cerebellum';
+            if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) return 'brainstem';
+            if (Math.abs(x) < 0.3 && Math.abs(y) < 0.3 && Math.abs(z) < 0.3) return 'amygdala';
+            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.5 && y < 0 && z > -0.2 && z < 0.2) return 'hippocampus';
+            return 'default';
+        },
+
         generateHelixPoints(index, totalNodes, helixOffset) {
             // True 3D Double Helix Topology with Major/Minor Grooves
             const pairIndex = Math.floor(index / 2); // Which base pair rung
@@ -267,58 +280,92 @@
         },
 
         generateChromosomeMesh() {
-            // X-Shaped Chromosome (Two crossed, slightly bent capsules)
-            // VERTICAL ORIENTATION for PiP display
+            // High-fidelity Chromosome: Beads-on-a-string (Nucleosomes) + Centromere + Telomeres
             const vertices = [];
             const faces = [];
-            const radius = 15; // Slightly smaller for PiP
-            const length = 100; // Adjusted length
-            const segments = 10;
-            const rings = 20;
+            const radius = 12;
+            const length = 120;
+            const segments = 12;
+            const rings = 40;
 
-            // Helper to generate a bent capsule (arm)
-            const generateArm = (angleOffset, bendFactor, zOffset) => {
+            const generateArm = (angleOffset, bendFactor, isRight) => {
+                const armOffset = vertices.length;
                 for (let i = 0; i <= rings; i++) {
                     const t = i / rings;
-                    const profile = 1.0 + Math.pow(Math.abs(t - 0.5) * 2, 2) * 0.5;
-                    const r = radius * profile;
-                    const lPos = (t - 0.5) * length * 2;
+                    const lPos = (t - 0.5) * length;
+
+                    // 1. Centromere Constriction (at t=0.5)
+                    const distFromCenter = Math.abs(t - 0.5);
+                    const constriction = 0.4 + 0.6 * Math.min(1, distFromCenter * 10);
+
+                    // 2. Nucleosome "Beads" (Periodic swellings)
+                    const beads = 1.0 + 0.2 * Math.pow(Math.sin(t * Math.PI * 10), 2);
+
+                    // 3. Telomere Caps (at ends)
+                    const telomere = (t < 0.05 || t > 0.95) ? 1.2 : 1.0;
+
+                    const r = radius * constriction * beads * telomere;
+
                     let y = lPos;
-                    let x = Math.pow(lPos / length, 2) * bendFactor;
-                    let z = zOffset;
+                    let x = Math.pow(lPos / (length/2), 2) * bendFactor;
+                    let z = 0;
 
                     const cos = Math.cos(angleOffset);
                     const sin = Math.sin(angleOffset);
                     const rx = x * cos - y * sin;
                     const ry = x * sin + y * cos;
-
                     x = rx; y = ry;
 
                     for (let j = 0; j < segments; j++) {
                         const theta = (j / segments) * Math.PI * 2;
+                        // 4. Fine surface ridges (chromatin packing)
+                        const ridge = 1 + 0.05 * Math.sin(theta * 6);
                         const nx = Math.cos(theta);
                         const nz = Math.sin(theta);
-                        vertices.push({ x: x + nx * r, y: y, z: z + nz * r });
+                        vertices.push({ x: x + nx * r * ridge, y: y, z: z + nz * r * ridge });
+                    }
+                }
+
+                // Faces
+                for (let i = 0; i < rings; i++) {
+                    for (let j = 0; j < segments; j++) {
+                        const v1 = armOffset + i * segments + j;
+                        const v2 = armOffset + i * segments + (j + 1) % segments;
+                        const v3 = armOffset + (i + 1) * segments + (j + 1) % segments;
+                        const v4 = armOffset + (i + 1) * segments + j;
+                        faces.push([v1, v2, v3]);
+                        faces.push([v1, v3, v4]);
                     }
                 }
             };
 
-            generateArm(Math.PI / 6, 15, 0);
-            generateArm(-Math.PI / 6, 15, 0);
+            generateArm(Math.PI / 6, 10, false);
+            generateArm(-Math.PI / 6, 10, true);
 
-            const vertsPerArm = (rings + 1) * segments;
-            for (let arm = 0; arm < 2; arm++) {
-                const offset = arm * vertsPerArm;
-                for (let i = 0; i < rings; i++) {
-                    for (let j = 0; j < segments; j++) {
-                        const current = offset + i * segments + j;
-                        const next = offset + (i + 1) * segments + j;
-                        const nextJ = (j + 1) % segments;
-                        faces.push([current, offset + i * segments + nextJ, offset + (i + 1) * segments + nextJ]);
-                        faces.push([current, offset + (i + 1) * segments + nextJ, next]);
-                    }
+            // Centromere Torus
+            const centOffset = vertices.length;
+            const cRadius = 15, tRadius = 5;
+            const tSteps = 8;
+            for (let i = 0; i <= tSteps; i++) {
+                const u = (i / tSteps) * Math.PI * 2;
+                for (let j = 0; j <= tSteps; j++) {
+                    const v = (j / tSteps) * Math.PI * 2;
+                    const x = (cRadius + tRadius * Math.cos(v)) * Math.cos(u);
+                    const y = (cRadius + tRadius * Math.cos(v)) * Math.sin(u);
+                    const z = tRadius * Math.sin(v);
+                    vertices.push({ x, y: y * 0.2, z });
                 }
             }
+
+            for (let i = 0; i < tSteps; i++) {
+                for (let j = 0; j < tSteps; j++) {
+                    const current = centOffset + i * (tSteps + 1) + j;
+                    const next = current + tSteps + 1;
+                    faces.push([current, next, current + 1]);
+                    faces.push([next, next + 1, current + 1]);
+                }
+            }
+
             return { vertices, faces };
         },
 
@@ -373,9 +420,20 @@
                     }
 
                     // 4. Procedural Gyri/Sulci Noise (The brain surface 'wrinkles')
-                    // This is key to removing the 'soccer ball' look
-                    const noise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.03 +
-                        (Math.sin(x * 25) * Math.cos(y * 25)) * 0.01;
+                    const region = this.getRegionAt(x, y, z);
+                    let freq = 12;
+                    let amp = 0.03;
+
+                    if (region === 'pfc') freq = 18;
+                    else if (region === 'temporalLobe') freq = 12;
+                    else if (region === 'occipitalLobe') freq = 8;
+                    else if (region === 'brainstem') amp = 0.005;
+
+                    let noise = (Math.sin(x * freq) * Math.cos(y * freq) * Math.sin(z * freq)) * amp;
+
+                    if (region === 'cerebellum') {
+                        noise = (Math.sin(z * 0.4) * 0.04);
+                    }
 
                     x = x * radius * (1 + noise);
                     y = y * radius * (1 + noise);
@@ -393,14 +451,14 @@
                 }
             }
             brainShell.regions = {
-                pfc: { color: 'rgba(100, 150, 255, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc') },
-                amygdala: { color: 'rgba(255, 100, 100, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala') },
-                hippocampus: { color: 'rgba(100, 255, 150, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus') },
-                temporalLobe: { color: 'rgba(255, 165, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe') },
-                parietalLobe: { color: 'rgba(147, 112, 219, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe') },
-                occipitalLobe: { color: 'rgba(255, 192, 203, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe') },
-                cerebellum: { color: 'rgba(64, 224, 208, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum') },
-                brainstem: { color: 'rgba(255, 215, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem') }
+                pfc: { color: 'rgba(100, 150, 255, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc'), roughness: 0.7, metallic: 0.1 },
+                amygdala: { color: 'rgba(255, 100, 100, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala'), roughness: 0.4, metallic: 0.2 },
+                hippocampus: { color: 'rgba(100, 255, 150, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus'), roughness: 0.4, metallic: 0.2 },
+                temporalLobe: { color: 'rgba(255, 165, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe'), roughness: 0.7, metallic: 0.1 },
+                parietalLobe: { color: 'rgba(147, 112, 219, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe'), roughness: 0.7, metallic: 0.1 },
+                occipitalLobe: { color: 'rgba(255, 192, 203, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe'), roughness: 0.7, metallic: 0.1 },
+                cerebellum: { color: 'rgba(64, 224, 208, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum'), roughness: 0.8, metallic: 0.0 },
+                brainstem: { color: 'rgba(255, 215, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem'), roughness: 0.5, metallic: 0.1 }
             };
 
             // Define topological cut planes for smooth boundary rendering
@@ -454,13 +512,28 @@
                 });
             });
             brainShell.boundaries = [];
+            const boundaryVertices = new Set();
             edgeMap.forEach((faces, key) => {
                 if (faces.length === 2) {
                     const f1 = brainShell.faces[faces[0]], f2 = brainShell.faces[faces[1]];
                     if (f1.region !== f2.region && f1.region && f2.region) {
                         const [i1, i2] = key.split('-').map(Number);
                         brainShell.boundaries.push({ i1, i2 });
+                        boundaryVertices.add(i1);
+                        boundaryVertices.add(i2);
                     }
+                }
+            });
+
+            // Inset boundary vertices to create visible grooves
+            boundaryVertices.forEach(idx => {
+                const v = brainShell.vertices[idx];
+                const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+                if (len > 0) {
+                    const inset = 3;
+                    v.x -= (v.x / len) * inset;
+                    v.y -= (v.y / len) * inset;
+                    v.z -= (v.z / len) * inset;
                 }
             });
         }

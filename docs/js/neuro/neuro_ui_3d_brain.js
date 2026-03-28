@@ -123,11 +123,13 @@
                 // Simplified Specular: Just use diffuse power for "shininess" or a fixed highlight
                 const specular = Math.pow(diffuse, 30); // Sharp highlight
 
-                // Base Color
+                // Base Color and Material
                 let r = 100, g = 100, b = 100, a = 0.1;
+                let roughness = 0.5, metallic = 0.1;
                 if (f.region && regions[f.region]) {
+                    const region = regions[f.region];
                     // Parse rgba
-                    const color = regions[f.region].color; // e.g. 'rgba(100, 150, 255, 0.6)'
+                    const color = region.color; // e.g. 'rgba(100, 150, 255, 0.6)'
                     const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                     if (match) {
                         r = parseInt(match[1]);
@@ -135,6 +137,8 @@
                         b = parseInt(match[3]);
                         a = parseFloat(match[4] || 1);
                     }
+                    roughness = region.roughness !== undefined ? region.roughness : 0.5;
+                    metallic = region.metallic !== undefined ? region.metallic : 0.1;
                 }
 
                 // If this is the target region, use a bright, glowing color and bypass lighting.
@@ -144,11 +148,17 @@
                 } else {
                     // Apply Lighting for all other regions
                     const ambient = 0.2;
-                    const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
+                    // Material-informed lighting
+                    const diffContrib = 0.8 * (1 - metallic);
+                    const specContrib = 0.5 + metallic * 0.5;
+                    const shiny = (1 - roughness) * 50 + 5;
+                    const spec = Math.pow(diffuse, shiny);
 
-                    const litR = Math.min(255, r * lightIntensity + specular * 255);
-                    const litG = Math.min(255, g * lightIntensity + specular * 255);
-                    const litB = Math.min(255, b * lightIntensity + specular * 255);
+                    const lightIntensity = ambient + diffuse * diffContrib;
+
+                    const litR = Math.min(255, r * lightIntensity + spec * specContrib * 255);
+                    const litG = Math.min(255, g * lightIntensity + spec * specContrib * 255);
+                    const litB = Math.min(255, b * lightIntensity + spec * specContrib * 255);
 
                     // Depth Fog for Alpha
                     const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);

@@ -560,6 +560,9 @@
             ctx.textAlign = 'left';
             ctx.fillText(`${t('cog_model_title').toUpperCase()}: ${t('cerebral_cortex').toUpperCase()}`, 20, 30);
 
+            // Detailed Structural Cognition: Working Memory Slots & Dual Process Routing
+            this.drawCognitiveArchitecture(ctx, w, h);
+
             if (this.activeEnhancement) {
                 if (this.activeEnhancement.render) {
                     this.activeEnhancement.render(ctx, this);
@@ -578,6 +581,56 @@
                 if (utils) utils.renderCategoryInfo(ctx, this.activeCategory, cat.description, w, h);
             }
         }
+    };
+
+    GreenhouseCognitionApp.drawCognitiveArchitecture = function(ctx, w, h) {
+        const time = Date.now() * 0.001;
+
+        // 1. Working Memory "Slots/Gears"
+        ctx.save();
+        ctx.translate(w - 150, h - 150);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+
+        for (let i = 0; i < 7; i++) { // Miller's Law: 7 +/- 2 slots
+            const angle = (i / 7) * Math.PI * 2 + time * 0.5;
+            const x = Math.cos(angle) * 40;
+            const y = Math.sin(angle) * 40;
+
+            // Gear/Slot representation
+            ctx.beginPath();
+            ctx.rect(x - 5, y - 5, 10, 10);
+            if (i < (this.activeEnhancement ? 5 : 2)) {
+                ctx.fillStyle = 'rgba(57, 255, 20, 0.6)';
+                ctx.fill();
+            }
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // 2. System 1 vs System 2 Routing
+        ctx.save();
+        ctx.lineWidth = 3;
+
+        // System 1: Fast Bypass Tube
+        ctx.beginPath();
+        ctx.moveTo(100, h - 100);
+        ctx.bezierCurveTo(200, h - 150, 300, h - 150, 400, h - 100);
+        ctx.strokeStyle = 'rgba(57, 255, 20, 0.2)';
+        ctx.stroke();
+
+        // System 2: Slow Maze Path
+        ctx.beginPath();
+        ctx.moveTo(100, h - 100);
+        const mazeSteps = 10;
+        for (let i = 1; i <= mazeSteps; i++) {
+            const mx = 100 + i * 30;
+            const my = h - 100 + (i % 2 === 0 ? -20 : 20);
+            ctx.lineTo(mx, my);
+        }
+        ctx.strokeStyle = 'rgba(255, 100, 100, 0.2)';
+        ctx.stroke();
+        ctx.restore();
     };
 
     window.GreenhouseCognitionApp = GreenhouseCognitionApp;

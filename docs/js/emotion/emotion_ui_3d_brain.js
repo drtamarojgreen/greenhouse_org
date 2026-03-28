@@ -161,9 +161,20 @@
             const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
+            // Global Physical Arousal: High arousal introduces mesh stiffness and contraction
+            const time = Date.now() * 0.001;
+            const arousal = activeROI && activeROI.arousal !== undefined ? activeROI.arousal : 0.5;
+            const contraction = Math.sin(time * (5 + arousal * 10)) * (arousal * 5);
+
             // Project all vertices first
             const projectedVertices = vertices.map(v => {
-                return GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
+                let vx = v.x, vy = v.y, vz = v.z;
+                // Structural contraction (heartbeat-like)
+                const dist = Math.sqrt(vx*vx + vy*vy + vz*vz);
+                const scale = 1.0 - (contraction / dist);
+                vx *= scale; vy *= scale; vz *= scale;
+
+                return GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, camera, projection);
             });
 
             // Prepare Faces with Depth and Normals

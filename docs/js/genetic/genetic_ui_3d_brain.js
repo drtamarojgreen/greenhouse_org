@@ -88,16 +88,31 @@
                 if (!f.isFront) { nx = -nx; ny = -ny; nz = -nz; }
                 const diffuse = Math.max(0, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
                 let r = 100, g = 100, b = 100, a = 0.1;
+                let roughness = 0.5, metallic = 0.1;
                 if (f.region && regions[f.region]) {
-                    const match = regions[f.region].color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                    const region = regions[f.region];
+                    const match = region.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                     if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); a = parseFloat(match[4] || 1); }
+                    roughness = region.roughness !== undefined ? region.roughness : 0.5;
+                    metallic = region.metallic !== undefined ? region.metallic : 0.1;
                 }
                 const isTarget = (targetRegion && (f.region === targetRegion || (targetRegion === 'pfc' && f.region === 'prefrontalCortex')));
                 if (isTarget) {
                     ctx.fillStyle = `rgba(57, 255, 20, ${GreenhouseModels3DMath.applyDepthFog(0.9, f.depth)})`;
                 } else {
-                    const intensity = 0.3 + diffuse * 0.7;
-                    ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
+                    const ambient = 0.2;
+                    const diffContrib = 0.8 * (1 - metallic);
+                    const specContrib = 0.5 + metallic * 0.5;
+                    const shiny = (1 - roughness) * 50 + 5;
+                    const spec = Math.pow(diffuse, shiny);
+
+                    const lightIntensity = ambient + diffuse * diffContrib;
+
+                    const litR = Math.min(255, r * lightIntensity + spec * specContrib * 255);
+                    const litG = Math.min(255, g * lightIntensity + spec * specContrib * 255);
+                    const litB = Math.min(255, b * lightIntensity + spec * specContrib * 255);
+
+                    ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
                 }
                 ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.fill();
             });
@@ -394,37 +409,20 @@
         },
 
         generatePyramidalMesh() {
-            const r = 6;
-            const h = 12;
-            const vertices = [
-                { x: 0, y: -h, z: 0 },
-                { x: r, y: r, z: r },
-                { x: -r, y: r, z: r },
-                { x: 0, y: r, z: -r }
-            ];
-            const faces = [
-                [0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]
-            ];
+            // Reusing high-fidelity mesh logic from neuro module
+            if (window.GreenhouseNeuroNeuron) return window.GreenhouseNeuroNeuron.generatePyramidalMesh();
+            const r = 6, h = 12;
+            const vertices = [{ x: 0, y: -h, z: 0 }, { x: r, y: r, z: r }, { x: -r, y: r, z: r }, { x: 0, y: r, z: -r }];
+            const faces = [[0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]];
             return { vertices, faces };
         },
 
         generateStellateMesh() {
-            const s = 4;
-            const p = 8;
-            const vertices = [
-                { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
-                { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s },
-                { x: 0, y: 0, z: -s - p }, { x: 0, y: 0, z: s + p },
-                { x: 0, y: -s - p, z: 0 }, { x: s + p, y: 0, z: 0 },
-                { x: -s - p, y: 0, z: 0 }, { x: s + p, y: 0, z: 0 }
-            ];
-            const faces = [];
-            faces.push([10, 0, 1], [10, 1, 5], [10, 5, 4], [10, 4, 0]);
-            faces.push([11, 3, 2], [11, 2, 6], [11, 6, 7], [11, 7, 3]);
-            faces.push([9, 4, 5], [9, 5, 6], [9, 6, 7], [9, 7, 4]);
-            faces.push([8, 1, 0], [8, 0, 3], [8, 3, 2], [8, 2, 1]);
-            faces.push([12, 0, 4], [12, 4, 7], [12, 7, 3], [12, 3, 0]);
-            faces.push([13, 5, 1], [13, 1, 2], [13, 2, 6], [13, 6, 5]);
+            // Reusing high-fidelity mesh logic from neuro module
+            if (window.GreenhouseNeuroNeuron) return window.GreenhouseNeuroNeuron.generateStellateMesh();
+            const s = 4, p = 8;
+            const vertices = [{ x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s }, { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s }, { x: 0, y: 0, z: -s - p }, { x: 0, y: 0, z: s + p }, { x: 0, y: -s - p, z: 0 }, { x: s + p, y: 0, z: 0 }, { x: -s - p, y: 0, z: 0 }, { x: s + p, y: 0, z: 0 }];
+            const faces = [[10, 0, 1], [10, 1, 5], [10, 5, 4], [10, 4, 0], [11, 3, 2], [11, 2, 6], [11, 6, 7], [11, 7, 3], [9, 4, 5], [9, 5, 6], [9, 6, 7], [9, 7, 4], [8, 1, 0], [8, 0, 3], [8, 3, 2], [8, 2, 1], [12, 0, 4], [12, 4, 7], [12, 7, 3], [12, 3, 0], [13, 5, 1], [13, 1, 2], [13, 2, 6], [13, 6, 5]];
             return { vertices, faces };
         },
 

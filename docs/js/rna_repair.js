@@ -315,11 +315,13 @@
             if (damageType === this.damageTypes.BREAK) {
                 if (base.connected) {
                     base.connected = false;
+                    base.bulge = true; // Oxidative bulge
                     this.spawnEnzyme('Ligase', index);
                 }
             } else if (damageType === this.damageTypes.METHYLATION) {
                 if (!base.damaged) {
                     base.damaged = true;
+                    base.bulge = true;
                     base.damageType = this.damageTypes.METHYLATION;
                     this.spawnEnzyme('Demethylase', index);
                 }
@@ -446,7 +448,10 @@
                 const noiseScale = this.environmentManager ? this.environmentManager.getNoiseMultiplier() : 1.0;
                 const thermalNoise = (Math.random() - 0.5) * 1.5 * noiseScale;
 
-                base.x = base.targetX + fluidMotion + thermalNoise;
+                // Structural Bulge for damage
+                const bulgeOffset = base.bulge ? Math.sin(Date.now() * 0.01) * 10 : 0;
+
+                base.x = base.targetX + fluidMotion + thermalNoise + bulgeOffset;
 
                 // Enhancement 16: Structural Folding offsets
                 if (this.foldingEngine) {
@@ -558,11 +563,13 @@
                     if (enzyme.progress >= 1) {
                         if (enzyme.name === 'Ligase') {
                             targetBase.connected = true;
+                            targetBase.bulge = false; // Smooth out
                         } else if (enzyme.name === 'Dcp2') {
                             targetBase.flash = 1.0;
                             this.spawnExonuclease(0);
                         } else {
                             targetBase.damaged = false;
+                            targetBase.bulge = false;
                             targetBase.damageType = null;
                         }
                         targetBase.flash = 1.0;

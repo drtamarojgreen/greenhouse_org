@@ -11,7 +11,47 @@
             // Culling
             if (p.scale <= 0) return;
 
-            // LOD: Low Detail (Simple Circle) for distant neurons
+            // Determine cell type based on region
+            const pyramidalRegions = ['pfc', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'hippocampus'];
+            const type = pyramidalRegions.includes(neuron.region) ? 'pyramidal' : 'stellate';
+
+            // LOD 0: Icon for very distant neurons
+            if (p.scale < 0.3) {
+                const alpha = GreenhouseModels3DMath.applyDepthFog(1, p.depth);
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                const color = colorOverride || neuron.baseColor;
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.translate(p.x, p.y);
+                const size = neuron.radius * p.scale;
+                if (type === 'pyramidal') {
+                    // Triangle Icon
+                    ctx.beginPath();
+                    ctx.moveTo(0, -size);
+                    ctx.lineTo(size, size);
+                    ctx.lineTo(-size, size);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    // Circle with radiating lines icon
+                    ctx.beginPath();
+                    ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                    for (let i = 0; i < 6; i++) {
+                        ctx.beginPath();
+                        const angle = i * Math.PI / 3;
+                        ctx.moveTo(Math.cos(angle) * size * 0.7, Math.sin(angle) * size * 0.7);
+                        ctx.lineTo(Math.cos(angle) * size * 1.2, Math.sin(angle) * size * 1.2);
+                        ctx.stroke();
+                    }
+                }
+                ctx.restore();
+                return;
+            }
+
+            // LOD 1: Simple Circle for medium distance
             if (p.scale < 0.6) {
                 const alpha = GreenhouseModels3DMath.applyDepthFog(1, p.depth);
                 ctx.save();
@@ -24,11 +64,7 @@
                 return;
             }
 
-            // High Detail: 3D Mesh
-            // Determine cell type based on region
-            const pyramidalRegions = ['pfc', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'hippocampus'];
-            const type = pyramidalRegions.includes(neuron.region) ? 'pyramidal' : 'stellate';
-
+            // LOD 2: High Detail 3D Mesh
             // Get or generate base mesh
             if (!this.neuronMeshes[type]) {
                 this.neuronMeshes[type] = type === 'pyramidal' ?
@@ -42,9 +78,25 @@
             const rotY = neuron.y * 0.01 + Date.now() * (pulseFreq * 0.1); // Scalable rotation
             const rotZ = neuron.z * 0.01;
 
+            // Activity Signals
+            const now = Date.now();
+            const isActive = neuron.activation > 0.5;
+            const isFiring = neuron.isFiring;
+            const firingScale = isFiring ? 1.1 : 1.0;
+
             const transformedVertices = mesh.vertices.map(v => {
                 // Rotate
                 let x = v.x, y = v.y, z = v.z;
+
+                // Membrane Flickering (Activity Signal)
+                if (isActive) {
+                    const freq = 0.2;
+                    const amp = 0.5;
+                    const offset = Math.sin((v.x + v.y + v.z) * freq + now * 0.01) * amp;
+                    x += v.nx * offset;
+                    y += v.ny * offset;
+                    z += v.nz * offset;
+                }
 
                 // Rotate Y
                 let tx = x * Math.cos(rotY) - z * Math.sin(rotY);
@@ -57,7 +109,7 @@
                 y = ty; z = tz;
 
                 // Scale
-                const scale = type === 'pyramidal' ? 1.5 : 1.0;
+                const scale = (type === 'pyramidal' ? 1.5 : 1.0) * firingScale;
                 x *= scale; y *= scale; z *= scale;
 
                 // Translate to Neuron Position (World Space)
@@ -160,57 +212,172 @@
         },
 
         generatePyramidalMesh() {
-            // True 3D Pyramid: Base triangle + Apex + Elongated Apical Dendrite
-            const r = 6;
-            const h = 12;
-            const vertices = [
-                { x: 0, y: -h, z: 0 }, // 0: Apex (Top)
-                { x: r, y: r, z: r },  // 1: Base 1
-                { x: -r, y: r, z: r }, // 2: Base 2
-                { x: 0, y: r, z: -r }  // 3: Base 3
-            ];
-            const faces = [
-                [0, 1, 2], // Side 1
-                [0, 2, 3], // Side 2
-                [0, 3, 1], // Side 3
-                [1, 3, 2]  // Base
-            ];
+            // Pyramidal Cell: Ellipsoidal Soma + Apical Dendrite + Basal Dendrites
+            const vertices = [];
+            const faces = [];
+
+            // 1. Soma (Ellipsoid icosphere approx)
+            const segments = 8;
+            for (let i = 0; i <= segments; i++) {
+                const lat = (i / segments) * Math.PI;
+                const sinLat = Math.sin(lat);
+                const cosLat = Math.cos(lat);
+                for (let j = 0; j <= segments; j++) {
+                    const lon = (j / segments) * 2 * Math.PI;
+                    const rx = 8 * sinLat * Math.cos(lon);
+                    const ry = 10 * cosLat;
+                    const rz = 8 * sinLat * Math.sin(lon);
+                    const len = Math.sqrt(rx * rx + ry * ry + rz * rz);
+                    vertices.push({ x: rx, y: ry, z: rz, nx: rx / len, ny: ry / len, nz: rz / len });
+                }
+            }
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const first = i * (segments + 1) + j;
+                    const second = first + segments + 1;
+                    faces.push([first, second, first + 1]);
+                    faces.push([second, second + 1, first + 1]);
+                }
+            }
+
+            // 2. Apical Dendrite (Tapered cylinder pointing up)
+            const apicalOffset = vertices.length;
+            const apicalHeight = 40;
+            const apicalSteps = 4;
+            for (let i = 0; i <= apicalSteps; i++) {
+                const y = 10 + (i / apicalSteps) * apicalHeight;
+                const r = 3 * (1 - (i / apicalSteps) * 0.7);
+                for (let j = 0; j < 6; j++) {
+                    const angle = (j / 6) * 2 * Math.PI;
+                    const x = Math.cos(angle) * r;
+                    const z = Math.sin(angle) * r;
+                    vertices.push({ x, y, z, nx: x / r, ny: 0, nz: z / r });
+                }
+            }
+            for (let i = 0; i < apicalSteps; i++) {
+                for (let j = 0; j < 6; j++) {
+                    const first = apicalOffset + i * 6 + j;
+                    const second = apicalOffset + (i + 1) * 6 + j;
+                    const nextJ = (j + 1) % 6;
+                    faces.push([first, second, apicalOffset + i * 6 + nextJ]);
+                    faces.push([second, apicalOffset + (i + 1) * 6 + nextJ, apicalOffset + i * 6 + nextJ]);
+                }
+            }
+
+            // 3. Basal Dendrites (A few short radiating branches at the bottom)
+            for (let b = 0; b < 3; b++) {
+                const basalOffset = vertices.length;
+                const angle = (b / 3) * 2 * Math.PI;
+                const dirX = Math.cos(angle);
+                const dirZ = Math.sin(angle);
+                const basalLength = 15;
+                for (let i = 0; i <= 2; i++) {
+                    const t = i / 2;
+                    const dist = t * basalLength;
+                    const r = 2 * (1 - t * 0.5);
+                    const y = -10 - t * 5;
+                    const centerX = dirX * dist;
+                    const centerZ = dirZ * dist;
+                    for (let j = 0; j < 4; j++) {
+                        const a = (j / 4) * 2 * Math.PI;
+                        const x = centerX + Math.cos(a) * r;
+                        const z = centerZ + Math.sin(a) * r;
+                        vertices.push({ x, y, z, nx: (x - centerX) / r, ny: 0, nz: (z - centerZ) / r });
+                    }
+                }
+                for (let i = 0; i < 2; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        const first = basalOffset + i * 4 + j;
+                        const second = basalOffset + (i + 1) * 4 + j;
+                        const nextJ = (j + 1) % 4;
+                        faces.push([first, second, basalOffset + i * 4 + nextJ]);
+                        faces.push([second, basalOffset + (i + 1) * 4 + nextJ, basalOffset + i * 4 + nextJ]);
+                    }
+                }
+            }
+
             return { vertices, faces };
         },
 
         generateStellateMesh() {
-            // True 3D Star (Icosahedron-like spike ball)
-            // Simplified: Central cube with pyramids on each face
-            const s = 4; // size
-            const p = 8; // spike length
-            const vertices = [
-                // Cube Vertices (0-7)
-                { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
-                { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s },
-                // Spikes (8-13)
-                { x: 0, y: 0, z: -s - p }, // Back
-                { x: 0, y: 0, z: s + p },  // Front
-                { x: 0, y: -s - p, z: 0 }, // Top
-                { x: 0, y: s + p, z: 0 },  // Bottom
-                { x: -s - p, y: 0, z: 0 }, // Left
-                { x: s + p, y: 0, z: 0 }   // Right
+            // Stellate Cell: Spherical Soma + Symmetric Radiating Dendrites
+            const vertices = [];
+            const faces = [];
+
+            // 1. Soma
+            const segments = 8;
+            const radius = 6;
+            for (let i = 0; i <= segments; i++) {
+                const lat = (i / segments) * Math.PI;
+                const sinLat = Math.sin(lat);
+                const cosLat = Math.cos(lat);
+                for (let j = 0; j <= segments; j++) {
+                    const lon = (j / segments) * 2 * Math.PI;
+                    const x = radius * sinLat * Math.cos(lon);
+                    const y = radius * cosLat;
+                    const z = radius * sinLat * Math.sin(lon);
+                    vertices.push({ x, y, z, nx: x / radius, ny: y / radius, nz: z / radius });
+                }
+            }
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const first = i * (segments + 1) + j;
+                    const second = first + segments + 1;
+                    faces.push([first, second, first + 1]);
+                    faces.push([second, second + 1, first + 1]);
+                }
+            }
+
+            // 2. Symmetric Dendrites (6 radiating branches)
+            const dendriteDirs = [
+                { x: 1, y: 0, z: 0 }, { x: -1, y: 0, z: 0 },
+                { x: 0, y: 1, z: 0 }, { x: 0, y: -1, z: 0 },
+                { x: 0, y: 0, z: 1 }, { x: 0, y: 0, z: -1 }
             ];
 
-            const faces = [];
-            // Add faces for spikes connecting to cube corners...
-            // Simplified for performance: Just a few spikes
-            // Top Spike
-            faces.push([10, 0, 1], [10, 1, 5], [10, 5, 4], [10, 4, 0]);
-            // Bottom Spike
-            faces.push([11, 3, 2], [11, 2, 6], [11, 6, 7], [11, 7, 3]);
-            // Front Spike
-            faces.push([9, 4, 5], [9, 5, 6], [9, 6, 7], [9, 7, 4]);
-            // Back Spike
-            faces.push([8, 1, 0], [8, 0, 3], [8, 3, 2], [8, 2, 1]);
-            // Left Spike
-            faces.push([12, 0, 4], [12, 4, 7], [12, 7, 3], [12, 3, 0]);
-            // Right Spike
-            faces.push([13, 5, 1], [13, 1, 2], [13, 2, 6], [13, 6, 5]);
+            dendriteDirs.forEach(dir => {
+                const offset = vertices.length;
+                const length = 20;
+                for (let i = 0; i <= 2; i++) {
+                    const t = i / 2;
+                    const dist = radius + t * length;
+                    const r = 2 * (1 - t * 0.7);
+                    const centerX = dir.x * dist;
+                    const centerY = dir.y * dist;
+                    const centerZ = dir.z * dist;
+
+                    // Perpendicular vectors for ring
+                    let ux = 0, uy = 1, uz = 0;
+                    if (Math.abs(dir.y) > 0.9) { ux = 1; uy = 0; }
+                    let bx = dir.y * uz - dir.z * uy;
+                    let by = dir.z * ux - dir.x * uz;
+                    let bz = dir.x * uy - dir.y * ux;
+                    const bLen = Math.sqrt(bx * bx + by * by + bz * bz);
+                    if (bLen > 0) {
+                        bx /= bLen; by /= bLen; bz /= bLen;
+                    }
+                    let nx = by * dir.z - bz * dir.y;
+                    let ny = bz * dir.x - bx * dir.z;
+                    let nz = bx * dir.y - by * dir.x;
+
+                    for (let j = 0; j < 4; j++) {
+                        const a = (j / 4) * 2 * Math.PI;
+                        const vx = centerX + (nx * Math.cos(a) + bx * Math.sin(a)) * r;
+                        const vy = centerY + (ny * Math.cos(a) + by * Math.sin(a)) * r;
+                        const vz = centerZ + (nz * Math.cos(a) + bz * Math.sin(a)) * r;
+                        vertices.push({ x: vx, y: vy, z: vz, nx: (vx - centerX) / r, ny: (vy - centerY) / r, nz: (vz - centerZ) / r });
+                    }
+                }
+                for (let i = 0; i < 2; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        const first = offset + i * 4 + j;
+                        const second = offset + (i + 1) * 4 + j;
+                        const nextJ = (j + 1) % 4;
+                        faces.push([first, second, offset + i * 4 + nextJ]);
+                        faces.push([second, offset + (i + 1) * 4 + nextJ, offset + i * 4 + nextJ]);
+                    }
+                }
+            });
 
             return { vertices, faces };
         },

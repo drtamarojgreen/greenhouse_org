@@ -525,16 +525,36 @@
             }
         }
 
-        // Render DA molecules
+        // Render DA molecules (3D molecular meshes for dopamine)
         sState.cleftDA.forEach(da => {
             const p = project(da.x, da.y, da.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
+                const s = 4 * p.scale;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(da.life * 0.1);
+
+                // Intricate 3D molecular mesh approximation (Catecholamine)
                 ctx.fillStyle = '#00ff00';
                 ctx.globalAlpha = Math.max(0, da.life / 200);
+
+                // Benzene ring
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1.0;
+                for (let i = 0; i < 6; i++) {
+                    const a = i * Math.PI / 3;
+                    ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s);
+                }
+                ctx.closePath(); ctx.fill();
+
+                // Amine tail
+                ctx.beginPath();
+                ctx.moveTo(s, 0);
+                ctx.lineTo(s * 2, s * 0.5);
+                ctx.lineTo(s * 3, 0);
+                ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 1.5 * p.scale;
+                ctx.stroke();
+
+                ctx.restore();
             }
         });
 

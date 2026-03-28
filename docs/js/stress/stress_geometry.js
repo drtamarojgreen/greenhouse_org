@@ -76,16 +76,21 @@
 
                     const vIdx = brainShell.vertices.length;
 
+                    // Allostatic Load: Represented as physical buckling/bending under weight
+                    const stressLevel = (window.GreenhouseStressApp && window.GreenhouseStressApp.state) ? window.GreenhouseStressApp.state.allostaticLoad : 0.5;
+                    const buckling = (ny > 0.5) ? Math.sin(nx * 5) * stressLevel * 10 : 0;
+
                     // The Normal stays strictly the smooth base direction to ensure smooth lighting
                     const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
                     const normal = { x: nx / nLen, y: ny / nLen, z: nz / nLen };
 
                     brainShell.vertices.push({
                         x: x * baseRadius * finalFactor,
-                        y: y * baseRadius * finalFactor,
+                        y: (y * baseRadius * finalFactor) - buckling,
                         z: z * baseRadius * finalFactor,
                         normal: normal,
-                        region: region
+                        region: region,
+                        buckling: buckling
                     });
 
                     if (brainShell.regions[region]) {
@@ -115,6 +120,39 @@
                 }
             }
         }
+    };
+
+    GreenhouseStressGeometry.drawScaffolding = function(ctx, projectedVertices, brainShell, camera, projection) {
+        // Support Scaffolding: Physical trusses bracing the structure
+        ctx.save();
+        ctx.strokeStyle = 'rgba(100, 200, 255, 0.4)';
+        ctx.lineWidth = 2;
+
+        const centerV = brainShell.vertices.find(v => v.region === 'brainstem');
+        if (centerV) {
+            const cp = GreenhouseModels3DMath.project3DTo2D(0, -300, 0, camera, projection);
+            const bp = GreenhouseModels3DMath.project3DTo2D(0, 0, 0, camera, projection);
+
+            if (cp.scale > 0 && bp.scale > 0) {
+                // Central Pillar
+                ctx.beginPath();
+                ctx.moveTo(cp.x, cp.y);
+                ctx.lineTo(bp.x, bp.y);
+                ctx.stroke();
+
+                // Trusses
+                for (let i = 0; i < 4; i++) {
+                    const angle = i * Math.PI / 2;
+                    const tx = Math.cos(angle) * 100;
+                    const tz = Math.sin(angle) * 100;
+                    const tp = GreenhouseModels3DMath.project3DTo2D(tx, -150, tz, camera, projection);
+                    if (tp.scale > 0) {
+                        ctx.beginPath(); ctx.moveTo(bp.x, bp.y); ctx.lineTo(tp.x, tp.y); ctx.stroke();
+                    }
+                }
+            }
+        }
+        ctx.restore();
     };
 
     window.GreenhouseStressGeometry = GreenhouseStressGeometry;

@@ -183,7 +183,7 @@
             return { vertices, faces };
         },
 
-        generateLipidBilayerSegment(width, height, subdivisions) {
+        generateLipidBilayerSegment(width, height, subdivisions, permeability = 0) {
             const vertices = [];
             const faces = [];
             const stepX = width / subdivisions;
@@ -191,8 +191,14 @@
 
             for (let i = 0; i <= subdivisions; i++) {
                 for (let j = 0; j <= subdivisions; j++) {
-                    const x = i * stepX - width / 2;
-                    const y = j * stepY - height / 2;
+                    let x = i * stepX - width / 2;
+                    let y = j * stepY - height / 2;
+
+                    // BBB Permeability: Shifting endothelial cell meshes to create gaps
+                    if (permeability > 0.5 && i % 4 === 0) {
+                        x += (i % 8 === 0 ? 20 : -20) * (permeability - 0.5);
+                    }
+
                     const wave = Math.sin(x * 0.012 + y * 0.008) * 15;
 
                     const layers = [
@@ -267,32 +273,38 @@
             return { vertices, faces };
         },
 
-        generateGliaMesh(type, scale = 1.0) {
+        generateGliaMesh(type, scale = 1.0, activationLevel = 0) {
             const vertices = [];
             const faces = [];
             const isAstro = type === 'astrocyte';
-            const branches = isAstro ? 16 : 10;
-            const somaRadius = (isAstro ? 12 : 8) * scale;
+
+            // Glial Morphology: Ramified (resting) to Amoeboid (active/bloated)
+            const branchesCount = Math.floor((isAstro ? 16 : 10) * (1 - activationLevel * 0.8));
+            const somaRadius = (isAstro ? 12 : 8) * scale * (1 + activationLevel);
+
             const soma = this.generateSphere(somaRadius, 10);
 
             // Astrocytes: Gold/Yellow; Microglia: Cyan/Blue-ish (Resting) or Red (Active)
-            const baseColor = isAstro ? '#ffcc00' : '#4ca1af';
+            const baseColor = isAstro ? '#ffcc00' : (activationLevel > 0.5 ? '#ff4444' : '#4ca1af');
             vertices.push(...soma.vertices.map(v => ({ ...v, color: baseColor })));
             faces.push(...soma.faces);
 
-            for (let i = 0; i < branches; i++) {
-                const angle = (i / branches) * Math.PI * 2;
+            for (let i = 0; i < branchesCount; i++) {
+                const angle = (i / branchesCount) * Math.PI * 2;
                 const phi = (Math.random() - 0.5) * Math.PI;
                 const p1 = { x: 0, y: 0, z: 0 };
+
+                // Retract branches as activation increases
+                const branchLength = 80 * scale * (1 - activationLevel * 0.7);
                 const p2 = {
-                    x: Math.cos(angle) * Math.cos(phi) * 80 * scale,
-                    y: Math.sin(phi) * 80 * scale,
-                    z: Math.sin(angle) * Math.cos(phi) * 80 * scale
+                    x: Math.cos(angle) * Math.cos(phi) * branchLength,
+                    y: Math.sin(phi) * branchLength,
+                    z: Math.sin(angle) * Math.cos(phi) * branchLength
                 };
                 const cp = { x: p2.x * 0.5 + (Math.random() - 0.5) * 30, y: p2.y * 0.5 + (Math.random() - 0.5) * 30, z: p2.z * 0.5 };
 
-                const hasEndfoot = isAstro && Math.random() > 0.6;
-                const radius = (isAstro ? 3 : 2) * scale;
+                const hasEndfoot = isAstro && Math.random() > 0.6 && activationLevel < 0.8;
+                const radius = (isAstro ? 3 : 2) * scale * (1 + activationLevel * 0.5);
                 const tube = this.generateTubeMesh(p1, p2, cp, radius, 6);
                 const offset = vertices.length;
                 vertices.push(...tube.vertices.map(v => ({ ...v, color: baseColor })));

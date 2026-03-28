@@ -60,6 +60,16 @@
                     if (!batches[key]) batches[key] = new Path2D();
                     batches[key].moveTo(p1.x, p1.y);
                     batches[key].lineTo(p2.x, p2.y);
+
+                    // Directional arrow for low LOD
+                    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+                    const len = Math.sqrt(dx*dx + dy*dy);
+                    if (len > 20) {
+                        const ax = p2.x - dx/len * 10, ay = p2.y - dy/len * 10;
+                        batches[key].moveTo(ax - dy/len * 5, ay + dx/len * 5);
+                        batches[key].lineTo(p2.x, p2.y);
+                        batches[key].lineTo(ax + dy/len * 5, ay - dx/len * 5);
+                    }
                     continue;
                 }
 
@@ -140,49 +150,45 @@
                     }
                 }
 
+                // Myelination Segments for high detail
+                const isMyelinated = Math.abs(conn.weight) > 0.7;
+                if (isMyelinated && GreenhouseGeneticGeometry) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                    for (let i = 1; i < 4; i++) {
+                        const t = i / 4;
+                        const mt = 1 - t;
+                        const mp = {
+                            x: mt * mt * conn.from.x + 2 * mt * t * conn.controlPoint.x + t * t * conn.to.x,
+                            y: mt * mt * conn.from.y + 2 * mt * t * conn.controlPoint.y + t * t * conn.to.y,
+                            z: mt * mt * conn.from.z + 2 * mt * t * conn.controlPoint.z + t * t * conn.to.z
+                        };
+                        const mproj = GreenhouseModels3DMath.project3DTo2D(mp.x, mp.y, mp.z, camera, projection);
+                        if (mproj.scale > 0) {
+                            ctx.beginPath(); ctx.arc(mproj.x, mproj.y, 8 * mproj.scale, 0, Math.PI * 2); ctx.fill();
+                        }
+                    }
+                }
+
                 const seed = (conn.from.id + conn.to.id) * 0.1;
                 const cycle = (now * 0.001 + seed) % 2.0;
 
                 if (cycle < 1.0) {
                     const t = cycle;
                     const mt = 1 - t;
-
-                    const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
-
                     const sparkP = {
                         x: mt * mt * conn.from.x + 2 * mt * t * conn.controlPoint.x + t * t * conn.to.x,
                         y: mt * mt * conn.from.y + 2 * mt * t * conn.controlPoint.y + t * t * conn.to.y,
                         z: mt * mt * conn.from.z + 2 * mt * t * conn.controlPoint.z + t * t * conn.to.z
                     };
-
                     const sparkProj = GreenhouseModels3DMath.project3DTo2D(sparkP.x, sparkP.y, sparkP.z, camera, projection);
 
                     if (sparkProj.scale > 0) {
-                        const size = 4 * sparkProj.scale;
-                        const alpha = GreenhouseModels3DMath.applyDepthFog(1, sparkProj.depth);
-
+                        // Propagating Expansion Wave
+                        const waveSize = 10 * sparkProj.scale * (1 + Math.sin(now * 0.01) * 0.4);
+                        const alpha = GreenhouseModels3DMath.applyDepthFog(0.6, sparkProj.depth);
                         ctx.save();
-                        ctx.globalAlpha = alpha;
-
-                        ctx.fillStyle = '#FFF';
-                        ctx.beginPath();
-                        ctx.arc(sparkProj.x, sparkProj.y, size * 0.5, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        const grad = ctx.createRadialGradient(sparkProj.x, sparkProj.y, size * 0.5, sparkProj.x, sparkProj.y, size * 2);
-
-                        let glowColor = '255, 255, 100';
-                        if (adhdActive.has(16) && conn.weight < 0) {
-                            glowColor = '255, 50, 50';
-                        }
-
-                        grad.addColorStop(0, `rgba(${glowColor}, 0.8)`);
-                        grad.addColorStop(1, `rgba(${glowColor}, 0)`);
-                        ctx.fillStyle = grad;
-                        ctx.beginPath();
-                        ctx.arc(sparkProj.x, sparkProj.y, size * 2, 0, Math.PI * 2);
-                        ctx.fill();
-
+                        ctx.strokeStyle = '#FFF'; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.arc(sparkProj.x, sparkProj.y, waveSize, 0, Math.PI * 2); ctx.stroke();
                         ctx.restore();
                     }
                 }
@@ -374,12 +380,23 @@
                 const p = GreenhouseModels3DMath.project3DTo2D(obj.x, obj.y + (type === 'post' ? 60 : -60), obj.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 if (p.scale > 0) {
                     if (type === 'vesicle') {
-                        // ADHD: Dietary Omega-3 Fluidity (37)
+                        // 3D-style vesicle rendering
+                        const radius = 3 * p.scale;
                         const glow = adhdActive.has(37) ? 'rgba(200, 255, 255, 0.8)' : 'rgba(255, 255, 200, 0.6)';
+
+                        // Outer membrane
+                        ctx.globalAlpha = 0.4;
                         ctx.fillStyle = glow;
-                        ctx.beginPath();
-                        ctx.arc(p.x + x, p.y + y, 3 * p.scale, 0, Math.PI * 2);
-                        ctx.fill();
+                        ctx.beginPath(); ctx.arc(p.x + x, p.y + y, radius * 1.2, 0, Math.PI * 2); ctx.fill();
+
+                        // Inner contents
+                        ctx.globalAlpha = 0.8;
+                        const grad = ctx.createRadialGradient(p.x + x - radius*0.3, p.y + y - radius*0.3, 0, p.x + x, p.y + y, radius);
+                        grad.addColorStop(0, '#FFF');
+                        grad.addColorStop(1, glow);
+                        ctx.fillStyle = grad;
+                        ctx.beginPath(); ctx.arc(p.x + x, p.y + y, radius, 0, Math.PI * 2); ctx.fill();
+                        ctx.globalAlpha = 1.0;
                     } else if (type === 'mito') {
                         // ADHD: Exercise-Induced BDNF (36)
                         if (adhdActive.has(36)) {
@@ -489,7 +506,8 @@
                     }
 
                     const alpha = p.life;
-                    let particleColor = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
+                    const color = p.hasBound ? '50, 255, 50' : '255, 255, 100';
+                    let particleColor = `rgba(${color}, ${alpha})`;
 
                     // ADHD: Amygdala (73) / Imbalance (55)
                     if (p.hasBound && adhdActive.has(73)) particleColor = `rgba(255, 0, 0, ${alpha})`;
@@ -509,9 +527,27 @@
                     if (adhdActive.has(94)) pSize *= (0.5 + Math.random()); // Gut-Brain (94)
 
                     ctx.fillStyle = particleColor;
-                    ctx.beginPath();
-                    ctx.arc(proj.x + x, proj.y + y, pSize * proj.scale, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.save();
+                    ctx.translate(proj.x + x, proj.y + y);
+
+                    // Shape-coded neurotransmitters
+                    const ntType = p.ntType || (['glutamate', 'gaba', 'dopamine'][Math.floor(p.x) % 3]);
+                    const s = pSize * proj.scale;
+                    if (ntType === 'gaba') {
+                        // Oblate spheroid
+                        ctx.beginPath(); ctx.ellipse(0, 0, s * 1.5, s * 0.8, 0, 0, Math.PI * 2); ctx.fill();
+                    } else if (ntType === 'dopamine') {
+                        // Y-shape
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0); ctx.lineTo(0, -s);
+                        ctx.moveTo(0, 0); ctx.lineTo(s * 0.8, s * 0.5);
+                        ctx.moveTo(0, 0); ctx.lineTo(-s * 0.8, s * 0.5);
+                        ctx.strokeStyle = particleColor; ctx.lineWidth = 1; ctx.stroke();
+                    } else {
+                        // Glutamate (spherical)
+                        ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2); ctx.fill();
+                    }
+                    ctx.restore();
                 }
             });
 
@@ -550,6 +586,26 @@
             if (postLabelPos.scale > 0) {
                 ctx.fillStyle = '#C0C0C0';
                 ctx.fillText(t('post_synaptic_density').toUpperCase(), postLabelPos.x + x, postLabelPos.y + y);
+
+                // Draw Receptors (T-shaped extrusions)
+                for (let i = -2; i <= 2; i++) {
+                    const rx = i * 30;
+                    const rz = Math.sin(i) * 20;
+                    const ry = 150;
+                    const rp = GreenhouseModels3DMath.project3DTo2D(rx, ry, rz, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                    if (rp.scale > 0) {
+                        ctx.save();
+                        ctx.translate(rp.x + x, rp.y + y);
+                        ctx.strokeStyle = '#4ca1af'; ctx.lineWidth = 2 * rp.scale;
+                        // Stem
+                        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -10 * rp.scale); ctx.stroke();
+                        // Head
+                        const tilt = Math.sin(Date.now() * 0.002 + i) * 0.2;
+                        ctx.rotate(tilt);
+                        ctx.beginPath(); ctx.moveTo(-8 * rp.scale, -10 * rp.scale); ctx.lineTo(8 * rp.scale, -10 * rp.scale); ctx.stroke();
+                        ctx.restore();
+                    }
+                }
             }
 
             ctx.restore();

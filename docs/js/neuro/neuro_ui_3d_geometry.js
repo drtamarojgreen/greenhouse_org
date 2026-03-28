@@ -5,6 +5,19 @@
         // Cache for expensive geometries
         cache: new Map(),
 
+        getRegionAt(x, y, z) {
+            // Normalize coords for region checking (assuming radius 1 here)
+            if (z > 0.4 && y > -0.2) return 'pfc';
+            if (z < -0.5 && y > -0.2) return 'occipitalLobe';
+            if (Math.abs(x) > 0.4 && y < 0.1 && z > -0.4 && z < 0.4) return 'temporalLobe';
+            if (y > 0.4 && z > -0.4 && z < 0.4) return 'parietalLobe';
+            if (y < -0.3 && z < -0.4) return 'cerebellum';
+            if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) return 'brainstem';
+            if (Math.abs(x) < 0.3 && Math.abs(y) < 0.3 && Math.abs(z) < 0.3) return 'amygdala';
+            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.5 && y < 0 && z > -0.2 && z < 0.2) return 'hippocampus';
+            return 'default';
+        },
+
         generateSphere(radius, segments) {
             const vertices = [];
             const faces = [];
@@ -126,29 +139,39 @@
             return { vertices, faces };
         },
 
-        generateGliaMesh(type, scale = 1.0) {
+        generateGliaMesh(type, scale = 1.0, activationLevel = 0) {
             const vertices = [];
             const faces = [];
-            const branches = type === 'astrocyte' ? 12 : 8;
+
+            // Morph from ramified (many branches, small soma) to amoeboid (few/no branches, large soma)
+            const branchesCount = Math.floor((type === 'astrocyte' ? 12 : 8) * (1 - activationLevel * 0.8));
+            const somaRadius = 10 * scale * (1 + activationLevel);
 
             // Central Soma
-            const soma = this.generateSphere(10 * scale, 8);
+            const soma = this.generateSphere(somaRadius, 8);
             vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff4444' })));
             faces.push(...soma.faces);
 
             // Processes (Dendrite-like branches)
-            for (let i = 0; i < branches; i++) {
-                const angle = (i / branches) * Math.PI * 2;
+            for (let i = 0; i < branchesCount; i++) {
+                const angle = (i / branchesCount) * Math.PI * 2;
                 const phi = (Math.random() - 0.5) * Math.PI;
                 const p1 = { x: 0, y: 0, z: 0 };
-                const p2 = {
-                    x: Math.cos(angle) * Math.cos(phi) * 60 * scale,
-                    y: Math.sin(phi) * 60 * scale,
-                    z: Math.sin(angle) * Math.cos(phi) * 60 * scale
-                };
-                const cp = { x: p2.x * 0.5 + (Math.random() - 0.5) * 20, y: p2.y * 0.5 + (Math.random() - 0.5) * 20, z: p2.z * 0.5 };
 
-                const tube = this.generateTubeMesh(p1, p2, cp, 2 * scale, 6);
+                // Retract branches as activationLevel increases
+                const branchLength = 60 * scale * (1 - activationLevel * 0.6);
+                const p2 = {
+                    x: Math.cos(angle) * Math.cos(phi) * branchLength,
+                    y: Math.sin(phi) * branchLength,
+                    z: Math.sin(angle) * Math.cos(phi) * branchLength
+                };
+                const cp = {
+                    x: p2.x * 0.5 + (Math.random() - 0.5) * 20 * (1 - activationLevel),
+                    y: p2.y * 0.5 + (Math.random() - 0.5) * 20 * (1 - activationLevel),
+                    z: p2.z * 0.5
+                };
+
+                const tube = this.generateTubeMesh(p1, p2, cp, 2 * scale * (1 + activationLevel * 0.5), 6);
                 const offset = vertices.length;
                 vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff6666' })));
                 tube.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
@@ -229,9 +252,20 @@
                     }
 
                     // 5. Gyri/Sulci Noise (The brain surface 'wrinkles')
-                    // Using layered sine waves to remove the 'soccer ball' look
-                    const noise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.03 +
-                        (Math.sin(x * 25) * Math.cos(y * 25)) * 0.01;
+                    const region = this.getRegionAt(x, y, z);
+                    let freq = 12;
+                    let amp = 0.03;
+
+                    if (region === 'pfc') freq = 18;
+                    else if (region === 'temporalLobe') freq = 12;
+                    else if (region === 'occipitalLobe') freq = 8;
+                    else if (region === 'brainstem') amp = 0.005;
+
+                    let noise = (Math.sin(x * freq) * Math.cos(y * freq) * Math.sin(z * freq)) * amp;
+
+                    if (region === 'cerebellum') {
+                        noise = (Math.sin(z * 0.4) * 0.04);
+                    }
 
                     x = x * radius * (1 + noise);
                     y = y * radius * (1 + noise);
@@ -239,21 +273,9 @@
 
                     // Compute Normal
                     const len = Math.sqrt(x * x + y * y + z * z);
-                    const normal = len > 0 ? 1.0 / len : 0; // Approx normal is just position for sphere
 
-                    // Texture coordinate (UV)
-                    const u = 1 - (lon / longitudeBands);
-                    const v = 1 - (lat / latitudeBands);
-
-                    // Add Gyri Texture (Visual only, affects lighting)
-                    // We can bake this into the normal or color later
-                    let texture = 0;
-                    if (window.GreenhouseModels3DMath && window.GreenhouseModels3DMath.noise) {
-                        // If we had a noise function...
-                    } else {
-                        // Simple procedural texture
-                        texture = (Math.sin(x * 0.1) + Math.cos(y * 0.1) + Math.sin(z * 0.1)) * 0.5 + 0.5;
-                    }
+                    // Simple procedural texture
+                    const texture = (Math.sin(x * 0.1) + Math.cos(y * 0.1) + Math.sin(z * 0.1)) * 0.5 + 0.5;
 
                     // Apply texture to geometry (displacement mapping)
                     if (texture > 0.6) {
@@ -282,35 +304,43 @@
             brainShell.regions = {
                 pfc: {
                     color: 'rgba(100, 150, 255, 0.6)',
-                    vertices: this.getRegionVertices(brainShell, 'pfc')
+                    vertices: this.getRegionVertices(brainShell, 'pfc'),
+                    roughness: 0.7, metallic: 0.1
                 },
                 amygdala: {
                     color: 'rgba(255, 100, 100, 0.6)',
-                    vertices: this.getRegionVertices(brainShell, 'amygdala')
+                    vertices: this.getRegionVertices(brainShell, 'amygdala'),
+                    roughness: 0.4, metallic: 0.2
                 },
                 hippocampus: {
                     color: 'rgba(100, 255, 150, 0.6)',
-                    vertices: this.getRegionVertices(brainShell, 'hippocampus')
+                    vertices: this.getRegionVertices(brainShell, 'hippocampus'),
+                    roughness: 0.4, metallic: 0.2
                 },
                 temporalLobe: {
                     color: 'rgba(255, 165, 0, 0.6)',
-                    vertices: this.getRegionVertices(brainShell, 'temporalLobe')
+                    vertices: this.getRegionVertices(brainShell, 'temporalLobe'),
+                    roughness: 0.7, metallic: 0.1
                 },
                 parietalLobe: {
                     color: 'rgba(147, 112, 219, 0.6)',
-                    vertices: this.getRegionVertices(brainShell, 'parietalLobe')
+                    vertices: this.getRegionVertices(brainShell, 'parietalLobe'),
+                    roughness: 0.7, metallic: 0.1
                 },
                 occipitalLobe: {
                     color: 'rgba(255, 192, 203, 0.6)',
-                    vertices: this.getRegionVertices(brainShell, 'occipitalLobe')
+                    vertices: this.getRegionVertices(brainShell, 'occipitalLobe'),
+                    roughness: 0.7, metallic: 0.1
                 },
                 cerebellum: {
                     color: 'rgba(64, 224, 208, 0.6)',
-                    vertices: this.getRegionVertices(brainShell, 'cerebellum')
+                    vertices: this.getRegionVertices(brainShell, 'cerebellum'),
+                    roughness: 0.8, metallic: 0.0
                 },
                 brainstem: {
                     color: 'rgba(255, 215, 0, 0.6)',
-                    vertices: this.getRegionVertices(brainShell, 'brainstem')
+                    vertices: this.getRegionVertices(brainShell, 'brainstem'),
+                    roughness: 0.5, metallic: 0.1
                 }
             };
 
@@ -407,8 +437,9 @@
                 });
             });
 
-            // 3. Find Boundary Edges
+            // 3. Find Boundary Edges and apply grooves (beveling)
             brainShell.boundaries = [];
+            const boundaryVertices = new Set();
 
             edgeMap.forEach((faces, key) => {
                 if (faces.length === 2) {
@@ -418,7 +449,21 @@
                     if (f1.region !== f2.region && f1.region && f2.region) {
                         const [i1, i2] = key.split('-').map(Number);
                         brainShell.boundaries.push({ i1, i2, type: 'border' });
+                        boundaryVertices.add(i1);
+                        boundaryVertices.add(i2);
                     }
+                }
+            });
+
+            // 4. Inset boundary vertices to create visible grooves
+            boundaryVertices.forEach(idx => {
+                const v = brainShell.vertices[idx];
+                const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+                if (len > 0) {
+                    const inset = 3;
+                    v.x -= (v.x / len) * inset;
+                    v.y -= (v.y / len) * inset;
+                    v.z -= (v.z / len) * inset;
                 }
             });
         },
@@ -501,11 +546,11 @@
             return { vertices, faces };
         },
 
-        createSynapseGeometry(radius, segments, type) {
+        createSynapseGeometry(radius, segments, type, synapticWeight = 1.0) {
             const vertices = [];
             const faces = [];
 
-            // Type: 'pre' (Bouton) or 'post' (Spine/Cup)
+            const weightScale = 0.8 + synapticWeight * 0.4; // 0.8 to 1.2
 
             for (let i = 0; i <= segments; i++) {
                 const lat = (i / segments) * Math.PI; // 0 to PI
@@ -517,13 +562,10 @@
                     const sinLon = Math.sin(lon);
                     const cosLon = Math.cos(lon);
 
-                    let r = radius;
-                    let yOffset = 0;
+                    let r = radius * weightScale;
 
                     if (type === 'pre') {
                         // Pre-synaptic Bouton: Organic "Bag of Marbles" look
-                        // Base sphere
-                        // Deform to be slightly irregular
                         r *= 1.0 + Math.sin(lat * 3) * 0.1 + Math.cos(lon * 4) * 0.1;
 
                         // Flatten bottom slightly where it meets cleft
@@ -531,18 +573,17 @@
                             r *= 0.8 + (cosLat + 0.5) * 0.2;
                         }
 
-                        // Add surface bumps (vesicles pressing out)
+                        // Add surface bumps (vesicles pressing out) - scaled by weight
                         const bumps = Math.sin(lat * 12) * Math.cos(lon * 12);
-                        r += bumps * 0.5;
+                        r += bumps * 0.5 * weightScale;
                     } else {
-                        // Post-synaptic Spine: "Mushroom Head" (Convex)
-                        // Not a cup! A bulbous head on a neck.
-
+                        // Post-synaptic Spine: "Mushroom Head"
                         if (cosLat > 0) {
                             // Top half (Head): Bulbous
                             r *= 1.2;
-                            // Flatten very top slightly for PSD
-                            if (cosLat > 0.8) r *= 0.9;
+                            // Flatten very top slightly for PSD - deeper with more weight
+                            const flattenThreshold = 1.0 - (0.2 * weightScale);
+                            if (cosLat > flattenThreshold) r *= 0.9;
                         } else {
                             // Bottom half: Taper sharply to neck
                             const t = -cosLat; // 0 to 1
@@ -550,13 +591,11 @@
                                 r *= Math.max(0.3, 1.0 - (t - 0.3) * 2); // Neck
                             }
                         }
-
-                        // Organic noise
                         r += Math.sin(lat * 8) * 0.5;
                     }
 
                     const x = r * sinLat * cosLon;
-                    const y = r * cosLat + yOffset;
+                    const y = r * cosLat;
                     const z = r * sinLat * sinLon;
 
                     vertices.push({ x, y, z });
@@ -572,6 +611,47 @@
                     faces.push([second, second + 1, first + 1]);
                 }
             }
+
+            // Structural Scaffolding Additions
+            if (type === 'pre') {
+                // Active Zone Pegs
+                const pegOffset = vertices.length;
+                const pegRows = 4, pegCols = 4;
+                const pegSpacing = 20;
+                for (let row = 0; row < pegRows; row++) {
+                    for (let col = 0; col < pegCols; col++) {
+                        const px = (col - (pegCols-1)/2) * pegSpacing;
+                        const pz = (row - (pegRows-1)/2) * pegSpacing;
+                        const py = -radius * 0.8; // Bottom surface
+                        const pegIdx = vertices.length;
+                        // Use small octahedron geometry for the peg to ensure visibility without complex cylinder logic
+                        const pegSize = 3;
+                        const s = pegSize;
+                        vertices.push(
+                            { x: px + s, y: py, z: pz }, { x: px - s, y: py, z: pz },
+                            { x: px, y: py + s, z: pz }, { x: px, y: py - s, z: pz },
+                            { x: px, y: py, z: pz + s }, { x: px, y: py, z: pz - s }
+                        );
+                        faces.push(
+                            [pegIdx + 0, pegIdx + 2, pegIdx + 4], [pegIdx + 0, pegIdx + 4, pegIdx + 3],
+                            [pegIdx + 0, pegIdx + 3, pegIdx + 5], [pegIdx + 0, pegIdx + 5, pegIdx + 2],
+                            [pegIdx + 1, pegIdx + 2, pegIdx + 5], [pegIdx + 1, pegIdx + 5, pegIdx + 3],
+                            [pegIdx + 1, pegIdx + 3, pegIdx + 4], [pegIdx + 1, pegIdx + 4, pegIdx + 2]
+                        );
+                    }
+                }
+            } else {
+                // PSD Plate
+                const psdOffset = vertices.length;
+                const size = 80;
+                vertices.push({ x: -size, y: radius * 0.8, z: -size });
+                vertices.push({ x: size, y: radius * 0.8, z: -size });
+                vertices.push({ x: size, y: radius * 0.8, z: size });
+                vertices.push({ x: -size, y: radius * 0.8, z: size });
+                faces.push([psdOffset, psdOffset + 1, psdOffset + 2]);
+                faces.push([psdOffset, psdOffset + 2, psdOffset + 3]);
+            }
+
             return { vertices, faces };
         }
     };
