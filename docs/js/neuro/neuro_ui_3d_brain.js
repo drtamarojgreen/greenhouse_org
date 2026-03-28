@@ -140,7 +140,7 @@
                 // If this is the target region, use a bright, glowing color and bypass lighting.
                 if (targetRegion && f.region === targetRegion) {
                     const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
-                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
+                    ctx.fillStyle = `rgba(76, 175, 80, ${fog})`; // Greenhouse Green for ROI with fog
                     ctx.beginPath();
                     ctx.moveTo(f.p1.x, f.p1.y);
                     ctx.lineTo(f.p2.x, f.p2.y);
@@ -234,7 +234,7 @@
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.lineWidth = 1;
             ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)';
+            ctx.shadowColor = 'rgba(79, 209, 197, 0.4)';
 
             for (let i = 0; i < segments.length; i++) {
                 const seg = segments[i];

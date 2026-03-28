@@ -312,9 +312,9 @@
                     z = vertex.z * jitter;
                 }
 
-                // Color mapping - "Cool Science" Palette (Blues/Teals/Purples)
-                const coolSciencePalette = ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE'];
-                const baseColor = coolSciencePalette[Math.floor(Math.random() * coolSciencePalette.length)];
+                // Color mapping - Standardized Scientific Palette
+                const coolSciencePalette = ['#4FD1C5', '#4CAF50', '#A0AEC0'];
+                const baseColor = coolSciencePalette[i % coolSciencePalette.length];
 
                 return {
                     ...n,

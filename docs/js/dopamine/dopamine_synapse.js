@@ -455,7 +455,7 @@
         sState.metabolites.visual.forEach(m => {
             const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff5500';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.globalAlpha = m.life / 120;
                 ctx.font = `${7 * p.scale}px Arial`;
                 ctx.fillText(m.type.toUpperCase(), p.x, p.y);
@@ -529,7 +529,7 @@
         sState.cleftDA.forEach(da => {
             const p = project(da.x, da.y, da.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#00ff00';
+                ctx.fillStyle = '#4CAF50';
                 ctx.globalAlpha = Math.max(0, da.life / 200);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);

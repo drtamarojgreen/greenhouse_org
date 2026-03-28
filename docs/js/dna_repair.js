@@ -61,8 +61,8 @@
             rise: 14,
             rotationPerPair: 0.5,
             colors: {
-                A: '#00D9FF', T: '#FF0055', C: '#FFD500', G: '#00FF66',
-                backbone: '#EEEEEE', enzyme: '#9d00ff', damage: '#FF0000'
+                A: '#4FD1C5', T: '#4FD1C5', C: '#4CAF50', G: '#4CAF50',
+                backbone: '#A0AEC0', enzyme: '#4FD1C5', damage: '#FF9F43'
             }
         },
 
@@ -277,7 +277,7 @@
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
                 const drawB = (sp, ep, type, dam) => {
                     if (!type) return;
-                    ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff');
+                    ctx.strokeStyle = dam ? '#FF9F43' : (this.config.colors[type] || '#A0AEC0');
                     ctx.lineWidth = 5 * p1.scale;
                     // Structural signature for DNA base types
                     ctx.setLineDash(type === 'A' || type === 'T' ? [5, 2] : []);

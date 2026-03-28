@@ -28,47 +28,47 @@
             const newRegions = {
                 dlPFC: {
                     name: 'Dorsal PFC',
-                    color: 'rgba(100, 180, 255, 0.7)',
+                    color: 'rgba(160, 174, 192, 0.7)',
                     vertices: []
                 },
                 vmPFC: {
                     name: 'Ventromedial PFC',
-                    color: 'rgba(120, 160, 255, 0.7)',
+                    color: 'rgba(160, 174, 192, 0.7)',
                     vertices: []
                 },
                 ofc: {
                     name: 'Orbitofrontal Cortex',
-                    color: 'rgba(80, 140, 255, 0.7)',
+                    color: 'rgba(160, 174, 192, 0.7)',
                     vertices: []
                 },
                 acc: {
                     name: 'Anterior Cingulate Cortex',
-                    color: 'rgba(100, 255, 255, 0.6)',
+                    color: 'rgba(79, 209, 197, 0.6)',
                     vertices: []
                 },
                 subgenualACC: {
                     name: 'Subgenual ACC (Area 25)',
-                    color: 'rgba(80, 220, 220, 0.7)',
+                    color: 'rgba(79, 209, 197, 0.7)',
                     vertices: []
                 },
                 insula: {
                     name: 'Insula',
-                    color: 'rgba(255, 100, 255, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: []
                 },
                 striatum: {
                     name: 'Striatum',
-                    color: 'rgba(200, 100, 255, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: []
                 },
                 nucleusAccumbens: {
                     name: 'Nucleus Accumbens',
-                    color: 'rgba(180, 80, 255, 0.8)',
+                    color: 'rgba(160, 174, 192, 0.8)',
                     vertices: []
                 },
                 cortex: {
                     name: 'Cortex',
-                    color: 'rgba(120, 120, 120, 0.3)',
+                    color: 'rgba(160, 174, 192, 0.3)',
                     vertices: []
                 }
             };

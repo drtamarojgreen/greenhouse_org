@@ -210,7 +210,7 @@
             this.canvas.id = 'main-canvas';
             this.canvas.style.width = '100%';
             this.canvas.style.height = '500px';
-            this.canvas.style.background = '#0f172a';
+            this.canvas.style.background = '#050510';
             this.canvas.style.borderRadius = '12px';
             this.canvas.style.cursor = 'grab';
             this.container.appendChild(this.canvas);
@@ -453,7 +453,7 @@
                             region: regionKey, // Assign the target region to the gene
                             strand: helixData.strandIndex,
                             label: GENE_SYMBOLS[i % GENE_SYMBOLS.length],
-                            baseColor: helixData.strandIndex === 0 ? '#A8DADC' : '#F4A261'
+                            baseColor: helixData.strandIndex === 0 ? '#4FD1C5' : '#FF9F43'
                         };
                     }
                     return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', region: regionKey, baseColor: '#fff' };
@@ -480,10 +480,9 @@
                         z = vertex.z * jitterZ;
                     }
 
-                    // Color mapping
-                    // Color mapping - "Cool Science" Palette (Blues/Teals/Purples)
-                    const coolSciencePalette = ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE'];
-                    const baseColor = coolSciencePalette[Math.floor(Math.random() * coolSciencePalette.length)];
+                    // Color mapping - Standardized Scientific Palette
+                    const coolSciencePalette = ['#4FD1C5', '#4CAF50', '#A0AEC0'];
+                    const baseColor = coolSciencePalette[correspondingIndex % coolSciencePalette.length];
 
                     return {
                         id: node.id,
@@ -1234,7 +1233,7 @@
 
                 const strandColor = config ?
                     (s === 0 ? config.get('materials.dna.strand1Color') : config.get('materials.dna.strand2Color')) :
-                    (s === 0 ? '#00D9FF' : '#FF6B9D');
+                    (s === 0 ? '#4FD1C5' : '#FF9F43');
 
                 for (let i = 0; i < strandNodes.length - 1; i++) {
                     const n1 = strandNodes[i];
@@ -1329,7 +1328,7 @@
                 [0, 4], [1, 5], [2, 6], [3, 7]  // Connecting edges
             ];
 
-            ctx.strokeStyle = '#FF00FF';
+            ctx.strokeStyle = '#4FD1C5';
             ctx.lineWidth = 2;
 
             edges.forEach(([i, j]) => {
@@ -1352,12 +1351,12 @@
             ctx.fillRect(w / 2 - 30, h / 2 - 15, 60, 30);
 
             // Draw border
-            ctx.strokeStyle = '#FF00FF';
+            ctx.strokeStyle = '#4FD1C5';
             ctx.lineWidth = 2;
             ctx.strokeRect(w / 2 - 30, h / 2 - 15, 60, 30);
 
             // Draw rotation value as whole number
-            ctx.fillStyle = '#FF00FF';
+            ctx.fillStyle = '#4FD1C5';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1390,8 +1389,8 @@
 
                 // Determine base color from weight
                 const weight = conn.weight;
-                const positiveColor = [0, 242, 255]; // Electric Cyan
-                const negativeColor = [255, 48, 48]; // Pulse Red
+                const positiveColor = [79, 209, 197]; // Scientific Teal
+                const negativeColor = [255, 159, 67]; // Orange
                 const baseColor = weight > 0 ? positiveColor : negativeColor;
 
                 // Nerve Aesthetics: High transparency, glowing highlights

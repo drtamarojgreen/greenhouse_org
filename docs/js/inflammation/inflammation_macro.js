@@ -32,9 +32,9 @@
                 }
                 const isHyper = tone > 0.4 && (k.includes('thalamus') || k.includes('insula'));
                 if (isHyper) {
-                    regions[key].color = `rgba(255, 120, 0, ${0.1 + tone * 0.15})`;
+                    regions[key].color = `rgba(255, 159, 67, ${0.1 + tone * 0.15})`;
                 } else {
-                    regions[key].color = 'rgba(100, 180, 220, 0.05)';
+                    regions[key].color = 'rgba(160, 174, 192, 0.05)';
                 }
             }
 
@@ -113,9 +113,9 @@
 
                 const proj = Math3D.project3DTo2D(x, -y, z, camera, projection);
                 if (proj.scale > 0 && p.progress <= 1.0) {
-                    ctx.fillStyle = p.color;
+                    ctx.fillStyle = '#4FD1C5';
                     ctx.shadowBlur = p.molId === 'QUIN' ? 8 : 0;
-                    ctx.shadowColor = 'red';
+                    ctx.shadowColor = '#FF9F43';
                     ctx.beginPath();
                     ctx.arc(proj.x, proj.y, p.radius * proj.scale, 0, Math.PI * 2);
                     ctx.fill();

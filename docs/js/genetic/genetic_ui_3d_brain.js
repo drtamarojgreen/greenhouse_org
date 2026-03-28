@@ -87,14 +87,14 @@
                 let nx = f.normal.x, ny = f.normal.y, nz = f.normal.z;
                 if (!f.isFront) { nx = -nx; ny = -ny; nz = -nz; }
                 const diffuse = Math.max(0, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
-                let r = 100, g = 100, b = 100, a = 0.1;
+                let r = 160, g = 174, b = 192, a = 0.1; // Default to Neural Gray
                 if (f.region && regions[f.region]) {
                     const match = regions[f.region].color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                     if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); a = parseFloat(match[4] || 1); }
                 }
                 const isTarget = (targetRegion && (f.region === targetRegion || (targetRegion === 'pfc' && f.region === 'prefrontalCortex')));
                 if (isTarget) {
-                    ctx.fillStyle = `rgba(57, 255, 20, ${GreenhouseModels3DMath.applyDepthFog(0.9, f.depth)})`;
+                    ctx.fillStyle = `rgba(76, 175, 80, ${GreenhouseModels3DMath.applyDepthFog(0.9, f.depth)})`;
                 } else {
                     const intensity = 0.3 + diffuse * 0.7;
                     ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
@@ -143,7 +143,7 @@
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.lineWidth = 1;
             ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)';
+            ctx.shadowColor = 'rgba(79, 209, 197, 0.4)'; // Scientific Teal
             const radius = 200;
 
             brainShell.regionalPlanes.forEach(plane => {
@@ -371,7 +371,7 @@
                 ctx.closePath();
 
                 // Determine color based on neuron's state (e.g., active, inactive)
-                let baseColor = p.baseColor || '#00FFFF'; // Default to cyan
+                let baseColor = p.baseColor || '#A0AEC0';
                 if (p.isFocused) {
                     baseColor = this.adjustColor(baseColor, 50); // Brighten if focused
                 }

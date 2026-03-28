@@ -522,7 +522,7 @@
                     const bottom = project(rx, 80, rz, cam, { width: w, height: h, near: 10, far: 5000 });
 
                     if (top.scale > 0 && bottom.scale > 0) {
-                        ctx.strokeStyle = '#667eea';
+                        ctx.strokeStyle = '#4FD1C5';
                         ctx.lineWidth = 15 * top.scale;
                         ctx.lineCap = 'round';
                         // Structural signature for 5-HT helices
@@ -547,9 +547,9 @@
             // Draw Ligand (5-HT) in pocket
             const ligandPos = project(0, -20, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (ligandPos.scale > 0) {
-                ctx.fillStyle = '#00ffcc';
+                ctx.fillStyle = '#4CAF50';
                 ctx.shadowBlur = 10;
-                ctx.shadowColor = '#00ffcc';
+                ctx.shadowColor = '#4CAF50';
                 ctx.beginPath();
                 ctx.arc(ligandPos.x, ligandPos.y, 8 * ligandPos.scale, 0, Math.PI * 2);
                 ctx.fill();

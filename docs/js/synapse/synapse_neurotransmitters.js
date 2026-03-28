@@ -123,10 +123,10 @@
                     const cleft = G.config.kinetics?.cleftWidth || 1.0;
                     const surfaceY = h * (0.6 + (cleft * 0.08));
                     const alpha = p.life * (p.y > surfaceY ? 0.2 : 1.0);
-                    ctx.fillStyle = p.color;
+                    ctx.fillStyle = '#4CAF50';
                     ctx.globalAlpha = alpha;
                     ctx.shadowBlur = 15 * p.life;
-                    ctx.shadowColor = p.glow;
+                    ctx.shadowColor = '#4CAF50';
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
                     ctx.fill();

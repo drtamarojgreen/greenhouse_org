@@ -82,8 +82,10 @@
                 const size = Math.random() * 2;
                 if (Math.random() > 0.95) {
                     // "Static" glitch line
+                    ctx.fillStyle = '#FF9F43';
                     ctx.fillRect(x, y, 20 * load, 0.5);
                 } else {
+                    ctx.fillStyle = '#4CAF50';
                     ctx.fillRect(x, y, size, size);
                 }
             }

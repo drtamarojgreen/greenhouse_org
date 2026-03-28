@@ -108,13 +108,13 @@
                 if (targetRegion && f.region === targetRegion) {
                     const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 400);
                     const fog = GreenhouseModels3DMath.applyDepthFog(pulse, f.depth);
-                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green
+                    ctx.fillStyle = `rgba(76, 175, 80, ${fog})`; // Greenhouse Green
 
                     // Additive Glow Effect
                     ctx.save();
                     ctx.globalCompositeOperation = 'lighter';
                     ctx.shadowBlur = 10 * pulse;
-                    ctx.shadowColor = 'rgba(57, 255, 20, 0.8)';
+                    ctx.shadowColor = 'rgba(76, 175, 80, 0.8)';
                     ctx.beginPath();
                     ctx.moveTo(f.p1.x, f.p1.y);
                     ctx.lineTo(f.p2.x, f.p2.y);

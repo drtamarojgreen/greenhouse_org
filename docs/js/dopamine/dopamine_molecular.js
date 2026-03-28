@@ -485,7 +485,7 @@
         mState.rgsProteins.visual.forEach(rgs => {
             const p = project(rgs.x, rgs.y, rgs.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff00ff';
+                ctx.fillStyle = '#FF9F43';
                 ctx.globalAlpha = rgs.life / 60;
                 ctx.fillRect(p.x - 3*p.scale, p.y - 3*p.scale, 6*p.scale, 6*p.scale);
                 ctx.globalAlpha = 1.0;
@@ -496,9 +496,9 @@
         mState.gProteins.forEach(gp => {
             const p = project(gp.x, gp.y, gp.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                if (gp.type === 'Gs') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#ff0000' : '#ff9999') : '#ffcccc';
-                else if (gp.type === 'Gq') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#00ff00' : '#99ff99') : '#ccffcc';
-                else ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#0000ff' : '#9999ff') : '#ccccff';
+                if (gp.type === 'Gs') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#4CAF50' : '#A0AEC0') : '#A0AEC0';
+                else if (gp.type === 'Gq') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#4FD1C5' : '#A0AEC0') : '#A0AEC0';
+                else ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#A0AEC0' : '#A0AEC0') : '#A0AEC0';
 
                 ctx.globalAlpha = Math.min(1, gp.life / 100);
                 const size = gp.subunit === 'alpha' ? 4 : 3;
@@ -604,7 +604,7 @@
         mState.pka.subunits.forEach(s => {
             const p = project(s.x, s.y, s.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff3300';
+                ctx.fillStyle = '#4CAF50';
                 ctx.globalAlpha = Math.min(1, s.life / 50);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 3 * p.scale, 0, Math.PI * 2);

@@ -69,13 +69,13 @@
         // Material Configuration
         materials: {
             dna: {
-                strand1Color: '#00D9FF', // Bright cyan
-                strand2Color: '#FF6B9D', // Bright pink
+                strand1Color: '#4FD1C5', // Scientific Teal
+                strand2Color: '#FF9F43', // Orange
                 baseColors: {
-                    A: '#FF6B9D', // Adenine - Pink
-                    T: '#00D9FF', // Thymine - Cyan
-                    G: '#FFD93D', // Guanine - Yellow
-                    C: '#6BCF7F'  // Cytosine - Green
+                    A: '#4FD1C5', // Adenine
+                    T: '#4FD1C5', // Thymine
+                    G: '#4CAF50', // Guanine
+                    C: '#4CAF50'  // Cytosine
                 },
                 alpha: 0.9,
                 metallic: 0.3,
@@ -86,9 +86,9 @@
                 glowIntensity: 0.4
             },
             gene: {
-                activeColor: '#00FF88', // Bright green for active genes
-                inactiveColor: '#4A5568', // Gray for inactive
-                highlightColor: '#FFD700', // Gold for selected
+                activeColor: '#4CAF50', // Greenhouse Green
+                inactiveColor: '#A0AEC0', // Gray
+                highlightColor: '#4FD1C5', // Scientific Teal
                 alpha: 0.95,
                 metallic: 0.5,
                 roughness: 0.3,
@@ -96,8 +96,8 @@
                 emissiveIntensity: 0.4
             },
             protein: {
-                backboneColor: '#9B59B6', // Purple
-                sideChainColors: ['#E74C3C', '#3498DB', '#2ECC71', '#F39C12', '#1ABC9C'],
+                backboneColor: '#A0AEC0', // Neural Gray
+                sideChainColors: ['#4FD1C5', '#4CAF50', '#A0AEC0', '#FF9F43'],
                 alpha: 0.85,
                 metallic: 0.4,
                 roughness: 0.5,
@@ -113,7 +113,7 @@
                 sssIntensity: 0.3
             },
             neuron: {
-                baseColors: ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE', '#9370DB'],
+                baseColors: ['#4FD1C5', '#4CAF50', '#A0AEC0'],
                 alpha: 0.9,
                 metallic: 0.5,
                 roughness: 0.3,
@@ -121,7 +121,7 @@
                 emissiveIntensity: 0.3
             },
             connection: {
-                baseColor: { r: 100, g: 200, b: 255 },
+                baseColor: { r: 160, g: 174, b: 192 },
                 alpha: 0.6,
                 metallic: 0.2,
                 roughness: 0.5,
@@ -148,7 +148,7 @@
                 enabled: true,
                 start: 0.6,
                 end: 1.0,
-                color: { r: 15, g: 23, b: 42 } // Match canvas background
+                color: { r: 5, g: 5, b: 16 } // Match #050510 background
             },
             bloom: {
                 enabled: true,
@@ -196,10 +196,10 @@
             baseSpacing: 10,
             offset: -200, // X offset for helix position
             colors: {
-                strand1: '#00D9FF',
-                strand2: '#FF6B9D',
-                backbone: '#FFFFFF',
-                basePairs: '#FFD93D'
+                strand1: '#4FD1C5',
+                strand2: '#FF9F43',
+                backbone: '#A0AEC0',
+                basePairs: '#4CAF50'
             }
         },
 
@@ -207,42 +207,42 @@
         regions: {
             pfc: {
                 name: 'Prefrontal Cortex',
-                color: 'rgba(100, 150, 255, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: -100, z: 150 }
             },
             amygdala: {
                 name: 'Amygdala',
-                color: 'rgba(255, 100, 100, 0.6)',
+                color: 'rgba(255, 159, 67, 0.6)',
                 position: { x: 50, y: 0, z: 0 }
             },
             hippocampus: {
                 name: 'Hippocampus',
-                color: 'rgba(100, 255, 150, 0.6)',
+                color: 'rgba(79, 209, 197, 0.6)',
                 position: { x: -50, y: 0, z: 0 }
             },
             temporalLobe: {
                 name: 'Temporal Lobe',
-                color: 'rgba(100, 255, 150, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 100, y: 50, z: 0 }
             },
             parietalLobe: {
                 name: 'Parietal Lobe',
-                color: 'rgba(150, 100, 255, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: -50, z: 0 }
             },
             occipitalLobe: {
                 name: 'Occipital Lobe',
-                color: 'rgba(255, 100, 150, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: 0, z: -150 }
             },
             cerebellum: {
                 name: 'Cerebellum',
-                color: 'rgba(255, 150, 100, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: 150, z: -100 }
             },
             brainstem: {
                 name: 'Brainstem',
-                color: 'rgba(150, 255, 100, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: 200, z: 0 }
             }
         },
@@ -258,7 +258,7 @@
             labelColor: 'rgba(255, 255, 255, 0.7)',
             controlsPosition: 'bottom',
             theme: 'dark', // 'dark' or 'light'
-            backgroundColor: '#0f172a',
+            backgroundColor: '#050510',
             textColor: '#ffffff'
         },
 

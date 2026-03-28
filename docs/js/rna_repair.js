@@ -100,20 +100,20 @@
             };
 
             this.colors = {
-                A: '#FF6B6B',
-                U: '#4ECDC4',
-                G: '#FFE66D',
-                C: '#1A535C',
-                PSI: '#818CF8', // Enhancement 7
-                BACKBONE: '#A3BFFA',
-                ENZYME: 'rgba(255, 255, 255, 0.2)',
-                METHYL: '#FF0000',
-                GLOW: '#667EEA',
-                METAL: '#A5F3FC',
-                PROTEIN: '#F472B6',
-                RIBOSOME: '#9333EA',
-                ATP: '#FBDF11',
-                DECAY: '#EF4444'
+                A: '#4FD1C5',
+                U: '#4FD1C5',
+                G: '#4CAF50',
+                C: '#4CAF50',
+                PSI: '#4FD1C5',
+                BACKBONE: '#A0AEC0',
+                ENZYME: 'rgba(79, 209, 197, 0.2)',
+                METHYL: '#FF9F43',
+                GLOW: '#4FD1C5',
+                METAL: '#A0AEC0',
+                PROTEIN: '#A0AEC0',
+                RIBOSOME: '#4CAF50',
+                ATP: '#4CAF50',
+                DECAY: '#FF9F43'
             };
 
             // Display state

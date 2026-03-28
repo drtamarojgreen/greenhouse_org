@@ -908,12 +908,12 @@
             ctx.stroke();
 
             const typeColors = {
-                'gene': '#00ffcc',
-                'compound': '#3498db',
-                'map': '#f1c40f',
-                'metabolite': '#64FFC8',
-                'neurotransmitter': '#C864FF',
-                'cytokine': '#FF0000'
+                'gene': '#4FD1C5',
+                'compound': '#A0AEC0',
+                'map': '#4CAF50',
+                'metabolite': '#A0AEC0',
+                'neurotransmitter': '#4CAF50',
+                'cytokine': '#FF9F43'
             };
 
             types.forEach((type, i) => {
@@ -960,14 +960,14 @@
                     const fx = source.projected.x + (target.projected.x - source.projected.x) * flowPos;
                     const fy = source.projected.y + (target.projected.y - source.projected.y) * flowPos;
 
-                    this.ctx.fillStyle = 'rgba(0, 255, 204, 0.8)';
+                    this.ctx.fillStyle = 'rgba(79, 209, 197, 0.8)';
                     this.ctx.beginPath();
                     this.ctx.arc(fx, fy, 2.5 * source.projected.scale, 0, Math.PI * 2);
                     this.ctx.fill();
 
                     // Add a small glow to the particle
                     this.ctx.shadowBlur = 5;
-                    this.ctx.shadowColor = 'rgba(0, 255, 204, 0.5)';
+                    this.ctx.shadowColor = 'rgba(79, 209, 197, 0.5)';
                     this.ctx.fill();
                     this.ctx.shadowBlur = 0;
                 }
@@ -977,22 +977,22 @@
             projectedNodes.forEach(node => {
                 if (node.projected.scale > 0) {
                     let radius = 4 * node.projected.scale;
-                    let color = '#4ca1af';
-                    let glow = 'rgba(76, 161, 175, 0.4)';
+                    let color = '#A0AEC0';
+                    let glow = 'rgba(160, 174, 192, 0.4)';
 
                     switch (node.type) {
                         case 'gene':
-                            color = '#00ffcc';
-                            glow = 'rgba(0, 255, 204, 0.4)';
+                            color = '#4FD1C5';
+                            glow = 'rgba(79, 209, 197, 0.4)';
                             break;
                         case 'compound':
-                            color = '#3498db';
-                            glow = 'rgba(52, 152, 219, 0.4)';
+                            color = '#A0AEC0';
+                            glow = 'rgba(160, 174, 192, 0.4)';
                             break;
                         case 'map':
-                            color = '#f1c40f';
+                            color = '#4CAF50';
                             radius = 8 * node.projected.scale;
-                            glow = 'rgba(241, 196, 15, 0.4)';
+                            glow = 'rgba(76, 175, 80, 0.4)';
                             break;
                     }
 

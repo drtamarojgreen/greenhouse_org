@@ -77,13 +77,13 @@
                         const structureType = p1.type || 'coil';
                         let r, g, b, baseWidth = 8;
                         if (structureType === 'helix') {
-                            r = 255; g = 0; b = 255; // Helix: Magenta
+                            r = 79; g = 209; b = 197; // Helix: Scientific Teal
                             baseWidth = 12; // Helices are thicker ribbons
                         } else if (structureType === 'sheet') {
-                            r = 255; g = 215; b = 0; // Sheet: Yellow
+                            r = 76; g = 175; b = 80; // Sheet: Greenhouse Green
                             baseWidth = 10;
                         } else {
-                            r = 240; g = 240; b = 240; // Coil: White
+                            r = 160; g = 174; b = 192; // Coil: Neural Gray
                             baseWidth = 6;
                         }
 
@@ -136,12 +136,11 @@
                         const size = 6 * p.scale;
 
                         // CPK Coloring (Simulated by index position in residue)
-                        // N (Blue), C (Grey), O (Red), S (Yellow)
                         const atomType = p.index % 3; // 0: N, 1: C, 2: O (Simplified)
                         let r, g, b;
-                        if (atomType === 0) { r = 50; g = 50; b = 255; } // N
-                        else if (atomType === 1) { r = 100; g = 100; b = 100; } // C
-                        else { r = 255; g = 50; b = 50; } // O
+                        if (atomType === 0) { r = 79; g = 209; b = 197; } // Scientific Teal (N)
+                        else if (atomType === 1) { r = 160; g = 174; b = 192; } // Neural Gray (C)
+                        else { r = 76; g = 175; b = 80; } // Greenhouse Green (O)
 
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();
@@ -169,9 +168,9 @@
                         // CPK Coloring
                         const atomType = p.index % 3; // 0: N, 1: C, 2: O
                         let r, g, b;
-                        if (atomType === 0) { r = 50; g = 50; b = 255; } // N
-                        else if (atomType === 1) { r = 100; g = 100; b = 100; } // C
-                        else { r = 255; g = 50; b = 50; } // O
+                        if (atomType === 0) { r = 79; g = 209; b = 197; } // Scientific Teal (N)
+                        else if (atomType === 1) { r = 160; g = 174; b = 192; } // Neural Gray (C)
+                        else { r = 76; g = 175; b = 80; } // Greenhouse Green (O)
 
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();
@@ -245,7 +244,7 @@
             // Label 7-TM
             const tmLabelP = GreenhouseModels3DMath.project3DTo2D(0, -50, 0, camera, projectionParams);
             if (tmLabelP.scale > 0) {
-                ctx.fillStyle = '#00ffff';
+                ctx.fillStyle = '#4FD1C5';
                 ctx.font = '8px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText(t("gpcr_7tm"), tmLabelP.x, tmLabelP.y);
@@ -269,9 +268,9 @@
                 }
             };
 
-            drawSubunit(gAlphaPos, '#ff4444', 'Gα');
-            drawSubunit(gBetaPos, '#44ff44', 'Gβ');
-            drawSubunit(gGammaPos, '#4444ff', 'Gγ');
+            drawSubunit(gAlphaPos, '#4CAF50', 'Gα');
+            drawSubunit(gBetaPos, '#A0AEC0', 'Gβγ');
+            drawSubunit(gGammaPos, '#4FD1C5', 'Gγ');
 
             const gLabelP = GreenhouseModels3DMath.project3DTo2D(40, 80, 0, camera, projectionParams);
             if (gLabelP.scale > 0) {
@@ -283,7 +282,7 @@
             const arrestinPos = { x: -40, y: 50 + Math.cos(time) * 5, z: 0 };
             const arrestinP = GreenhouseModels3DMath.project3DTo2D(arrestinPos.x, arrestinPos.y, arrestinPos.z, camera, projectionParams);
             if (arrestinP.scale > 0) {
-                ctx.fillStyle = '#ff00ff';
+                ctx.fillStyle = '#FF9F43';
                 ctx.fillRect(arrestinP.x - 10 * arrestinP.scale, arrestinP.y - 5 * arrestinP.scale, 20 * arrestinP.scale, 10 * arrestinP.scale);
                 ctx.fillStyle = '#fff';
                 ctx.font = '7px Arial';
@@ -294,14 +293,14 @@
             const acPos = { x: 80, y: 10, z: 0 };
             const acP = GreenhouseModels3DMath.project3DTo2D(acPos.x, acPos.y, acPos.z, camera, projectionParams);
             if (acP.scale > 0) {
-                ctx.fillStyle = '#ffd700';
+                ctx.fillStyle = '#4CAF50';
                 ctx.beginPath();
                 ctx.rect(acP.x - 15 * acP.scale, acP.y - 15 * acP.scale, 30 * acP.scale, 20 * acP.scale);
                 ctx.fill();
-                ctx.fillStyle = '#000';
+                ctx.fillStyle = '#fff';
                 ctx.font = 'bold 6px Arial';
                 ctx.fillText("AC", acP.x, acP.y - 2);
-                ctx.fillStyle = '#ffd700';
+                ctx.fillStyle = '#4CAF50';
                 ctx.fillText(t("gpcr_adenyl_cyclase"), acP.x, acP.y + 15 * acP.scale);
             }
 
@@ -311,7 +310,7 @@
 
             const kinaseP = GreenhouseModels3DMath.project3DTo2D(kinasePos.x, kinasePos.y, kinasePos.z, camera, projectionParams);
             if (kinaseP.scale > 0) {
-                ctx.fillStyle = '#9c27b0';
+                ctx.fillStyle = '#4FD1C5';
                 ctx.beginPath();
                 ctx.arc(kinaseP.x, kinaseP.y, 6 * kinaseP.scale, 0, Math.PI * 2);
                 ctx.fill();
@@ -327,7 +326,7 @@
                 ctx.arc(tfP.x, tfP.y, 40 * tfP.scale, 0, Math.PI * 2);
                 ctx.stroke();
 
-                ctx.fillStyle = '#ff5722';
+                ctx.fillStyle = '#FF9F43';
                 ctx.beginPath();
                 ctx.arc(tfP.x, tfP.y, 8 * tfP.scale, 0, Math.PI * 2);
                 ctx.fill();
@@ -338,7 +337,7 @@
                 ctx.font = 'italic 7px Arial';
                 ctx.fillText(t("gpcr_transactivation"), tfP.x - 30 * tfP.scale, tfP.y - 20 * tfP.scale);
                 ctx.fillText(t("gpcr_transcriptional_control"), tfP.x + 30 * tfP.scale, tfP.y - 20 * tfP.scale);
-                ctx.fillStyle = '#4caf50';
+                ctx.fillStyle = '#4CAF50';
                 ctx.font = 'bold 8px Arial';
                 ctx.fillText(t("gpcr_gene_expression"), tfP.x, tfP.y + 30 * tfP.scale);
             }

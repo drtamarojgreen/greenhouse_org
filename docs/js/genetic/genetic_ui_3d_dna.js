@@ -56,7 +56,7 @@
 
                 // Highlight focused gene
                 if (p.isFocused) {
-                    ctx.strokeStyle = '#00ffcc';
+                    ctx.strokeStyle = '#4FD1C5';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 15 * p.scale, 0, Math.PI * 2);
