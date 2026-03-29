@@ -502,12 +502,15 @@
                     if (p.y > bindingThreshold && !p.hasBound) {
                         p.hasBound = true;
                         p.life = 0.5;
-                        // ADHD: Reward Delay Discounting (5)
-                        const flashAlpha = adhdActive.has(5) ? Math.max(0.1, 1 - p.age/200) : 0.9;
-                        ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+                        // Physical binding indicator (Rotational expansion)
+                        ctx.save();
+                        ctx.translate(proj.x + x, proj.y + y);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${p.life})`;
+                        ctx.lineWidth = 2 * proj.scale;
                         ctx.beginPath();
-                        ctx.arc(proj.x + x, proj.y + y, 8 * proj.scale, 0, Math.PI * 2);
-                        ctx.fill();
+                        ctx.arc(0, 0, 10 * proj.scale * (1.5 - p.life), 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.restore();
                     }
 
                     this.drawShapeCodedParticle(ctx, x, y, proj, p, adhdActive);
@@ -777,35 +780,39 @@
 
         drawShapeCodedParticle(ctx, x, y, proj, p, adhdActive) {
             const alpha = p.life;
-            let particleColor = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
-            if (p.hasBound && adhdActive.has(73)) particleColor = `rgba(255, 0, 0, ${alpha})`;
-            if (p.hasBound && adhdActive.has(55)) particleColor = `rgba(255, 0, 255, ${alpha})`;
-            if (adhdActive.has(11) && !p.hasBound) particleColor = `hsla(${(Date.now() * 0.1) % 360}, 100%, 70%, ${alpha})`;
-            if (p.isNoise) particleColor = `rgba(200, 200, 200, ${alpha})`;
-            if (adhdActive.has(79)) particleColor = `rgba(100, 100, 100, ${alpha})`;
+            // Structure-dominant: Standardize to grayscale, use rotation/shape for meaning
+            const particleColor = `rgba(200, 200, 200, ${alpha})`;
+            const rotation = (Date.now() * 0.005 + (p.id || 0)) % (Math.PI * 2);
 
-            let pSize = 3;
-            if (adhdActive.has(21)) pSize = 1 + Math.random() * 5;
-            if (adhdActive.has(71)) pSize = 1.5;
-            if (adhdActive.has(94)) pSize *= (0.5 + Math.random());
+            let pSize = 4;
+            if (adhdActive.has(21)) pSize = 2 + Math.random() * 6;
             const size = pSize * proj.scale;
 
+            ctx.save();
+            ctx.translate(proj.x + x, proj.y + y);
+            ctx.rotate(rotation);
             ctx.fillStyle = particleColor;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
+
             ctx.beginPath();
             if (p.type === 'gaba') {
-                ctx.ellipse(proj.x + x, proj.y + y, size, size * 0.6, 0, 0, Math.PI * 2);
+                // Spheroid with structural ring
+                ctx.ellipse(0, 0, size, size * 0.6, 0, 0, Math.PI * 2);
+                ctx.stroke();
             } else if (p.type === 'dopamine') {
-                ctx.moveTo(proj.x + x, proj.y + y);
-                ctx.lineTo(proj.x + x, proj.y + y - size);
-                ctx.moveTo(proj.x + x, proj.y + y);
-                ctx.lineTo(proj.x + x - size, proj.y + y + size);
-                ctx.moveTo(proj.x + x, proj.y + y);
-                ctx.lineTo(proj.x + x + size, proj.y + y + size);
+                // Y-Shape with physical rotation
+                ctx.moveTo(0, 0); ctx.lineTo(0, -size);
+                ctx.moveTo(0, 0); ctx.lineTo(-size * 0.8, size * 0.6);
+                ctx.moveTo(0, 0); ctx.lineTo(size * 0.8, size * 0.6);
+                ctx.lineWidth = 2 * proj.scale;
                 ctx.stroke();
             } else {
-                ctx.arc(proj.x + x, proj.y + y, size, 0, Math.PI * 2);
+                // Glutamate: Octahedron profile (Diamond)
+                ctx.moveTo(0, -size); ctx.lineTo(size, 0); ctx.lineTo(0, size); ctx.lineTo(-size, 0);
+                ctx.closePath();
             }
             ctx.fill();
+            ctx.restore();
         }
     };
 

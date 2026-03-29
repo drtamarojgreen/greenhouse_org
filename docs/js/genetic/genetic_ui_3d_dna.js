@@ -112,60 +112,84 @@
                         case 3: color1 = baseColors.G; color2 = baseColors.C; break;
                     }
 
-                    // Enhanced cylinder drawing with lighting
-                    const drawEnhancedCylinder = (x1, y1, x2, y2, color, depth) => {
-                        // Calculate normal for lighting (perpendicular to line)
+                    // Enhanced nucleotide drawing with geometric coding (A=Box, T=Triangle, C=Diamond, G=Hexagon)
+                    const drawEnhancedNucleotide = (x1, y1, x2, y2, color, depth, baseType) => {
                         const dx = x2 - x1;
                         const dy = y2 - y1;
                         const len = Math.sqrt(dx * dx + dy * dy);
                         const nx = -dy / len;
                         const ny = dx / len;
 
-                        // Apply lighting if available
                         let litColor = color;
                         if (lighting) {
-                            const baseColor = lighting.parseColor(color);
+                            const bColor = lighting.parseColor(color);
                             const material = config.get('materials.dna');
                             const normal = { x: nx, y: ny, z: 0 };
                             const position = { x: (x1 + x2) / 2, y: (y1 + y2) / 2, z: depth };
-
                             const lit = lighting.calculateLighting(normal, position, camera, {
-                                baseColor: baseColor,
-                                metallic: material.metallic,
-                                roughness: material.roughness,
-                                emissive: material.emissive,
-                                emissiveIntensity: material.emissiveIntensity,
-                                alpha: material.alpha
+                                baseColor: bColor, metallic: material.metallic, roughness: material.roughness,
+                                emissive: material.emissive, emissiveIntensity: material.emissiveIntensity, alpha: material.alpha
                             });
-
                             litColor = lighting.toRGBA(lit);
                         }
 
-                        // Draw main rectangular rung for 3D effect
-                        ctx.fillStyle = litColor;
                         ctx.save();
                         ctx.translate(x1, y1);
                         ctx.rotate(Math.atan2(dy, dx));
-                        ctx.fillRect(0, -thickness / 2, len, thickness);
+                        ctx.fillStyle = litColor;
 
-                        // Structural groove indentation (shadow line)
-                        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                        ctx.fillRect(0, thickness * 0.1, len, thickness * 0.2);
+                        const h = thickness;
+                        const w = len;
+
+                        switch(baseType) {
+                            case 'A': // Box
+                                ctx.fillRect(0, -h/2, w, h);
+                                break;
+                            case 'T': // Triangle
+                                ctx.beginPath();
+                                ctx.moveTo(0, h/2); ctx.lineTo(w, 0); ctx.lineTo(0, -h/2);
+                                ctx.closePath(); ctx.fill();
+                                break;
+                            case 'C': // Diamond
+                                ctx.beginPath();
+                                ctx.moveTo(0, 0); ctx.lineTo(w/2, -h/2); ctx.lineTo(w, 0); ctx.lineTo(w/2, h/2);
+                                ctx.closePath(); ctx.fill();
+                                break;
+                            case 'G': // Hexagon
+                                ctx.beginPath();
+                                const qw = w/4;
+                                ctx.moveTo(0, 0); ctx.lineTo(qw, -h/2); ctx.lineTo(w-qw, -h/2);
+                                ctx.lineTo(w, 0); ctx.lineTo(w-qw, h/2); ctx.lineTo(qw, h/2);
+                                ctx.closePath(); ctx.fill();
+                                break;
+                        }
+
+                        // Structural detail (shadow)
+                        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                        ctx.fillRect(0, h * 0.1, w, h * 0.2);
                         ctx.restore();
 
-                        // Add specular highlight
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-                        ctx.lineWidth = thickness * 0.2;
+                        // Specular highlight
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                        ctx.lineWidth = thickness * 0.15;
                         ctx.beginPath();
-                        ctx.moveTo(x1 + nx * thickness * 0.15, y1 + ny * thickness * 0.15);
-                        ctx.lineTo(x2 + nx * thickness * 0.15, y2 + ny * thickness * 0.15);
+                        ctx.moveTo(x1 + nx * h * 0.2, y1 + ny * h * 0.2);
+                        ctx.lineTo(x2 + nx * h * 0.2, y2 + ny * h * 0.2);
                         ctx.stroke();
                     };
 
-                    // Draw two halves with depth
                     const avgDepth = (p1.depth + p2.depth) / 2;
-                    drawEnhancedCylinder(p1.x, p1.y, midX, midY, color1, avgDepth);
-                    drawEnhancedCylinder(midX, midY, p2.x, p2.y, color2, avgDepth);
+                    const baseTypes = ['A', 'T', 'C', 'G'];
+                    const typeIdx = (i / 2) % 4;
+
+                    let b1, b2;
+                    if (typeIdx === 0) { b1 = 'A'; b2 = 'T'; }
+                    else if (typeIdx === 1) { b1 = 'T'; b2 = 'A'; }
+                    else if (typeIdx === 2) { b1 = 'C'; b2 = 'G'; }
+                    else { b1 = 'G'; b2 = 'C'; }
+
+                    drawEnhancedNucleotide(p1.x, p1.y, midX, midY, color1, avgDepth, b1);
+                    drawEnhancedNucleotide(midX, midY, p2.x, p2.y, color2, avgDepth, b2);
                 }
             }
 

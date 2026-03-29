@@ -59,7 +59,7 @@
             helixLength: 60,
             radius: 20,
             rise: 14,
-            rotationPerPair: 0.5,
+            rotationPerPair: 0.2, // Reduced revolutions for clearer structural rotation
             colors: {
                 A: '#D0D0D0', T: '#B0B0B0', C: '#C0C0C0', G: '#A0A0A0',
                 backbone: '#EEEEEE', enzyme: '#CCCCCC', damage: '#FF3333'
@@ -224,7 +224,9 @@
         animate() { if (!this.isRunning) return; this.update(); this.render(); requestAnimationFrame(() => this.animate()); },
 
         update() {
-            const st = this.state; st.camera.rotationX += 0.005;
+            const st = this.state;
+            // Prefer rotations over revolutions
+            st.camera.rotationY += 0.005;
             if (st.simulating) {
                 st.timer++;
                 if (this.induceSpontaneousDamage) this.induceSpontaneousDamage();
@@ -276,14 +278,53 @@
                 if (p1.scale <= 0 || p2.scale <= 0) continue;
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
 
-                // Enhanced Base Pair Rungs (Rectangular Solids / Rungs)
+                // Enhanced Base Pair Rungs (Geometric Coding & Rotational State)
                 const drawB = (sp, ep, type, dam) => {
                     if (!type) return;
                     const avgScale = (p1.scale + p2.scale) / 2;
-                    ctx.fillStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff');
+                    // Lower color reliance: Damaged bases are slightly darker/grayer but significantly tilted
+                    ctx.fillStyle = dam ? '#552222' : (this.config.colors[type] || '#fff');
                     const dx = ep.x - sp.x, dy = ep.y - sp.y, dist = Math.sqrt(dx*dx + dy*dy);
-                    ctx.save(); ctx.translate(sp.x, sp.y); ctx.rotate(Math.atan2(dy, dx));
-                    ctx.fillRect(0, -3 * avgScale, dist, 6 * avgScale); // Solid rectangular rung
+                    let angle = Math.atan2(dy, dx);
+
+                    // Rotational representation of damage (structural misalignment)
+                    if (dam) angle += Math.sin(Date.now() * 0.01) * 0.3;
+
+                    ctx.save(); ctx.translate(sp.x, sp.y); ctx.rotate(angle);
+
+                    const w = dist;
+                    const h = 8 * avgScale;
+
+                    // Geometric coding for nucleotides
+                    switch(type) {
+                        case 'A': // Adenine = Box
+                            ctx.fillRect(0, -h/2, w, h);
+                            ctx.strokeRect(0, -h/2, w, h);
+                            break;
+                        case 'T': // Thymine = Triangle (Up)
+                            ctx.beginPath();
+                            ctx.moveTo(0, h/2); ctx.lineTo(w, 0); ctx.lineTo(0, -h/2);
+                            ctx.closePath(); ctx.fill();
+                            break;
+                        case 'C': // Cytosine = Diamond
+                            ctx.beginPath();
+                            ctx.moveTo(0, 0); ctx.lineTo(w/2, -h/2); ctx.lineTo(w, 0); ctx.lineTo(w/2, h/2);
+                            ctx.closePath(); ctx.fill();
+                            break;
+                        case 'G': // Guanine = Hexagon
+                            ctx.beginPath();
+                            const qw = w/4;
+                            ctx.moveTo(0, 0); ctx.lineTo(qw, -h/2); ctx.lineTo(w-qw, -h/2);
+                            ctx.lineTo(w, 0); ctx.lineTo(w-qw, h/2); ctx.lineTo(qw, h/2);
+                            ctx.closePath(); ctx.fill();
+                            break;
+                        default:
+                            ctx.fillRect(0, -2 * avgScale, w, 4 * avgScale);
+                    }
+
+                    // Structural groove indentation (shadow)
+                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                    ctx.fillRect(0, h * 0.1, w, h * 0.2);
                     ctx.restore();
                 };
 

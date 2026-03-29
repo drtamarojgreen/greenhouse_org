@@ -414,7 +414,7 @@
         }
 
         update(dt) {
-            this.simTime += dt * 0.002;
+            this.simTime += dt * 0.001; // Slower time for better rotation visibility
 
             // Enhancement: Mechanical Enzyme Animators (AlkB physically moving)
             this.enzymes.forEach(e => {
@@ -728,14 +728,44 @@
                 }
                 this.ctx.restore();
 
-                // Enhancement 9: Abasic site (no letter)
-                if (base.damageType === this.damageTypes.ABASIC) {
-                    // Just draw backbone/glow, no letter
-                } else {
+                // Enhancement: Geometric Nucleotide Coding
+                if (base.damageType !== this.damageTypes.ABASIC) {
+                    const type = base.type;
+                    const r = 10;
+                    this.ctx.save();
+                    this.ctx.translate(base.x, base.y);
                     this.ctx.fillStyle = 'white';
-                    this.ctx.font = 'bold 11px Arial';
+                    this.ctx.beginPath();
+
+                    switch(type) {
+                        case 'A': // Box
+                            this.ctx.rect(-r*0.7, -r*0.7, r*1.4, r*1.4);
+                            break;
+                        case 'U': // Triangle (Down)
+                            this.ctx.moveTo(0, r);
+                            this.ctx.lineTo(-r, -r*0.5);
+                            this.ctx.lineTo(r, -r*0.5);
+                            break;
+                        case 'C': // Diamond
+                            this.ctx.moveTo(0, -r);
+                            this.ctx.lineTo(r, 0);
+                            this.ctx.lineTo(0, r);
+                            this.ctx.lineTo(-r, 0);
+                            break;
+                        case 'G': // Hexagon
+                            for (let i = 0; i < 6; i++) {
+                                const angle = i * Math.PI / 3;
+                                this.ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+                            }
+                            break;
+                    }
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                    this.ctx.restore();
+
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.font = 'bold 10px Arial';
                     this.ctx.textAlign = 'center';
-                    // Enhancement 7: Pseudouridine
                     const label = base.damageType === this.damageTypes.PSEUDOURIDINE ? 'Ψ' : base.type;
                     this.ctx.fillText(label, base.x, base.y + 4);
                 }

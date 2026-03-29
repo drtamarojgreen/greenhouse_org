@@ -24,19 +24,28 @@
                 ctx.fillStyle = colorOverride || '#E0E0E0';
                 ctx.beginPath();
                 if (type === 'pyramidal') {
-                    // Triangle Icon
-                    ctx.moveTo(p.x, p.y - 5 * p.scale);
-                    ctx.lineTo(p.x + 5 * p.scale, p.y + 5 * p.scale);
-                    ctx.lineTo(p.x - 5 * p.scale, p.y + 5 * p.scale);
+                    // Triangle Icon with rotational orientation
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(neuron.y * 0.01);
+                    ctx.moveTo(0, -6 * p.scale);
+                    ctx.lineTo(5 * p.scale, 4 * p.scale);
+                    ctx.lineTo(-5 * p.scale, 4 * p.scale);
                     ctx.closePath();
+                    ctx.restore();
                 } else {
-                    // Circle with radiating lines icon
-                    ctx.arc(p.x, p.y, 4 * p.scale, 0, Math.PI * 2);
-                    for (let i = 0; i < 6; i++) {
-                        const angle = (i / 6) * Math.PI * 2;
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p.x + Math.cos(angle) * 7 * p.scale, p.y + Math.sin(angle) * 7 * p.scale);
+                    // Stellate: Octagon with physical rotations
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(Date.now() * 0.001);
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        const rx = Math.cos(angle) * 5 * p.scale;
+                        const ry = Math.sin(angle) * 5 * p.scale;
+                        if (i === 0) ctx.moveTo(rx, ry); else ctx.lineTo(rx, ry);
                     }
+                    ctx.closePath();
+                    ctx.restore();
                 }
                 ctx.fill();
                 if (type === 'stellate') ctx.stroke();

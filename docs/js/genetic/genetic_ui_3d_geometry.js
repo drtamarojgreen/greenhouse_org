@@ -8,22 +8,23 @@
             const pairIndex = Math.floor(index / 2); // Which base pair rung
             const strandIndex = index % 2; // 0 or 1
 
-            const t = pairIndex * 0.4; // Spacing along the helix
+            const t = pairIndex * 0.1; // Further reduced revolutions to emphasize rotation
             const radius = 60;
-            const verticalSpread = 12;
+            const verticalSpread = 15; // Increased spread for clearer individual rotations
 
             // Major/Minor Groove Offset
-            // Standard B-DNA has grooves. We simulate this by offsetting the second strand 
-            // not by 180 degrees (PI), but by roughly 140 degrees (2.44 rad).
-            // Let's exaggerate it slightly for visual clarity: 2.2 rad (~126 deg)
             const strandOffset = strandIndex === 0 ? 0 : 2.2;
 
             const angle = t + strandOffset;
 
+            // Individual component rotation update
+            const spin = Date.now() * 0.001;
+            const finalAngle = angle + spin;
+
             // 3D Spiral: x = r*cos(t), z = r*sin(t), y = t
-            const x = helixOffset + Math.cos(angle) * radius;
+            const x = helixOffset + Math.cos(finalAngle) * radius;
             const y = (pairIndex * verticalSpread) - 300;
-            const z = Math.sin(angle) * radius;
+            const z = Math.sin(finalAngle) * radius;
 
             return { x, y, z, strandIndex };
         },

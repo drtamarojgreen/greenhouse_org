@@ -73,18 +73,23 @@
                         const avgDepth = (p1.depth + p2.depth) / 2;
                         const alpha = Math.min(1, Math.max(0.2, 1 - avgDepth / 1000));
 
-                        // Color based on Secondary Structure
+                        // Structural coding for Secondary Structure
                         const structureType = p1.type || 'coil';
-                        let r, g, b, baseWidth = 8;
+                        let baseWidth = 8;
+                        const rotation = (Date.now() * 0.002) % (Math.PI * 2);
+
+                        // Use grayscale with structural variations
+                        let r = 200, g = 200, b = 200;
+
                         if (structureType === 'helix') {
-                            r = 255; g = 0; b = 255; // Helix: Magenta
-                            baseWidth = 12; // Helices are thicker ribbons
+                            baseWidth = 14;
+                            r = 220; g = 220; b = 220;
                         } else if (structureType === 'sheet') {
-                            r = 255; g = 215; b = 0; // Sheet: Yellow
                             baseWidth = 10;
+                            r = 180; g = 180; b = 180;
                         } else {
-                            r = 240; g = 240; b = 240; // Coil: White
                             baseWidth = 6;
+                            r = 150; g = 150; b = 150;
                         }
 
                         const width = baseWidth * ((p1.scale + p2.scale) / 2);
@@ -156,43 +161,62 @@
                         const alpha = Math.min(1, Math.max(0.2, 1 - p.depth / 1000));
                         const size = 6 * p.scale;
 
-                        // CPK Coloring (Simulated by index position in residue)
-                        // N (Blue), C (Grey), O (Red), S (Yellow)
+                        // Structural Atom Coding (Size + Ring Count)
                         const atomType = p.index % 3; // 0: N, 1: C, 2: O (Simplified)
-                        let r, g, b;
-                        if (atomType === 0) { r = 50; g = 50; b = 255; } // N
-                        else if (atomType === 1) { r = 100; g = 100; b = 100; } // C
-                        else { r = 255; g = 50; b = 50; } // O
+                        let r = 150, g = 150, b = 150;
+                        let ringCount = 0;
+                        let sizeMult = 1.0;
+
+                        if (atomType === 0) { // N
+                            sizeMult = 0.8;
+                            ringCount = 1;
+                        } else if (atomType === 1) { // C
+                            sizeMult = 1.2;
+                            ringCount = 0;
+                        } else { // O
+                            sizeMult = 1.0;
+                            ringCount = 2;
+                        }
 
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                        ctx.arc(p.x, p.y, size * sizeMult, 0, Math.PI * 2);
                         ctx.fill();
+
+                        // Structural rings for identification in grayscale
+                        if (ringCount > 0) {
+                            ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.5})`;
+                            ctx.lineWidth = 1;
+                            for (let rIdx = 1; rIdx <= ringCount; rIdx++) {
+                                ctx.beginPath();
+                                ctx.arc(p.x, p.y, size * sizeMult + rIdx * 2, 0, Math.PI * 2);
+                                ctx.stroke();
+                            }
+                        }
 
                         // Highlight
                         ctx.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
                         ctx.beginPath();
-                        ctx.arc(p.x - size * 0.3, p.y - size * 0.3, size * 0.3, 0, Math.PI * 2);
+                        ctx.arc(p.x - (size * sizeMult) * 0.3, p.y - (size * sizeMult) * 0.3, (size * sizeMult) * 0.3, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 });
 
             } else if (mode === 'space-filling') {
-                // Space-Filling Mode (Van der Waals)
-                // Large spheres, no bonds visible
+                // Space-Filling Mode (Van der Waals) - Structural Grayscale
                 const sortedAtoms = [...projected].map((p, i) => ({ ...p, index: i })).sort((a, b) => b.depth - a.depth);
 
                 sortedAtoms.forEach(p => {
                     if (p.scale > 0) {
                         const alpha = Math.min(1, Math.max(0.2, 1 - p.depth / 1000));
-                        const size = 12 * p.scale; // Larger size
+                        const size = 12 * p.scale;
 
-                        // CPK Coloring
-                        const atomType = p.index % 3; // 0: N, 1: C, 2: O
-                        let r, g, b;
-                        if (atomType === 0) { r = 50; g = 50; b = 255; } // N
-                        else if (atomType === 1) { r = 100; g = 100; b = 100; } // C
-                        else { r = 255; g = 50; b = 50; } // O
+                        const atomType = p.index % 3;
+                        let r = 150, g = 150, b = 150;
+                        let sizeMult = 1.0;
+                        if (atomType === 0) { sizeMult = 0.8; r = 180; g = 180; b = 180; }
+                        else if (atomType === 1) { sizeMult = 1.2; r = 120; g = 120; b = 120; }
+                        else { sizeMult = 1.0; r = 150; g = 150; b = 150; }
 
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();
