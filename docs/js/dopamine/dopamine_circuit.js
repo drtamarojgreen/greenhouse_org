@@ -11,8 +11,8 @@
 
     G.circuitState = {
         pathways: {
-            direct: { color: '#ff4d4d', active: false, label: 'Direct Pathway (D1-MSN)' },
-            indirect: { color: '#4d79ff', active: false, label: 'Indirect Pathway (D2-MSN)' }
+            direct: { color: '#4CAF50', active: false, label: 'Direct Pathway (D1-MSN)' },
+            indirect: { color: '#4FD1C5', active: false, label: 'Indirect Pathway (D2-MSN)' }
         },
         msnPopulations: {
             d1: [], // 71. Distinct MSN populations
@@ -102,7 +102,7 @@
 
     // Helper: Draw Matrix Lattice Field
     function drawMatrixLattice(ctx, w, h, spacing) {
-        ctx.fillStyle = "rgba(0, 255, 255, 0.1)";
+        ctx.fillStyle = "rgba(160, 174, 192, 0.1)"; // Neutral Gray
         for (let x = spacing / 2; x < w; x += spacing) {
             for (let y = spacing / 2; y < h; y += spacing) {
                 ctx.beginPath();
@@ -114,7 +114,7 @@
 
     // Helper: Draw Matrix Flow Vectors
     function drawMatrixFlow(ctx, w, h, time) {
-        ctx.strokeStyle = "rgba(0, 255, 255, 0.08)";
+        ctx.strokeStyle = "rgba(160, 174, 192, 0.08)";
         ctx.lineWidth = 1;
         for (let x = 20; x < w; x += 40) {
             for (let y = 20; y < h; y += 40) {
@@ -227,7 +227,7 @@
         cState.msnPopulations.d1.forEach(msn => {
             const p = project(msn.x, msn.y, msn.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff4d4d';
+                ctx.fillStyle = '#4CAF50'; // Greenhouse Green
                 ctx.globalAlpha = cState.pathways.direct.active ? 1.0 : 0.4;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
@@ -238,7 +238,7 @@
         cState.msnPopulations.d2.forEach(msn => {
             const p = project(msn.x, msn.y, msn.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#4d79ff';
+                ctx.fillStyle = '#4FD1C5'; // Scientific Teal
                 ctx.globalAlpha = cState.pathways.indirect.active ? 1.0 : 0.4;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
@@ -251,7 +251,7 @@
         Object.values(cState.interneurons.gabaergic).forEach(inter => {
             const p = project(inter.x, inter.y, inter.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = inter.label === 'PV+' ? '#ff00ff' : '#00ffff';
+                ctx.fillStyle = inter.label === 'PV+' ? '#FF9F43' : '#4FD1C5';
                 ctx.globalAlpha = inter.active;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y - 10 * p.scale);
@@ -294,7 +294,7 @@
         cState.astrocytes.forEach(a => {
             const pos = project(a.x, a.y, a.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (pos.scale > 0) {
-                ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
+                ctx.strokeStyle = 'rgba(160, 174, 192, 0.15)';
                 ctx.beginPath();
                 // Draw stellate processes
                 for (let i = 0; i < 8; i++) {
@@ -306,7 +306,7 @@
                 ctx.stroke();
 
                 // Central soma
-                ctx.fillStyle = 'rgba(0, 200, 200, 0.05)';
+                ctx.fillStyle = 'rgba(160, 174, 192, 0.05)';
                 ctx.beginPath();
                 ctx.arc(pos.x, pos.y, (a.radius / 4) * pos.scale, 0, Math.PI * 2);
                 ctx.fill();

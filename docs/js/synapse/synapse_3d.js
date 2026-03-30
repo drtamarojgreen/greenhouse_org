@@ -78,7 +78,7 @@
         drawElectrostaticPotential(ctx, w, h, frame) {
             ctx.save();
             ctx.globalAlpha = 0.05;
-            ctx.fillStyle = '#00F2FF';
+            ctx.fillStyle = '#4FD1C5';
             const offset = Math.sin(frame * 0.02) * 10;
             const surfaceY = G.getSurfaceY ? G.getSurfaceY(h) : h * 0.68;
 
@@ -86,7 +86,7 @@
             ctx.rect(w * 0.35, h * 0.38 + offset, w * 0.3, 10);
             ctx.fill();
 
-            ctx.fillStyle = '#FF1493';
+            ctx.fillStyle = '#FF9F43';
             ctx.beginPath();
             ctx.rect(0, surfaceY - offset, w, 15);
             ctx.fill();
@@ -95,7 +95,7 @@
 
         drawBBB(ctx, w, h) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(0, 242, 255, 0.5)';
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.5)';
             ctx.lineWidth = 4;
             ctx.setLineDash([10, 5]);
             ctx.beginPath();
@@ -103,10 +103,10 @@
             ctx.lineTo(w, h * 0.05);
             ctx.stroke();
 
-            ctx.fillStyle = 'rgba(0, 242, 255, 0.05)';
+            ctx.fillStyle = 'rgba(160, 174, 192, 0.05)';
             ctx.fillRect(0, 0, w, h * 0.05);
 
-            ctx.fillStyle = '#00F2FF';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 10px Arial';
             ctx.fillText('BLOOD-BRAIN BARRIER (BBB)', w * 0.5 - 70, h * 0.04);
             ctx.restore();
@@ -115,7 +115,7 @@
         drawMeasurement(ctx, start, end) {
             if (!start || !end) return;
             ctx.save();
-            ctx.strokeStyle = '#FFD700';
+            ctx.strokeStyle = '#4CAF50';
             ctx.setLineDash([2, 2]);
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -126,7 +126,7 @@
             const dist = Math.sqrt((end.x - start.x)**2 + (end.y - start.y)**2);
             const virtualNM = (dist * 0.2).toFixed(1);
 
-            ctx.fillStyle = '#FFD700';
+            ctx.fillStyle = '#4CAF50';
             ctx.font = 'bold 10px Arial';
             ctx.fillText(`${virtualNM} nm`, (start.x + end.x) / 2, (start.y + end.y) / 2 - 10);
             ctx.restore();

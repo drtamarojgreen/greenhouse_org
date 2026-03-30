@@ -146,20 +146,24 @@
                     ctx.lineTo(f.p2.x, f.p2.y);
                     ctx.lineTo(f.p3.x, f.p3.y);
                     ctx.fill();
+
+                    // Add Highlight Outline
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
                 } else {
-                    // Apply Lighting for all other regions
+                    // Apply Lighting for all other regions - Standardized Neutral Gray (#A0AEC0)
                     const ambient = 0.2;
                     const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
 
-                    const litR = Math.min(255, r * lightIntensity + specular * 255);
-                    const litG = Math.min(255, g * lightIntensity + specular * 255);
-                    const litB = Math.min(255, b * lightIntensity + specular * 255);
+                    const litR = Math.min(255, 160 * lightIntensity + specular * 255);
+                    const litG = Math.min(255, 174 * lightIntensity + specular * 255);
+                    const litB = Math.min(255, 192 * lightIntensity + specular * 255);
 
                     // Depth Fog for Alpha
-                    const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.15, f.depth);
 
-                    // --- Structural Shading ---
-                    // Instead of pure color, use regional modifiers
+                    // --- Structural Shading (Intrinsic Signatures) ---
                     ctx.save();
                     ctx.beginPath();
                     ctx.moveTo(f.p1.x, f.p1.y);
@@ -167,23 +171,30 @@
                     ctx.lineTo(f.p3.x, f.p3.y);
                     ctx.closePath();
 
-                    // Pattern-based differentiation for grayscale accessibility
                     if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
+                        // PFC - Grid Pattern (Executive Function)
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
-                        ctx.save(); ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.4})`; ctx.lineWidth = 0.5;
-                        ctx.setLineDash([2, 4]); ctx.stroke(); ctx.restore();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.4})`; ctx.lineWidth = 0.5;
+                        ctx.setLineDash([2, 4]); ctx.stroke();
                     } else if (f.region === 'cerebellum') {
-                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog * 0.8})`; ctx.fill();
-                        if (Math.floor(f.p1.y / 2) % 2 === 0) {
-                            ctx.fillStyle = `rgba(255, 255, 255, ${fog * 0.25})`; ctx.fill();
-                        }
+                        // Cerebellum - Foliated Hatching
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.3})`; ctx.lineWidth = 0.5;
+                        ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.stroke();
                     } else if (f.region === 'temporalLobe') {
-                        // Dotted wireframe overlay
-                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
-                        ctx.fill();
-                        ctx.setLineDash([1, 2]);
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.5})`;
-                        ctx.stroke();
+                        // Temporal Lobe - Dotted Wave
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                        ctx.setLineDash([1, 3]);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.6})`; ctx.stroke();
+                    } else if (f.region === 'amygdala') {
+                        // Amygdala - Grainy Stippling (Salience)
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                        for(let k=0; k<2; k++) {
+                            const sx = f.p1.x + Math.random()*(f.p2.x - f.p1.x);
+                            const sy = f.p1.y + Math.random()*(f.p2.y - f.p1.y);
+                            ctx.fillStyle = `rgba(255, 255, 255, ${fog * 0.5})`;
+                            ctx.fillRect(sx, sy, 1, 1);
+                        }
                     } else {
                         // Standard shaded fill
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;

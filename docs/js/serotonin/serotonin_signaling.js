@@ -39,6 +39,9 @@
             let ht2aActive = false;
             let ht4Active = false;
 
+            // Intrinsic Motion: Local Rotation
+            this.localRot = (this.localRot || 0) + 0.03;
+
             if (G.state.receptors) {
                 G.state.receptors.forEach(r => {
                     const efficiency = r.couplingEfficiency || 1.0;
@@ -180,12 +183,12 @@
 
             // GIRK Visual Flow (Category 3, #22)
             if (girkActivation > 0.5 && G.state.timer % 10 === 0) {
-                this.triggerPulse(200, 0, 150, 'rgba(0, 150, 255,'); // Flow near SK/BK channels area
+                this.triggerPulse(200, 0, 150, 'rgba(79, 209, 197,'); // Scientific Teal
             }
         },
 
         triggerPulse(x, y, z, color) {
-            this.pulses.push({ x, y, z, radius: 10, life: 1.0, color: color || 'rgba(0, 255, 200,' });
+            this.pulses.push({ x, y, z, radius: 10, life: 1.0, color: color || 'rgba(79, 209, 197,' });
         },
 
         renderSignaling(ctx, project, cam, w, h) {
@@ -193,15 +196,15 @@
             const glowIntensity = Math.min(0.3, (this.calcium + this.cAMP * 0.1) * 0.05);
             if (glowIntensity > 0) {
                 const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
-                grad.addColorStop(0, `rgba(0, 255, 255, ${glowIntensity})`);
+                grad.addColorStop(0, `rgba(79, 209, 197, ${glowIntensity})`); // Scientific Teal
                 grad.addColorStop(1, 'transparent');
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, w, h);
             }
 
             // Dynamic Signaling Waves (Category 10, #94)
-            if (this.cAMP > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(255, 200, 0,');
-            if (this.calcium > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(0, 255, 255,');
+            if (this.cAMP > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(255, 159, 67,'); // Warning Orange
+            if (this.calcium > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(79, 209, 197,'); // Scientific Teal
 
             // Render pulses
             this.pulses.forEach(p => {

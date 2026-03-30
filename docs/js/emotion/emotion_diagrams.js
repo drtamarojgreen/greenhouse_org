@@ -104,15 +104,15 @@
             // Neural Oscillations (EEG)
             this.drawEEG(ctx, 20, h - 100, time, app.simState);
 
-            // Neurochemical Meters
+            // Neurochemical Meters - Standardized Palette
             if (id === 8 || id === 53 || id === 60) {
                 this.drawBalanceMeter(ctx, w - 180, 80, time, app.simState?.gaba || 0.5);
             }
             if (id === 23 || id === 51 || id === 61) {
-                this.drawHUDGauge(ctx, w - 180, 130, 'SEROTONIN', app.simState?.serotonin || (0.7 + Math.sin(time * 0.5) * 0.1), '#ff00ff');
+                this.drawHUDGauge(ctx, w - 180, 130, 'SEROTONIN', app.simState?.serotonin || (0.7 + Math.sin(time * 0.5) * 0.1), '#4CAF50');
             }
             if (id === 9 || id === 25) {
-                this.drawHUDGauge(ctx, w - 180, 180, 'CORTISOL', app.simState?.cortisol || (0.3 + Math.sin(time * 2) * 0.4), '#ff4d4d');
+                this.drawHUDGauge(ctx, w - 180, 180, 'CORTISOL', app.simState?.cortisol || (0.3 + Math.sin(time * 2) * 0.4), '#FF9F43');
             }
 
             // Physiological metrics
@@ -301,7 +301,7 @@
             const scale = 0.5 + Math.sin(time * 0.5) * 0.5; // 0 to 1
             const r = 20 + scale * 30;
 
-            ctx.strokeStyle = '#4fd1c5';
+            ctx.strokeStyle = '#4FD1C5';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.arc(x, y, 50, 0, Math.PI * 2);
@@ -342,14 +342,14 @@
             ctx.fillRect(x, y, w, h);
 
             // Glutamate (Excitatory)
-            ctx.fillStyle = '#ff4d4d';
+            ctx.fillStyle = '#FF9F43'; // Warning Orange
             ctx.fillRect(x, y, w * glutamate, h / 2);
             ctx.fillStyle = '#fff';
             ctx.font = '8px Arial';
             ctx.fillText('GLUTAMATE', x + 5, y + 10);
 
             // GABA (Inhibitory)
-            ctx.fillStyle = '#4fd1c5';
+            ctx.fillStyle = '#4FD1C5'; // Scientific Teal
             ctx.fillRect(x, y + h / 2, w * gaba, h / 2);
             ctx.fillStyle = '#fff';
             ctx.fillText('GABA', x + 5, y + 25);
@@ -638,18 +638,18 @@
             const cycle = (time * 0.3) % 3;
             let mode = 'DMN';
             let label = 'DEFAULT MODE (Internal Reflection/Rumination)';
-            let color = '#ff00ff';
+            let color = '#A0AEC0'; // Gray
             let nodes = ['vmPFC', 'parietalLobe', 'hippocampus'];
 
             if (cycle > 1 && cycle <= 2) {
                 mode = 'CEN';
                 label = 'CENTRAL EXECUTIVE (Goal-Directed Focus)';
-                color = '#00ffff';
+                color = '#4FD1C5'; // Teal
                 nodes = ['dlPFC', 'parietalLobe', 'thalamus'];
             } else if (cycle > 2) {
                 mode = 'SN';
                 label = 'SALIENCE (Stimulus Detection/Switching)';
-                color = '#ffff00';
+                color = '#FF9F43'; // Orange
                 nodes = ['insula', 'acc', 'amygdala'];
             }
 
@@ -709,7 +709,7 @@
 
         drawTopDownBottomUp(ctx, app, time) {
             const isTopDown = Math.sin(time) > 0;
-            const color = isTopDown ? '#00ffff' : '#ff4d4d';
+            const color = isTopDown ? '#4FD1C5' : '#FF9F43';
 
             if (isTopDown) {
                 this.drawCircuit(ctx, app, 'prefrontalCortex', 'amygdala', time, color, true);

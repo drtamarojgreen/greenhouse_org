@@ -24,7 +24,8 @@
             const intensity = state.factors.stressorIntensity || 0;
             const load = state.metrics.allostaticLoad || 0;
 
-            this.orbitalRotation += 0.001;
+            // Local Rotations instead of orbital revolutions
+            this.localRotation = (this.localRotation || 0) + 0.01;
             this.helixRotation += 0.01;
 
             // 1. AURA METRICS (Systemic Noise/Static)
@@ -187,12 +188,12 @@
 
             ctx.save();
             activeFactors.forEach((fid, idx) => {
-                const angle = (idx / activeFactors.length) * Math.PI * 2 + this.orbitalRotation;
-                const radius = 250;
-
-                const fx = Math.cos(angle) * radius;
-                const fz = Math.sin(angle) * radius;
-                const fy = Math.sin(angle * 0.5) * 100;
+                // Fixed Layout Matrix
+                const row = Math.floor(idx / 5);
+                const col = idx % 5;
+                const fx = -500 + col * 250;
+                const fy = 300 + row * 150;
+                const fz = 0;
 
                 const p = Math3D.project3DTo2D(fx, -fy, fz, camera, projection);
                 if (p.scale > 0) {

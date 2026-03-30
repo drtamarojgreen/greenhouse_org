@@ -69,11 +69,11 @@
         // Material Configuration
         materials: {
             dna: {
-                strand1Color: '#4FD1C5', // Scientific Teal
-                strand2Color: '#FF9F43', // Orange
+                strand1Color: '#A0AEC0', // Gray
+                strand2Color: '#A0AEC0', // Gray
                 baseColors: {
-                    A: '#4FD1C5', // Adenine
-                    T: '#4FD1C5', // Thymine
+                    A: '#A0AEC0', // Adenine
+                    T: '#A0AEC0', // Thymine
                     G: '#4CAF50', // Guanine
                     C: '#4CAF50'  // Cytosine
                 },
@@ -196,8 +196,8 @@
             baseSpacing: 10,
             offset: -200, // X offset for helix position
             colors: {
-                strand1: '#4FD1C5',
-                strand2: '#FF9F43',
+                strand1: '#A0AEC0',
+                strand2: '#A0AEC0',
                 backbone: '#A0AEC0',
                 basePairs: '#4CAF50'
             }
@@ -212,12 +212,12 @@
             },
             amygdala: {
                 name: 'Amygdala',
-                color: 'rgba(255, 159, 67, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 50, y: 0, z: 0 }
             },
             hippocampus: {
                 name: 'Hippocampus',
-                color: 'rgba(79, 209, 197, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: -50, y: 0, z: 0 }
             },
             temporalLobe: {

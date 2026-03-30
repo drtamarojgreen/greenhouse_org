@@ -18,12 +18,12 @@
             brainShell.vertices = [];
             brainShell.faces = [];
             brainShell.regions = {
-                hypothalamus: { name: 'Hypothalamus', color: 'rgba(76, 175, 80, 0.9)', vertices: [] },
-                hippocampus: { name: 'Hippocampus', color: 'rgba(79, 209, 197, 0.7)', vertices: [] },
+                hypothalamus: { name: 'Hypothalamus', color: 'rgba(160, 174, 192, 0.8)', vertices: [] },
+                hippocampus: { name: 'Hippocampus', color: 'rgba(160, 174, 192, 0.7)', vertices: [] },
                 thalamus: { name: 'Thalamus', color: 'rgba(160, 174, 192, 0.8)', vertices: [] },
                 insula: { name: 'Insula', color: 'rgba(160, 174, 192, 0.7)', vertices: [] },
                 basal_ganglia: { name: 'Basal Ganglia', color: 'rgba(160, 174, 192, 0.6)', vertices: [] },
-                amygdala: { name: 'Amygdala', color: 'rgba(255, 159, 67, 0.8)', vertices: [] },
+                amygdala: { name: 'Amygdala', color: 'rgba(160, 174, 192, 0.8)', vertices: [] },
                 frontal: { name: 'Frontal Lobe', color: 'rgba(160, 174, 192, 0.2)', vertices: [] },
                 parietal: { name: 'Parietal Lobe', color: 'rgba(160, 174, 192, 0.2)', vertices: [] },
                 temporal: { name: 'Temporal Lobe', color: 'rgba(160, 174, 192, 0.2)', vertices: [] },

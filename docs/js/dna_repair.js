@@ -61,7 +61,7 @@
             rise: 14,
             rotationPerPair: 0.5,
             colors: {
-                A: '#4FD1C5', T: '#4FD1C5', C: '#4CAF50', G: '#4CAF50',
+                A: '#A0AEC0', T: '#A0AEC0', C: '#4CAF50', G: '#4CAF50',
                 backbone: '#A0AEC0', enzyme: '#4FD1C5', damage: '#FF9F43'
             }
         },
@@ -279,10 +279,36 @@
                     if (!type) return;
                     ctx.strokeStyle = dam ? '#FF9F43' : (this.config.colors[type] || '#A0AEC0');
                     ctx.lineWidth = 5 * p1.scale;
-                    // Structural signature for DNA base types
-                    ctx.setLineDash(type === 'A' || type === 'T' ? [5, 2] : []);
-                    ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
-                    ctx.setLineDash([]);
+
+                    // Structural signature for DNA base types (Geometric differentiation)
+                    ctx.save();
+                    if (type === 'A' || type === 'T') {
+                        // Purines/Pyrimidines (A/T) - Dashed/Triangular ends
+                        ctx.setLineDash([4, 2]);
+                        ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
+
+                        // Geometric Cap
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.beginPath();
+                        ctx.moveTo(ep.x, ep.y - 4); ctx.lineTo(ep.x + 4, ep.y + 4); ctx.lineTo(ep.x - 4, ep.y + 4);
+                        ctx.fill();
+                    } else {
+                        // Guanine/Cytosine (G/C) - Solid/Hexagonal ends
+                        ctx.setLineDash([]);
+                        ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
+
+                        // Hexagonal Cap
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.beginPath();
+                        for(let k=0; k<6; k++) {
+                            const ang = k * Math.PI / 3;
+                            ctx.lineTo(ep.x + 4 * Math.cos(ang), ep.y + 4 * Math.sin(ang));
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.restore();
+
                     if (dam) {
                         ctx.save(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1 * p1.scale;
                         for (let j = 0; j < 5; j++) {

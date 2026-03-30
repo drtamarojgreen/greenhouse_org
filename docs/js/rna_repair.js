@@ -100,11 +100,11 @@
             };
 
             this.colors = {
-                A: '#4FD1C5',
-                U: '#4FD1C5',
+                A: '#A0AEC0',
+                U: '#A0AEC0',
                 G: '#4CAF50',
                 C: '#4CAF50',
-                PSI: '#4FD1C5',
+                PSI: '#A0AEC0',
                 BACKBONE: '#A0AEC0',
                 ENZYME: 'rgba(79, 209, 197, 0.2)',
                 METHYL: '#FF9F43',
@@ -712,6 +712,12 @@
                     this.ctx.moveTo(base.x, base.y - 12); this.ctx.lineTo(base.x + 10, base.y); this.ctx.lineTo(base.x, base.y + 12); this.ctx.lineTo(base.x - 10, base.y); this.ctx.closePath();
                 } else { // Square for U/PSI
                     this.ctx.rect(base.x - 9, base.y - 9, 18, 18);
+
+                    // Add internal cross for U/PSI to differentiate from pure square
+                    this.ctx.moveTo(base.x - 5, base.y); this.ctx.lineTo(base.x + 5, base.y);
+                    this.ctx.moveTo(base.x, base.y - 5); this.ctx.lineTo(base.x, base.y + 5);
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    this.ctx.stroke();
                 }
                 this.ctx.fillStyle = this.colors[base.type];
                 this.ctx.fill();

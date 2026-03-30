@@ -59,6 +59,9 @@
         const state = G.state;
         const mState = G.molecularState;
 
+        // Internal Rotations
+        mState.localRot = (mState.localRot || 0) + 0.05;
+
         // 2. G-Protein Cycle & 3. GTP/GDP Exchange Rates
         // Constants (simplified but based on ~0.1 - 1.0 s^-1 rates)
         const kGtpBinding = 0.5;
@@ -419,14 +422,14 @@
         // 18. Render Endoplasmic Reticulum (ER)
         const pER = project(mState.er.x, mState.er.y, mState.er.z, cam, { width: w, height: h, near: 10, far: 5000 });
         if (pER.scale > 0) {
-            ctx.strokeStyle = 'rgba(255, 100, 255, 0.4)';
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.4)';
             ctx.lineWidth = 4 * pER.scale;
             ctx.setLineDash([10, 5]);
             ctx.beginPath();
             ctx.ellipse(pER.x, pER.y, (mState.er.width / 2) * pER.scale, (mState.er.height / 2) * pER.scale, 0, 0, Math.PI * 2);
             ctx.stroke();
             ctx.setLineDash([]);
-            ctx.fillStyle = 'rgba(255, 100, 255, 0.1)';
+            ctx.fillStyle = 'rgba(160, 174, 192, 0.1)';
             ctx.fill();
 
             ctx.fillStyle = '#fff';
@@ -439,12 +442,12 @@
         mState.clathrinPits.forEach(pit => {
             const p = project(pit.x, pit.y, pit.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.strokeStyle = '#ffff00';
+                ctx.strokeStyle = '#4FD1C5';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 20 * pit.progress * p.scale, 0, Math.PI);
                 ctx.stroke();
-                ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
+                ctx.fillStyle = 'rgba(79, 209, 197, 0.2)';
                 ctx.fill();
             }
         });
@@ -496,18 +499,22 @@
         mState.gProteins.forEach(gp => {
             const p = project(gp.x, gp.y, gp.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                if (gp.type === 'Gs') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#4CAF50' : '#A0AEC0') : '#A0AEC0';
-                else if (gp.type === 'Gq') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#4FD1C5' : '#A0AEC0') : '#A0AEC0';
-                else ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#A0AEC0' : '#A0AEC0') : '#A0AEC0';
+                ctx.fillStyle = '#A0AEC0';
+                if (gp.subunit === 'alpha' && gp.gtpBound) ctx.fillStyle = gp.type === 'Gs' ? '#4CAF50' : '#4FD1C5';
 
                 ctx.globalAlpha = Math.min(1, gp.life / 100);
                 const size = gp.subunit === 'alpha' ? 4 : 3;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(mState.localRot * (gp.subunit === 'alpha' ? 1 : -0.5));
+
                 ctx.beginPath();
                 if (gp.subunit === 'alpha') {
-                    // Structural Alpha Identification (Triangle)
-                    ctx.moveTo(p.x, p.y - size * p.scale);
-                    ctx.lineTo(p.x + size * p.scale, p.y + size * p.scale);
-                    ctx.lineTo(p.x - size * p.scale, p.y + size * p.scale);
+                    // Structural Alpha Identification (Rotating Triangle)
+                    ctx.moveTo(0, -size * p.scale);
+                    ctx.lineTo(size * p.scale, size * p.scale);
+                    ctx.lineTo(-size * p.scale, size * p.scale);
                     ctx.closePath();
 
                     // 3. GDP/GTP Visual indicator (Glow if bound)
@@ -533,10 +540,11 @@
                         ctx.globalAlpha = 1.0;
                     }
                 } else {
-                    // 2. Gβγ dissociation
-                    ctx.ellipse(p.x, p.y, size * p.scale, (size / 1.5) * p.scale, 0, 0, Math.PI * 2);
+                    // 2. Gβγ dissociation (Rotating Ellipse)
+                    ctx.ellipse(0, 0, size * p.scale, (size / 1.5) * p.scale, 0, 0, Math.PI * 2);
                 }
                 ctx.fill();
+                ctx.restore();
                 ctx.globalAlpha = 1.0;
             }
         });
@@ -545,7 +553,7 @@
         mState.plcPathway.ip3Particles.forEach(ip3 => {
             const p = project(ip3.x, ip3.y, ip3.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#00ffff';
+                ctx.fillStyle = '#4FD1C5';
                 ctx.globalAlpha = Math.min(1, ip3.life / 50);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
@@ -554,7 +562,7 @@
             }
         });
 
-        // 19. Render DAG (Membrane-bound yellow dots)
+        // 19. Render DAG (Membrane-bound dots)
         if (mState.plcPathway.dag > 0.2) {
             for (let i = 0; i < 20; i++) {
                 const angle = (i / 20) * Math.PI * 2 + G.state.timer * 0.01;
@@ -563,7 +571,7 @@
                 const dz = Math.sin(angle) * r;
                 const p = project(dx, 0, dz, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    ctx.fillStyle = '#ffff00';
+                    ctx.fillStyle = '#4CAF50';
                     ctx.globalAlpha = mState.plcPathway.dag * 0.5;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
@@ -590,7 +598,7 @@
         mState.campMicrodomains.forEach(m => {
             const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.strokeStyle = '#ffff99';
+                ctx.strokeStyle = '#A0AEC0';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.globalAlpha = m.life / 50;
                 ctx.beginPath();
@@ -617,7 +625,7 @@
         mState.erkPathway.visual.forEach(v => {
             const p = project(v.x, v.y, v.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff00ff';
+                ctx.fillStyle = '#FF9F43';
                 ctx.globalAlpha = v.life / 90;
                 ctx.font = `${8 * p.scale}px Arial`;
                 ctx.fillText("ERK", p.x, p.y);
