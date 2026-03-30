@@ -16,14 +16,31 @@
          * @returns {Object} {x, y, depth} - 2D screen coordinates and depth value
          */
         project3DTo2D(x, y, z, camera, projection) {
-            // Translate to camera space
-            const dx = x - camera.x;
-            const dy = y - camera.y;
-            const dz = z - camera.z;
+            // 1. Apply Model/Object-Local Rotation (Rotation in Place)
+            // This ensures objects rotate on their own axis before camera transformations
+            let modelX = x;
+            let modelY = y;
+            let modelZ = z;
 
-            // Apply camera rotation if present
-            // IMPORTANT: We need to rotate the point in the OPPOSITE direction of camera rotation
-            // because we're rotating the world around the camera, not the camera itself
+            if (camera.modelRotationX || camera.modelRotationY || camera.modelRotationZ) {
+                const rotated = this.rotatePoint3D(
+                    { x: x, y: y, z: z },
+                    camera.modelRotationX || 0,
+                    camera.modelRotationY || 0,
+                    camera.modelRotationZ || 0
+                );
+                modelX = rotated.x;
+                modelY = rotated.y;
+                modelZ = rotated.z;
+            }
+
+            // 2. Translate to camera space
+            const dx = modelX - camera.x;
+            const dy = modelY - camera.y;
+            const dz = modelZ - camera.z;
+
+            // 3. Apply Camera/View Rotation (Revolution)
+            // IMPORTANT: We rotate in the OPPOSITE direction for camera space
             let rotatedX = dx;
             let rotatedY = dy;
             let rotatedZ = dz;
@@ -31,9 +48,9 @@
             if (camera.rotationX || camera.rotationY || camera.rotationZ) {
                 const rotated = this.rotatePoint3D(
                     { x: dx, y: dy, z: dz },
-                    -(camera.rotationX || 0),  // Negate rotation
-                    -(camera.rotationY || 0),  // Negate rotation
-                    -(camera.rotationZ || 0)   // Negate rotation
+                    -(camera.rotationX || 0),
+                    -(camera.rotationY || 0),
+                    -(camera.rotationZ || 0)
                 );
                 rotatedX = rotated.x;
                 rotatedY = rotated.y;

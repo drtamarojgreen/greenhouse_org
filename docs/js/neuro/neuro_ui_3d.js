@@ -403,7 +403,9 @@
             if (this.animationId) return;
             const animate = () => {
                 if (this.autoRotate) {
-                    this.camera.rotationY += this.rotationSpeed;
+                    // Refactor: Use modelRotationY for "Rotation" (Self-Axis)
+                    // instead of camera.rotationY for "Revolution" (Orbital)
+                    this.camera.modelRotationY = (this.camera.modelRotationY || 0) + this.rotationSpeed;
                 }
                 this.render();
                 this.animationId = requestAnimationFrame(animate);
@@ -949,6 +951,11 @@
 
         toggleAutoRotate() {
             this.autoRotate = !this.autoRotate;
+            // Clear orbital revolutions and switch to local rotations
+            if (this.autoRotate) {
+                this.camera.rotationY = 0;
+                this.synapseCamera.rotationY = 0;
+            }
             if (this.networkCameraController) this.networkCameraController.autoRotate = this.autoRotate;
             if (this.synapseCameraController) this.synapseCameraController.autoRotate = this.autoRotate;
         },

@@ -249,8 +249,9 @@
         rotate(dx, dy) {
             const rotateSpeed = this.config.get('camera.controls.rotateSpeed') || 0.005;
 
-            this.camera.rotationY += dx * rotateSpeed;
-            this.camera.rotationX += dy * rotateSpeed;
+            // Refactor: Use modelRotation for self-axis spin
+            this.camera.modelRotationY = (this.camera.modelRotationY || 0) + dx * rotateSpeed;
+            this.camera.modelRotationX = (this.camera.modelRotationX || 0) + dy * rotateSpeed;
 
             // Store velocity for inertia
             if (this.config.get('camera.controls.inertia')) {
@@ -258,8 +259,8 @@
                 this.velocityY = dy * rotateSpeed;
             }
 
-            // Clamp X rotation
-            this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
+            // Clamp X rotation (on modelRotationX)
+            this.camera.modelRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.modelRotationX));
         }
 
         /**
@@ -370,8 +371,9 @@
             if (this.isListening && this.config.get('camera.controls.inertia') && !this.isDragging) {
                 const damping = this.config.get('camera.controls.inertiaDamping') || 0.95;
 
-                this.camera.rotationY += this.velocityX;
-                this.camera.rotationX += this.velocityY;
+                // Refactor: Use modelRotation for self-axis spin
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + this.velocityX;
+                this.camera.modelRotationX = (this.camera.modelRotationX || 0) + this.velocityY;
 
                 this.velocityX *= damping;
                 this.velocityY *= damping;
@@ -383,8 +385,8 @@
             // Auto-rotate
             if (this.isListening && this.autoRotate && this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
                 const speed = this.config.get('camera.controls.autoRotateSpeed') || 0.0002;
-                const oldRotY = this.camera.rotationY;
-                this.camera.rotationY += speed;
+                // Refactor: Use modelRotationY for self-axis spin
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + speed;
                 
                 // Log auto-rotate animation every 60 frames (~1 second at 60fps)
                 if (!this._autoRotateFrameCount) this._autoRotateFrameCount = 0;

@@ -125,9 +125,9 @@
                     </button>
                 </div>
                 <div class="control-group" id="3d-camera-controls" style="display: none;">
-                    <label>${t('camera_x') || 'Camera X Rotation'}</label>
+                    <label>${t('camera_x') || 'Model X Rotation'}</label>
                     <input type="range" min="-180" max="180" value="0" class="greenhouse-slider" id="camera-x-slider">
-                    <label>${t('camera_y') || 'Camera Y Rotation'}</label>
+                    <label>${t('camera_y') || 'Model Y Rotation'}</label>
                     <input type="range" min="-180" max="180" value="0" class="greenhouse-slider" id="camera-y-slider">
                     <label>${t('camera_z') || 'Camera Z Position'}</label>
                     <input type="range" min="-2000" max="1000" value="-500" class="greenhouse-slider" id="camera-z-slider">
@@ -145,12 +145,14 @@
 
             // Camera control sliders
             document.getElementById('camera-x-slider').addEventListener('input', (e) => {
-                this.camera.rotationX = GreenhouseModels3DMath.degToRad(parseFloat(e.target.value));
+                // Refactor: Use modelRotationX for self-axis spin
+                this.camera.modelRotationX = GreenhouseModels3DMath.degToRad(parseFloat(e.target.value));
                 this.render3DView();
             });
 
             document.getElementById('camera-y-slider').addEventListener('input', (e) => {
-                this.camera.rotationY = GreenhouseModels3DMath.degToRad(parseFloat(e.target.value));
+                // Refactor: Use modelRotationY for self-axis spin
+                this.camera.modelRotationY = GreenhouseModels3DMath.degToRad(parseFloat(e.target.value));
                 this.render3DView();
             });
 
@@ -186,12 +188,13 @@
                 const deltaX = e.clientX - lastX;
                 const deltaY = e.clientY - lastY;
 
-                this.camera.rotationY += deltaX * 0.005;
-                this.camera.rotationX += deltaY * 0.005;
+                // Refactor: Use modelRotation for dragging (self-axis spin)
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + deltaX * 0.005;
+                this.camera.modelRotationX = (this.camera.modelRotationX || 0) + deltaY * 0.005;
 
                 // Update sliders
-                document.getElementById('camera-x-slider').value = GreenhouseModels3DMath.radToDeg(this.camera.rotationX);
-                document.getElementById('camera-y-slider').value = GreenhouseModels3DMath.radToDeg(this.camera.rotationY);
+                document.getElementById('camera-x-slider').value = GreenhouseModels3DMath.radToDeg(this.camera.modelRotationX);
+                document.getElementById('camera-y-slider').value = GreenhouseModels3DMath.radToDeg(this.camera.modelRotationY);
 
                 lastX = e.clientX;
                 lastY = e.clientY;
@@ -594,9 +597,10 @@
                 if (!this.isActive) return;
 
                 if (this.autoRotate) {
-                    this.camera.rotationY += this.rotationSpeed;
+                    // Refactor: Use modelRotationY for auto-rotation (self-axis spin)
+                    this.camera.modelRotationY = (this.camera.modelRotationY || 0) + this.rotationSpeed;
                     document.getElementById('camera-y-slider').value = 
-                        GreenhouseModels3DMath.radToDeg(this.camera.rotationY);
+                        GreenhouseModels3DMath.radToDeg(this.camera.modelRotationY);
                 }
 
                 this.update3DData();

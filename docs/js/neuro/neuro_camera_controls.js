@@ -247,8 +247,9 @@
         rotate(dx, dy) {
             const rotateSpeed = this.config.get('camera.controls.rotateSpeed') || 0.005;
             
-            this.camera.rotationY += dx * rotateSpeed;
-            this.camera.rotationX += dy * rotateSpeed;
+            // Refactor: Use modelRotation for self-axis spin
+            this.camera.modelRotationY = (this.camera.modelRotationY || 0) + dx * rotateSpeed;
+            this.camera.modelRotationX = (this.camera.modelRotationX || 0) + dy * rotateSpeed;
             
             // Store velocity for inertia
             if (this.config.get('camera.controls.inertia')) {
@@ -256,8 +257,8 @@
                 this.velocityY = dy * rotateSpeed;
             }
             
-            // Clamp X rotation to prevent flipping
-            this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
+            // Clamp X rotation (on modelRotationX)
+            this.camera.modelRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.modelRotationX));
         },
 
         /**
@@ -315,8 +316,9 @@
             if (this.config.get('camera.controls.inertia') && !this.isDragging) {
                 const damping = this.config.get('camera.controls.inertiaDamping') || 0.95;
                 
-                this.camera.rotationY += this.velocityX;
-                this.camera.rotationX += this.velocityY;
+                // Refactor: Use modelRotation for self-axis spin
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + this.velocityX;
+                this.camera.modelRotationX = (this.camera.modelRotationX || 0) + this.velocityY;
                 
                 this.velocityX *= damping;
                 this.velocityY *= damping;
@@ -329,7 +331,8 @@
             // Auto-rotate
             if (this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
                 const speed = this.config.get('camera.controls.autoRotateSpeed') || 0.0002;
-                this.camera.rotationY += speed;
+                // Refactor: Use modelRotationY for auto-rotation
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + speed;
             }
         },
 

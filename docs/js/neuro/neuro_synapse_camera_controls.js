@@ -152,15 +152,16 @@
         rotate(dx, dy) {
             const rotateSpeed = 0.005;
             
-            this.camera.rotationY += dx * rotateSpeed;
-            this.camera.rotationX += dy * rotateSpeed;
+            // Refactor: Use modelRotation for self-axis spin
+            this.camera.modelRotationY = (this.camera.modelRotationY || 0) + dx * rotateSpeed;
+            this.camera.modelRotationX = (this.camera.modelRotationX || 0) + dy * rotateSpeed;
             
             // Store velocity for inertia
             this.velocityX = dx * rotateSpeed;
             this.velocityY = dy * rotateSpeed;
             
-            // Clamp X rotation to prevent flipping
-            this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
+            // Clamp X rotation to prevent flipping (on modelRotationX)
+            this.camera.modelRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.modelRotationX));
         }
 
         /**
@@ -213,8 +214,9 @@
             if (!this.isDragging && !this.isPanning) {
                 const damping = 0.95;
                 
-                this.camera.rotationY += this.velocityX;
-                this.camera.rotationX += this.velocityY;
+                // Refactor: Use modelRotation for self-axis spin
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + this.velocityX;
+                this.camera.modelRotationX = (this.camera.modelRotationX || 0) + this.velocityY;
                 
                 this.velocityX *= damping;
                 this.velocityY *= damping;
@@ -226,7 +228,8 @@
             
             // Auto-rotate
             if (this.autoRotate && !this.isDragging && !this.isPanning) {
-                this.camera.rotationY += this.autoRotateSpeed;
+                // Refactor: Use modelRotationY for self-axis auto-rotation
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + this.autoRotateSpeed;
             }
         }
 

@@ -385,8 +385,9 @@
             }
 
             if (this.interaction.isDragging) {
-                this.camera.rotationY += (e.clientX - this.interaction.lastX) * 0.01;
-                this.camera.rotationX += (e.clientY - this.interaction.lastY) * 0.01;
+                // Refactor: Use modelRotation for dragging (self-axis spin)
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + (e.clientX - this.interaction.lastX) * 0.01;
+                this.camera.modelRotationX = (this.camera.modelRotationX || 0) + (e.clientY - this.interaction.lastY) * 0.01;
                 this.interaction.lastX = e.clientX;
                 this.interaction.lastY = e.clientY;
             }
@@ -582,7 +583,10 @@
             const ctx = this.ctx, w = this.canvas.width, h = this.canvas.height, state = this.engine.state;
             ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, w, h);
 
-            if (!this.interaction.isDragging) this.camera.rotationY += 0.001;
+            if (!this.interaction.isDragging) {
+                // Refactor: Use modelRotationY for auto-rotation
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + 0.001;
+            }
             if (window.GreenhouseStressUI3D) window.GreenhouseStressUI3D.render(ctx, state, this.camera, this.projection);
 
             this.drawUI(ctx, w, h, state);

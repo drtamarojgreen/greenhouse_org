@@ -21,7 +21,8 @@
             const sourceNodes = (ui3d.currentPathwayNodes && ui3d.currentPathwayNodes.length > 0) ? ui3d.currentPathwayNodes : ui3d.hpaNodes;
             const sourceEdges = ui3d.currentPathwayEdges || [];
 
-            camera.rotationY += 0.001;
+            // Refactor: Use modelRotationY for self-axis rotation
+            camera.modelRotationY = (camera.modelRotationY || 0) + 0.001;
 
             // --- GRAPH VISUALIZATION INTEGRATION ---
             // If the Graph Viewer is available and active, render it INSTEAD or ON TOP

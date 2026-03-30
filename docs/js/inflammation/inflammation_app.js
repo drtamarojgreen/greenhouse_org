@@ -252,7 +252,7 @@
             // Minimap Click (Item 86)
             const lm = this.layout.miniMap;
             if (mx >= lm.x && mx <= lm.x + lm.w && my >= lm.y && my <= lm.y + lm.h) {
-                this.camera.rotationY += Math.PI / 2;
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + Math.PI / 2;
                 return;
             }
 
@@ -417,9 +417,10 @@
                 const dx = (e.clientX - this.interaction.lastX) * 0.01;
                 const dy = (e.clientY - this.interaction.lastY) * 0.01;
 
-                this.camera.rotationY += dx;
+                // Refactor: Use modelRotation for dragging (self-axis spin)
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + dx;
                 if (!this.interaction.isYLocked) {
-                    this.camera.rotationX += dy;
+                    this.camera.modelRotationX = (this.camera.modelRotationX || 0) + dy;
                 }
 
                 this.interaction.velX = dx;
@@ -724,9 +725,10 @@
         updateCameraInertia() {
             if (!this.interaction.isDragging) {
                 // Apply velocity with friction
-                this.camera.rotationY += this.interaction.velX;
+                // Refactor: Use modelRotation for self-axis rotation
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + this.interaction.velX;
                 if (!this.interaction.isYLocked) {
-                    this.camera.rotationX += this.interaction.velY;
+                    this.camera.modelRotationX = (this.camera.modelRotationX || 0) + this.interaction.velY;
                 }
 
                 this.interaction.velX *= this.interaction.friction;
@@ -738,7 +740,7 @@
 
                 // If no user velocity, apply subtle auto-rotation
                 if (this.interaction.velX === 0) {
-                    this.camera.rotationY += 0.001;
+                    this.camera.modelRotationY = (this.camera.modelRotationY || 0) + 0.001;
                 }
             }
         },

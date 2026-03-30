@@ -158,8 +158,9 @@
                 if (isDragging) {
                     const dx = e.clientX - lastX;
                     const dy = e.clientY - lastY;
-                    this.state.camera.rotationY += dx * 0.01;
-                    this.state.camera.rotationX += dy * 0.01;
+                    // Refactor: Use modelRotation for dragging (self-axis spin)
+                    this.state.camera.modelRotationY = (this.state.camera.modelRotationY || 0) + dx * 0.01;
+                    this.state.camera.modelRotationX = (this.state.camera.modelRotationX || 0) + dy * 0.01;
                     lastX = e.clientX; lastY = e.clientY;
                 }
             });
@@ -282,7 +283,8 @@
                 this.state.timer++;
                 // Stop the revolution if 2D Closeup is active
                 if (!this.isDragging && this.viewMode !== '2D-Closeup') {
-                    this.state.camera.rotationY += 0.003;
+                    // Refactor: Use modelRotationY for "Rotation" (Self-Axis)
+                    this.state.camera.modelRotationY = (this.state.camera.modelRotationY || 0) + 0.003;
                 }
                 // Call module updates if they exist
                 if (this.Receptors && this.Receptors.updateReceptorStates) this.Receptors.updateReceptorStates();

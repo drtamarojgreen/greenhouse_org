@@ -359,9 +359,10 @@
                     const dy = e.clientY - lastY;
                     if (Math.abs(dx) > 2 || Math.abs(dy) > 2) hasDragged = true;
 
-                    this.camera.rotationY += dx * 0.01;
-                    this.camera.rotationX += dy * 0.01;
-                    this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
+                    // Refactor: Use modelRotation for dragging (self-axis spin)
+                    this.camera.modelRotationY = (this.camera.modelRotationY || 0) + dx * 0.01;
+                    this.camera.modelRotationX = (this.camera.modelRotationX || 0) + dy * 0.01;
+                    this.camera.modelRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.modelRotationX));
 
                     lastX = e.clientX;
                     lastY = e.clientY;
@@ -434,6 +435,10 @@
         startLoop() {
             const animate = () => {
                 if (!this.isRunning) return;
+                // Add slow constant rotation for premium feel
+                if (!this.isAnimatingCamera) {
+                    this.camera.modelRotationY = (this.camera.modelRotationY || 0) + 0.002;
+                }
                 this.update();
                 this.render();
                 requestAnimationFrame(animate);
@@ -474,10 +479,11 @@
 
             if (this.isAnimatingCamera && this.targetCamera) {
                 const lerp = 0.05;
-                this.camera.rotationX += (this.targetCamera.rotationX - this.camera.rotationX) * lerp;
-                let diffY = this.targetCamera.rotationY - this.camera.rotationY;
+                // Refactor: Transition modelRotation for self-axis spin alignment
+                this.camera.modelRotationX = (this.camera.modelRotationX || 0) + (this.targetCamera.rotationX - (this.camera.modelRotationX || 0)) * lerp;
+                let diffY = this.targetCamera.rotationY - (this.camera.modelRotationY || 0);
                 while (diffY > Math.PI) diffY -= Math.PI * 2; while (diffY < -Math.PI) diffY += Math.PI * 2;
-                this.camera.rotationY += diffY * lerp;
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + diffY * lerp;
                 this.camera.z += (this.targetCamera.z - this.camera.z) * lerp;
                 if (Math.abs(diffY) < 0.01 && Math.abs(this.camera.z - this.targetCamera.z) < 1) this.isAnimatingCamera = false;
             }

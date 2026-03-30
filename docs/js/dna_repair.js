@@ -208,7 +208,7 @@
             let isDragging = false; let lastX = 0; let lastY = 0;
             this.canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
             window.addEventListener('mousemove', (e) => {
-                if (isDragging) { const dx = e.clientX - lastX; const dy = e.clientY - lastY; this.state.camera.rotationX += dy * 0.005; this.state.camera.x -= dx * 2; lastX = e.clientX; lastY = e.clientY; return; }
+                if (isDragging) { const dx = e.clientX - lastX; const dy = e.clientY - lastY; this.state.camera.modelRotationX = (this.state.camera.modelRotationX || 0) + dy * 0.005; this.state.camera.x -= dx * 2; lastX = e.clientX; lastY = e.clientY; return; }
                 if (window.GreenhouseDNATooltip) {
                     const rect = this.canvas.getBoundingClientRect();
                     const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
@@ -233,7 +233,9 @@
         animate() { if (!this.isRunning) return; this.update(); this.render(); requestAnimationFrame(() => this.animate()); },
 
         update() {
-            const st = this.state; st.camera.rotationX += 0.005;
+            const st = this.state;
+            // Refactor: Use modelRotationX for self-axis rotation
+            st.camera.modelRotationX = (st.camera.modelRotationX || 0) + 0.005;
             if (st.simulating) {
                 st.timer++;
                 if (this.induceSpontaneousDamage) this.induceSpontaneousDamage();

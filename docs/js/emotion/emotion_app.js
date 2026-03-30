@@ -603,8 +603,9 @@
                 if (isDragging) {
                     const dx = e.clientX - lastX;
                     const dy = e.clientY - lastY;
-                    this.camera.rotationY += dx * 0.01;
-                    this.camera.rotationX += dy * 0.01;
+                    // Refactor: Use modelRotation for dragging (self-axis spin)
+                    this.camera.modelRotationY = (this.camera.modelRotationY || 0) + dx * 0.01;
+                    this.camera.modelRotationX = (this.camera.modelRotationX || 0) + dy * 0.01;
                     lastX = e.clientX;
                     lastY = e.clientY;
                 } else {

@@ -267,8 +267,9 @@
             if (G.isDragging) {
                 const dx = e.clientX - lastX;
                 const dy = e.clientY - lastY;
-                G.state.camera.rotationY += dx * 0.01;
-                G.state.camera.rotationX += dy * 0.01;
+                // Refactor: Use modelRotation for dragging (self-axis spin)
+                G.state.camera.modelRotationY = (G.state.camera.modelRotationY || 0) + dx * 0.01;
+                G.state.camera.modelRotationX = (G.state.camera.modelRotationX || 0) + dy * 0.01;
                 lastX = e.clientX; lastY = e.clientY;
             }
         });
@@ -287,7 +288,8 @@
     G.update = function () {
         G.state.timer++;
         if (!G.isDragging) {
-            G.state.camera.rotationY += 0.005;
+            // Refactor: Use modelRotationY for self-axis rotation
+            G.state.camera.modelRotationY = (G.state.camera.modelRotationY || 0) + 0.005;
             // 100. Cinematic Camera: subtle zoom/pan
             if (G.state.cinematicCamera) {
                 G.state.camera.zoom = 1.0 + Math.sin(G.state.timer * 0.005) * 0.1;

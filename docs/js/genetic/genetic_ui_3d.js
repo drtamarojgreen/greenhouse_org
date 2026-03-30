@@ -582,9 +582,9 @@
                 this.mainCameraController.update();
             }
 
-            // Fallback auto-rotate if no controller or if isEvolving
-            if (!this.mainCameraController && this.isEvolving) {
-                this.camera.rotationY += this.rotationSpeed;
+            // Refactor: Transition from orbital "revolution" to self-axis "rotation"
+            if (this.isEvolving || (this.mainCameraController && this.mainCameraController.autoRotate)) {
+                this.camera.modelRotationY = (this.camera.modelRotationY || 0) + this.rotationSpeed;
             }
 
             // Update PiP Cameras

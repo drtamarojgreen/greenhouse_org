@@ -723,7 +723,12 @@
 
         startAnimation() {
             const animate = () => {
-                if (this.cameraControls) this.cameraControls.update();
+                if (this.cameraControls) {
+                    this.cameraControls.update();
+                } else {
+                    // Refactor: Transition from orbital revolution to local rotation
+                    this.camera.modelRotationY = (this.camera.modelRotationY || 0) + 0.001;
+                }
                 this.render();
                 requestAnimationFrame(animate);
             };
