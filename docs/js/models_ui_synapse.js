@@ -69,7 +69,7 @@
                 // Determine Y based on channel type or id if needed, but here we place them on the membrane
                 const y = preSynapticY;
 
-                ctx.fillStyle = channel.state === 'open' ? '#4CAF50' : '#F44336';
+                ctx.fillStyle = channel.state === 'open' ? '#E0E0E0' : '#A0AEC0';
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 1;
 
@@ -274,7 +274,7 @@
                         receptor.boundUntil = Date.now() + 200;
                     }
                 } else {
-                    ctx.fillStyle = `rgba(0, 123, 255, ${p.opacity})`;
+                    ctx.fillStyle = `rgba(224, 224, 224, ${p.opacity})`;
 
                     // Enhancement #7: Neurotransmitter Shapes
                     // Render distinct shapes to mimic different molecular structures

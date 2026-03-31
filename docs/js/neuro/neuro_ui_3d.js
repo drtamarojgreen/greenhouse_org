@@ -312,8 +312,8 @@
                     z = vertex.z * jitter;
                 }
 
-                // Color mapping - Standardized Scientific Palette
-                const coolSciencePalette = ['#4FD1C5', '#4CAF50', '#A0AEC0'];
+                // Color mapping - Monochromatic Premium Palette
+                const coolSciencePalette = ['#E0E0E0', '#D0D0D0', '#A0AEC0'];
                 const baseColor = coolSciencePalette[i % coolSciencePalette.length];
 
                 return {
@@ -503,7 +503,7 @@
 
             // Draw Frame & Background
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
             ctx.fillRect(0, 0, w, h);
             ctx.strokeRect(0, 0, w, h);
@@ -515,7 +515,7 @@
 
             // Label
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = '800 10px Quicksand, sans-serif';
             ctx.textBaseline = 'top';
             ctx.fillText(t('whole_brain_title').toUpperCase(), 15, 15);

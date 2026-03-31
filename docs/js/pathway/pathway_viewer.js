@@ -189,30 +189,30 @@
         generate3DLayout(data) {
             if (!data || !data.nodes || data.nodes.length === 0) return [];
 
-            // Anatomical Map (Coordinates in World Space)
+            // Anatomical Map (Coordinates in World Space) - Constrained to prevent off-screen movement
             const anatomicalMap = {
                 // Brain
-                'pfc': { x: 0, y: 80, z: 140 },
-                'striatum': { x: 80, y: 20, z: 40 },
+                'pfc': { x: 0, y: 80, z: 100 },
+                'striatum': { x: 60, y: 20, z: 40 },
                 'vta': { x: 0, y: -40, z: -20 },
                 'sn': { x: 30, y: -40, z: -10 },
                 'hypothalamus': { x: 0, y: -20, z: 20 },
-                'pituitary': { x: 0, y: -80, z: 60 },
-                'scn': { x: 0, y: -10, z: 50 },
-                'pineal': { x: 0, y: 40, z: -60 },
-                'raphe': { x: 0, y: -120, z: -20 },
-                'locus_coeruleus': { x: 20, y: -110, z: -40 },
-                'amygdala': { x: 70, y: -30, z: 20 },
-                'hippocampus': { x: 60, y: -50, z: -40 },
+                'pituitary': { x: 0, y: -80, z: 40 },
+                'scn': { x: 0, y: -10, z: 40 },
+                'pineal': { x: 0, y: 40, z: -40 },
+                'raphe': { x: 0, y: -100, z: -20 },
+                'locus_coeruleus': { x: 20, y: -90, z: -40 },
+                'amygdala': { x: 60, y: -30, z: 20 },
+                'hippocampus': { x: 50, y: -40, z: -40 },
                 'thalamus': { x: 15, y: 40, z: 10 },
-                'brain_stem': { x: 0, y: -160, z: -40 },
+                'brain_stem': { x: 0, y: -140, z: -40 },
                 // Torso
-                'spinal_cord': { x: 0, y: -250, z: -50 },
-                'heart': { x: -50, y: -450, z: 30 },
-                'liver': { x: 60, y: -550, z: 40 },
-                'adrenals': { x: 50, y: -650, z: -20 },
-                'gut': { x: 0, y: -800, z: 20 },
-                'blood_stream': { x: -100, y: -500, z: 0 },
+                'spinal_cord': { x: 0, y: -220, z: -40 },
+                'heart': { x: -40, y: -400, z: 30 },
+                'liver': { x: 50, y: -500, z: 40 },
+                'adrenals': { x: 40, y: -600, z: -20 },
+                'gut': { x: 0, y: -700, z: 20 },
+                'blood_stream': { x: -80, y: -450, z: 0 },
                 // Cellular/Generic
                 'synapse': { x: 20, y: 150, z: 150 },
                 'cytosol': { x: 0, y: 160, z: 150 },
@@ -222,8 +222,8 @@
             return data.nodes.map((node, i) => {
                 const targetBase = anatomicalMap[node.region] || { x: 0, y: 0, z: 0 };
 
-                // Add jitter to prevent exact overlap if multiple nodes in same region
-                const jitter = 25;
+                // Add jitter to prevent exact overlap if multiple nodes in same region - Constrained
+                const jitter = 15;
                 const pos = {
                     x: targetBase.x + (Math.sin(i * 1.5) * jitter),
                     y: targetBase.y + (Math.cos(i * 2.1) * jitter),
@@ -353,14 +353,14 @@
                         enableZoom: true,
                         enableRotate: true,
                         autoRotate: true,
-                        autoRotateSpeed: 0.0005,
+                        autoRotateSpeed: 0.0003, // Reduced for accessibility
                         panSpeed: 0.002,
                         zoomSpeed: 0.1,
                         rotateSpeed: 0.005,
                         inertia: true,
                         inertiaDamping: 0.95,
                         minZoom: -50,
-                        maxZoom: -8000
+                        maxZoom: -4000 // Constrained to prevent model disappearing
                     }
                 },
                 get(path) {
@@ -908,12 +908,12 @@
             ctx.stroke();
 
             const typeColors = {
-                'gene': '#4FD1C5',
+                'gene': '#D0D0D0',
                 'compound': '#A0AEC0',
-                'map': '#4CAF50',
+                'map': '#E0E0E0',
                 'metabolite': '#A0AEC0',
-                'neurotransmitter': '#4CAF50',
-                'cytokine': '#FF9F43'
+                'neurotransmitter': '#D0D0D0',
+                'cytokine': '#E0E0E0'
             };
 
             types.forEach((type, i) => {
@@ -960,14 +960,14 @@
                     const fx = source.projected.x + (target.projected.x - source.projected.x) * flowPos;
                     const fy = source.projected.y + (target.projected.y - source.projected.y) * flowPos;
 
-                    this.ctx.fillStyle = 'rgba(79, 209, 197, 0.8)';
+                    this.ctx.fillStyle = 'rgba(224, 224, 224, 0.8)';
                     this.ctx.beginPath();
                     this.ctx.arc(fx, fy, 2.5 * source.projected.scale, 0, Math.PI * 2);
                     this.ctx.fill();
 
                     // Add a small glow to the particle
                     this.ctx.shadowBlur = 5;
-                    this.ctx.shadowColor = 'rgba(79, 209, 197, 0.5)';
+                    this.ctx.shadowColor = 'rgba(224, 224, 224, 0.5)';
                     this.ctx.fill();
                     this.ctx.shadowBlur = 0;
                 }
@@ -982,17 +982,17 @@
 
                     switch (node.type) {
                         case 'gene':
-                            color = '#4FD1C5';
-                            glow = 'rgba(79, 209, 197, 0.4)';
+                            color = '#D0D0D0';
+                            glow = 'rgba(208, 208, 208, 0.4)';
                             break;
                         case 'compound':
                             color = '#A0AEC0';
                             glow = 'rgba(160, 174, 192, 0.4)';
                             break;
                         case 'map':
-                            color = '#4CAF50';
+                            color = '#E0E0E0';
                             radius = 8 * node.projected.scale;
-                            glow = 'rgba(76, 175, 80, 0.4)';
+                            glow = 'rgba(224, 224, 224, 0.4)';
                             break;
                     }
 
@@ -1001,8 +1001,8 @@
                     const showLabel = isHighlighted || node.projected.scale > semanticZoomThreshold;
 
                     if (isHighlighted) {
-                        color = '#39ff14'; // Neon Green
-                        glow = 'rgba(57, 255, 20, 0.8)';
+                        color = '#FFFFFF'; // Highlighted Monochromatic
+                        glow = 'rgba(255, 255, 255, 0.8)';
                         radius *= 2.5;
                     }
 
@@ -1016,9 +1016,9 @@
                         this.ctx.fillRect(node.projected.x - textWidth / 2 - 4, node.projected.y - radius - 18, textWidth + 8, 14);
 
                         if (isHighlighted) {
-                            this.ctx.strokeStyle = '#39ff14';
+                            this.ctx.strokeStyle = '#FFFFFF';
                             this.ctx.strokeRect(node.projected.x - textWidth / 2 - 4, node.projected.y - radius - 18, textWidth + 8, 14);
-                            this.ctx.fillStyle = '#39ff14';
+                            this.ctx.fillStyle = '#FFFFFF';
                         } else {
                             this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
                         }

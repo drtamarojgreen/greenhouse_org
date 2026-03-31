@@ -11,8 +11,8 @@
 
     G.circuitState = {
         pathways: {
-            direct: { color: '#4CAF50', active: false, label: 'Direct Pathway (D1-MSN)' },
-            indirect: { color: '#4FD1C5', active: false, label: 'Indirect Pathway (D2-MSN)' }
+            direct: { color: '#E0E0E0', active: false, label: 'Direct Pathway (D1-MSN)' },
+            indirect: { color: '#A0AEC0', active: false, label: 'Indirect Pathway (D2-MSN)' }
         },
         msnPopulations: {
             d1: [], // 71. Distinct MSN populations
@@ -227,7 +227,7 @@
         cState.msnPopulations.d1.forEach(msn => {
             const p = project(msn.x, msn.y, msn.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#4CAF50'; // Greenhouse Green
+                ctx.fillStyle = '#E0E0E0'; // Silver
                 ctx.globalAlpha = cState.pathways.direct.active ? 1.0 : 0.4;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
@@ -238,7 +238,7 @@
         cState.msnPopulations.d2.forEach(msn => {
             const p = project(msn.x, msn.y, msn.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#4FD1C5'; // Scientific Teal
+                ctx.fillStyle = '#A0AEC0'; // Muted Gray-Blue
                 ctx.globalAlpha = cState.pathways.indirect.active ? 1.0 : 0.4;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
@@ -251,7 +251,7 @@
         Object.values(cState.interneurons.gabaergic).forEach(inter => {
             const p = project(inter.x, inter.y, inter.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = inter.label === 'PV+' ? '#FF9F43' : '#4FD1C5';
+                ctx.fillStyle = inter.label === 'PV+' ? '#E0E0E0' : '#A0AEC0';
                 ctx.globalAlpha = inter.active;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y - 10 * p.scale);

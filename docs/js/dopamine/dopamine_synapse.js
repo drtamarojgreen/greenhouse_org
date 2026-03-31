@@ -428,7 +428,7 @@
         sState.synthesis.fluxVisuals.forEach(f => {
             const p = project(f.x, f.y, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = f.type === 'ldopa' ? '#FF9F43' : '#4CAF50';
+                ctx.fillStyle = f.type === 'ldopa' ? '#A0AEC0' : '#E0E0E0';
                 ctx.font = `${8 * p.scale}px Arial`;
                 ctx.fillText(f.type.toUpperCase(), p.x, p.y);
             }
@@ -438,7 +438,7 @@
         sState.astrocytes.forEach(ast => {
             const p = project(ast.x, ast.y, ast.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.strokeStyle = '#4FD1C5';
+                ctx.strokeStyle = '#A0AEC0';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, ast.radius * p.scale, 0, Math.PI * 2);
@@ -467,7 +467,7 @@
         [...sState.vesicles.reserve, ...sState.vesicles.rrp].forEach(v => {
             const p = project(v.x, v.y, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = v.filled > 0.9 ? '#88ff88' : '#666';
+                ctx.fillStyle = v.filled > 0.9 ? '#E0E0E0' : '#666';
                 ctx.strokeStyle = v.snareState === 'Primed' ? '#fff' : '#444';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.beginPath();
@@ -511,13 +511,13 @@
             const gradientY = -160;
             const pG = project(0, gradientY, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (pG.scale > 0) {
-                // Create a multi-stop heatmap gradient - Standardized Teal
+                // Create a multi-stop heatmap gradient - Standardized Monochromatic
                 const grad = ctx.createRadialGradient(pG.x, pG.y, 0, pG.x, pG.y, 150 * pG.scale);
                 const intensity = Math.min(1.0, sState.cleftDA.length / 400);
                 grad.addColorStop(0, `rgba(255, 255, 255, ${intensity * 0.6})`); // Core (White)
-                grad.addColorStop(0.2, `rgba(79, 209, 197, ${intensity * 0.4})`);  // Mid (Teal)
-                grad.addColorStop(0.5, `rgba(46, 61, 47, ${intensity * 0.2})`);  // Outer (Dark Greenhouse)
-                grad.addColorStop(1, 'rgba(79, 209, 197, 0)');
+                grad.addColorStop(0.2, `rgba(160, 174, 192, ${intensity * 0.4})`);  // Mid (Silver)
+                grad.addColorStop(0.5, `rgba(80, 80, 80, ${intensity * 0.2})`);  // Outer (Dark Gray)
+                grad.addColorStop(1, 'rgba(160, 174, 192, 0)');
                 ctx.fillStyle = grad;
                 ctx.beginPath();
                 ctx.arc(pG.x, pG.y, 150 * pG.scale, 0, Math.PI * 2);
@@ -525,11 +525,11 @@
             }
         }
 
-        // Render DA molecules
+        // Render DA molecules (Monochromatic)
         sState.cleftDA.forEach(da => {
             const p = project(da.x, da.y, da.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#4CAF50';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.globalAlpha = Math.max(0, da.life / 200);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);

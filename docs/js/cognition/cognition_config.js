@@ -30,62 +30,62 @@
         regions: {
             prefrontalCortex: {
                 name: 'cog_reg_pfc_name',
-                color: 'rgba(50, 150, 255, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_pfc_desc'
             },
             parietalLobe: {
                 name: 'cog_reg_parietal_name',
-                color: 'rgba(150, 50, 255, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_parietal_desc'
             },
             temporalLobe: {
                 name: 'cog_reg_temporal_name',
-                color: 'rgba(50, 255, 150, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_temporal_desc'
             },
             occipitalLobe: {
                 name: 'cog_reg_occipital_name',
-                color: 'rgba(255, 50, 150, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_occipital_desc'
             },
             motorCortex: {
                 name: 'cog_reg_motor_name',
-                color: 'rgba(255, 150, 100, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_motor_desc'
             },
             somatosensoryCortex: {
                 name: 'cog_reg_somato_name',
-                color: 'rgba(150, 255, 150, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_somato_desc'
             },
             cerebellum: {
                 name: 'cog_reg_cerebellum_name',
-                color: 'rgba(64, 224, 208, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_cerebellum_desc'
             },
             brainstem: {
                 name: 'cog_reg_brainstem_name',
-                color: 'rgba(255, 215, 0, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_brainstem_desc'
             },
             amygdala: {
                 name: 'cog_reg_amygdala_name',
-                color: 'rgba(255, 100, 100, 0.8)',
+                color: 'rgba(208, 208, 208, 0.4)',
                 description: 'cog_reg_amygdala_desc'
             },
             hippocampus: {
                 name: 'cog_reg_hippocampus_name',
-                color: 'rgba(100, 255, 150, 0.8)',
+                color: 'rgba(208, 208, 208, 0.4)',
                 description: 'cog_reg_hippocampus_desc'
             },
             thalamus: {
                 name: 'cog_reg_thalamus_name',
-                color: 'rgba(100, 150, 255, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_thalamus_desc'
             },
             hypothalamus: {
                 name: 'cog_reg_hypothalamus_name',
-                color: 'rgba(255, 200, 100, 0.8)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'cog_reg_hypothalamus_desc'
             }
         },

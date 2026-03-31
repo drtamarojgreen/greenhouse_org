@@ -78,7 +78,7 @@
         drawElectrostaticPotential(ctx, w, h, frame) {
             ctx.save();
             ctx.globalAlpha = 0.05;
-            ctx.fillStyle = '#4FD1C5';
+            ctx.fillStyle = '#A0AEC0';
             const offset = Math.sin(frame * 0.02) * 10;
             const surfaceY = G.getSurfaceY ? G.getSurfaceY(h) : h * 0.68;
 
@@ -86,7 +86,7 @@
             ctx.rect(w * 0.35, h * 0.38 + offset, w * 0.3, 10);
             ctx.fill();
 
-            ctx.fillStyle = '#FF9F43';
+            ctx.fillStyle = '#E0E0E0';
             ctx.beginPath();
             ctx.rect(0, surfaceY - offset, w, 15);
             ctx.fill();
@@ -95,7 +95,7 @@
 
         drawBBB(ctx, w, h) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(160, 174, 192, 0.5)';
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.6)';
             ctx.lineWidth = 4;
             ctx.setLineDash([10, 5]);
             ctx.beginPath();
@@ -103,7 +103,7 @@
             ctx.lineTo(w, h * 0.05);
             ctx.stroke();
 
-            ctx.fillStyle = 'rgba(160, 174, 192, 0.05)';
+            ctx.fillStyle = 'rgba(160, 174, 192, 0.1)';
             ctx.fillRect(0, 0, w, h * 0.05);
 
             ctx.fillStyle = '#A0AEC0';
@@ -115,7 +115,7 @@
         drawMeasurement(ctx, start, end) {
             if (!start || !end) return;
             ctx.save();
-            ctx.strokeStyle = '#4CAF50';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.setLineDash([2, 2]);
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -126,7 +126,7 @@
             const dist = Math.sqrt((end.x - start.x)**2 + (end.y - start.y)**2);
             const virtualNM = (dist * 0.2).toFixed(1);
 
-            ctx.fillStyle = '#4CAF50';
+            ctx.fillStyle = '#E0E0E0';
             ctx.font = 'bold 10px Arial';
             ctx.fillText(`${virtualNM} nm`, (start.x + end.x) / 2, (start.y + end.y) / 2 - 10);
             ctx.restore();

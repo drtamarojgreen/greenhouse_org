@@ -83,9 +83,9 @@
             ctx.strokeStyle = '#A0AEC0';
             ctx.strokeRect(40, projection.height - 180, 150, 45);
 
-            ctx.fillStyle = '#FF9F43'; ctx.font = 'bold 9px monospace';
+            ctx.fillStyle = '#E0E0E0'; ctx.font = 'bold 9px monospace';
             ctx.fillText(`M1-LIKE (REACTIVE): ${(m1Prop * 100).toFixed(0)}%`, 50, projection.height - 165);
-            ctx.fillStyle = '#4FD1C5';
+            ctx.fillStyle = '#A0AEC0';
             ctx.fillText(`M2-LIKE (RESOLVING): ${(m2Prop * 100).toFixed(0)}%`, 50, projection.height - 150);
             ctx.restore();
         },
@@ -93,7 +93,7 @@
         drawInfiltrationCounter(ctx, state, ui3d, projection) {
             const infiltratingCount = ui3d.leukocytes.filter(l => l.state === 'infiltrating').length;
             ctx.save();
-            ctx.fillStyle = infiltratingCount > 3 ? '#FF9F43' : '#fff';
+            ctx.fillStyle = infiltratingCount > 3 ? '#E0E0E0' : '#fff';
             ctx.font = 'bold 11px Quicksand';
             ctx.fillText(`LEUKOCYTE INFILTRATION: ${infiltratingCount} CELLS`, 40, projection.height - 195);
             ctx.restore();
@@ -135,8 +135,8 @@
 
             // Endothelial Cell (Flat elongated hex-like shape)
             ctx.beginPath();
-            // Item 46: Endothelial stress overlay
-            const stressColor = bbb < 0.7 ? `rgba(255, 159, 67, ${0.4 * (1 - bbb)})` : 'transparent';
+            // Item 46: Endothelial stress overlay - Monochromatic
+            const stressColor = bbb < 0.7 ? `rgba(224, 224, 224, ${0.4 * (1 - bbb)})` : 'transparent';
             const color = bbb < 0.8 ? `rgba(160, 174, 192, ${0.3 + (1 - bbb) * 0.3})` : 'rgba(160, 174, 192, 0.3)';
             ctx.fillStyle = color;
             ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 * p.scale})`;
@@ -162,7 +162,7 @@
             const Math3D = window.GreenhouseModels3DMath;
             ctx.beginPath();
             // Item 57: Improve neuron visual encoding (color + thickness)
-            ctx.strokeStyle = tone > 0.5 ? `rgba(255, 159, 67, ${0.4 * (1 - tone)})` : `rgba(79, 209, 197, ${0.3 * (1 - tone)})`;
+            ctx.strokeStyle = tone > 0.5 ? `rgba(224, 224, 224, ${0.4 * (1 - tone)})` : `rgba(160, 174, 192, ${0.3 * (1 - tone)})`;
             ctx.lineWidth = 0.5 + (1 - tone) * 1.5;
 
             n.mesh.faces.forEach(f => {
@@ -188,12 +188,12 @@
             // Item 61: Pulsing animation tied to activation
             const pulse = 1 + Math.sin(Date.now() * 0.005 + g.pulseOffset) * (activation * 0.2);
 
-            // Color Themes (Standardized Palette)
-            let color = isAstro ? `rgba(255, 159, 67, ${0.6 * p.scale})` : (isM1 ? `rgba(255, 159, 67, ${0.8 * p.scale})` : `rgba(79, 209, 197, ${0.6 * p.scale})`);
+            // Color Themes (Standardized Monochromatic Palette)
+            let color = isAstro ? `rgba(208, 208, 208, ${0.6 * p.scale})` : (isM1 ? `rgba(224, 224, 224, ${0.8 * p.scale})` : `rgba(160, 174, 192, ${0.6 * p.scale})`);
 
             // Phenotype Label (Item 41)
             if (p.scale > 0.6 && !isAstro) {
-                ctx.fillStyle = isM1 ? '#FF9F43' : '#4FD1C5';
+                ctx.fillStyle = isM1 ? '#E0E0E0' : '#A0AEC0';
                 ctx.font = 'bold 8px monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText(isM1 ? 'PHENOTYPE: M1' : 'PHENOTYPE: M2', 0, -20 * p.scale);
@@ -222,7 +222,7 @@
                 g.receptors.forEach(r => {
                     ctx.save();
                     ctx.rotate(r.angle + Date.now() * 0.001);
-                    ctx.fillStyle = r.type === 'tnf' ? '#FF9F43' : '#4CAF50';
+                    ctx.fillStyle = r.type === 'tnf' ? '#E0E0E0' : '#A0AEC0';
                     ctx.beginPath();
                     ctx.arc(15 * p.scale, 0, 2 * p.scale, 0, Math.PI * 2);
                     ctx.fill();
@@ -233,7 +233,7 @@
             // Astrocytic Endfeet wrapping simulation (if near vessel)
             if (isAstro && g.y > 100) {
                 ctx.beginPath();
-                ctx.strokeStyle = `rgba(255, 220, 50, 0.3)`;
+                ctx.strokeStyle = `rgba(208, 208, 208, 0.3)`;
                 ctx.lineWidth = 2;
                 ctx.moveTo(0, 0);
                 ctx.lineTo(0, (300 - g.y) * p.scale);
@@ -267,7 +267,7 @@
             // Item 44: Pulse on transition
             const pulse = (l.state === 'infiltrating' && Date.now() % 500 < 250) ? 1.5 : 1.0;
 
-            ctx.fillStyle = isRolling ? `rgba(255, 255, 255, 0.9)` : `rgba(200, 200, 255, 0.5)`;
+            ctx.fillStyle = isRolling ? `rgba(255, 255, 255, 0.9)` : `rgba(208, 208, 208, 0.5)`;
 
             // Draw spherical leukocyte
             ctx.beginPath();
@@ -275,7 +275,7 @@
             ctx.fill();
 
             if (isRolling) {
-                ctx.strokeStyle = '#FF9F43';
+                ctx.strokeStyle = '#E0E0E0';
                 ctx.lineWidth = 1;
                 ctx.stroke();
                 // "Adhesion" lines

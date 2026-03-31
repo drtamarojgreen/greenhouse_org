@@ -11,18 +11,18 @@
 
     G.Receptors = {
         subtypes: {
-            '5-HT1A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#4d79ff', constitutiveActivity: 0.1, pdb: '7E2Y', architecture: 'GPCR-A', tmHelices: 7, il3Length: 30, cTailLength: 40 },
-            '5-HT1B': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#3366ff', pdb: '6A93', architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 15 },
-            '5-HT1D': { coupling: 'Gi/o', effect: 'Inhibitory (Presynaptic)', color: '#3399ff', pdb: '7E2Z', architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 15 },
-            '5-HT1E': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#6699ff', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 20 },
-            '5-HT1F': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9999ff', pdb: '7EXD', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 20 },
-            '5-HT2A': { coupling: 'Gq/11', effect: 'Excitatory', color: '#ff4d4d', rnaEditingVariants: true, pdb: '6WIV', architecture: 'GPCR-A', tmHelices: 7, il3Length: 12, cTailLength: 25 },
-            '5-HT2C': { coupling: 'Gq/11', effect: 'Excitatory', color: '#cc3333', editedIsoforms: ['INI', 'VGV', 'VSV'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 12, cTailLength: 25 },
-            '5-HT3': { coupling: 'Ionotropic', effect: 'Excitatory (Na+/K+)', color: '#4dff4d', architecture: 'Pentameric', subunits: 5, poreRadius: 10 },
-            '5-HT4': { coupling: 'Gs', effect: 'Excitatory', color: '#ff9900', spliceVariants: ['a', 'b', 'c'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 35 },
-            '5-HT5A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9933ff', architecture: 'GPCR-A', tmHelices: 7, il3Length: 20, cTailLength: 30 },
-            '5-HT6': { coupling: 'Gs', effect: 'Excitatory', color: '#ffff4d', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 25 },
-            '5-HT7': { coupling: 'Gs', effect: 'Excitatory', color: '#ff4dff', spliceVariants: ['a', 'b', 'd'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 45 }
+            '5-HT1A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#E0E0E0', constitutiveActivity: 0.1, pdb: '7E2Y', architecture: 'GPCR-A', tmHelices: 7, il3Length: 30, cTailLength: 40 },
+            '5-HT1B': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#D0D0D0', pdb: '6A93', architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 15 },
+            '5-HT1D': { coupling: 'Gi/o', effect: 'Inhibitory (Presynaptic)', color: '#A0AEC0', pdb: '7E2Z', architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 15 },
+            '5-HT1E': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#D0D0D0', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 20 },
+            '5-HT1F': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#A0AEC0', pdb: '7EXD', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 20 },
+            '5-HT2A': { coupling: 'Gq/11', effect: 'Excitatory', color: '#E0E0E0', rnaEditingVariants: true, pdb: '6WIV', architecture: 'GPCR-A', tmHelices: 7, il3Length: 12, cTailLength: 25 },
+            '5-HT2C': { coupling: 'Gq/11', effect: 'Excitatory', color: '#D0D0D0', editedIsoforms: ['INI', 'VGV', 'VSV'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 12, cTailLength: 25 },
+            '5-HT3': { coupling: 'Ionotropic', effect: 'Excitatory (Na+/K+)', color: '#FFFFFF', architecture: 'Pentameric', subunits: 5, poreRadius: 10 },
+            '5-HT4': { coupling: 'Gs', effect: 'Excitatory', color: '#E0E0E0', spliceVariants: ['a', 'b', 'c'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 35 },
+            '5-HT5A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#A0AEC0', architecture: 'GPCR-A', tmHelices: 7, il3Length: 20, cTailLength: 30 },
+            '5-HT6': { coupling: 'Gs', effect: 'Excitatory', color: '#D0D0D0', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 25 },
+            '5-HT7': { coupling: 'Gs', effect: 'Excitatory', color: '#A0AEC0', spliceVariants: ['a', 'b', 'd'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 45 }
         },
 
         conformationalStates: ['Inactive', 'Intermediate', 'Active'],
@@ -137,9 +137,9 @@
         renderMembraneChannels(ctx, project, cam, w, h) {
             // Electrophysiological Channels (Category 6, #51, #53)
             const channels = [
-                { type: 'HCN', color: '#ffcc00', x: -200, y: 0, z: 100 },
-                { type: 'SK', color: '#00ccff', x: 200, y: 0, z: 150 },
-                { type: 'BK', color: '#0066ff', x: 250, y: 0, z: -50 }
+                { type: 'HCN', color: '#D0D0D0', x: -200, y: 0, z: 100 },
+                { type: 'SK', color: '#A0AEC0', x: 200, y: 0, z: 150 },
+                { type: 'BK', color: '#A0AEC0', x: 250, y: 0, z: -50 }
             ];
 
             channels.forEach(ch => {
@@ -270,7 +270,7 @@
                             ctx.stroke();
                         }
                         // Pore center
-                        ctx.fillStyle = r.state === 'Active' ? '#4dff4d' : '#222';
+                        ctx.fillStyle = r.state === 'Active' ? '#FFFFFF' : '#222';
                         ctx.beginPath();
                         ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
                         ctx.fill();
@@ -325,7 +325,7 @@
                     ctx.fillText(label, p.x, p.y + 60 * p.scale);
 
                     if (r.state !== 'Inactive') {
-                        ctx.fillStyle = '#00ffcc';
+                        ctx.fillStyle = '#FFFFFF';
                         ctx.fillText(r.state, p.x, p.y - 50 * p.scale);
 
                         // Binding Pocket Water Molecules visualization (Category 2, #14)

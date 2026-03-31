@@ -21,17 +21,17 @@
         // Category Definitions for Visuals (Enhancement 1: Neural regions added)
         // Note: All nodes are spheres per explicit user request.
         categories: {
-            'hpa': { label: 'stress_cat_hpa', color: '#FF9F43', total: 5 },
-            'env': { label: 'stress_cat_env', color: '#FF9F43', total: 26 },
-            'limbic': { label: 'stress_cat_limbic', color: '#FF9F43', total: 6 },
-            'psych': { label: 'stress_cat_psych', color: '#4CAF50', total: 25 },
-            'cortical': { label: 'stress_cat_cortical', color: '#4FD1C5', total: 3 },
-            'philo': { label: 'stress_cat_philo', color: '#4CAF50', total: 25 },
-            'brainstem': { label: 'stress_cat_autonomic', color: '#4FD1C5', total: 10 },
-            'research': { label: 'stress_cat_biological_defense', color: '#4FD1C5', total: 30 },
-            'interv': { label: 'stress_cat_interv', color: '#4FD1C5', total: 4 },
-            'therapy': { label: 'stress_cat_therapy', color: '#4CAF50', total: 8 },
-            'lifestyle': { label: 'stress_cat_lifestyle', color: '#4CAF50', total: 7 },
+            'hpa': { label: 'stress_cat_hpa', color: '#E0E0E0', total: 5 },
+            'env': { label: 'stress_cat_env', color: '#E0E0E0', total: 26 },
+            'limbic': { label: 'stress_cat_limbic', color: '#E0E0E0', total: 6 },
+            'psych': { label: 'stress_cat_psych', color: '#D0D0D0', total: 25 },
+            'cortical': { label: 'stress_cat_cortical', color: '#A0AEC0', total: 3 },
+            'philo': { label: 'stress_cat_philo', color: '#D0D0D0', total: 25 },
+            'brainstem': { label: 'stress_cat_autonomic', color: '#A0AEC0', total: 10 },
+            'research': { label: 'stress_cat_biological_defense', color: '#A0AEC0', total: 30 },
+            'interv': { label: 'stress_cat_interv', color: '#A0AEC0', total: 4 },
+            'therapy': { label: 'stress_cat_therapy', color: '#D0D0D0', total: 8 },
+            'lifestyle': { label: 'stress_cat_lifestyle', color: '#D0D0D0', total: 7 },
             'system': { label: 'stress_cat_system', color: '#A0AEC0', total: 6 }
         },
 
@@ -91,8 +91,8 @@
             if (cp.scale > 0) {
                 const auraSize = Math.max(ctx.canvas.width, ctx.canvas.height) * 0.8;
                 const auraGrad = ctx.createRadialGradient(cp.x, cp.y, 0, cp.x, cp.y, auraSize);
-                // Standardized Scientific Palette: Gray to Green to Teal to Orange
-                const auraColor = load > 0.7 ? '255, 159, 67' : (load > 0.3 ? '79, 209, 197' : '160, 174, 192');
+                // Standardized Scientific Palette (Monochromatic): Load-based intensity
+                const auraColor = load > 0.7 ? '224, 224, 224' : '160, 174, 192';
                 auraGrad.addColorStop(0, `rgba(${auraColor}, 0.15)`);
                 auraGrad.addColorStop(1, 'transparent');
                 ctx.save();
@@ -161,8 +161,8 @@
                 const pz = p.orbit;
                 const pt = Math3D.project3DTo2D(px, p.y, pz, camera, projection);
                 if (pt.scale > 0) {
-                    // Standard Palette: Teal for health, Orange for load
-                    const baseColor = load > 0.7 ? '255, 159, 67' : '79, 209, 197';
+                    // Standard Palette (Monochromatic): High intensity for load
+                    const baseColor = load > 0.7 ? '224, 224, 224' : '160, 174, 192';
                     ctx.fillStyle = `rgba(${baseColor}, ${0.4 * pt.scale})`;
                     ctx.beginPath();
 
@@ -419,16 +419,16 @@
                 }
             });
 
-            // 4. Threshold Markers (Enhancement 7)
+            // 4. Threshold Markers (Enhancement 7) - Monochromatic Highlight
             if (load > 0.8) {
-                ctx.strokeStyle = '#ff4d4d';
+                ctx.strokeStyle = '#E0E0E0';
                 ctx.lineWidth = 3;
                 ctx.setLineDash([10, 5]);
                 ctx.beginPath();
                 ctx.arc(cp.x, cp.y, 100 * cp.scale, 0, Math.PI * 2);
                 ctx.stroke();
                 ctx.setLineDash([]);
-                ctx.fillStyle = '#ff4d4d';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.font = 'bold 12px Arial';
                 ctx.fillText(window.GreenhouseModelsUtil.t('stress_ui_critical_overload'), cp.x, cp.y - 110 * cp.scale);
             }
@@ -450,7 +450,7 @@
             ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
             ctx.fillRect(scrubberX, scrubberY, scrubberW, 10);
 
-            ctx.fillStyle = '#64d2ff';
+            ctx.fillStyle = '#D0D0D0';
             ctx.fillRect(scrubberX, scrubberY, scrubberW * this.timelineT, 10);
 
             ctx.strokeStyle = '#fff';
@@ -481,7 +481,7 @@
 
             ctx.save();
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.strokeStyle = 'rgba(100, 210, 255, 0.3)';
+            ctx.strokeStyle = 'rgba(208, 208, 208, 0.3)';
             ctx.lineWidth = 1;
             if (window.GreenhouseStressApp && window.GreenhouseStressApp.roundRect) {
                 window.GreenhouseStressApp.roundRect(ctx, dx, dy, dw, dh, 8, true, true);
@@ -490,15 +490,15 @@
                 ctx.strokeRect(dx, dy, dw, dh);
             }
 
-            ctx.fillStyle = '#64d2ff';
+            ctx.fillStyle = '#D0D0D0';
             ctx.font = 'bold 10px Quicksand, sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText(window.GreenhouseModelsUtil.t('stress_ui_live_telemetry').toUpperCase(), dx + 10, dy + 20);
 
             const telemetry = [
-                { label: 'HRV', value: (m.hrv || 0).toFixed(0) + 'ms', color: '#00ff99' },
-                { label: 'CORT', value: (m.cortisolLevels || 0).toFixed(1), color: '#ffcc00' },
-                { label: 'SERO', value: (m.serotoninLevels || 0).toFixed(0), color: '#5856d6' }
+                { label: 'HRV', value: (m.hrv || 0).toFixed(0) + 'ms', color: '#D0D0D0' },
+                { label: 'CORT', value: (m.cortisolLevels || 0).toFixed(1), color: '#E0E0E0' },
+                { label: 'SERO', value: (m.serotoninLevels || 0).toFixed(0), color: '#A0AEC0' }
             ];
 
             telemetry.forEach((t, i) => {
@@ -512,7 +512,7 @@
                 // Small scrolling graph for each
                 const history = this.scoreHistory['hpa']; // Proxy for history
                 ctx.beginPath();
-                ctx.strokeStyle = '#4FD1C5'; // Scientific Teal
+                ctx.strokeStyle = '#A0AEC0'; // Scientific Gray
                 ctx.globalAlpha = 0.3;
                 for (let j = 0; j < 20; j++) {
                     const val = history[history.length - 20 + j] || 0;

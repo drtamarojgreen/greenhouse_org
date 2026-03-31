@@ -28,8 +28,8 @@
 
         renderDashboard(container) {
             let html = `
-                <div id="analytics-panel" style="margin-top: 20px; padding: 20px; background: rgba(0,242,255,0.05); border-radius: 15px; border: 1px solid rgba(0,242,255,0.1);">
-                    <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #00F2FF; margin-bottom: 10px; font-weight: 700;">Live Telemetry</h3>
+                <div id="analytics-panel" style="margin-top: 20px; padding: 20px; background: rgba(160,174,192,0.05); border-radius: 15px; border: 1px solid rgba(160,174,192,0.1);">
+                    <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #A0AEC0; margin-bottom: 10px; font-weight: 700;">Live Telemetry</h3>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: #aaa;">[Ca2+]i (Intracellular)</span>
@@ -38,18 +38,18 @@
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: #aaa;">Membrane Current</span>
-                        <span id="membrane-current" style="font-family: monospace; font-size: 14px; color: #FFD700;">0.0 pA</span>
+                        <span id="membrane-current" style="font-family: monospace; font-size: 14px; color: #E0E0E0;">0.0 pA</span>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <span style="font-size: 11px; color: #aaa;">Simulation Sensitivity</span>
-                        <span id="sensitivity-index" style="font-family: monospace; font-size: 14px; color: #00F2FF;">1.00</span>
+                        <span id="sensitivity-index" style="font-family: monospace; font-size: 14px; color: #A0AEC0;">1.00</span>
                     </div>
 
                     <div style="margin-bottom: 12px;">
                         <label style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">Mitochondrial ATP</label>
                         <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
-                            <div id="atp-bar" style="width: 100%; height: 100%; background: #FFD700;"></div>
+                            <div id="atp-bar" style="width: 100%; height: 100%; background: #E0E0E0;"></div>
                         </div>
                     </div>
 
@@ -57,13 +57,13 @@
                         <canvas id="dose-response-chart" width="260" height="80" style="width: 100%; height: 40px; margin-bottom: 10px;"></canvas>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-size: 12px; color: #ccc;">Synaptic Health Score</span>
-                            <span id="health-score" style="font-family: monospace; font-size: 18px; color: #00F2FF; font-weight: bold;">--</span>
+                            <span id="health-score" style="font-family: monospace; font-size: 18px; color: #A0AEC0; font-weight: bold;">--</span>
                         </div>
                     </div>
                 </div>
 
                 <div id="literature-panel" style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: none;">
-                    <h3 style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 8px; font-weight: 700;">Literature Meta-analysis</h3>
+                    <h3 style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #A0AEC0; margin-bottom: 8px; font-weight: 700;">Literature Meta-analysis</h3>
                     <div id="literature-content" style="font-size: 11px; color: #ccc; line-height: 1.4;"></div>
                 </div>
             `;
@@ -125,7 +125,7 @@
             const atpBar = document.getElementById('atp-bar');
             if (atpBar) {
                 atpBar.style.width = `${this.state.atp}%`;
-                atpBar.style.background = this.state.atp < 20 ? '#ff4444' : '#FFD700';
+                atpBar.style.background = this.state.atp < 20 ? '#ff4444' : '#E0E0E0';
             }
         },
 
@@ -142,7 +142,7 @@
 
             content.innerHTML = data.map(item => `
                 <div style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
-                    <div style="font-weight: 700; color: #357438; font-size: 9px;">${item.source}</div>
+                    <div style="font-weight: 700; color: #A0AEC0; font-size: 9px;">${item.source}</div>
                     <div>${item.findings}</div>
                 </div>
             `).join('');
@@ -175,7 +175,7 @@
             }
 
             if (this.state.history.length > 1) {
-                ctx.fillStyle = 'rgba(0, 242, 255, 0.1)';
+                ctx.fillStyle = 'rgba(160, 174, 192, 0.1)';
                 ctx.beginPath();
                 for(let i=0; i<20; i++) {
                     const vals = this.state.history.map(h => h[i]).filter(v => v !== undefined);
@@ -201,7 +201,7 @@
                 ctx.fill();
             }
 
-            ctx.strokeStyle = '#00F2FF';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
             ctx.beginPath();
 

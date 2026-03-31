@@ -62,13 +62,13 @@
                 ctx.lineTo(px, py);
             }
 
-            ctx.strokeStyle = '#4FD1C5';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
             ctx.setLineDash([2, 2]); // Dashed to look like "copy"
             ctx.stroke();
 
             // Label
-            ctx.fillStyle = '#4FD1C5';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = '10px Arial';
             ctx.fillText("mRNA", cx + length, cy - length * 0.5);
 

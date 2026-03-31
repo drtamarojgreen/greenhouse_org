@@ -61,8 +61,8 @@
             rise: 14,
             rotationPerPair: 0.5,
             colors: {
-                A: '#A0AEC0', T: '#A0AEC0', C: '#4CAF50', G: '#4CAF50',
-                backbone: '#A0AEC0', enzyme: '#4FD1C5', damage: '#FF9F43'
+                A: '#E0E0E0', T: '#E0E0E0', C: '#D0D0D0', G: '#D0D0D0',
+                backbone: '#A0AEC0', enzyme: '#B0B0B0', damage: '#FF9F43'
             }
         },
 
@@ -134,7 +134,7 @@
 
         consumeATP(amount, x, y, z) {
             this.state.atpConsumed += amount;
-            if (x !== undefined && amount > 0) this.spawnParticles(x, y || 0, z || 0, Math.min(amount * 2, 20), '#48bb78');
+            if (x !== undefined && amount > 0) this.spawnParticles(x, y || 0, z || 0, Math.min(amount * 2, 20), '#E0E0E0');
         },
 
         refreshUIText() {
@@ -277,32 +277,38 @@
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
                 const drawB = (sp, ep, type, dam) => {
                     if (!type) return;
-                    ctx.strokeStyle = dam ? '#FF9F43' : (this.config.colors[type] || '#A0AEC0');
+                    ctx.strokeStyle = dam ? '#FF9F43' : (this.config.colors[type] || '#E0E0E0');
                     ctx.lineWidth = 5 * p1.scale;
 
-                    // Structural signature for DNA base types (Geometric differentiation)
+                    // Structural signature for DNA base types (Geometric coding for nucleotides)
                     ctx.save();
-                    if (type === 'A' || type === 'T') {
-                        // Purines/Pyrimidines (A/T) - Dashed/Triangular ends
+                    if (type === 'A') { // Adenine (Box cap)
                         ctx.setLineDash([4, 2]);
                         ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
-
-                        // Geometric Cap
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.fillRect(ep.x - 4, ep.y - 4, 8, 8);
+                    } else if (type === 'T') { // Thymine (Triangle Up cap)
+                        ctx.setLineDash([4, 2]);
+                        ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
                         ctx.fillStyle = ctx.strokeStyle;
                         ctx.beginPath();
-                        ctx.moveTo(ep.x, ep.y - 4); ctx.lineTo(ep.x + 4, ep.y + 4); ctx.lineTo(ep.x - 4, ep.y + 4);
+                        ctx.moveTo(ep.x, ep.y - 6); ctx.lineTo(ep.x + 5, ep.y + 4); ctx.lineTo(ep.x - 5, ep.y + 4);
                         ctx.fill();
-                    } else {
-                        // Guanine/Cytosine (G/C) - Solid/Hexagonal ends
+                    } else if (type === 'C') { // Cytosine (Diamond cap)
                         ctx.setLineDash([]);
                         ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
-
-                        // Hexagonal Cap
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.beginPath();
+                        ctx.moveTo(ep.x, ep.y - 6); ctx.lineTo(ep.x + 5, ep.y); ctx.lineTo(ep.x, ep.y + 6); ctx.lineTo(ep.x - 5, ep.y);
+                        ctx.closePath(); ctx.fill();
+                    } else if (type === 'G') { // Guanine (Hexagon cap)
+                        ctx.setLineDash([]);
+                        ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
                         ctx.fillStyle = ctx.strokeStyle;
                         ctx.beginPath();
                         for(let k=0; k<6; k++) {
                             const ang = k * Math.PI / 3;
-                            ctx.lineTo(ep.x + 4 * Math.cos(ang), ep.y + 4 * Math.sin(ang));
+                            ctx.lineTo(ep.x + 5 * Math.cos(ang), ep.y + 5 * Math.sin(ang));
                         }
                         ctx.closePath();
                         ctx.fill();
@@ -351,7 +357,7 @@
                     ctx.beginPath(); ctx.moveTo(pp2.x, pp2.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
 
                     if (p.isReplicating && prev.isReplicating) {
-                        ctx.strokeStyle = '#00fbff';
+                        ctx.strokeStyle = '#A0AEC0';
                         if (p.newBase1 && prev.newBase1) {
                             const npp1 = project(prev.x, Math.cos(pdAngle) * radius + prev.offsetY + ps1O.y - ps1O.y * 0.3, Math.sin(pdAngle) * radius + ps1O.z - ps1O.z * 0.3, cam, { width: w, height: h, near: 10, far: 5000 });
                             const np1 = project(p.x, s1Y - s1O.y * 0.3, s1Z - s1O.z * 0.3, cam, { width: w, height: h, near: 10, far: 5000 });

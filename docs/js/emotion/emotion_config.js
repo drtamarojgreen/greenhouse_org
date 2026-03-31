@@ -31,7 +31,7 @@
         regions: {
             prefrontalCortex: {
                 name: 'emotion_reg_pfc_name',
-                color: 'rgba(200, 200, 200, 0.4)',
+                color: 'rgba(160, 174, 192, 0.2)',
                 description: 'emotion_reg_pfc_desc',
                 subRegions: ['dlPFC', 'vmPFC', 'OFC'],
                 primaryNTs: ['Glutamate', 'Dopamine', 'Serotonin'],
@@ -40,7 +40,7 @@
             },
             dlPFC: {
                 name: 'emotion_reg_dlpfc_name',
-                color: 'rgba(100, 180, 255, 0.7)',
+                color: 'rgba(208, 208, 208, 0.4)',
                 description: 'emotion_reg_dlpfc_desc',
                 subRegions: ['Brodmann Area 9/46'],
                 primaryNTs: ['Dopamine', 'Glutamate'],
@@ -49,7 +49,7 @@
             },
             vmPFC: {
                 name: 'emotion_reg_vmpfc_name',
-                color: 'rgba(120, 160, 255, 0.7)',
+                color: 'rgba(208, 208, 208, 0.4)',
                 description: 'emotion_reg_vmpfc_desc',
                 subRegions: ['Brodmann Area 10/11/32'],
                 primaryNTs: ['Serotonin', 'Glutamate'],
@@ -58,7 +58,7 @@
             },
             ofc: {
                 name: 'emotion_reg_ofc_name',
-                color: 'rgba(80, 140, 255, 0.7)',
+                color: 'rgba(208, 208, 208, 0.4)',
                 description: 'emotion_reg_ofc_desc',
                 subRegions: ['Brodmann Area 11/12'],
                 primaryNTs: ['Dopamine', 'Serotonin'],
@@ -67,7 +67,7 @@
             },
             amygdala: {
                 name: 'emotion_reg_amygdala_name',
-                color: 'rgba(255, 50, 50, 0.8)',
+                color: 'rgba(160, 174, 192, 0.8)',
                 description: 'emotion_reg_amygdala_desc',
                 subRegions: ['Basolateral (BLA)', 'Centromedial (CeA)'],
                 primaryNTs: ['Glutamate', 'GABA', 'CRH'],
@@ -76,7 +76,7 @@
             },
             hippocampus: {
                 name: 'emotion_reg_hippocampus_name',
-                color: 'rgba(50, 255, 50, 0.8)',
+                color: 'rgba(160, 174, 192, 0.8)',
                 description: 'emotion_reg_hippocampus_desc',
                 subRegions: ['Anterior', 'Posterior'],
                 primaryNTs: ['Glutamate', 'GABA', 'Acetylcholine'],
@@ -85,7 +85,7 @@
             },
             hypothalamus: {
                 name: 'emotion_reg_hypothalamus_name',
-                color: 'rgba(255, 255, 50, 0.8)',
+                color: 'rgba(160, 174, 192, 0.8)',
                 description: 'emotion_reg_hypothalamus_desc',
                 subRegions: ['Paraventricular Nucleus (PVN)', 'Suprachiasmatic Nucleus (SCN)'],
                 primaryNTs: ['Oxytocin', 'Vasopressin', 'Dopamine'],
@@ -94,7 +94,7 @@
             },
             thalamus: {
                 name: 'emotion_reg_thalamus_name',
-                color: 'rgba(50, 150, 255, 0.8)',
+                color: 'rgba(160, 174, 192, 0.8)',
                 description: 'emotion_reg_thalamus_desc',
                 subRegions: ['Mediodorsal', 'Pulvinar'],
                 primaryNTs: ['Glutamate', 'GABA'],
@@ -103,7 +103,7 @@
             },
             brainstem: {
                 name: 'emotion_reg_brainstem_name',
-                color: 'rgba(150, 100, 255, 0.8)',
+                color: 'rgba(160, 174, 192, 0.8)',
                 description: 'emotion_reg_brainstem_desc',
                 subRegions: ['Locus Coeruleus', 'Dorsal Raphe', 'VTA'],
                 primaryNTs: ['Norepinephrine', 'Serotonin', 'Dopamine'],
@@ -112,7 +112,7 @@
             },
             insula: {
                 name: 'emotion_reg_insula_name',
-                color: 'rgba(255, 100, 255, 0.8)',
+                color: 'rgba(160, 174, 192, 0.8)',
                 description: 'emotion_reg_insula_desc',
                 subRegions: ['Anterior Insula', 'Posterior Insula'],
                 primaryNTs: ['Glutamate', 'GABA'],
@@ -121,7 +121,7 @@
             },
             acc: {
                 name: 'emotion_reg_acc_name',
-                color: 'rgba(100, 255, 255, 0.8)',
+                color: 'rgba(224, 224, 224, 0.5)',
                 description: 'emotion_reg_acc_desc',
                 subRegions: ['dorsal ACC', 'subgenual ACC'],
                 primaryNTs: ['Glutamate', 'Serotonin'],
@@ -130,7 +130,7 @@
             },
             subgenualACC: {
                 name: 'emotion_reg_sacc_name',
-                color: 'rgba(80, 220, 220, 0.7)',
+                color: 'rgba(208, 208, 208, 0.4)',
                 description: 'emotion_reg_sacc_desc',
                 subRegions: ['Brodmann Area 25'],
                 primaryNTs: ['Serotonin'],
@@ -139,7 +139,7 @@
             },
             striatum: {
                 name: 'emotion_reg_striatum_name',
-                color: 'rgba(200, 100, 255, 0.8)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 description: 'emotion_reg_striatum_desc',
                 subRegions: ['Caudate', 'Putamen', 'Nucleus Accumbens'],
                 primaryNTs: ['Dopamine', 'GABA'],
@@ -148,7 +148,7 @@
             },
             nucleusAccumbens: {
                 name: 'emotion_reg_nacc_name',
-                color: 'rgba(180, 80, 255, 0.8)',
+                color: 'rgba(208, 208, 208, 0.6)',
                 description: 'emotion_reg_nacc_desc',
                 subRegions: ['NAc Core', 'NAc Shell'],
                 primaryNTs: ['Dopamine', 'Opioids'],

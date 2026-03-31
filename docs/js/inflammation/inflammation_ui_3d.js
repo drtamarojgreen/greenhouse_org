@@ -31,6 +31,8 @@
                 if (this.brainShell.regions) {
                     for (const key in this.brainShell.regions) {
                         const region = this.brainShell.regions[key];
+                        // Shift to monochromatic premium palette
+                        region.color = 'rgba(160, 174, 192, 0.4)';
                         this.originalRegionColors[key] = region.color;
                         if (region.vertices && region.vertices.length > 0) {
                             let cx = 0, cy = 0, cz = 0;
@@ -363,13 +365,13 @@
                     const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
                     if (p.scale > 0 && p.depth < 0.6) {
                         const confidence = (state.metrics.regionConfidence || 0.85) * 100;
-                        ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
-                        ctx.font = '8px monospace';
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.font = 'bold 8px monospace';
                         ctx.fillText(`CONF: ${confidence.toFixed(0)}%`, p.x - 20, p.y + 15);
 
-                        // Hover Halo (Enhancement #11)
+                        // Hover Halo (Enhancement #11) - Monochromatic
                         if (this.app.ui.hoveredElement && this.app.ui.hoveredElement.label === region.name) {
-                            ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
                             ctx.beginPath();
                             ctx.arc(p.x, p.y, 40 * p.scale * (1 + Math.sin(Date.now() * 0.005) * 0.2), 0, Math.PI * 2);
                             ctx.stroke();

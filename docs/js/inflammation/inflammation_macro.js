@@ -33,7 +33,8 @@
                 }
                 const isHyper = tone > 0.4 && (k.includes('thalamus') || k.includes('insula'));
                 if (isHyper) {
-                    regions[key].color = `rgba(255, 159, 67, ${0.1 + tone * 0.15})`;
+                    // Critical ROI - Monochromatic High Contrast
+                    regions[key].color = `rgba(255, 255, 255, ${0.1 + tone * 0.2})`;
                 } else {
                     regions[key].color = 'rgba(160, 174, 192, 0.05)';
                 }
@@ -114,9 +115,9 @@
 
                 const proj = Math3D.project3DTo2D(x, -y, z, camera, projection);
                 if (proj.scale > 0 && p.progress <= 1.0) {
-                    ctx.fillStyle = '#4FD1C5';
+                    ctx.fillStyle = '#A0AEC0'; // Muted Gray
                     ctx.shadowBlur = p.molId === 'QUIN' ? 8 : 0;
-                    ctx.shadowColor = '#FF9F43';
+                    ctx.shadowColor = '#E0E0E0';
                     ctx.beginPath();
                     ctx.arc(proj.x, proj.y, p.radius * proj.scale, 0, Math.PI * 2);
                     ctx.fill();
@@ -195,7 +196,7 @@
                         const mz = (f.renderBounds.z + t.renderBounds.z) / 2;
                         const p = Math3D.project3DTo2D(mx, -my, mz, camera, projection);
                         if (p.scale > 0) {
-                            ctx.fillStyle = '#4ca1af';
+                            ctx.fillStyle = '#A0AEC0';
                             ctx.font = 'italic 8px monospace';
                             ctx.fillText(lbl.text, p.x + 10, p.y);
                         }
@@ -229,8 +230,8 @@
                     // Infiltration Line
                     ctx.beginPath();
                     const grad = ctx.createLinearGradient(p.x, p.y, tp.x, tp.y);
-                    grad.addColorStop(0, fid.includes('patho') || fid.includes('stress') ? `rgba(255, 50, 0, ${alpha})` : `rgba(180, 240, 255, ${alpha})`);
-                    grad.addColorStop(1, `rgba(255, 50, 0, 0)`);
+                    grad.addColorStop(0, fid.includes('patho') || fid.includes('stress') ? `rgba(224, 224, 224, ${alpha})` : `rgba(208, 208, 208, ${alpha})`);
+                    grad.addColorStop(1, `rgba(224, 224, 224, 0)`);
                     ctx.strokeStyle = grad;
                     ctx.lineWidth = 1.2;
                     ctx.setLineDash([10, 5]);
@@ -241,7 +242,7 @@
 
                     // Node with Internal Rotation (Intrinsic motion)
                     const isTrigger = fid.includes('patho') || fid.includes('stress') || fid.includes('Sleep') || fid.includes('Gut');
-                    ctx.fillStyle = '#4FD1C5';
+                    ctx.fillStyle = '#A0AEC0';
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = ctx.fillStyle;
 
@@ -314,8 +315,8 @@
                 if (isHovered) {
                     color = `rgba(255, 255, 255, ${0.15 + Math.sin(Date.now() * 0.01) * 0.05})`;
                 } else if (tone > 0.4 && (regionKey.includes('thalamus') || regionKey.includes('insula'))) {
-                    // Critical ROI - Warning Orange
-                    color = `rgba(255, 159, 67, ${0.08 + tone * 0.12})`;
+                    // Critical ROI - Monochromatic White Glow
+                    color = `rgba(255, 255, 255, ${0.1 + tone * 0.2})`;
                 }
 
                 ctx.fillStyle = color;
@@ -328,18 +329,23 @@
                     ctx.save();
                     if (regionKey === 'thalamus' || regionKey === 'hypothalamus') {
                         // Deep core - Dotted wireframe
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 * fog})`;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 * fog})`;
                         ctx.setLineDash([1, 2]);
                         ctx.stroke();
                     } else if (regionKey === 'hippocampus') {
                         // Hippocampus - Laminar Flow
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 * fog})`;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.35 * fog})`;
                         ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
+                    } else if (regionKey === 'pfc' || regionKey === 'prefrontalCortex') {
+                        // PFC - Grid Pattern
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 * fog})`;
+                        ctx.setLineDash([1, 2]);
+                        ctx.stroke();
                     } else {
                         // Fine line sulci detail
                         const sulci = Math.cos(v1.x * 0.04) * Math.sin(v1.z * 0.04) > 0.7;
-                        ctx.strokeStyle = sulci ? `rgba(255, 255, 255, ${0.12 * fog})` : `rgba(255, 255, 255, ${0.03 * fog})`;
-                        ctx.lineWidth = sulci ? 0.8 : 0.4;
+                        ctx.strokeStyle = sulci ? `rgba(255, 255, 255, ${0.25 * fog})` : `rgba(255, 255, 255, ${0.05 * fog})`;
+                        ctx.lineWidth = sulci ? 1.0 : 0.5;
                         ctx.stroke();
                     }
                     ctx.restore();
@@ -347,7 +353,7 @@
 
                 // BBB Breakdown Flicker
                 if (tone > 0.7 && Math.random() > 0.99) {
-                    ctx.fillStyle = 'rgba(255,0,0,0.5)'; ctx.fill();
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fill();
                 }
             });
         },
@@ -374,7 +380,7 @@
                         ctx.font = 'bold 9px monospace';
 
                         ctx.beginPath();
-                        ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.2})`;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(p.x + (p.x < projection.width / 2 ? -40 : 40), p.y - 40);
                         ctx.lineTo(p.x + (p.x < projection.width / 2 ? -80 : 80), p.y - 40);
@@ -426,10 +432,11 @@
             const tone = state.metrics.tnfAlpha || 0;
 
             if (tone > 0.5) {
-                // BBB Leakage (Enhancement #28)
+                // BBB Leakage (Enhancement #28) - Monochromatic Structural Overlay
                 ctx.save();
-                ctx.strokeStyle = `rgba(255, 0, 0, ${tone * 0.3})`;
+                ctx.strokeStyle = `rgba(255, 255, 255, ${tone * 0.5})`;
                 ctx.lineWidth = 2;
+                ctx.setLineDash([2, 2]); // Dashed rings for leakage
                 const regions = ['thalamus', 'insula', 'hippocampus'];
                 regions.forEach(r => {
                     const reg = ui3d.brainShell.regions[r];
@@ -439,7 +446,7 @@
                             ctx.beginPath();
                             ctx.arc(p.x, p.y, 30 * p.scale, 0, Math.PI * 2);
                             ctx.stroke();
-                            ctx.fillStyle = `rgba(255, 0, 0, ${tone * 0.1})`;
+                            ctx.fillStyle = `rgba(255, 255, 255, ${tone * 0.15})`;
                             ctx.fill();
                         }
                     }

@@ -21,7 +21,7 @@
                 enableZoom: true,
                 enableRotate: true,
                 autoRotate: true,
-                autoRotateSpeed: 0.05, // Very fast rotation: ~2 seconds per full rotation at 60 FPS
+                autoRotateSpeed: 0.005, // Smooth rotation for accessibility
                 panSpeed: 0.002,
                 zoomSpeed: 0.1,
                 rotateSpeed: 0.005,
@@ -69,13 +69,13 @@
         // Material Configuration
         materials: {
             dna: {
-                strand1Color: '#A0AEC0', // Gray
-                strand2Color: '#A0AEC0', // Gray
+                strand1Color: '#E0E0E0', // Premium Off-White
+                strand2Color: '#D0D0D0', // Silver
                 baseColors: {
-                    A: '#A0AEC0', // Adenine
-                    T: '#A0AEC0', // Thymine
-                    G: '#4CAF50', // Guanine
-                    C: '#4CAF50'  // Cytosine
+                    A: '#E0E0E0', // Adenine
+                    T: '#E0E0E0', // Thymine
+                    G: '#D0D0D0', // Guanine
+                    C: '#D0D0D0'  // Cytosine
                 },
                 alpha: 0.9,
                 metallic: 0.3,
@@ -86,9 +86,9 @@
                 glowIntensity: 0.4
             },
             gene: {
-                activeColor: '#4CAF50', // Greenhouse Green
+                activeColor: '#E0E0E0', // Premium Off-White
                 inactiveColor: '#A0AEC0', // Gray
-                highlightColor: '#4FD1C5', // Scientific Teal
+                highlightColor: '#D0D0D0', // Silver
                 alpha: 0.95,
                 metallic: 0.5,
                 roughness: 0.3,
@@ -97,7 +97,7 @@
             },
             protein: {
                 backboneColor: '#A0AEC0', // Neural Gray
-                sideChainColors: ['#4FD1C5', '#4CAF50', '#A0AEC0', '#FF9F43'],
+                sideChainColors: ['#E0E0E0', '#D0D0D0', '#A0AEC0', '#B0B0B0'],
                 alpha: 0.85,
                 metallic: 0.4,
                 roughness: 0.5,
@@ -113,7 +113,7 @@
                 sssIntensity: 0.3
             },
             neuron: {
-                baseColors: ['#4FD1C5', '#4CAF50', '#A0AEC0'],
+                baseColors: ['#E0E0E0', '#D0D0D0', '#A0AEC0'],
                 alpha: 0.9,
                 metallic: 0.5,
                 roughness: 0.3,
@@ -196,10 +196,10 @@
             baseSpacing: 10,
             offset: -200, // X offset for helix position
             colors: {
-                strand1: '#A0AEC0',
-                strand2: '#A0AEC0',
+                strand1: '#E0E0E0',
+                strand2: '#D0D0D0',
                 backbone: '#A0AEC0',
-                basePairs: '#4CAF50'
+                basePairs: '#E0E0E0'
             }
         },
 

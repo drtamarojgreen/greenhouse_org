@@ -104,25 +104,25 @@
                     }
                 }
 
-                // Highlighting Active Region
+                // Highlighting Active Region - Monochromatic High Contrast
                 if (targetRegion && f.region === targetRegion) {
-                    const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 400);
+                    const pulse = 0.8 + 0.2 * Math.sin(Date.now() / 400);
                     const fog = GreenhouseModels3DMath.applyDepthFog(pulse, f.depth);
-                    ctx.fillStyle = `rgba(76, 175, 80, ${fog})`; // Greenhouse Green
+                    ctx.fillStyle = `rgba(255, 255, 255, ${fog})`; // High-contrast White
 
                     // Additive Glow Effect
                     ctx.save();
                     ctx.globalCompositeOperation = 'lighter';
-                    ctx.shadowBlur = 10 * pulse;
-                    ctx.shadowColor = 'rgba(76, 175, 80, 0.8)';
+                    ctx.shadowBlur = 12 * pulse;
+                    ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
                     ctx.beginPath();
                     ctx.moveTo(f.p1.x, f.p1.y);
                     ctx.lineTo(f.p2.x, f.p2.y);
                     ctx.lineTo(f.p3.x, f.p3.y);
                     ctx.fill();
 
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
-                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog})`;
+                    ctx.lineWidth = 2;
                     ctx.stroke();
                     ctx.restore();
                 } else {
@@ -143,22 +143,29 @@
                 // Intrinsic Structural Signatures (Accessibility)
                 ctx.save();
                 if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
-                    // PFC - Executive Grid Pattern
+                    // PFC - Executive Grid Pattern with high-frequency noise
                     ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
-                    ctx.setLineDash([2, 4]);
+                    ctx.setLineDash([1, 2]);
                     ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.stroke();
                 } else if (f.region === 'amygdala') {
                     // Amygdala - Salience Stippling
                     for(let k=0; k<2; k++) {
                         const sx = f.p1.x + Math.random()*(f.p2.x - f.p1.x);
                         const sy = f.p1.y + Math.random()*(f.p2.y - f.p1.y);
-                        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                        ctx.fillStyle = 'rgba(255,255,255,0.3)';
                         ctx.fillRect(sx, sy, 1, 1);
                     }
                 } else if (f.region === 'hippocampus') {
                     // Hippocampus - Memory Laminar Flow
-                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
                     ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
+                } else if (f.region === 'cerebellum') {
+                    // Cerebellum - Foliated Parallel Hatching
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y);
+                    ctx.moveTo(f.p1.x + 2, f.p1.y + 2); ctx.lineTo(f.p2.x + 2, f.p2.y + 2);
+                    ctx.stroke();
                 }
                 ctx.restore();
             });
@@ -248,9 +255,9 @@
             if (!brainShell.regionalPlanes) return;
 
             ctx.save();
-            ctx.setLineDash([8, 4]);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 1;
+            ctx.setLineDash([]); // Solid borders
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1.5;
 
             const radius = 200;
             brainShell.regionalPlanes.forEach(plane => {

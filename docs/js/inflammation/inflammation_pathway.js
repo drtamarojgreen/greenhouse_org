@@ -63,7 +63,7 @@
                 const t = filteredNodes.find(n => n.id === edge.target);
                 if (s && t && s.scale > 0 && t.scale > 0) {
                     ctx.beginPath();
-                    ctx.strokeStyle = edge.type === 'inhibitory' ? 'rgba(255, 85, 51, 0.4)' : 'rgba(76, 161, 175, 0.4)';
+                    ctx.strokeStyle = edge.type === 'inhibitory' ? 'rgba(224, 224, 224, 0.4)' : 'rgba(160, 174, 192, 0.4)';
                     ctx.lineWidth = 1;
                     ctx.moveTo(s.x, s.y);
                     ctx.lineTo(t.x, t.y);
@@ -91,7 +91,7 @@
             // Draw Nodes
             filteredNodes.forEach(n => {
                 if (n.scale <= 0) return;
-                ctx.fillStyle = state.factors[n.id] === 1 ? '#00ff99' : '#4ca1af';
+                ctx.fillStyle = state.factors[n.id] === 1 ? '#E0E0E0' : '#A0AEC0';
                 ctx.beginPath();
                 ctx.arc(n.x, n.y, 5 * n.scale, 0, Math.PI * 2);
                 ctx.fill();
@@ -114,7 +114,7 @@
             ctx.textAlign = 'center';
             ctx.fillText('FETCHING PATHWAY DATA...', projection.width / 2, projection.height / 2);
             // Simple spinning arc
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.arc(projection.width / 2, projection.height / 2 + 30, 15, 0, (Date.now() % 1000) / 1000 * Math.PI * 2);
@@ -122,7 +122,7 @@
         },
 
         drawErrorMessage(ctx, projection) {
-            ctx.fillStyle = '#ff5533';
+            ctx.fillStyle = '#E0E0E0';
             ctx.font = 'bold 14px Quicksand';
             ctx.textAlign = 'center';
             ctx.fillText(`PATHWAY ERROR: ${this.error}`, projection.width / 2, projection.height / 2);
@@ -135,22 +135,22 @@
             const x = 40, y = projection.height - 180;
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fillRect(x, y, 150, 80);
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.strokeRect(x, y, 150, 80);
 
-            ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 10px Quicksand';
+            ctx.fillStyle = '#A0AEC0'; ctx.font = 'bold 10px Quicksand';
             ctx.fillText('PATHWAY LEGEND', x + 10, y + 15);
 
-            ctx.fillStyle = '#00ff99'; ctx.beginPath(); ctx.arc(x + 15, y + 30, 4, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#E0E0E0'; ctx.beginPath(); ctx.arc(x + 15, y + 30, 4, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#fff'; ctx.font = '9px monospace'; ctx.fillText('ACTIVE FACTOR', x + 25, y + 33);
 
-            ctx.fillStyle = '#4ca1af'; ctx.beginPath(); ctx.arc(x + 15, y + 45, 4, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#A0AEC0'; ctx.beginPath(); ctx.arc(x + 15, y + 45, 4, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#fff'; ctx.fillText('INACTIVE', x + 25, y + 48);
 
-            ctx.strokeStyle = 'rgba(76, 161, 175, 0.8)'; ctx.beginPath(); ctx.moveTo(x + 10, y + 60); ctx.lineTo(x + 20, y + 60); ctx.stroke();
+            ctx.strokeStyle = 'rgba(208, 208, 208, 0.8)'; ctx.beginPath(); ctx.moveTo(x + 10, y + 60); ctx.lineTo(x + 20, y + 60); ctx.stroke();
             ctx.fillStyle = '#fff'; ctx.fillText('STIMULATORY', x + 25, y + 63);
 
-            ctx.strokeStyle = 'rgba(255, 85, 51, 0.8)'; ctx.beginPath(); ctx.moveTo(x + 10, y + 75); ctx.lineTo(x + 20, y + 75); ctx.stroke();
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.8)'; ctx.beginPath(); ctx.moveTo(x + 10, y + 75); ctx.lineTo(x + 20, y + 75); ctx.stroke();
             ctx.fillStyle = '#fff'; ctx.fillText('INHIBITORY', x + 25, y + 78);
         },
 
@@ -158,10 +158,10 @@
             const x = projection.width - 200, y = 140;
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fillRect(x, y, 180, 100);
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.strokeRect(x, y, 180, 100);
 
-            ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 10px Quicksand';
+            ctx.fillStyle = '#A0AEC0'; ctx.font = 'bold 10px Quicksand';
             ctx.fillText('PATHWAY CONTROLS', x + 10, y + 15);
 
             ctx.fillStyle = '#fff'; ctx.font = '9px monospace';

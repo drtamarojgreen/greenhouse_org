@@ -94,7 +94,7 @@
                 }
                 const isTarget = (targetRegion && (f.region === targetRegion || (targetRegion === 'pfc' && f.region === 'prefrontalCortex')));
                 if (isTarget) {
-                    ctx.fillStyle = `rgba(76, 175, 80, ${GreenhouseModels3DMath.applyDepthFog(0.9, f.depth)})`;
+                    ctx.fillStyle = `rgba(255, 255, 255, ${GreenhouseModels3DMath.applyDepthFog(0.95, f.depth)})`;
                 } else {
                     const intensity = 0.3 + diffuse * 0.7;
                     ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
@@ -139,11 +139,11 @@
         drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
             if (!brainShell.regionalPlanes) return;
             ctx.save();
-            ctx.setLineDash([8, 4]);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 1;
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(79, 209, 197, 0.4)'; // Scientific Teal
+            ctx.setLineDash([]); // Solid lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
             const radius = 200;
 
             brainShell.regionalPlanes.forEach(plane => {

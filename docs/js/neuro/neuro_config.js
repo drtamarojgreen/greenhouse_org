@@ -21,14 +21,14 @@
                 enableZoom: true,
                 enableRotate: true,
                 autoRotate: true,
-                autoRotateSpeed: 0.0002,
+                autoRotateSpeed: 0.0001,
                 panSpeed: 0.002,
                 zoomSpeed: 0.1,
                 rotateSpeed: 0.005,
                 inertia: true,
                 inertiaDamping: 0.95,
                 minZoom: -50,
-                maxZoom: -2000
+                maxZoom: -1200 // Constrained to prevent model disappearing
             }
         },
 
@@ -70,7 +70,7 @@
         // Material Configuration
         materials: {
             brain: {
-                baseColor: { r: 100, g: 100, b: 100 },
+                baseColor: { r: 160, g: 174, b: 192 },
                 alpha: 0.1,
                 metallic: 0.2,
                 roughness: 0.6,
@@ -78,7 +78,7 @@
                 sssIntensity: 0.3
             },
             neuron: {
-                baseColors: ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE'],
+                baseColors: ['#E0E0E0', '#D0D0D0', '#A0AEC0', '#C0C0C0', '#B0B0B0'],
                 alpha: 0.9,
                 metallic: 0.4,
                 roughness: 0.3,
@@ -86,7 +86,7 @@
                 emissiveIntensity: 0.2
             },
             synapse: {
-                baseColor: { r: 255, g: 100, b: 150 },
+                baseColor: { r: 224, g: 224, b: 224 },
                 alpha: 0.7,
                 metallic: 0.3,
                 roughness: 0.4,
@@ -94,7 +94,7 @@
                 glowIntensity: 0.3
             },
             connection: {
-                baseColor: { r: 100, g: 200, b: 255 },
+                baseColor: { r: 160, g: 174, b: 192 },
                 alpha: 0.6,
                 metallic: 0.1,
                 roughness: 0.5
@@ -158,32 +158,32 @@
         regions: {
             pfc: {
                 name: 'Prefrontal Cortex',
-                color: 'rgba(100, 150, 255, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: -100, z: 150 }
             },
             parietalLobe: {
                 name: 'Parietal Lobe',
-                color: 'rgba(150, 100, 255, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: -50, z: 0 }
             },
             occipitalLobe: {
                 name: 'Occipital Lobe',
-                color: 'rgba(255, 100, 150, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: 0, z: -150 }
             },
             temporalLobe: {
                 name: 'Temporal Lobe',
-                color: 'rgba(100, 255, 150, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 100, y: 50, z: 0 }
             },
             cerebellum: {
                 name: 'Cerebellum',
-                color: 'rgba(255, 150, 100, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: 150, z: -100 }
             },
             brainstem: {
                 name: 'Brainstem',
-                color: 'rgba(150, 255, 100, 0.6)',
+                color: 'rgba(160, 174, 192, 0.6)',
                 position: { x: 0, y: 200, z: 0 }
             }
         },

@@ -100,19 +100,19 @@
             };
 
             this.colors = {
-                A: '#A0AEC0',
-                U: '#A0AEC0',
-                G: '#4CAF50',
-                C: '#4CAF50',
+                A: '#E0E0E0', // Premium Off-White
+                U: '#E0E0E0',
+                G: '#D0D0D0', // Silver
+                C: '#D0D0D0',
                 PSI: '#A0AEC0',
                 BACKBONE: '#A0AEC0',
-                ENZYME: 'rgba(79, 209, 197, 0.2)',
+                ENZYME: 'rgba(160, 174, 192, 0.2)',
                 METHYL: '#FF9F43',
-                GLOW: '#4FD1C5',
+                GLOW: '#E0E0E0',
                 METAL: '#A0AEC0',
                 PROTEIN: '#A0AEC0',
-                RIBOSOME: '#4CAF50',
-                ATP: '#4CAF50',
+                RIBOSOME: '#D0D0D0',
+                ATP: '#A0AEC0',
                 DECAY: '#FF9F43'
             };
 
@@ -704,20 +704,14 @@
                 this.ctx.shadowBlur = 15;
                 this.ctx.shadowColor = this.colors[base.type];
                 this.ctx.beginPath();
-                if (base.type === 'A') { // Triangle
-                    this.ctx.moveTo(base.x, base.y - 12); this.ctx.lineTo(base.x + 10, base.y + 8); this.ctx.lineTo(base.x - 10, base.y + 8); this.ctx.closePath();
-                } else if (base.type === 'G') { // Hexagon
-                    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; this.ctx.lineTo(base.x + Math.cos(a) * 11, base.y + Math.sin(a) * 11); } this.ctx.closePath();
-                } else if (base.type === 'C') { // Diamond
-                    this.ctx.moveTo(base.x, base.y - 12); this.ctx.lineTo(base.x + 10, base.y); this.ctx.lineTo(base.x, base.y + 12); this.ctx.lineTo(base.x - 10, base.y); this.ctx.closePath();
-                } else { // Square for U/PSI
-                    this.ctx.rect(base.x - 9, base.y - 9, 18, 18);
-
-                    // Add internal cross for U/PSI to differentiate from pure square
-                    this.ctx.moveTo(base.x - 5, base.y); this.ctx.lineTo(base.x + 5, base.y);
-                    this.ctx.moveTo(base.x, base.y - 5); this.ctx.lineTo(base.x, base.y + 5);
-                    this.ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-                    this.ctx.stroke();
+                if (base.type === 'A') { // Adenine: Triangle Up
+                    this.ctx.moveTo(base.x, base.y - 14); this.ctx.lineTo(base.x + 12, base.y + 10); this.ctx.lineTo(base.x - 12, base.y + 10); this.ctx.closePath();
+                } else if (base.type === 'G') { // Guanine: Hexagon
+                    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; this.ctx.lineTo(base.x + Math.cos(a) * 13, base.y + Math.sin(a) * 13); } this.ctx.closePath();
+                } else if (base.type === 'C') { // Cytosine: Diamond
+                    this.ctx.moveTo(base.x, base.y - 14); this.ctx.lineTo(base.x + 12, base.y); this.ctx.lineTo(base.x, base.y + 14); this.ctx.lineTo(base.x - 12, base.y); this.ctx.closePath();
+                } else { // Uracil: Triangle Down (Standardized geometric coding)
+                    this.ctx.moveTo(base.x, base.y + 14); this.ctx.lineTo(base.x + 12, base.y - 10); this.ctx.lineTo(base.x - 12, base.y - 10); this.ctx.closePath();
                 }
                 this.ctx.fillStyle = this.colors[base.type];
                 this.ctx.fill();
@@ -951,7 +945,7 @@
         langBtn.textContent = t('btn_language');
         langBtn.style.cssText = `
             position: absolute; top: 10px; right: 10px; z-index: 100;
-            background: #732751; color: white; border: none; padding: 5px 10px;
+            background: #A0AEC0; color: white; border: none; padding: 5px 10px;
             border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Quicksand', sans-serif;
             width: auto !important; max-width: fit-content;
         `;
