@@ -18,17 +18,17 @@
             brainShell.vertices = [];
             brainShell.faces = [];
             brainShell.regions = {
-                hypothalamus: { name: 'Hypothalamus', color: 'rgba(255, 200, 50, 0.9)', vertices: [] },
-                hippocampus: { name: 'Hippocampus', color: 'rgba(80, 240, 150, 0.7)', vertices: [] },
-                thalamus: { name: 'Thalamus', color: 'rgba(230, 100, 255, 0.8)', vertices: [] },
-                insula: { name: 'Insula', color: 'rgba(255, 120, 60, 0.7)', vertices: [] },
-                basal_ganglia: { name: 'Basal Ganglia', color: 'rgba(80, 220, 220, 0.6)', vertices: [] },
-                amygdala: { name: 'Amygdala', color: 'rgba(255, 0, 150, 0.8)', vertices: [] },
-                frontal: { name: 'Frontal Lobe', color: 'rgba(255, 100, 100, 0.2)', vertices: [] },
-                parietal: { name: 'Parietal Lobe', color: 'rgba(100, 255, 100, 0.2)', vertices: [] },
-                temporal: { name: 'Temporal Lobe', color: 'rgba(100, 100, 255, 0.2)', vertices: [] },
-                occipital: { name: 'Occipital Lobe', color: 'rgba(255, 255, 100, 0.2)', vertices: [] },
-                cortex: { name: 'Cortex', color: 'rgba(180, 180, 200, 0.25)', vertices: [] }
+                hypothalamus: { name: 'Hypothalamus', color: 'rgba(160, 174, 192, 0.8)', vertices: [] },
+                hippocampus: { name: 'Hippocampus', color: 'rgba(160, 174, 192, 0.7)', vertices: [] },
+                thalamus: { name: 'Thalamus', color: 'rgba(160, 174, 192, 0.8)', vertices: [] },
+                insula: { name: 'Insula', color: 'rgba(160, 174, 192, 0.7)', vertices: [] },
+                basal_ganglia: { name: 'Basal Ganglia', color: 'rgba(160, 174, 192, 0.6)', vertices: [] },
+                amygdala: { name: 'Amygdala', color: 'rgba(160, 174, 192, 0.8)', vertices: [] },
+                frontal: { name: 'Frontal Lobe', color: 'rgba(160, 174, 192, 0.2)', vertices: [] },
+                parietal: { name: 'Parietal Lobe', color: 'rgba(160, 174, 192, 0.2)', vertices: [] },
+                temporal: { name: 'Temporal Lobe', color: 'rgba(160, 174, 192, 0.2)', vertices: [] },
+                occipital: { name: 'Occipital Lobe', color: 'rgba(160, 174, 192, 0.2)', vertices: [] },
+                cortex: { name: 'Cortex', color: 'rgba(160, 174, 192, 0.25)', vertices: [] }
             };
 
             for (let lat = 0; lat <= latBands; lat++) {

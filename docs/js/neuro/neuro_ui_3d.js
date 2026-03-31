@@ -312,9 +312,9 @@
                     z = vertex.z * jitter;
                 }
 
-                // Color mapping - "Cool Science" Palette (Blues/Teals/Purples)
-                const coolSciencePalette = ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE'];
-                const baseColor = coolSciencePalette[Math.floor(Math.random() * coolSciencePalette.length)];
+                // Color mapping - Standardized Scientific Palette
+                const coolSciencePalette = ['#4FD1C5', '#4CAF50', '#A0AEC0'];
+                const baseColor = coolSciencePalette[i % coolSciencePalette.length];
 
                 return {
                     ...n,
@@ -605,7 +605,9 @@
 
         drawNeuron(ctx, neuron, camera, projection) {
             if (window.GreenhouseNeuroNeuron) {
-                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection);
+                // Check if neuron is hovered (if applicable)
+                const isHovered = this.hoveredNeuronId === neuron.id;
+                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, null, 0.005, isHovered);
             }
         },
 
@@ -752,6 +754,9 @@
         },
 
         hitTest(mouseX, mouseY) {
+            // Reset hover state
+            this.hoveredNeuronId = null;
+
             // PiP Bounds
             const pipW = 300;
             const pipH = 250;
@@ -776,6 +781,31 @@
             // Local Mouse Coords relative to PiP
             const localMouseX = mouseX - pipX;
             const localMouseY = mouseY - pipY;
+
+            // Check Neurons first
+            let closestNeuron = null;
+            let minNeuronDist = 15;
+
+            this.neurons.forEach(n => {
+                const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                if (p.scale > 0) {
+                    const dx = localMouseX - p.x;
+                    const dy = localMouseY - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < minNeuronDist) {
+                        minNeuronDist = dist;
+                        closestNeuron = n;
+                    }
+                }
+            });
+
+            if (closestNeuron) {
+                this.hoveredNeuronId = closestNeuron.id;
+                // Restore projection
+                this.projection.width = origW;
+                this.projection.height = origH;
+                return { type: 'neuron', data: closestNeuron };
+            }
 
             // Check Connections
             let closestConn = null;

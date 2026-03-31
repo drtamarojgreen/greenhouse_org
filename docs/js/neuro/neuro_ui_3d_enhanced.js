@@ -964,9 +964,11 @@
                     neuron.y += (Math.random() - 0.5) * jitter;
                 }
 
+                const isHovered = this.hoveredElement && this.hoveredElement.type === 'neuron' && this.hoveredElement.data.id === neuron.id;
+
                 ctx.save();
                 ctx.globalAlpha *= alphaOverride;
-                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq);
+                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq, isHovered);
                 ctx.restore();
 
                 if (adhd?.activeEnhancements.has(53) && (neuron.region === 'striatum' || neuron.region === 'brainstem')) {
@@ -1084,6 +1086,9 @@
         },
 
         hitTest(mouseX, mouseY) {
+            // Reset hover state
+            this.hoveredElement = null;
+
             const pipConfig = this.config.get('pip');
             const pipW = pipConfig.width;
             const pipH = pipConfig.height;
@@ -1104,6 +1109,31 @@
 
             const localMouseX = mouseX - pipX;
             const localMouseY = mouseY - pipY;
+
+            // Check Neurons first
+            let closestNeuron = null;
+            let minNeuronDist = 15;
+
+            this.neurons.forEach(n => {
+                const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                if (p.scale > 0) {
+                    const dx = localMouseX - p.x;
+                    const dy = localMouseY - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < minNeuronDist) {
+                        minNeuronDist = dist;
+                        closestNeuron = n;
+                    }
+                }
+            });
+
+            if (closestNeuron) {
+                this.hoveredElement = { type: 'neuron', data: closestNeuron };
+                // Restore projection
+                this.projection.width = origW;
+                this.projection.height = origH;
+                return this.hoveredElement;
+            }
 
             let closestConn = null;
             let minDist = 20;
@@ -1129,7 +1159,8 @@
             this.projection.height = origH;
 
             if (closestConn) {
-                return { type: 'connection', data: closestConn };
+                this.hoveredElement = { type: 'connection', data: closestConn };
+                return this.hoveredElement;
             }
             return null;
         },

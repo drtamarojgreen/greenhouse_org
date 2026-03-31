@@ -21,18 +21,18 @@
         // Category Definitions for Visuals (Enhancement 1: Neural regions added)
         // Note: All nodes are spheres per explicit user request.
         categories: {
-            'hpa': { label: 'stress_cat_hpa', color: '#ff9500', orbit: 110, speed: 0.0001, total: 5, shape: 'sphere' },
-            'env': { label: 'stress_cat_env', color: '#ff4d4d', orbit: 140, speed: 0.0002, total: 26, shape: 'sphere' },
-            'limbic': { label: 'stress_cat_limbic', color: '#ff2d55', orbit: 170, speed: -0.00015, total: 6, shape: 'sphere' },
-            'psych': { label: 'stress_cat_psych', color: '#ffcc00', orbit: 200, speed: -0.0001, total: 25, shape: 'sphere' },
-            'cortical': { label: 'stress_cat_cortical', color: '#5856d6', orbit: 230, speed: 0.00008, total: 3, shape: 'sphere' },
-            'philo': { label: 'stress_cat_philo', color: '#a18cd1', orbit: 260, speed: 0.00005, total: 25, shape: 'sphere' },
-            'brainstem': { label: 'stress_cat_autonomic', color: '#4cd964', orbit: 290, speed: -0.00012, total: 10, shape: 'sphere' },
-            'research': { label: 'stress_cat_biological_defense', color: '#64d2ff', orbit: 320, speed: -0.0002, total: 30, shape: 'sphere' },
-            'interv': { label: 'stress_cat_interv', color: '#30b0c7', orbit: 350, speed: 0.00015, total: 4, shape: 'sphere' },
-            'therapy': { label: 'stress_cat_therapy', color: '#00c7be', orbit: 380, speed: -0.00018, total: 8, shape: 'sphere' },
-            'lifestyle': { label: 'stress_cat_lifestyle', color: '#a2845e', orbit: 410, speed: 0.00012, total: 7, shape: 'sphere' },
-            'system': { label: 'stress_cat_system', color: '#8e8e93', orbit: 440, speed: -0.0001, total: 6, shape: 'sphere' }
+            'hpa': { label: 'stress_cat_hpa', color: '#FF9F43', total: 5 },
+            'env': { label: 'stress_cat_env', color: '#FF9F43', total: 26 },
+            'limbic': { label: 'stress_cat_limbic', color: '#FF9F43', total: 6 },
+            'psych': { label: 'stress_cat_psych', color: '#4CAF50', total: 25 },
+            'cortical': { label: 'stress_cat_cortical', color: '#4FD1C5', total: 3 },
+            'philo': { label: 'stress_cat_philo', color: '#4CAF50', total: 25 },
+            'brainstem': { label: 'stress_cat_autonomic', color: '#4FD1C5', total: 10 },
+            'research': { label: 'stress_cat_biological_defense', color: '#4FD1C5', total: 30 },
+            'interv': { label: 'stress_cat_interv', color: '#4FD1C5', total: 4 },
+            'therapy': { label: 'stress_cat_therapy', color: '#4CAF50', total: 8 },
+            'lifestyle': { label: 'stress_cat_lifestyle', color: '#4CAF50', total: 7 },
+            'system': { label: 'stress_cat_system', color: '#A0AEC0', total: 6 }
         },
 
         initVisuals() {
@@ -83,16 +83,17 @@
             const time = state.time || 0;
             const load = m.allostaticLoad || 0;
 
+            // Transition from orbital revolution to local rotation
+            this.localRotation = (this.localRotation || 0) + 0.01;
+
             // 0. Background Aura (Global Stress Indicator)
             const cp = Math3D.project3DTo2D(0, 0, 0, camera, projection);
             if (cp.scale > 0) {
                 const auraSize = Math.max(ctx.canvas.width, ctx.canvas.height) * 0.8;
                 const auraGrad = ctx.createRadialGradient(cp.x, cp.y, 0, cp.x, cp.y, auraSize);
-                // Transitions from Blue (Low Stress) to Red (High Stress)
-                const r = Math.floor(50 + load * 205);
-                const g = Math.floor(150 * (1 - load));
-                const b = Math.floor(255 * (1 - load));
-                auraGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.15)`);
+                // Standardized Scientific Palette: Gray to Green to Teal to Orange
+                const auraColor = load > 0.7 ? '255, 159, 67' : (load > 0.3 ? '79, 209, 197' : '160, 174, 192');
+                auraGrad.addColorStop(0, `rgba(${auraColor}, 0.15)`);
                 auraGrad.addColorStop(1, 'transparent');
                 ctx.save();
                 ctx.globalCompositeOperation = 'screen';
@@ -140,7 +141,7 @@
                     ctx.save();
                     ctx.translate(p.x, p.y);
                     ctx.rotate(g.rot);
-                    ctx.strokeStyle = `rgba(100, 210, 255, ${0.1 * p.scale})`;
+                    ctx.strokeStyle = `rgba(160, 174, 192, ${0.1 * p.scale})`; // Standard Gray
                     ctx.lineWidth = 2 * p.scale;
                     ctx.beginPath();
                     for (let j = -15; j <= 15; j += 2) {
@@ -155,13 +156,25 @@
             // 1.6 Render Systemic Flux Particles
             this.particles.forEach(p => {
                 p.angle += p.speed * (0.5 + load * 2.0);
-                const px = Math.cos(p.angle) * p.orbit;
-                const pz = Math.sin(p.angle) * p.orbit;
+                // Switch from orbit to flow
+                const px = (p.angle * 50) % 1000 - 500;
+                const pz = p.orbit;
                 const pt = Math3D.project3DTo2D(px, p.y, pz, camera, projection);
                 if (pt.scale > 0) {
-                    ctx.fillStyle = `rgba(${100 + load * 155}, ${200 - load * 150}, 255, ${0.4 * pt.scale})`;
+                    // Standard Palette: Teal for health, Orange for load
+                    const baseColor = load > 0.7 ? '255, 159, 67' : '79, 209, 197';
+                    ctx.fillStyle = `rgba(${baseColor}, ${0.4 * pt.scale})`;
                     ctx.beginPath();
-                    ctx.arc(pt.x, pt.y, p.size * pt.scale, 0, Math.PI * 2);
+
+                    // Particle Shape differentiation (Health = circles, Stress = triangles)
+                    if (load > 0.7) {
+                        ctx.moveTo(pt.x, pt.y - p.size * pt.scale);
+                        ctx.lineTo(pt.x + p.size * pt.scale, pt.y + p.size * pt.scale);
+                        ctx.lineTo(pt.x - p.size * pt.scale, pt.y + p.size * pt.scale);
+                        ctx.closePath();
+                    } else {
+                        ctx.arc(pt.x, pt.y, p.size * pt.scale, 0, Math.PI * 2);
+                    }
                     ctx.fill();
                 }
             });
@@ -199,7 +212,7 @@
                 }
             }
 
-            // 3. Render Category Nodes (Planetary Orbitals)
+            // 3. Render Category Nodes (Fixed-Point Matrix)
             const nodePositions = {};
             const renderedLabels = []; // Store label bounds to prevent overlap (Item 74 enhancement)
 
@@ -208,11 +221,12 @@
                 const score = scores[catKey];
                 const count = score; // Raw count for display
 
-                // Orbit Logic (12 nodes spaced by PI/6)
-                const angle = time * cat.speed + (i * Math.PI / 6);
-                const x = Math.cos(angle) * cat.orbit;
-                const z = Math.sin(angle) * cat.orbit;
-                const y = Math.sin(angle * 2) * 30; // Mild wave
+                // Fixed Matrix Layout (4 columns, 3 rows)
+                const col = i % 4;
+                const row = Math.floor(i / 4);
+                const x = -450 + col * 300;
+                const z = 0;
+                const y = 300 - row * 300;
 
                 const p = Math3D.project3DTo2D(x, y, z, camera, projection);
 
@@ -253,11 +267,60 @@
                     if (this.nodeMeshes[catKey]) {
                         ctx.strokeStyle = cat.color;
                         ctx.lineWidth = isHovered ? 2 : 1;
+
+                        // Intrinsic Morphological Detailing
+                        const isStressor = ['env', 'hpa', 'limbic'].includes(catKey);
+                        const isResilience = ['psych', 'philo', 'therapy', 'lifestyle'].includes(catKey);
+
+                        if (isStressor) {
+                            ctx.setLineDash([5, 2]); // Jagged
+                        } else if (isResilience) {
+                            ctx.setLineDash([]); // Smooth
+                        } else {
+                            ctx.setLineDash([2, 2]); // Grid-like
+                        }
+
                         const sphereRad = 10 + score * 3;
-                        this.nodeMeshes[catKey].faces.forEach(face => {
-                            const v1 = this.nodeMeshes[catKey].vertices[face[0]];
-                            const v2 = this.nodeMeshes[catKey].vertices[face[1]];
-                            const v3 = this.nodeMeshes[catKey].vertices[face[2]];
+
+                        // Apply Local Rotation
+                        const cosR = Math.cos(this.localRotation * (isStressor ? 1.5 : 1.0));
+                        const sinR = Math.sin(this.localRotation * (isStressor ? 1.5 : 1.0));
+
+                        this.nodeMeshes[catKey].faces.forEach((face, fidx) => {
+                            const v1o = this.nodeMeshes[catKey].vertices[face[0]];
+                            const v2o = this.nodeMeshes[catKey].vertices[face[1]];
+                            const v3o = this.nodeMeshes[catKey].vertices[face[2]];
+
+                            // Morphological Topology overrides (Non-spherical geometry through vertex displacement)
+                            const getMorph = (v) => {
+                                let mx = v.x, my = v.y, mz = v.z;
+                                if (isStressor) {
+                                    // Diamond/Spiky transformation
+                                    const s = 1.0 + Math.sin(fidx * 10) * 0.3;
+                                    mx *= s; my *= s; mz *= s;
+                                } else if (!isResilience) {
+                                    // Hexagonal/Crystalline transformation
+                                    mx = Math.sign(mx) * Math.pow(Math.abs(mx), 0.8);
+                                    my = Math.sign(my) * Math.pow(Math.abs(my), 0.8);
+                                    mz = Math.sign(mz) * Math.pow(Math.abs(mz), 0.8);
+                                }
+                                return { x: mx, y: my, z: mz };
+                            };
+
+                            const vm1 = getMorph(v1o);
+                            const vm2 = getMorph(v2o);
+                            const vm3 = getMorph(v3o);
+
+                            // Simple Y-axis rotation
+                            const rotateV = (v) => ({
+                                x: v.x * cosR - v.z * sinR,
+                                y: v.y,
+                                z: v.x * sinR + v.z * cosR
+                            });
+
+                            const v1 = rotateV(vm1);
+                            const v2 = rotateV(vm2);
+                            const v3 = rotateV(vm3);
 
                             const p1 = Math3D.project3DTo2D(x + v1.x * sphereRad, y + v1.y * sphereRad, z + v1.z * sphereRad, camera, projection);
                             const p2 = Math3D.project3DTo2D(x + v2.x * sphereRad, y + v2.y * sphereRad, z + v2.z * sphereRad, camera, projection);
@@ -442,14 +505,14 @@
                 ctx.fillStyle = 'rgba(255,255,255,0.5)';
                 ctx.font = '9px monospace';
                 ctx.fillText(t.label, dx + 10, dy + 40 + i * 25);
-                ctx.fillStyle = t.color;
+                ctx.fillStyle = '#A0AEC0'; // Standard Gray
                 ctx.font = 'bold 11px monospace';
                 ctx.fillText(t.value, dx + 50, dy + 40 + i * 25);
 
                 // Small scrolling graph for each
                 const history = this.scoreHistory['hpa']; // Proxy for history
                 ctx.beginPath();
-                ctx.strokeStyle = t.color;
+                ctx.strokeStyle = '#4FD1C5'; // Scientific Teal
                 ctx.globalAlpha = 0.3;
                 for (let j = 0; j < 20; j++) {
                     const val = history[history.length - 20 + j] || 0;
@@ -485,10 +548,12 @@
                     if (state.factors[fact.id] === 1 && fact.category === catKey) score++;
                 });
 
-                const angle = time * cat.speed + (i * Math.PI / 6);
-                const x = Math.cos(angle) * cat.orbit;
-                const z = Math.sin(angle) * cat.orbit;
-                const y = Math.sin(angle * 2) * 30;
+                // Match Fixed Matrix Layout
+                const col = i % 4;
+                const row = Math.floor(i / 4);
+                const x = -450 + col * 300;
+                const z = 0;
+                const y = 300 - row * 300;
 
                 const p = Math3D.project3DTo2D(x, y, z, camera, projection);
                 const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);

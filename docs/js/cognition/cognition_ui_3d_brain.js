@@ -108,34 +108,59 @@
                 if (targetRegion && f.region === targetRegion) {
                     const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 400);
                     const fog = GreenhouseModels3DMath.applyDepthFog(pulse, f.depth);
-                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green
+                    ctx.fillStyle = `rgba(76, 175, 80, ${fog})`; // Greenhouse Green
 
                     // Additive Glow Effect
                     ctx.save();
                     ctx.globalCompositeOperation = 'lighter';
                     ctx.shadowBlur = 10 * pulse;
-                    ctx.shadowColor = 'rgba(57, 255, 20, 0.8)';
+                    ctx.shadowColor = 'rgba(76, 175, 80, 0.8)';
                     ctx.beginPath();
                     ctx.moveTo(f.p1.x, f.p1.y);
                     ctx.lineTo(f.p2.x, f.p2.y);
                     ctx.lineTo(f.p3.x, f.p3.y);
                     ctx.fill();
+
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
                     ctx.restore();
                 } else {
+                    // Standardized Neutral Gray (#A0AEC0)
                     const ambient = 0.2;
                     const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
-                    const litR = Math.min(255, r * lightIntensity + specular * 255);
-                    const litG = Math.min(255, g * lightIntensity + specular * 255);
-                    const litB = Math.min(255, b * lightIntensity + specular * 255);
-                    const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
+                    const litR = Math.min(255, 160 * lightIntensity + specular * 255);
+                    const litG = Math.min(255, 174 * lightIntensity + specular * 255);
+                    const litB = Math.min(255, 192 * lightIntensity + specular * 255);
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.15, f.depth);
                     ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y);
+                    ctx.fill();
                 }
 
-                ctx.beginPath();
-                ctx.moveTo(f.p1.x, f.p1.y);
-                ctx.lineTo(f.p2.x, f.p2.y);
-                ctx.lineTo(f.p3.x, f.p3.y);
-                ctx.fill();
+                // Intrinsic Structural Signatures (Accessibility)
+                ctx.save();
+                if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
+                    // PFC - Executive Grid Pattern
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
+                    ctx.setLineDash([2, 4]);
+                    ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.stroke();
+                } else if (f.region === 'amygdala') {
+                    // Amygdala - Salience Stippling
+                    for(let k=0; k<2; k++) {
+                        const sx = f.p1.x + Math.random()*(f.p2.x - f.p1.x);
+                        const sy = f.p1.y + Math.random()*(f.p2.y - f.p1.y);
+                        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                        ctx.fillRect(sx, sy, 1, 1);
+                    }
+                } else if (f.region === 'hippocampus') {
+                    // Hippocampus - Memory Laminar Flow
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
+                }
+                ctx.restore();
             });
 
             // Topological Overlays

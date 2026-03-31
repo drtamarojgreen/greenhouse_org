@@ -61,8 +61,8 @@
             rise: 14,
             rotationPerPair: 0.5,
             colors: {
-                A: '#00D9FF', T: '#FF0055', C: '#FFD500', G: '#00FF66',
-                backbone: '#EEEEEE', enzyme: '#9d00ff', damage: '#FF0000'
+                A: '#A0AEC0', T: '#A0AEC0', C: '#4CAF50', G: '#4CAF50',
+                backbone: '#A0AEC0', enzyme: '#4FD1C5', damage: '#FF9F43'
             }
         },
 
@@ -275,7 +275,50 @@
                 const p2 = project(p.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p1.scale <= 0 || p2.scale <= 0) continue;
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
-                const drawB = (sp, ep, type, dam) => { if (!type) return; ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; if (dam) { ctx.shadowBlur = 15; ctx.shadowColor = '#ff0000'; } ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.shadowBlur = 0; };
+                const drawB = (sp, ep, type, dam) => {
+                    if (!type) return;
+                    ctx.strokeStyle = dam ? '#FF9F43' : (this.config.colors[type] || '#A0AEC0');
+                    ctx.lineWidth = 5 * p1.scale;
+
+                    // Structural signature for DNA base types (Geometric differentiation)
+                    ctx.save();
+                    if (type === 'A' || type === 'T') {
+                        // Purines/Pyrimidines (A/T) - Dashed/Triangular ends
+                        ctx.setLineDash([4, 2]);
+                        ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
+
+                        // Geometric Cap
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.beginPath();
+                        ctx.moveTo(ep.x, ep.y - 4); ctx.lineTo(ep.x + 4, ep.y + 4); ctx.lineTo(ep.x - 4, ep.y + 4);
+                        ctx.fill();
+                    } else {
+                        // Guanine/Cytosine (G/C) - Solid/Hexagonal ends
+                        ctx.setLineDash([]);
+                        ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
+
+                        // Hexagonal Cap
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.beginPath();
+                        for(let k=0; k<6; k++) {
+                            const ang = k * Math.PI / 3;
+                            ctx.lineTo(ep.x + 4 * Math.cos(ang), ep.y + 4 * Math.sin(ang));
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.restore();
+
+                    if (dam) {
+                        ctx.save(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1 * p1.scale;
+                        for (let j = 0; j < 5; j++) {
+                            const tx = sp.x + (ep.x - sp.x) * (j / 5);
+                            const ty = sp.y + (ep.y - sp.y) * (j / 5);
+                            ctx.beginPath(); ctx.moveTo(tx - 4, ty + 4); ctx.lineTo(tx + 4, ty - 4); ctx.stroke();
+                        }
+                        ctx.restore();
+                    }
+                };
 
                 if (!p.isReplicating) {
                     drawB(p1, { x: midX, y: midY }, p.base1, p.isDamaged);

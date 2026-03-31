@@ -140,25 +140,68 @@
                 // If this is the target region, use a bright, glowing color and bypass lighting.
                 if (targetRegion && f.region === targetRegion) {
                     const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
-                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
+                    ctx.fillStyle = `rgba(76, 175, 80, ${fog})`; // Greenhouse Green for ROI with fog
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y);
+                    ctx.lineTo(f.p2.x, f.p2.y);
+                    ctx.lineTo(f.p3.x, f.p3.y);
+                    ctx.fill();
+
+                    // Add Highlight Outline
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
                 } else {
-                    // Apply Lighting for all other regions
+                    // Apply Lighting for all other regions - Standardized Neutral Gray (#A0AEC0)
                     const ambient = 0.2;
                     const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
 
-                    const litR = Math.min(255, r * lightIntensity + specular * 255);
-                    const litG = Math.min(255, g * lightIntensity + specular * 255);
-                    const litB = Math.min(255, b * lightIntensity + specular * 255);
+                    const litR = Math.min(255, 160 * lightIntensity + specular * 255);
+                    const litG = Math.min(255, 174 * lightIntensity + specular * 255);
+                    const litB = Math.min(255, 192 * lightIntensity + specular * 255);
 
                     // Depth Fog for Alpha
-                    const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
-                    ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.15, f.depth);
+
+                    // --- Structural Shading (Intrinsic Signatures) ---
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y);
+                    ctx.lineTo(f.p2.x, f.p2.y);
+                    ctx.lineTo(f.p3.x, f.p3.y);
+                    ctx.closePath();
+
+                    if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
+                        // PFC - Grid Pattern (Executive Function)
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.4})`; ctx.lineWidth = 0.5;
+                        ctx.setLineDash([2, 4]); ctx.stroke();
+                    } else if (f.region === 'cerebellum') {
+                        // Cerebellum - Foliated Hatching
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.3})`; ctx.lineWidth = 0.5;
+                        ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.stroke();
+                    } else if (f.region === 'temporalLobe') {
+                        // Temporal Lobe - Dotted Wave
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                        ctx.setLineDash([1, 3]);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.6})`; ctx.stroke();
+                    } else if (f.region === 'amygdala') {
+                        // Amygdala - Grainy Stippling (Salience)
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                        for(let k=0; k<2; k++) {
+                            const sx = f.p1.x + Math.random()*(f.p2.x - f.p1.x);
+                            const sy = f.p1.y + Math.random()*(f.p2.y - f.p1.y);
+                            ctx.fillStyle = `rgba(255, 255, 255, ${fog * 0.5})`;
+                            ctx.fillRect(sx, sy, 1, 1);
+                        }
+                    } else {
+                        // Standard shaded fill
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+                        ctx.fill();
+                    }
+                    ctx.restore();
                 }
-                ctx.beginPath();
-                ctx.moveTo(f.p1.x, f.p1.y);
-                ctx.lineTo(f.p2.x, f.p2.y);
-                ctx.lineTo(f.p3.x, f.p3.y);
-                ctx.fill();
             }
 
             // NEW: Topological Projection - Smooth Surface Overlay
@@ -202,7 +245,7 @@
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.lineWidth = 1;
             ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)';
+            ctx.shadowColor = 'rgba(79, 209, 197, 0.4)';
 
             for (let i = 0; i < segments.length; i++) {
                 const seg = segments[i];

@@ -24,7 +24,7 @@
 
         // Recognition by Glycosylase
         if (t === 100) {
-            this.spawnParticles(pair.x, 0, 0, 20, '#ff00ff');
+            this.spawnParticles(pair.x, 0, 0, 20, '#4FD1C5');
             this.consumeATP(10, pair.x, 0, 0);
         }
 
@@ -104,7 +104,7 @@
             this.consumeATP(8, anchor.x, 0, 0);
         }
         if (t === 100) {
-            this.spawnParticles(anchor.x, 0, 0, 30, '#00ff00');
+            this.spawnParticles(anchor.x, 0, 0, 30, '#4CAF50');
             this.consumeATP(15, anchor.x, 0, 0);
         }
         if (t > 100 && t < 150) {
@@ -121,7 +121,7 @@
             this.state.globalHelixUnwind -= 0.02;
         }
         if (t === 400) {
-            this.spawnParticles(anchor.x, 0, 0, 20, '#00D9FF');
+            this.spawnParticles(anchor.x, 0, 0, 20, '#4FD1C5');
             this.consumeATP(30, anchor.x, 0, 0);
             this.state.globalHelixUnwind = 0;
         }
@@ -158,7 +158,7 @@
         }
         if (t === 200) {
             this.consumeATP(20, pair.x, 0, 0);
-            this.spawnParticles(pair.x, 0, 0, 30, '#ff5500');
+            this.spawnParticles(pair.x, 0, 0, 30, '#FF9F43');
             this.state.basePairs.splice(targetIdx, 1);
             this.state.mutationCount++;
             this.state.mutatedRepairs++;
@@ -183,7 +183,7 @@
             });
         }
         if (t === 350) {
-            this.spawnParticles(pair.x, 0, 0, 50, '#ffff00');
+            this.spawnParticles(pair.x, 0, 0, 50, '#FF9F43');
             this.consumeATP(50, pair.x, 0, 0);
         }
         if (t > 400) {
@@ -242,11 +242,11 @@
             this.consumeATP(2, pair.x, 0, 0);
         }
         if (t === 100) {
-            this.spawnParticles(pair.x, 0, 0, 20, '#9d00ff');
+            this.spawnParticles(pair.x, 0, 0, 20, '#4FD1C5');
             this.consumeATP(5, pair.x, 0, 0);
         }
         if (t === 200) {
-            this.spawnParticles(pair.x, 0, 0, 60, '#00fbff');
+            this.spawnParticles(pair.x, 0, 0, 60, '#4FD1C5');
             pair.isDamaged = false;
             pair.damageType = null;
             this.state.successfulRepairs++;
@@ -265,12 +265,12 @@
         }
 
         if (t === 100) {
-            this.spawnParticles(pair.x, 0, 0, 25, '#ff00aa');
+            this.spawnParticles(pair.x, 0, 0, 25, '#4FD1C5');
             this.consumeATP(5, pair.x, 0, 0);
         }
 
         if (t === 200) {
-            this.spawnParticles(pair.x, 0, 0, 40, '#ffaa00');
+            this.spawnParticles(pair.x, 0, 0, 40, '#FF9F43');
             pair.isDamaged = false;
             pair.damageType = null;
             this.state.successfulRepairs++;

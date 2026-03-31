@@ -100,20 +100,20 @@
             };
 
             this.colors = {
-                A: '#FF6B6B',
-                U: '#4ECDC4',
-                G: '#FFE66D',
-                C: '#1A535C',
-                PSI: '#818CF8', // Enhancement 7
-                BACKBONE: '#A3BFFA',
-                ENZYME: 'rgba(255, 255, 255, 0.2)',
-                METHYL: '#FF0000',
-                GLOW: '#667EEA',
-                METAL: '#A5F3FC',
-                PROTEIN: '#F472B6',
-                RIBOSOME: '#9333EA',
-                ATP: '#FBDF11',
-                DECAY: '#EF4444'
+                A: '#A0AEC0',
+                U: '#A0AEC0',
+                G: '#4CAF50',
+                C: '#4CAF50',
+                PSI: '#A0AEC0',
+                BACKBONE: '#A0AEC0',
+                ENZYME: 'rgba(79, 209, 197, 0.2)',
+                METHYL: '#FF9F43',
+                GLOW: '#4FD1C5',
+                METAL: '#A0AEC0',
+                PROTEIN: '#A0AEC0',
+                RIBOSOME: '#4CAF50',
+                ATP: '#4CAF50',
+                DECAY: '#FF9F43'
             };
 
             // Display state
@@ -704,7 +704,21 @@
                 this.ctx.shadowBlur = 15;
                 this.ctx.shadowColor = this.colors[base.type];
                 this.ctx.beginPath();
-                this.ctx.arc(base.x, base.y, 9, 0, Math.PI * 2);
+                if (base.type === 'A') { // Triangle
+                    this.ctx.moveTo(base.x, base.y - 12); this.ctx.lineTo(base.x + 10, base.y + 8); this.ctx.lineTo(base.x - 10, base.y + 8); this.ctx.closePath();
+                } else if (base.type === 'G') { // Hexagon
+                    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; this.ctx.lineTo(base.x + Math.cos(a) * 11, base.y + Math.sin(a) * 11); } this.ctx.closePath();
+                } else if (base.type === 'C') { // Diamond
+                    this.ctx.moveTo(base.x, base.y - 12); this.ctx.lineTo(base.x + 10, base.y); this.ctx.lineTo(base.x, base.y + 12); this.ctx.lineTo(base.x - 10, base.y); this.ctx.closePath();
+                } else { // Square for U/PSI
+                    this.ctx.rect(base.x - 9, base.y - 9, 18, 18);
+
+                    // Add internal cross for U/PSI to differentiate from pure square
+                    this.ctx.moveTo(base.x - 5, base.y); this.ctx.lineTo(base.x + 5, base.y);
+                    this.ctx.moveTo(base.x, base.y - 5); this.ctx.lineTo(base.x, base.y + 5);
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    this.ctx.stroke();
+                }
                 this.ctx.fillStyle = this.colors[base.type];
                 this.ctx.fill();
 

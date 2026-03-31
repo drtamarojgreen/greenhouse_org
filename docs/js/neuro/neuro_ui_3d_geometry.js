@@ -263,11 +263,22 @@
                         }
                     }
 
-                    // 5. Region-specific gyri/sulci morphology (structure-first)
-                    const regionKey = this.inferRegionFromUnitPosition(x, y, z);
-                    const baseNoise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.016;
-                    const regionalNoise = this.getRegionalSurfaceNoise(regionKey, x, y, z);
-                    const noise = baseNoise + regionalNoise;
+                    // 5. Gyri/Sulci Noise (The brain surface 'wrinkles')
+                    // Regional Morphological Variations
+                    let freq = 12;
+                    let amp = 0.03;
+
+                    // Approximate region check for noise variance
+                    if (y < -0.3 && z < -0.4) { // Cerebellum area
+                        freq = 40; amp = 0.015; // Denser, finer folds
+                    } else if (z > 0.4) { // PFC area
+                        freq = 15; amp = 0.04;  // Deeper, more pronounced
+                    } else if (Math.abs(x) > 0.6) { // Temporal
+                        freq = 8; amp = 0.025;  // Wider, smoother
+                    }
+
+                    const noise = (Math.sin(x * freq) * Math.cos(y * freq) * Math.sin(z * freq)) * amp +
+                        (Math.sin(x * freq * 2) * Math.cos(y * freq * 2)) * (amp * 0.3);
 
                     x = x * radius * (1 + noise);
                     y = y * radius * (1 + noise);
@@ -281,13 +292,22 @@
                     const u = 1 - (lon / longitudeBands);
                     const v = 1 - (lat / latitudeBands);
 
-                    // Displacement map now adapts to inferred anatomical area.
-                    const texture = (Math.sin(x * 0.1) + Math.cos(y * 0.1) + Math.sin(z * 0.1)) * 0.5 + 0.5;
-                    const textureLift = regionKey === 'cerebellum' ? 1.2 : 0.8;
-                    if (texture > 0.58) {
-                        x += (x / len) * textureLift;
-                        y += (y / len) * textureLift;
-                        z += (z / len) * textureLift;
+                    // Add Gyri Texture (Visual only, affects lighting)
+                    // We can bake this into the normal or color later
+                    let texture = 0;
+                    if (window.GreenhouseModels3DMath && window.GreenhouseModels3DMath.noise) {
+                        // If we had a noise function...
+                    } else {
+                        // Simple procedural texture
+                        texture = (Math.sin(x * 0.1) + Math.cos(y * 0.1) + Math.sin(z * 0.1)) * 0.5 + 0.5;
+                    }
+
+                    // Apply texture to geometry (displacement mapping)
+                    if (texture > 0.6) {
+                        const disp = (texture - 0.6) * 5;
+                        x += (x / len) * disp;
+                        y += (y / len) * disp;
+                        z += (z / len) * disp;
                     }
 
                     brainShell.vertices.push({ x, y, z });
@@ -309,35 +329,35 @@
             // Define Regions
             brainShell.regions = {
                 pfc: {
-                    color: 'rgba(100, 150, 255, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'pfc')
                 },
                 amygdala: {
-                    color: 'rgba(255, 100, 100, 0.6)',
+                    color: 'rgba(255, 159, 67, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'amygdala')
                 },
                 hippocampus: {
-                    color: 'rgba(100, 255, 150, 0.6)',
+                    color: 'rgba(79, 209, 197, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'hippocampus')
                 },
                 temporalLobe: {
-                    color: 'rgba(255, 165, 0, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'temporalLobe')
                 },
                 parietalLobe: {
-                    color: 'rgba(147, 112, 219, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'parietalLobe')
                 },
                 occipitalLobe: {
-                    color: 'rgba(255, 192, 203, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'occipitalLobe')
                 },
                 cerebellum: {
-                    color: 'rgba(64, 224, 208, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'cerebellum')
                 },
                 brainstem: {
-                    color: 'rgba(255, 215, 0, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'brainstem')
                 }
             };

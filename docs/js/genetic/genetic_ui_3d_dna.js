@@ -56,7 +56,7 @@
 
                 // Highlight focused gene
                 if (p.isFocused) {
-                    ctx.strokeStyle = '#00ffcc';
+                    ctx.strokeStyle = '#4FD1C5';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 15 * p.scale, 0, Math.PI * 2);
@@ -152,12 +152,35 @@
                         gradient.addColorStop(1, 'rgba(255, 255, 255, 0.6)');
 
                         ctx.strokeStyle = gradient;
-                        ctx.lineWidth = rungThickness;
-                        ctx.lineCap = 'butt';
-                        ctx.beginPath();
-                        ctx.moveTo(x1, y1);
-                        ctx.lineTo(x2, y2);
-                        ctx.stroke();
+                        ctx.lineWidth = thickness;
+                        ctx.lineCap = 'butt'; // Butt cap for clean join at middle
+
+                        // Structural differentiation for base pair types (Geometric differentiation)
+                        ctx.save();
+                        if (type === 0 || type === 1) { // A-T (Dashed / Triangular cap)
+                            ctx.setLineDash([thickness * 0.4, thickness * 0.2]);
+                            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+                            // Triangular cap at mid
+                            ctx.fillStyle = litColor;
+                            ctx.beginPath();
+                            ctx.moveTo(x2, y2 - thickness*0.4); ctx.lineTo(x2 + thickness*0.4, y2 + thickness*0.4); ctx.lineTo(x2 - thickness*0.4, y2 + thickness*0.4);
+                            ctx.fill();
+                        } else { // C-G (Solid / Hexagonal cap)
+                            ctx.setLineDash([]);
+                            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+                            // Hexagonal cap at mid
+                            ctx.fillStyle = litColor;
+                            ctx.beginPath();
+                            for(let k=0; k<6; k++) {
+                                const ang = k * Math.PI / 3;
+                                ctx.lineTo(x2 + thickness*0.4 * Math.cos(ang), y2 + thickness*0.4 * Math.sin(ang));
+                            }
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                        ctx.restore();
 
                         // Structural hatch marks for grayscale distinguishability.
                         const hatchCount = isPurineWide ? 3 : 2;

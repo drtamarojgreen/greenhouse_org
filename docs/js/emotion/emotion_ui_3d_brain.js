@@ -28,47 +28,47 @@
             const newRegions = {
                 dlPFC: {
                     name: 'Dorsal PFC',
-                    color: 'rgba(100, 180, 255, 0.7)',
+                    color: 'rgba(160, 174, 192, 0.7)',
                     vertices: []
                 },
                 vmPFC: {
                     name: 'Ventromedial PFC',
-                    color: 'rgba(120, 160, 255, 0.7)',
+                    color: 'rgba(160, 174, 192, 0.7)',
                     vertices: []
                 },
                 ofc: {
                     name: 'Orbitofrontal Cortex',
-                    color: 'rgba(80, 140, 255, 0.7)',
+                    color: 'rgba(160, 174, 192, 0.7)',
                     vertices: []
                 },
                 acc: {
                     name: 'Anterior Cingulate Cortex',
-                    color: 'rgba(100, 255, 255, 0.6)',
+                    color: 'rgba(79, 209, 197, 0.6)',
                     vertices: []
                 },
                 subgenualACC: {
                     name: 'Subgenual ACC (Area 25)',
-                    color: 'rgba(80, 220, 220, 0.7)',
+                    color: 'rgba(79, 209, 197, 0.7)',
                     vertices: []
                 },
                 insula: {
                     name: 'Insula',
-                    color: 'rgba(255, 100, 255, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: []
                 },
                 striatum: {
                     name: 'Striatum',
-                    color: 'rgba(200, 100, 255, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: []
                 },
                 nucleusAccumbens: {
                     name: 'Nucleus Accumbens',
-                    color: 'rgba(180, 80, 255, 0.8)',
+                    color: 'rgba(160, 174, 192, 0.8)',
                     vertices: []
                 },
                 cortex: {
                     name: 'Cortex',
-                    color: 'rgba(120, 120, 120, 0.3)',
+                    color: 'rgba(160, 174, 192, 0.3)',
                     vertices: []
                 }
             };
@@ -243,23 +243,52 @@
                 if (isTarget) {
                     const intensity = (activeROI && activeROI.intensity !== undefined) ? activeROI.intensity : 0.9;
                     const fog = GreenhouseModels3DMath.applyDepthFog(intensity, f.depth);
-                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`;
+                    ctx.fillStyle = `rgba(76, 175, 80, ${fog})`; // Greenhouse Green
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y);
+                    ctx.fill();
+
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
                 } else {
+                    // Standardized Neutral Gray (#A0AEC0)
                     const ambient = 0.2;
                     const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
 
-                    const litR = Math.min(255, r * lightIntensity + specular * 255);
-                    const litG = Math.min(255, g * lightIntensity + specular * 255);
-                    const litB = Math.min(255, b * lightIntensity + specular * 255);
+                    const litR = Math.min(255, 160 * lightIntensity + specular * 255);
+                    const litG = Math.min(255, 174 * lightIntensity + specular * 255);
+                    const litB = Math.min(255, 192 * lightIntensity + specular * 255);
 
-                    const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.15, f.depth);
                     ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y);
+                    ctx.fill();
                 }
-                ctx.beginPath();
-                ctx.moveTo(f.p1.x, f.p1.y);
-                ctx.lineTo(f.p2.x, f.p2.y);
-                ctx.lineTo(f.p3.x, f.p3.y);
-                ctx.fill();
+
+                // Intrinsic Structural Signatures (Accessibility)
+                ctx.save();
+                if (f.region === 'amygdala' || f.region === 'striatum') {
+                    // Amygdala/Striatum - Salience Stippling
+                    for(let k=0; k<2; k++) {
+                        const sx = f.p1.x + Math.random()*(f.p2.x - f.p1.x);
+                        const sy = f.p1.y + Math.random()*(f.p2.y - f.p1.y);
+                        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                        ctx.fillRect(sx, sy, 1, 1);
+                    }
+                } else if (f.region === 'dlPFC' || f.region === 'ofc' || f.region === 'vmPFC') {
+                    // PFC Subdivisions - Executive Grid
+                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                    ctx.setLineDash([2, 4]);
+                    ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.stroke();
+                } else if (f.region === 'acc' || f.region === 'subgenualACC') {
+                    // ACC - Longitudinal Flow lines
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
+                }
+                ctx.restore();
             });
 
             this.drawSurfaceGrid(ctx, projectedVertices, brainShell);

@@ -396,14 +396,14 @@
                 }
             }
             brainShell.regions = {
-                pfc: { color: 'rgba(100, 150, 255, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc') },
-                amygdala: { color: 'rgba(255, 100, 100, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala') },
-                hippocampus: { color: 'rgba(100, 255, 150, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus') },
-                temporalLobe: { color: 'rgba(255, 165, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe') },
-                parietalLobe: { color: 'rgba(147, 112, 219, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe') },
-                occipitalLobe: { color: 'rgba(255, 192, 203, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe') },
-                cerebellum: { color: 'rgba(64, 224, 208, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum') },
-                brainstem: { color: 'rgba(255, 215, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem') }
+                pfc: { color: 'rgba(160, 174, 192, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc') },
+                amygdala: { color: 'rgba(255, 159, 67, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala') },
+                hippocampus: { color: 'rgba(79, 209, 197, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus') },
+                temporalLobe: { color: 'rgba(160, 174, 192, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe') },
+                parietalLobe: { color: 'rgba(160, 174, 192, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe') },
+                occipitalLobe: { color: 'rgba(160, 174, 192, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe') },
+                cerebellum: { color: 'rgba(160, 174, 192, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum') },
+                brainstem: { color: 'rgba(160, 174, 192, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem') }
             };
 
             // Define topological cut planes for smooth boundary rendering

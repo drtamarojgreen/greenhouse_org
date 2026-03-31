@@ -252,11 +252,11 @@
 
     G.setupReceptors = function () {
         G.state.receptors = [
-            { type: 'D1', x: -200, y: 0, z: 0, color: '#ff4d4d', il3Size: 20, tailLength: 60, helixRadius: 15 },
-            { type: 'D2', x: -100, y: 0, z: 0, color: '#4d79ff', il3Size: 50, tailLength: 15, helixRadius: 18 },
-            { type: 'D3', x: 0, y: 0, z: 0, color: '#4dff4d', il3Size: 45, tailLength: 15, helixRadius: 16 },
-            { type: 'D4', x: 100, y: 0, z: 0, color: '#ffff4d', il3Size: 40, tailLength: 20, helixRadius: 14 },
-            { type: 'D5', x: 200, y: 0, z: 0, color: '#ff4dff', il3Size: 22, tailLength: 55, helixRadius: 15 }
+            { type: 'D1', x: -200, y: 0, z: 0, color: '#4FD1C5', il3Size: 20, tailLength: 60, helixRadius: 15 },
+            { type: 'D2', x: -100, y: 0, z: 0, color: '#A0AEC0', il3Size: 50, tailLength: 15, helixRadius: 18 },
+            { type: 'D3', x: 0, y: 0, z: 0, color: '#4CAF50', il3Size: 45, tailLength: 15, helixRadius: 16 },
+            { type: 'D4', x: 100, y: 0, z: 0, color: '#A0AEC0', il3Size: 40, tailLength: 20, helixRadius: 14 },
+            { type: 'D5', x: 200, y: 0, z: 0, color: '#4FD1C5', il3Size: 22, tailLength: 55, helixRadius: 15 }
         ];
     };
 
@@ -347,10 +347,12 @@
                         ctx.lineWidth = 8 * top.scale;
                         ctx.lineCap = 'round';
                         ctx.globalAlpha = 0.7;
-                        ctx.beginPath();
-                        ctx.moveTo(top.x, top.y);
-                        ctx.lineTo(bottom.x, bottom.y);
-                        ctx.stroke();
+                        // Structural signature for receptor helices
+                        if (r.type === 'D1' || r.type === 'D5') ctx.setLineDash([10, 5]);
+                        else if (r.type === 'D2') ctx.setLineDash([2, 2]);
+                        else if (r.type === 'D3') ctx.setLineDash([5, 5, 2, 2]);
+                        ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(bottom.x, bottom.y); ctx.stroke();
+                        ctx.setLineDash([]);
                         ctx.globalAlpha = 1.0;
                     }
                 }

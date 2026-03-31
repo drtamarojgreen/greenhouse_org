@@ -3,16 +3,16 @@
 
     const GreenhousePathwayBrain = {
         regionColors: {
-            'gut': 'rgba(100, 255, 100, 0.15)',
-            'blood_stream': 'rgba(255, 50, 50, 0.15)',
-            'liver': 'rgba(150, 75, 0, 0.15)',
-            'heart': 'rgba(255, 100, 200, 0.15)',
-            'adrenals': 'rgba(255, 200, 0, 0.15)',
-            'pfc': 'rgba(100, 150, 255, 0.15)',
-            'hypothalamus': 'rgba(255, 150, 0, 0.15)',
-            'pituitary': 'rgba(200, 100, 255, 0.15)',
-            'brain_stem': 'rgba(100, 100, 100, 0.15)',
-            'spinal_cord': 'rgba(200, 200, 200, 0.15)'
+            'gut': 'rgba(160, 174, 192, 0.15)',
+            'blood_stream': 'rgba(160, 174, 192, 0.15)',
+            'liver': 'rgba(160, 174, 192, 0.15)',
+            'heart': 'rgba(160, 174, 192, 0.15)',
+            'adrenals': 'rgba(160, 174, 192, 0.15)',
+            'pfc': 'rgba(160, 174, 192, 0.15)',
+            'hypothalamus': 'rgba(160, 174, 192, 0.15)',
+            'pituitary': 'rgba(160, 174, 192, 0.15)',
+            'brain_stem': 'rgba(160, 174, 192, 0.15)',
+            'spinal_cord': 'rgba(160, 174, 192, 0.15)'
         },
 
         drawBrain(ctx, brainShell, camera, projection, width, height, options = {}) {
@@ -62,7 +62,7 @@
 
             facesToDraw.forEach(f => {
                 const isHighlighted = activeRegion === f.region;
-                const baseColor = isHighlighted ? 'rgba(57, 255, 20, 0.4)' : (this.regionColors[f.region] || 'rgba(200, 200, 200, 0.05)');
+                const baseColor = isHighlighted ? 'rgba(76, 175, 80, 0.4)' : (this.regionColors[f.region] || 'rgba(160, 174, 192, 0.15)');
 
                 const match = baseColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                 const r = parseInt(match[1]); const g = parseInt(match[2]); const b = parseInt(match[3]); const a = parseFloat(match[4] || 1);
@@ -75,24 +75,46 @@
                 const litB = Math.min(255, b * intensity + (isHighlighted ? 50 : 0));
 
                 const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
-                ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
 
+                // --- Pathway Specific Structural Shading ---
+                ctx.save();
                 ctx.beginPath();
                 ctx.moveTo(f.p1.x, f.p1.y);
                 ctx.lineTo(f.p2.x, f.p2.y);
                 ctx.lineTo(f.p3.x, f.p3.y);
+                ctx.closePath();
+                ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
                 ctx.fill();
+
+                if (isHighlighted) {
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                } else {
+                    // Unique texture patterns for systemic regions
+                    if (f.region === 'gut') {
+                        // Peristaltic wave pattern
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.2})`;
+                        ctx.setLineDash([4, 4]);
+                        ctx.stroke();
+                    } else if (f.region === 'blood_stream') {
+                        // Flow lines
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.15})`;
+                        ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
+                    }
+                }
+                ctx.restore();
             });
         },
 
         drawInteractionPiP(ctx, w, h, moleculeName, sourceUrl) {
             // Simplified 3D stylized view of a receptor interaction
             const mapName = (moleculeName || 'Dopamine').toLowerCase();
-            let color = { r: 0, g: 153, b: 255 }; // Default Blue (Dopamine)
-            if (mapName.includes('serotonin') || mapName.includes('5-ht')) color = { r: 255, g: 50, b: 50 };
-            if (mapName.includes('glutamate')) color = { r: 255, g: 153, b: 0 };
-            if (mapName.includes('gaba')) color = { r: 150, g: 0, b: 255 };
-            if (mapName.includes('cortisol')) color = { r: 255, g: 200, b: 0 };
+            let color = { r: 79, g: 209, b: 197 }; // Default Teal
+            if (mapName.includes('serotonin') || mapName.includes('5-ht')) color = { r: 76, g: 175, b: 80 }; // Green
+            if (mapName.includes('glutamate')) color = { r: 79, g: 209, b: 197 };
+            if (mapName.includes('gaba')) color = { r: 160, g: 174, b: 192 }; // Gray
+            if (mapName.includes('cortisol')) color = { r: 255, g: 159, b: 67 }; // Orange
 
             // Draw Background and Frame
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';

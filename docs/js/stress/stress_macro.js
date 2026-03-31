@@ -24,7 +24,8 @@
             const intensity = state.factors.stressorIntensity || 0;
             const load = state.metrics.allostaticLoad || 0;
 
-            this.orbitalRotation += 0.001;
+            // Local Rotations instead of orbital revolutions
+            this.localRotation = (this.localRotation || 0) + 0.01;
             this.helixRotation += 0.01;
 
             // 1. AURA METRICS (Systemic Noise/Static)
@@ -82,8 +83,10 @@
                 const size = Math.random() * 2;
                 if (Math.random() > 0.95) {
                     // "Static" glitch line
+                    ctx.fillStyle = '#FF9F43';
                     ctx.fillRect(x, y, 20 * load, 0.5);
                 } else {
+                    ctx.fillStyle = '#4CAF50';
                     ctx.fillRect(x, y, size, size);
                 }
             }
@@ -185,12 +188,12 @@
 
             ctx.save();
             activeFactors.forEach((fid, idx) => {
-                const angle = (idx / activeFactors.length) * Math.PI * 2 + this.orbitalRotation;
-                const radius = 250;
-
-                const fx = Math.cos(angle) * radius;
-                const fz = Math.sin(angle) * radius;
-                const fy = Math.sin(angle * 0.5) * 100;
+                // Fixed Layout Matrix
+                const row = Math.floor(idx / 5);
+                const col = idx % 5;
+                const fx = -500 + col * 250;
+                const fy = 300 + row * 150;
+                const fz = 0;
 
                 const p = Math3D.project3DTo2D(fx, -fy, fz, camera, projection);
                 if (p.scale > 0) {
@@ -206,8 +209,11 @@
                     const py = p.y + (tp.y - p.y) * pulse;
 
                     ctx.beginPath();
+                    // Geometric factor signature
+                    if (fid.includes('sleep')) ctx.setLineDash([10, 10]);
+                    else if (fid.includes('noise')) ctx.setLineDash([2, 2]);
+                    else ctx.setLineDash([5, 5, 2, 2]);
                     ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.3})`;
-                    ctx.setLineDash([2, 4]);
                     ctx.moveTo(p.x, p.y); ctx.lineTo(tp.x, tp.y);
                     ctx.stroke();
                     ctx.setLineDash([]);

@@ -347,11 +347,19 @@
                     ctx.fillStyle = chem.color;
                     ctx.globalAlpha = s.life;
                     ctx.beginPath();
-                    ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+
+                // Structural Retrograde Signal (Diamond)
+                ctx.moveTo(s.x, s.y - 5);
+                ctx.lineTo(s.x + 5, s.y);
+                ctx.lineTo(s.x, s.y + 5);
+                ctx.lineTo(s.x - 5, s.y);
+                ctx.closePath();
                     ctx.fill();
 
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = chem.color;
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 0.5;
                     ctx.stroke();
                 }
             }
