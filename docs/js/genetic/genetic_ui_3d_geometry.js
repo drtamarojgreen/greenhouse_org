@@ -19,11 +19,14 @@
             const strandOffset = strandIndex === 0 ? 0 : 2.2;
 
             const angle = t + strandOffset;
+            const groovePhase = (pairIndex % 10) / 10;
+            const majorGrooveLift = Math.sin(groovePhase * Math.PI * 2) * 3.5;
+            const grooveRadius = radius + (strandIndex === 0 ? majorGrooveLift : -majorGrooveLift * 0.6);
 
             // 3D Spiral: x = r*cos(t), z = r*sin(t), y = t
-            const x = helixOffset + Math.cos(angle) * radius;
+            const x = helixOffset + Math.cos(angle) * grooveRadius;
             const y = (pairIndex * verticalSpread) - 300;
-            const z = Math.sin(angle) * radius;
+            const z = Math.sin(angle) * grooveRadius;
 
             return { x, y, z, strandIndex };
         },

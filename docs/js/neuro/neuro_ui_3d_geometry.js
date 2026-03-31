@@ -156,6 +156,41 @@
             return { vertices, faces };
         },
 
+        inferRegionFromUnitPosition(x, y, z) {
+            if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) return 'brainstem';
+            if (y < -0.3 && z < -0.4) return 'cerebellum';
+            if (z > 0.4 && y > -0.2) return 'pfc';
+            if (z < -0.5 && y > -0.2) return 'occipitalLobe';
+            if (y > 0.4 && z > -0.4 && z < 0.4) return 'parietalLobe';
+            if (Math.abs(x) > 0.4 && y < 0.1 && z > -0.4 && z < 0.4) return 'temporalLobe';
+            if (Math.abs(x) < 0.3 && Math.abs(y) < 0.3 && Math.abs(z) < 0.3) return 'amygdala';
+            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.5 && y < 0 && z > -0.2 && z < 0.2) return 'hippocampus';
+            return null;
+        },
+
+        getRegionalSurfaceNoise(region, x, y, z) {
+            switch (region) {
+                case 'pfc':
+                    return Math.sin(x * 18) * Math.cos(y * 18) * 0.02 + Math.sin(z * 26) * 0.012;
+                case 'temporalLobe':
+                    return Math.sin(z * 12) * Math.cos(x * 6) * 0.028 + Math.sin(y * 9) * 0.01;
+                case 'occipitalLobe':
+                    return Math.sin(y * 8) * Math.cos(z * 8) * 0.023;
+                case 'parietalLobe':
+                    return Math.sin(x * 14) * Math.cos(z * 14) * 0.022;
+                case 'cerebellum':
+                    return (Math.sin(z * 40) * 0.022) + (Math.sin(z * 20) * 0.018);
+                case 'brainstem':
+                    return Math.sin(y * 4) * 0.006;
+                case 'hippocampus':
+                    return Math.sin((x + z) * 16) * 0.016;
+                case 'amygdala':
+                    return Math.sin((x * x + y * y + z * z) * 10) * 0.012;
+                default:
+                    return Math.sin(x * 10) * Math.cos(y * 10) * Math.sin(z * 10) * 0.012;
+            }
+        },
+
         initializeBrainShell(brainShell) {
             // Use realistic brain mesh if available
             if (window.GreenhouseBrainMeshRealistic) {
@@ -228,10 +263,11 @@
                         }
                     }
 
-                    // 5. Gyri/Sulci Noise (The brain surface 'wrinkles')
-                    // Using layered sine waves to remove the 'soccer ball' look
-                    const noise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.03 +
-                        (Math.sin(x * 25) * Math.cos(y * 25)) * 0.01;
+                    // 5. Region-specific gyri/sulci morphology (structure-first)
+                    const regionKey = this.inferRegionFromUnitPosition(x, y, z);
+                    const baseNoise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.016;
+                    const regionalNoise = this.getRegionalSurfaceNoise(regionKey, x, y, z);
+                    const noise = baseNoise + regionalNoise;
 
                     x = x * radius * (1 + noise);
                     y = y * radius * (1 + noise);
@@ -245,21 +281,13 @@
                     const u = 1 - (lon / longitudeBands);
                     const v = 1 - (lat / latitudeBands);
 
-                    // Add Gyri Texture (Visual only, affects lighting)
-                    // We can bake this into the normal or color later
-                    let texture = 0;
-                    if (window.GreenhouseModels3DMath && window.GreenhouseModels3DMath.noise) {
-                        // If we had a noise function...
-                    } else {
-                        // Simple procedural texture
-                        texture = (Math.sin(x * 0.1) + Math.cos(y * 0.1) + Math.sin(z * 0.1)) * 0.5 + 0.5;
-                    }
-
-                    // Apply texture to geometry (displacement mapping)
-                    if (texture > 0.6) {
-                        x += (x / len) * 2;
-                        y += (y / len) * 2;
-                        z += (z / len) * 2;
+                    // Displacement map now adapts to inferred anatomical area.
+                    const texture = (Math.sin(x * 0.1) + Math.cos(y * 0.1) + Math.sin(z * 0.1)) * 0.5 + 0.5;
+                    const textureLift = regionKey === 'cerebellum' ? 1.2 : 0.8;
+                    if (texture > 0.58) {
+                        x += (x / len) * textureLift;
+                        y += (y / len) * textureLift;
+                        z += (z / len) * textureLift;
                     }
 
                     brainShell.vertices.push({ x, y, z });
@@ -328,6 +356,29 @@
 
             // Pre-calculate Regions and Boundaries
             this.computeRegionsAndBoundaries(brainShell);
+        },
+
+        updateMesh(geometry, time, state = {}) {
+            if (!geometry || !Array.isArray(geometry.vertices)) return geometry;
+            const load = Math.max(0, Math.min(1, state.cognitiveLoad ?? state.load ?? 0));
+            const tension = Math.max(0, Math.min(1, state.tension ?? 0));
+
+            geometry.vertices.forEach((v, idx) => {
+                if (v.baseX === undefined) {
+                    v.baseX = v.x;
+                    v.baseY = v.y;
+                    v.baseZ = v.z;
+                }
+                const regionNoise = this.getRegionalSurfaceNoise(v.region, v.baseX / 200, v.baseY / 200, v.baseZ / 200);
+                const osc = Math.sin(time * 0.0018 + idx * 0.13) * (0.8 + load);
+                const displacement = regionNoise * (3.2 + load * 4.5) + osc * tension * 0.9;
+                const len = Math.sqrt(v.baseX * v.baseX + v.baseY * v.baseY + v.baseZ * v.baseZ) || 1;
+                v.x = v.baseX + (v.baseX / len) * displacement;
+                v.y = v.baseY + (v.baseY / len) * displacement;
+                v.z = v.baseZ + (v.baseZ / len) * displacement;
+            });
+
+            return geometry;
         },
 
         getRegionVertices(brainShell, regionKey) {

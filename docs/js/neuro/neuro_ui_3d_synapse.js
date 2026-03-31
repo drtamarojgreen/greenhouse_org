@@ -25,6 +25,51 @@
 
         drawConnections(ctx, connections, neurons, camera, projection, width, height) {
             const now = Date.now();
+            const drawStructuralConnectionCue = (from, to, weight, alpha) => {
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const ux = dx / dist;
+                const uy = dy / dist;
+                const nx = -uy;
+                const ny = ux;
+
+                const tipX = to.x - ux * Math.min(8, dist * 0.25);
+                const tipY = to.y - uy * Math.min(8, dist * 0.25);
+
+                ctx.fillStyle = `rgba(255,255,255,${Math.min(0.9, alpha + 0.15)})`;
+                ctx.beginPath();
+                ctx.moveTo(to.x, to.y);
+                ctx.lineTo(tipX + nx * 3.5, tipY + ny * 3.5);
+                ctx.lineTo(tipX - nx * 3.5, tipY - ny * 3.5);
+                ctx.closePath();
+                ctx.fill();
+
+                if (Math.abs(weight) > 0.7) {
+                    ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.7, alpha + 0.1)})`;
+                    ctx.lineWidth = 1.25;
+                    for (let i = 1; i <= 3; i++) {
+                        const t = i / 4;
+                        const cx = from.x + dx * t;
+                        const cy = from.y + dy * t;
+                        const seg = 4;
+                        ctx.beginPath();
+                        ctx.moveTo(cx - ux * seg + nx * 1.4, cy - uy * seg + ny * 1.4);
+                        ctx.lineTo(cx + ux * seg + nx * 1.4, cy + uy * seg + ny * 1.4);
+                        ctx.stroke();
+                    }
+                } else if (Math.abs(weight) < 0.3) {
+                    ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.5, alpha)})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.setLineDash([2, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            };
+
             const lightDir = { x: 0.5, y: -0.5, z: 1 };
             const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
@@ -60,6 +105,7 @@
                     if (!batches[key]) batches[key] = new Path2D();
                     batches[key].moveTo(p1.x, p1.y);
                     batches[key].lineTo(p2.x, p2.y);
+                    drawStructuralConnectionCue(p1, p2, conn.weight, alpha);
                     continue;
                 }
 
@@ -186,6 +232,8 @@
                         ctx.restore();
                     }
                 }
+
+                drawStructuralConnectionCue(p1, p2, conn.weight, alpha);
             }
 
             ctx.lineWidth = 1;
