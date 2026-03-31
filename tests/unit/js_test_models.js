@@ -106,13 +106,18 @@
             'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js'
         ],
         'common': [
-            'models_lang.js', 'models_util.js', 'models_data.js', 'models_ui_synapse.js',
-            'models_ui_brain.js', 'models_ui_environment_overlay.js', 'models_ui_environment_hovers.js',
-            'models_ui_environment_background.js', 'models_ui_environment_medication.js',
-            'models_ui_environment_therapy.js', 'models_ui_environment.js', 'models_3d_math.js',
-            'models_ui_3d.js', 'models_ui.js', 'models_ux.js', 'labeling_system.js',
-            'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js',
-            'inspiration.js', 'kegg_parser.js', 'models_toc.js'
+            'common/test_accessibility.js', 'core/test_assertion_library.js', 'core/test_dependency_manager.js',
+            'common/test_global_ux.js', 'core/test_greenhouse_utils.js', 'common/test_labeling_system.js',
+            'common/test_models_3d_math.js', 'common/test_models_toc.js', 'common/test_models_util.js',
+            'common/test_models_data.js', 'common/test_models_ux.js', 'common/test_models_ui.js',
+            'core/test_performance_profiler_unit.js', 'common/test_performance_regression.js', 'common/test_react_compatibility.js',
+            'core/test_test_framework.js', 'common/test_v8_graph_renderer.js', 'mobile/test_mobile_edge_cases.js',
+            'mobile/test_mobile_integration.js', 'mobile/test_mobile_model_behaviors.js', 'mobile/test_mobile_models_lifecycle.js',
+            'mobile/test_mobile_regression.js', 'mobile/test_mobile_typography_contrast.js', 'mobile/test_mobile_ui_interactions.js',
+            'mobile/test_mobile_viewer.js', 'common/test_model_sync.js', 'common/test_patient_app_unit.js',
+            'common/test_dashboard_app_unit.js', 'common/test_meditation_app.js', 'common/test_scheduler_logic.js',
+            'common/test_tech_canvas.js', 'common/test_inspiration_logic.js', 'common/test_kegg_parser.js',
+            'common/test_models_page_new.js', 'common/test_layout_parity.js'
         ]
     };
 
