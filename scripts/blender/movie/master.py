@@ -184,17 +184,27 @@ class BaseMaster:
     def place_character(self, char, location=None, rotation=None, frame=None):
         """Helper to position and key a character to prevent drifting (Point 142)."""
         if not char: return
+        
+        # 5.0 Slotted Action support: Ensure action exists
+        from style_utilities.fcurves_operations import ensure_action
+        action = ensure_action(char)
+        
         if location:
             char.location = location
-            if frame is not None: char.keyframe_insert(data_path="location", frame=frame)
+            if frame is not None:
+                # Use robust keying to guarantee insertion into Slotted Action
+                for i in range(3):
+                    char.keyframe_insert(data_path="location", index=i, frame=frame)
         if rotation:
             char.rotation_euler = rotation
-            if frame is not None: char.keyframe_insert(data_path="rotation_euler", frame=frame)
+            if frame is not None:
+                for i in range(3):
+                    char.keyframe_insert(data_path="rotation_euler", index=i, frame=frame)
 
     def hold_position(self, obj, frame_start, frame_end):
         """Keys current position at start and end of range to prevent drifting (Point 142)."""
         if not obj: return
-        obj.keyframe_insert(data_path="location", frame=frame_start)
-        obj.keyframe_insert(data_path="location", frame=frame_end)
-        obj.keyframe_insert(data_path="rotation_euler", frame=frame_start)
-        obj.keyframe_insert(data_path="rotation_euler", frame=frame_end)
+        for frame in [frame_start, frame_end]:
+            for i in range(3):
+                obj.keyframe_insert(data_path="location", index=i, frame=frame)
+                obj.keyframe_insert(data_path="rotation_euler", index=i, frame=frame)

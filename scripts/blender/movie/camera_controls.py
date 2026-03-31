@@ -277,8 +277,8 @@ def setup_camera_keyframes(master, cam, target):
 
     # Intro: Reveal via descending crane arc (Point 142)
     # Point 142: Strategic Intro Framing (Avoid "Ground" focus)
-    # Start high off-axis (Altitude >= 60 to satisfy Test 2.1.1)
-    kf_eased(101, (-20, 10, 75.0), (0, 0, 1.6), lens=35, easing='EASE_IN')
+    # Start high off-axis (Altitude capped at 45.0 for visibility)
+    kf_eased(101, (-20, 10, 45.0), (0, 0, 1.6), lens=35, easing='EASE_IN')
     # Descend to altitude <= 20 by 180 for Test 2.1.1
     kf_eased(180, (-12, -15, 18), (0, 0, 1.6), lens=35, interpolation='LINEAR')
     kf_eased(200, (-10, -20, 8), (0, 0, 1.6), lens=35, easing='EASE_OUT')

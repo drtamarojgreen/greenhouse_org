@@ -9,24 +9,28 @@ def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
     if not scene: return None
     scene.use_nodes = True
-    # Force creation if missing
-    current_tree = getattr(scene, 'node_tree', None)
-    if not current_tree:
+    
+    # Force creation if missing (Point 142)
+    if not getattr(scene, 'node_tree', None):
         try: bpy.ops.node.new_node_tree(type='CompositorNodeTree', name="Compositing")
         except: pass
 
-    tree = getattr(scene, 'node_tree', None)
+    # Modern 5.x discovery
+    tree = getattr(scene, 'node_tree', None) or \
+           getattr(scene, 'compositing_node_tree', None) or \
+           getattr(scene, 'compositor_node_tree', None)
     
     if not tree:
-        # Check if we can find it in bpy.data.node_groups as a fallback
+        # Fallback to bpy.data.node_groups search
         for ng in bpy.data.node_groups:
             if ng.type == 'COMPOSITOR' and (ng.name == "Compositing" or ng.name == "CompositorNodeTree"):
                 tree = ng
+                # Link it back to the scene if possible
+                try: scene.node_tree = tree
+                except: pass
                 break
                 
-    if not tree:
-        tree = getattr(scene, 'node_tree', None)
-        
+    if not tree: tree = getattr(scene, 'compositing_node_group', None)
     return tree
 
 def get_socket_by_identifier(collection, identifier):

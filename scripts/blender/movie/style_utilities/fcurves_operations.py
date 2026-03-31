@@ -94,6 +94,15 @@ def get_action_curves(action, obj=None):
                     add_curves_from_bag(bag, prefix)
             except: pass
 
+    # 3. Last Resort: Global fallback if still no curves found (Point 142)
+    if not curves and hasattr(action, "fcurves"):
+        for fc in action.fcurves:
+            try: ptr = fc.as_pointer()
+            except: ptr = id(fc)
+            if ptr not in seen_ids:
+                seen_ids.add(ptr)
+                curves.append(FCurveProxy(fc, fc.data_path))
+
     return curves
 
 def ensure_action(obj, action_name_prefix="Anim"):

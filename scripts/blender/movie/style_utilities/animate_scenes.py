@@ -24,11 +24,15 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
 
     if scene_name == 'garden': # Scenes 1-4
         bg_color = (0.01, 0.02, 0.01, 1) # Dark mossy green
+        sun_energy = 10.0 # Boost for visibility (Point 142)
         sun_color = (1, 0.9, 0.7, 1) # Warm amber
+        rim_energy = 8000 # Boost for separation
         rim_color = (0.8, 1, 0.8, 1) # Soft green
     elif scene_name == 'resonance': # Scenes 5-6
         bg_color = (0, 0.01, 0.02, 1) # Dark cyan
+        sun_energy = 10.0 # Boost for visibility
         sun_color = (0.7, 0.9, 1, 1) # Electric cyan
+        rim_energy = 12000 # Strong silhouette for synergy
         rim_color = (0.5, 0.8, 1, 1) # Teal
     elif scene_name == 'shadow': # Scenes 7-8
         bg_color = (0.02, 0, 0.03, 1) # Dark violet
@@ -71,7 +75,11 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
             if light_obj and hasattr(light_obj, "data"):
                 light_obj.data.energy = energy
                 light_obj.data.keyframe_insert(data_path="energy", frame=frame_start)
-                if hasattr(light_obj.data, "color"):
+                
+                # Point 142: Preserve unique character tints (like GnomeKeyLight's green)
+                # only apply world mood color if it's not a character-specific key light
+                is_character_key = name in ["HerbaceousKeyLight", "ArborKeyLight", "GnomeKeyLight"]
+                if hasattr(light_obj.data, "color") and not is_character_key:
                     light_obj.data.color = color[:3]
                     light_obj.data.keyframe_insert(data_path="color", frame=frame_start)
 

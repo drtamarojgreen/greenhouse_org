@@ -4,6 +4,7 @@ import mathutils
 from assets.wilderness_assets import create_proc_terrain, create_proc_rock_formation, create_proc_dead_tree
 from scene_utils import place_random_prop
 import random
+import style_utilities as style
 
 def setup_scene(master):
     """
@@ -35,7 +36,8 @@ def setup_scene(master):
     from scene_utils import place_prop_on_grid
 
     # Point 142: Strategic Volcano Grid (Ordered chaos)
-    rock_grid = [(-10, 0, -0.8), (10, 0, -0.8)]
+    # Nudged ForgeRock_2 to (11, 0) for S18 camera clearance
+    rock_grid = [(-10, 0, -0.8), (11, 0, -0.8)]
     place_prop_on_grid(
         None,
         lambda l: create_proc_rock_formation(l, scale=2.5, style_type="jagged"),

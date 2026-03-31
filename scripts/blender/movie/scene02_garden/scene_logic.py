@@ -33,7 +33,8 @@ def setup_scene(master):
     from scene_utils import place_prop_on_grid
 
     # Point 142: Strategic Grid-Based Placement (Order vs Haphazard)
-    fern_grid = [(-8, 8, -0.5), (8, 8, -0.5), (0, 12, -0.5)]
+    # Nudged GardenFern_2 to (9, 9) to clear S22 camera retreat path
+    fern_grid = [(-8, 8, -0.5), (9, 9, -0.5), (0, 12, -0.5)]
     ferns = place_prop_on_grid(
         None,
         lambda l: create_proc_fern(l, scale=1.1),
