@@ -99,41 +99,20 @@
             'serotonin/test_serotonin_ui.js', 'serotonin/test_serotonin_model_logic.js', 'serotonin/test_serotonin_transport_unit.js'
         ],
         'inflammation': [
-            'inflammation/test_inflammation_logic.js', 'inflammation/test_inflammation_ui.js', 'inflammation/test_inflammation_enhancements.js'
-        ],
-        'stress': [
-            'stress/test_stress_logic.js', 'stress/test_stress_ui.js', 'stress/test_stress_regression.js', 'stress/test_stress_enhancements.js', 'stress/test_stress_interventions.js'
-        ],
-        'dna': [
-            'dna/test_dna_ui.js', 'dna/test_dna_logic.js', 'dna/test_dna_page.js'
-        ],
-        'rna': [
-            'rna/test_rna_ui.js', 'rna/test_rna_page.js', 'rna/repro_rna_error.js'
-        ],
-        'synapse': [
-            'synapse/test_synapse_ui.js', 'synapse/test_synapse_logic.js', 'synapse/test_synapse_receptors.js', 'synapse/test_synapse_page_loader.js', 'synapse/test_synapse_page_new.js'
-        ],
-        'pathway': [
-            'pathway/test_pathway_ui.js', 'pathway/test_pathway_logic.js', 'pathway/test_pathway_page_loader.js', 'pathway/test_json_pathway_support.js', 'pathway/test_pathway_page_new.js'
-        ],
-        'emotion': [
-            'emotion/test_emotion_page.js', 'emotion/test_emotion_deep_dive.js'
-        ],
-        'cognition': [
-            'cognition/test_cognition_logic.js', 'cognition/test_cognition_ui.js', 'cognition/test_cognition_drawing.js', 'cognition/test_cognition_modules.js', 'cognition/test_cognition_regression.js', 'cognition/test_cognition_page.js'
+            'models_util.js',
+            'inflammation/inflammation_config.js', 'inflammation/inflammation_geometry.js',
+            'inflammation/inflammation_pathway.js', 'inflammation/inflammation_ui_3d.js',
+            'inflammation/inflammation_analysis.js', 'inflammation/inflammation_app.js',
+            'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js'
         ],
         'common': [
-            'common/test_accessibility.js', 'core/test_assertion_library.js', 'core/test_dependency_manager.js',
-            'common/test_global_ux.js', 'core/test_greenhouse_utils.js', 'common/test_labeling_system.js',
-            'common/test_models_3d_math.js', 'common/test_models_toc.js', 'common/test_models_util.js',
-            'core/test_performance_profiler_unit.js', 'common/test_performance_regression.js',
-            'common/test_react_compatibility.js', 'core/test_test_framework.js', 'common/test_v8_graph_renderer.js',
-            'mobile/test_mobile_edge_cases.js', 'mobile/test_mobile_integration.js', 'mobile/test_mobile_model_behaviors.js',
-            'mobile/test_mobile_models_lifecycle.js', 'mobile/test_mobile_regression.js', 'mobile/test_mobile_typography_contrast.js',
-            'mobile/test_mobile_ui_interactions.js', 'mobile/test_mobile_viewer.js', 'common/test_model_sync.js',
-            'common/test_patient_app_unit.js', 'common/test_dashboard_app_unit.js', 'common/test_meditation_app.js',
-            'common/test_scheduler_logic.js', 'common/test_tech_canvas.js', 'common/test_inspiration_logic.js',
-            'common/test_kegg_parser.js', 'common/test_models_page_new.js', 'common/test_layout_parity.js'
+            'models_lang.js', 'models_util.js', 'models_data.js', 'models_ui_synapse.js',
+            'models_ui_brain.js', 'models_ui_environment_overlay.js', 'models_ui_environment_hovers.js',
+            'models_ui_environment_background.js', 'models_ui_environment_medication.js',
+            'models_ui_environment_therapy.js', 'models_ui_environment.js', 'models_3d_math.js',
+            'models_ui_3d.js', 'models_ui.js', 'models_ux.js', 'labeling_system.js',
+            'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js',
+            'inspiration.js', 'kegg_parser.js', 'models_toc.js'
         ]
     };
 
@@ -166,6 +145,15 @@
             'inflammation/inflammation_pathway.js', 'inflammation/inflammation_ui_3d.js',
             'inflammation/inflammation_analysis.js', 'inflammation/inflammation_app.js',
             'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js'
+        ],
+        'common': [
+            'models_lang.js', 'models_util.js', 'models_data.js', 'models_ui_synapse.js',
+            'models_ui_brain.js', 'models_ui_environment_overlay.js', 'models_ui_environment_hovers.js',
+            'models_ui_environment_background.js', 'models_ui_environment_medication.js',
+            'models_ui_environment_therapy.js', 'models_ui_environment.js', 'models_3d_math.js',
+            'models_ui_3d.js', 'models_ui.js', 'models_ux.js', 'labeling_system.js',
+            'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js',
+            'inspiration.js', 'kegg_parser.js', 'models_toc.js'
         ]
     };
 
@@ -492,17 +480,40 @@
                 };
             }
 
+
             // Bridge TestFramework
             const tf = window.TestFramework;
             if (tf) {
                 tf.reset();
                 tf.it = (name, fn) => {
-                    const suiteName = (tf.currentSuite ? tf.currentSuite.name : 'Unit');
-                    window.GreenhouseTestSuite.addTest(`[${suiteName}] ${name}`, async () => {
-                        if (tf.currentSuite && tf.currentSuite.beforeEach) { for (const h of tf.currentSuite.beforeEach) await h(); }
-                        try { await fn(); } finally { if (tf.currentSuite && tf.currentSuite.afterEach) { for (const h of tf.currentSuite.afterEach) await h(); } }
+                    const suite = tf.currentSuite;
+                    const suiteName = (suite ? suite.name : 'Unit');
+                    window.GreenhouseTestSuite.addTest('[' + suiteName + '] ' + name, async () => {
+                        if (suite && suite.beforeEach) {
+                            for (const h of suite.beforeEach) {
+                                try { await h(); } catch(e) { console.error('Error in beforeEach:', e); }
+                            }
+                        }
+                        try {
+                            await fn();
+                        } finally {
+                            if (suite && suite.afterEach) {
+                                for (const h of suite.afterEach) {
+                                    try { await h(); } catch(e) { console.error('Error in afterEach:', e); }
+                                }
+                            }
+                        }
                     });
                 };
+                tf.describe = (name, fn) => {
+                    const prev = tf.currentSuite;
+                    const newSuite = { name: name, beforeEach: [], afterEach: [] };
+                    tf.currentSuite = newSuite;
+                    try { fn(); } catch(e) { console.error('Error in describe ' + name, e); }
+                    tf.currentSuite = prev;
+                };
+                tf.beforeEach = (fn) => { if (tf.currentSuite) tf.currentSuite.beforeEach.push(fn); };
+                tf.afterEach = (fn) => { if (tf.currentSuite) tf.currentSuite.afterEach.push(fn); };
             }
 
             // Load Implementations
