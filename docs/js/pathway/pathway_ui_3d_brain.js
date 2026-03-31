@@ -4,7 +4,7 @@
     const GreenhousePathwayBrain = {
         regionColors: {
             'gut': 'rgba(160, 174, 192, 0.15)',
-            'blood_stream': 'rgba(160, 174, 192, 0.15)',
+            'blood_stream': 'rgba(160, 174, 192, 0.2)',
             'liver': 'rgba(160, 174, 192, 0.15)',
             'heart': 'rgba(160, 174, 192, 0.15)',
             'adrenals': 'rgba(160, 174, 192, 0.15)',
@@ -62,7 +62,8 @@
 
             facesToDraw.forEach(f => {
                 const isHighlighted = activeRegion === f.region;
-                const baseColor = isHighlighted ? 'rgba(76, 175, 80, 0.4)' : (this.regionColors[f.region] || 'rgba(160, 174, 192, 0.15)');
+                // Use monochromatic premium palette for highlighting
+                const baseColor = isHighlighted ? 'rgba(255, 255, 255, 0.6)' : (this.regionColors[f.region] || 'rgba(160, 174, 192, 0.15)');
 
                 const match = baseColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                 const r = parseInt(match[1]); const g = parseInt(match[2]); const b = parseInt(match[3]); const a = parseFloat(match[4] || 1);
@@ -90,31 +91,36 @@
                     ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
                     ctx.lineWidth = 1;
                     ctx.stroke();
-                } else {
-                    // Unique texture patterns for systemic regions
-                    if (f.region === 'gut') {
-                        // Peristaltic wave pattern
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.2})`;
-                        ctx.setLineDash([4, 4]);
-                        ctx.stroke();
-                    } else if (f.region === 'blood_stream') {
-                        // Flow lines
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.15})`;
-                        ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
-                    }
+                }
+
+                // Unique texture patterns for systemic regions - Enhanced for grayscale
+                if (f.region === 'gut') {
+                    // Peristaltic wave pattern
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * (isHighlighted ? 0.4 : 0.2)})`;
+                    ctx.setLineDash([4, 4]);
+                    ctx.stroke();
+                } else if (f.region === 'blood_stream') {
+                    // Flow lines
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * (isHighlighted ? 0.3 : 0.15)})`;
+                    ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
+                } else if (f.region === 'pfc') {
+                    // Executive Grid Pattern
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * (isHighlighted ? 0.3 : 0.1)})`;
+                    ctx.setLineDash([1, 2]);
+                    ctx.stroke();
                 }
                 ctx.restore();
             });
         },
 
         drawInteractionPiP(ctx, w, h, moleculeName, sourceUrl) {
-            // Simplified 3D stylized view of a receptor interaction
+            // Simplified 3D stylized view of a receptor interaction - Monochromatic
             const mapName = (moleculeName || 'Dopamine').toLowerCase();
-            let color = { r: 79, g: 209, b: 197 }; // Default Teal
-            if (mapName.includes('serotonin') || mapName.includes('5-ht')) color = { r: 76, g: 175, b: 80 }; // Green
-            if (mapName.includes('glutamate')) color = { r: 79, g: 209, b: 197 };
-            if (mapName.includes('gaba')) color = { r: 160, g: 174, b: 192 }; // Gray
-            if (mapName.includes('cortisol')) color = { r: 255, g: 159, b: 67 }; // Orange
+            let color = { r: 208, g: 208, b: 208 }; // Default Gray
+            if (mapName.includes('serotonin') || mapName.includes('5-ht')) color = { r: 224, g: 224, b: 224 };
+            if (mapName.includes('glutamate')) color = { r: 208, g: 208, b: 208 };
+            if (mapName.includes('gaba')) color = { r: 160, g: 174, b: 192 };
+            if (mapName.includes('cortisol')) color = { r: 240, g: 240, b: 240 };
 
             // Draw Background and Frame
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';

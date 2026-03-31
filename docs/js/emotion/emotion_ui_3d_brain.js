@@ -43,12 +43,12 @@
                 },
                 acc: {
                     name: 'Anterior Cingulate Cortex',
-                    color: 'rgba(79, 209, 197, 0.6)',
+                    color: 'rgba(224, 224, 224, 0.5)',
                     vertices: []
                 },
                 subgenualACC: {
                     name: 'Subgenual ACC (Area 25)',
-                    color: 'rgba(79, 209, 197, 0.7)',
+                    color: 'rgba(208, 208, 208, 0.4)',
                     vertices: []
                 },
                 insula: {
@@ -241,15 +241,15 @@
                 const isTarget = targetRegion && (f.region === targetRegion || (Array.isArray(targetRegion) && targetRegion.includes(f.region)));
 
                 if (isTarget) {
-                    const intensity = (activeROI && activeROI.intensity !== undefined) ? activeROI.intensity : 0.9;
+                    const intensity = (activeROI && activeROI.intensity !== undefined) ? activeROI.intensity : 0.95;
                     const fog = GreenhouseModels3DMath.applyDepthFog(intensity, f.depth);
-                    ctx.fillStyle = `rgba(76, 175, 80, ${fog})`; // Greenhouse Green
+                    ctx.fillStyle = `rgba(255, 255, 255, ${fog})`; // Monochromatic High-Contrast ROI
                     ctx.beginPath();
                     ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y);
                     ctx.fill();
 
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
-                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog})`;
+                    ctx.lineWidth = 2;
                     ctx.stroke();
                 } else {
                     // Standardized Neutral Gray (#A0AEC0)
@@ -270,23 +270,30 @@
 
                 // Intrinsic Structural Signatures (Accessibility)
                 ctx.save();
-                if (f.region === 'amygdala' || f.region === 'striatum') {
+                if (f.region === 'amygdala' || f.region === 'striatum' || f.region === 'nucleusAccumbens') {
                     // Amygdala/Striatum - Salience Stippling
                     for(let k=0; k<2; k++) {
                         const sx = f.p1.x + Math.random()*(f.p2.x - f.p1.x);
                         const sy = f.p1.y + Math.random()*(f.p2.y - f.p1.y);
-                        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                        ctx.fillStyle = 'rgba(255,255,255,0.3)';
                         ctx.fillRect(sx, sy, 1, 1);
                     }
-                } else if (f.region === 'dlPFC' || f.region === 'ofc' || f.region === 'vmPFC') {
-                    // PFC Subdivisions - Executive Grid
-                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-                    ctx.setLineDash([2, 4]);
+                } else if (f.region === 'dlPFC' || f.region === 'ofc' || f.region === 'vmPFC' || f.region === 'prefrontalCortex') {
+                    // PFC Subdivisions - Executive Grid Pattern with high-frequency noise
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.setLineDash([1, 2]);
                     ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.stroke();
                 } else if (f.region === 'acc' || f.region === 'subgenualACC') {
                     // ACC - Longitudinal Flow lines
-                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
                     ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
+                } else if (f.region === 'cerebellum') {
+                    // Cerebellum - Foliated Parallel Hatching
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y);
+                    ctx.moveTo(f.p1.x + 2, f.p1.y + 2); ctx.lineTo(f.p2.x + 2, f.p2.y + 2);
+                    ctx.stroke();
                 }
                 ctx.restore();
             });
@@ -319,11 +326,11 @@
         },
 
         drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
-            // Simplified boundaries for performance and clarity in the emotion model
+            // Simplified boundaries for performance and clarity in the emotion model - Enhanced for Grayscale
             ctx.save();
-            if (ctx.setLineDash) ctx.setLineDash([8, 4]);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.lineWidth = 0.8;
+            if (ctx.setLineDash) ctx.setLineDash([]); // Solid lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 1.2;
 
             // Major anatomical splits
             const majorPlanes = [

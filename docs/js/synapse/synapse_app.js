@@ -8,9 +8,9 @@
     window.GreenhouseSynapseApp = G;
 
     G.config = G.config || {
-        backgroundColor: '#050705',
-        accentCyan: '#00F2FF',
-        accentGold: '#FFD700',
+        backgroundColor: '#050510',
+        accentCyan: '#A0AEC0',
+        accentGold: '#E0E0E0',
         activeNT: 'serotonin',
         activeScenario: 'healthy',
         font: "'Quicksand', 'Segoe UI', sans-serif",
@@ -147,7 +147,7 @@
             this.container.style.cssText = `
                 display: flex; flex-direction: ${isMobile ? 'column' : 'row'}; gap: 0; background: ${config.backgroundColor};
                 border-radius: 24px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-                border: 1px solid rgba(53, 116, 56, 0.2); font-family: ${config.font}; height: ${isMobile ? 'auto' : '750px'};
+                border: 1px solid rgba(160, 174, 192, 0.2); font-family: ${config.font}; height: ${isMobile ? 'auto' : '750px'};
                 position: relative; min-height: ${isMobile ? '500px' : 'auto'};
             `;
 
@@ -155,7 +155,7 @@
             sidebar.id = 'synapse-sidebar';
             sidebar.style.cssText = `
                 flex: 1; max-width: ${isMobile ? '100%' : '340px'}; padding: ${isMobile ? '20px' : '50px 40px'};
-                background: rgba(53, 116, 56, 0.05); backdrop-filter: blur(15px);
+                background: rgba(160, 174, 192, 0.05); backdrop-filter: blur(15px);
                 border-right: ${isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.05)'};
                 border-bottom: ${isMobile ? '1px solid rgba(255, 255, 255, 0.05)' : 'none'};
                 color: #fff; display: ${isMobile ? 'none' : 'block'};
@@ -704,7 +704,7 @@
             const spineWidthMod = G.Particles.plasticityFactor ? (G.Particles.plasticityFactor - 1.0) * 0.1 : 0;
 
             ctx.save();
-            const preColor = activeId === 'preSynapticTerminal' ? (G.config.highContrast ? '#fff' : '#357438') : '#303830';
+            const preColor = activeId === 'preSynapticTerminal' ? (G.config.highContrast ? '#fff' : '#A0AEC0') : '#303830';
             ctx.fillStyle = preColor;
             ctx.beginPath();
             ctx.moveTo(centerX - w * 0.06, 0);
@@ -732,7 +732,7 @@
             });
 
             G.config.elements.transporters.forEach(tr => {
-                let color = '#4CAF50';
+                let color = '#E0E0E0';
                 if (tr.type === 'SERT' && G.config.pharmacology?.ssriActive) color = '#ff4444';
                 if (tr.type.startsWith('VMAT')) color = '#9C27B0'; // Purple for VMAT
                 if (tr.type === 'NET') color = '#FF5722'; // Deep Orange for NET

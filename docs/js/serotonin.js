@@ -158,8 +158,8 @@
                 if (isDragging) {
                     const dx = e.clientX - lastX;
                     const dy = e.clientY - lastY;
-                    this.state.camera.rotationY += dx * 0.01;
-                    this.state.camera.rotationX += dy * 0.01;
+                    this.state.camera.rotationY += dx * 0.005; // Reduced manual sensitivity
+                    this.state.camera.rotationX += dy * 0.005;
                     lastX = e.clientX; lastY = e.clientY;
                 }
             });
@@ -280,9 +280,9 @@
             const iterations = (this.timeLapse ? 5 : 1) * (this.playbackSpeed || 1);
             for (let i = 0; i < iterations; i++) {
                 this.state.timer++;
-                // Stop the revolution if 2D Closeup is active
+                // Stop the revolution if 2D Closeup is active - Constrained for accessibility
                 if (!this.isDragging && this.viewMode !== '2D-Closeup') {
-                    this.state.camera.rotationY += 0.003;
+                    this.state.camera.rotationY += 0.0008; // Reduced speed for accessibility
                 }
                 // Call module updates if they exist
                 if (this.Receptors && this.Receptors.updateReceptorStates) this.Receptors.updateReceptorStates();
@@ -522,11 +522,11 @@
                     const bottom = project(rx, 80, rz, cam, { width: w, height: h, near: 10, far: 5000 });
 
                     if (top.scale > 0 && bottom.scale > 0) {
-                        ctx.strokeStyle = '#4FD1C5';
+                        ctx.strokeStyle = '#E0E0E0'; // Premium palette
                         ctx.lineWidth = 15 * top.scale;
                         ctx.lineCap = 'round';
-                        // Structural signature for 5-HT helices
-                        ctx.setLineDash([15, 10, 5, 10]);
+                        // Structural signature for 5-HT helices - High contrast
+                        ctx.setLineDash([20, 5, 2, 5]);
                         ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(bottom.x, bottom.y); ctx.stroke();
                         ctx.setLineDash([]);
                     }
@@ -537,7 +537,7 @@
             this.state.lipids.forEach(l => {
                 const p = project(l.x, l.y, l.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    ctx.fillStyle = '#ffcc00';
+                    ctx.fillStyle = '#A0AEC0'; // Premium monochromatic lipids
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 3 * p.scale, 0, Math.PI * 2);
                     ctx.fill();
@@ -547,9 +547,9 @@
             // Draw Ligand (5-HT) in pocket
             const ligandPos = project(0, -20, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (ligandPos.scale > 0) {
-                ctx.fillStyle = '#4CAF50';
+                ctx.fillStyle = '#E0E0E0'; // High contrast ligand
                 ctx.shadowBlur = 10;
-                ctx.shadowColor = '#4CAF50';
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
                 ctx.beginPath();
                 ctx.arc(ligandPos.x, ligandPos.y, 8 * ligandPos.scale, 0, Math.PI * 2);
                 ctx.fill();

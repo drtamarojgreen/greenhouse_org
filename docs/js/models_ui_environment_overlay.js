@@ -76,7 +76,7 @@
         // Custom Renderers
         renderers: {
             dna_structure: (ctx, x, y) => {
-                ctx.strokeStyle = '#FFD700';
+                ctx.strokeStyle = '#E0E0E0'; // Silver
                 ctx.lineWidth = 4;
                 ctx.beginPath();
                 // Draw a chaotic noodle shape
@@ -86,10 +86,10 @@
                 ctx.stroke();
             },
             histones: (ctx, x, y) => {
-                ctx.fillStyle = '#8B4513';
+                ctx.fillStyle = '#A0AEC0'; // Muted Gray-Blue
                 // Draw stylized spool
                 ctx.fillRect(x, y - 15, 40, 30);
-                ctx.fillStyle = '#D2691E';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.beginPath();
                 ctx.ellipse(x, y, 5, 15, 0, 0, Math.PI * 2);
                 ctx.fill();
@@ -97,7 +97,7 @@
                 ctx.ellipse(x + 40, y, 5, 15, 0, 0, Math.PI * 2);
                 ctx.fill();
                 // Wrapped DNA thread
-                ctx.strokeStyle = '#FFD700';
+                ctx.strokeStyle = '#E0E0E0';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(x, y - 10);
@@ -108,7 +108,7 @@
             },
             acetylation: (ctx, x, y) => {
                 // Draw open curtains
-                ctx.fillStyle = '#90EE90';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.beginPath();
                 ctx.moveTo(x, y - 30);
                 ctx.quadraticCurveTo(x + 10, y, x - 20, y + 30);
@@ -124,12 +124,12 @@
                 ctx.fill();
 
                 // "Light" coming through
-                ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
                 ctx.fillRect(x - 10, y - 30, 60, 60);
             },
             methylation: (ctx, x, y) => {
                 // Draw closed curtains
-                ctx.fillStyle = '#CD5C5C';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.fillRect(x - 20, y - 30, 40, 60);
                 ctx.fillRect(x + 20, y - 30, 40, 60);
                 ctx.strokeStyle = '#333';
@@ -139,7 +139,7 @@
                 ctx.stroke();
             },
             cityscape: (ctx, x, y) => {
-                ctx.fillStyle = '#708090';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.fillRect(x, y, 20, 40);
                 ctx.fillRect(x + 25, y - 10, 15, 50);
                 ctx.fillRect(x + 45, y + 10, 20, 30);
@@ -157,7 +157,7 @@
                 ctx.arc(x + 50, y, 15, 0, Math.PI * 2);
                 ctx.fill();
                 // Lightning
-                ctx.strokeStyle = '#FFD700';
+                ctx.strokeStyle = '#FFFFFF';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(x + 30, y + 10);
@@ -168,7 +168,7 @@
             },
             therapy: (ctx, x, y) => {
                 // Rewiring arrows
-                ctx.strokeStyle = '#32CD32';
+                ctx.strokeStyle = '#A0AEC0';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(x + 30, y + 20, 20, 0, Math.PI * 1.5);
@@ -182,7 +182,7 @@
             },
             pfc: (ctx, x, y) => {
                 // Badge icon
-                ctx.fillStyle = '#4169E1';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.beginPath();
                 ctx.moveTo(x + 20, y);
                 ctx.lineTo(x + 40, y + 15);
@@ -197,7 +197,7 @@
             },
             amygdala: (ctx, x, y) => {
                 // Alarm bell
-                ctx.fillStyle = '#FF4500';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.beginPath();
                 ctx.arc(x + 25, y + 20, 20, Math.PI, 0);
                 ctx.lineTo(x + 45, y + 20);
@@ -312,9 +312,9 @@
                 const region = window.GreenhouseModelsUIEnvironment._brainRegions[item.targetRegion];
                 if (region && region.path) {
                     ctx.save();
-                    // Draw target circle indicator
+                    // Draw target circle indicator (White for monochromatic visibility)
                     ctx.beginPath();
-                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                     ctx.lineWidth = 3;
                     ctx.arc(item.x, item.y, 40, 0, Math.PI * 2);
                     ctx.stroke();
@@ -361,13 +361,13 @@
             ctx.beginPath();
             ctx.moveTo(item.x, item.y);
             ctx.lineTo(boxX, boxY + boxHeight / 2);
-            ctx.strokeStyle = 'rgba(53, 116, 56, 0.5)';
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.5)';
             ctx.lineWidth = 2;
             ctx.stroke();
 
             // 3. Draw Bubble Background
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            ctx.strokeStyle = '#357438';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
             ctx.shadowColor = 'rgba(0,0,0,0.2)';
             ctx.shadowBlur = 10;
@@ -388,7 +388,7 @@
             let currentY = boxY + padding + 10; // Start a bit down
 
             // Metaphor (Title)
-            ctx.fillStyle = '#357438';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif';
             this._wrapText(ctx, metaphor, boxX + iconSpace + padding, currentY, textWidth, 18);
             currentY += metaphorHeight;

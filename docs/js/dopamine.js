@@ -252,11 +252,11 @@
 
     G.setupReceptors = function () {
         G.state.receptors = [
-            { type: 'D1', x: -200, y: 0, z: 0, color: '#4FD1C5', il3Size: 20, tailLength: 60, helixRadius: 15 },
+            { type: 'D1', x: -200, y: 0, z: 0, color: '#E0E0E0', il3Size: 20, tailLength: 60, helixRadius: 15 },
             { type: 'D2', x: -100, y: 0, z: 0, color: '#A0AEC0', il3Size: 50, tailLength: 15, helixRadius: 18 },
-            { type: 'D3', x: 0, y: 0, z: 0, color: '#4CAF50', il3Size: 45, tailLength: 15, helixRadius: 16 },
+            { type: 'D3', x: 0, y: 0, z: 0, color: '#D0D0D0', il3Size: 45, tailLength: 15, helixRadius: 16 },
             { type: 'D4', x: 100, y: 0, z: 0, color: '#A0AEC0', il3Size: 40, tailLength: 20, helixRadius: 14 },
-            { type: 'D5', x: 200, y: 0, z: 0, color: '#4FD1C5', il3Size: 22, tailLength: 55, helixRadius: 15 }
+            { type: 'D5', x: 200, y: 0, z: 0, color: '#E0E0E0', il3Size: 22, tailLength: 55, helixRadius: 15 }
         ];
     };
 
@@ -288,10 +288,10 @@
         G.state.timer++;
         if (!G.isDragging) {
             G.state.camera.rotationY += 0.005;
-            // 100. Cinematic Camera: subtle zoom/pan
+            // 100. Cinematic Camera: constrained subtle zoom/pan for accessibility
             if (G.state.cinematicCamera) {
-                G.state.camera.zoom = 1.0 + Math.sin(G.state.timer * 0.005) * 0.1;
-                G.state.camera.rotationX = Math.sin(G.state.timer * 0.003) * 0.1;
+                G.state.camera.zoom = 1.0 + Math.sin(G.state.timer * 0.003) * 0.05;
+                G.state.camera.rotationX = Math.sin(G.state.timer * 0.002) * 0.05;
             }
         }
 
@@ -347,10 +347,12 @@
                         ctx.lineWidth = 8 * top.scale;
                         ctx.lineCap = 'round';
                         ctx.globalAlpha = 0.7;
-                        // Structural signature for receptor helices
-                        if (r.type === 'D1' || r.type === 'D5') ctx.setLineDash([10, 5]);
-                        else if (r.type === 'D2') ctx.setLineDash([2, 2]);
-                        else if (r.type === 'D3') ctx.setLineDash([5, 5, 2, 2]);
+                        // Structural signature for receptor helices - High contrast for grayscale distinguishability
+                        if (r.type === 'D1') ctx.setLineDash([15, 5]);
+                        else if (r.type === 'D2') ctx.setLineDash([2, 4]);
+                        else if (r.type === 'D3') ctx.setLineDash([8, 2, 2, 2]);
+                        else if (r.type === 'D4') ctx.setLineDash([4, 4]);
+                        else if (r.type === 'D5') ctx.setLineDash([20, 10]);
                         ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(bottom.x, bottom.y); ctx.stroke();
                         ctx.setLineDash([]);
                         ctx.globalAlpha = 1.0;

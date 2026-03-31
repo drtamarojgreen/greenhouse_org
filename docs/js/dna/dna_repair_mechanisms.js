@@ -24,7 +24,7 @@
 
         // Recognition by Glycosylase
         if (t === 100) {
-            this.spawnParticles(pair.x, 0, 0, 20, '#4FD1C5');
+            this.spawnParticles(pair.x, 0, 0, 20, '#A0AEC0');
             this.consumeATP(10, pair.x, 0, 0);
         }
 
@@ -104,7 +104,7 @@
             this.consumeATP(8, anchor.x, 0, 0);
         }
         if (t === 100) {
-            this.spawnParticles(anchor.x, 0, 0, 30, '#4CAF50');
+            this.spawnParticles(anchor.x, 0, 0, 30, '#A0AEC0');
             this.consumeATP(15, anchor.x, 0, 0);
         }
         if (t > 100 && t < 150) {
@@ -121,7 +121,7 @@
             this.state.globalHelixUnwind -= 0.02;
         }
         if (t === 400) {
-            this.spawnParticles(anchor.x, 0, 0, 20, '#4FD1C5');
+            this.spawnParticles(anchor.x, 0, 0, 20, '#A0AEC0');
             this.consumeATP(30, anchor.x, 0, 0);
             this.state.globalHelixUnwind = 0;
         }
@@ -242,11 +242,11 @@
             this.consumeATP(2, pair.x, 0, 0);
         }
         if (t === 100) {
-            this.spawnParticles(pair.x, 0, 0, 20, '#4FD1C5');
+            this.spawnParticles(pair.x, 0, 0, 20, '#A0AEC0');
             this.consumeATP(5, pair.x, 0, 0);
         }
         if (t === 200) {
-            this.spawnParticles(pair.x, 0, 0, 60, '#4FD1C5');
+            this.spawnParticles(pair.x, 0, 0, 60, '#A0AEC0');
             pair.isDamaged = false;
             pair.damageType = null;
             this.state.successfulRepairs++;
@@ -265,7 +265,7 @@
         }
 
         if (t === 100) {
-            this.spawnParticles(pair.x, 0, 0, 25, '#4FD1C5');
+            this.spawnParticles(pair.x, 0, 0, 25, '#A0AEC0');
             this.consumeATP(5, pair.x, 0, 0);
         }
 

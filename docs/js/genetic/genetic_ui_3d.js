@@ -453,10 +453,10 @@
                             region: regionKey, // Assign the target region to the gene
                             strand: helixData.strandIndex,
                             label: GENE_SYMBOLS[i % GENE_SYMBOLS.length],
-                            baseColor: helixData.strandIndex === 0 ? '#4FD1C5' : '#FF9F43'
+                            baseColor: helixData.strandIndex === 0 ? '#E0E0E0' : '#D0D0D0'
                         };
                     }
-                    return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', region: regionKey, baseColor: '#fff' };
+                    return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', region: regionKey, baseColor: '#A0AEC0' };
                 } else {
                     // Volumetric Brain Topology (Inside Shell)
                     // regionKey is already calculated above
@@ -480,8 +480,8 @@
                         z = vertex.z * jitterZ;
                     }
 
-                    // Color mapping - Standardized Scientific Palette
-                    const coolSciencePalette = ['#4FD1C5', '#4CAF50', '#A0AEC0'];
+                    // Color mapping - Monochromatic Premium Palette
+                    const coolSciencePalette = ['#E0E0E0', '#D0D0D0', '#A0AEC0'];
                     const baseColor = coolSciencePalette[correspondingIndex % coolSciencePalette.length];
 
                     return {
@@ -1205,8 +1205,8 @@
                     const midX = (p1.x + p2.x) / 2;
                     const midY = (p1.y + p2.y) / 2;
 
-                    // Draw with gradient
-                    const drawSegment = (x1, y1, x2, y2, color) => {
+                    // Draw with gradient and geometric coding
+                    const drawSegment = (x1, y1, x2, y2, color, type, isStart) => {
                         const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
                         gradient.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
                         gradient.addColorStop(0.5, color);
@@ -1219,10 +1219,37 @@
                         ctx.moveTo(x1, y1);
                         ctx.lineTo(x2, y2);
                         ctx.stroke();
+
+                        // Geometric Coding at junction
+                        if (!isStart) {
+                            ctx.fillStyle = color;
+                            ctx.save();
+                            ctx.translate(x1, y1);
+                            const size = thickness * 0.8;
+                            if (type === 0) { // Adenine (Box)
+                                ctx.fillRect(-size/2, -size/2, size, size);
+                            } else if (type === 1) { // Thymine (Triangle Up)
+                                ctx.beginPath();
+                                ctx.moveTo(0, -size/2); ctx.lineTo(size/2, size/2); ctx.lineTo(-size/2, size/2);
+                                ctx.fill();
+                            } else if (type === 2) { // Cytosine (Diamond)
+                                ctx.beginPath();
+                                ctx.moveTo(0, -size/2); ctx.lineTo(size/2, 0); ctx.lineTo(0, size/2); ctx.lineTo(-size/2, 0);
+                                ctx.closePath(); ctx.fill();
+                            } else { // Guanine (Hexagon)
+                                ctx.beginPath();
+                                for(let k=0; k<6; k++) {
+                                    const ang = k * Math.PI / 3;
+                                    ctx.lineTo(size/2 * Math.cos(ang), size/2 * Math.sin(ang));
+                                }
+                                ctx.closePath(); ctx.fill();
+                            }
+                            ctx.restore();
+                        }
                     };
 
-                    drawSegment(p1.x, p1.y, midX, midY, color1);
-                    drawSegment(midX, midY, p2.x, p2.y, color2);
+                    drawSegment(p1.x, p1.y, midX, midY, color1, type, true);
+                    drawSegment(midX, midY, p2.x, p2.y, color2, type, false);
                 }
             }
 
@@ -1233,7 +1260,7 @@
 
                 const strandColor = config ?
                     (s === 0 ? config.get('materials.dna.strand1Color') : config.get('materials.dna.strand2Color')) :
-                    (s === 0 ? '#4FD1C5' : '#FF9F43');
+                    (s === 0 ? '#E0E0E0' : '#D0D0D0');
 
                 for (let i = 0; i < strandNodes.length - 1; i++) {
                     const n1 = strandNodes[i];
@@ -1328,7 +1355,7 @@
                 [0, 4], [1, 5], [2, 6], [3, 7]  // Connecting edges
             ];
 
-            ctx.strokeStyle = '#4FD1C5';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
 
             edges.forEach(([i, j]) => {
@@ -1351,12 +1378,12 @@
             ctx.fillRect(w / 2 - 30, h / 2 - 15, 60, 30);
 
             // Draw border
-            ctx.strokeStyle = '#4FD1C5';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
             ctx.strokeRect(w / 2 - 30, h / 2 - 15, 60, 30);
 
             // Draw rotation value as whole number
-            ctx.fillStyle = '#4FD1C5';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1387,10 +1414,10 @@
                 if (conn.from.type === 'gene' || conn.to.type === 'gene') return;
                 const mesh = conn.mesh;
 
-                // Determine base color from weight
+                // Determine base color from weight (Monochromatic)
                 const weight = conn.weight;
-                const positiveColor = [79, 209, 197]; // Scientific Teal
-                const negativeColor = [255, 159, 67]; // Orange
+                const positiveColor = [224, 224, 224]; // Silver
+                const negativeColor = [160, 174, 192]; // Muted Gray
                 const baseColor = weight > 0 ? positiveColor : negativeColor;
 
                 // Nerve Aesthetics: High transparency, glowing highlights

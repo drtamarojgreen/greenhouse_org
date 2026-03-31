@@ -137,19 +137,19 @@
                     }
                 }
 
-                // If this is the target region, use a bright, glowing color and bypass lighting.
+                // If this is the target region, use a bright, monochromatic glow and bypass lighting.
                 if (targetRegion && f.region === targetRegion) {
-                    const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
-                    ctx.fillStyle = `rgba(76, 175, 80, ${fog})`; // Greenhouse Green for ROI with fog
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.95, f.depth);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${fog})`; // Bright white for high-contrast ROI
                     ctx.beginPath();
                     ctx.moveTo(f.p1.x, f.p1.y);
                     ctx.lineTo(f.p2.x, f.p2.y);
                     ctx.lineTo(f.p3.x, f.p3.y);
                     ctx.fill();
 
-                    // Add Highlight Outline
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
-                    ctx.lineWidth = 1;
+                    // Add Stronger Highlight Outline
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog})`;
+                    ctx.lineWidth = 2;
                     ctx.stroke();
                 } else {
                     // Apply Lighting for all other regions - Standardized Neutral Gray (#A0AEC0)
@@ -172,15 +172,18 @@
                     ctx.closePath();
 
                     if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
-                        // PFC - Grid Pattern (Executive Function)
+                        // PFC - Executive Grid Pattern with high-frequency noise
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
                         ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.4})`; ctx.lineWidth = 0.5;
-                        ctx.setLineDash([2, 4]); ctx.stroke();
+                        ctx.setLineDash([1, 2]); ctx.stroke();
                     } else if (f.region === 'cerebellum') {
-                        // Cerebellum - Foliated Hatching
+                        // Cerebellum - Foliated Parallel Hatching
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
                         ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.3})`; ctx.lineWidth = 0.5;
-                        ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y);
+                        ctx.moveTo(f.p1.x + 2, f.p1.y + 2); ctx.lineTo(f.p2.x + 2, f.p2.y + 2);
+                        ctx.stroke();
                     } else if (f.region === 'temporalLobe') {
                         // Temporal Lobe - Dotted Wave
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
@@ -234,18 +237,18 @@
             ctx.restore();
         },
 
-        // Draws smooth, non-jagged boundaries using plane intersection
+        // Draws smooth, non-jagged boundaries using plane intersection - High Contrast for Grayscale
         drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
             if (!brainShell.regionalPlanes) return;
 
             const segments = this._getPrecomputedBoundaries(brainShell);
 
             ctx.save();
-            ctx.setLineDash([8, 4]);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 1;
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(79, 209, 197, 0.4)';
+            ctx.setLineDash([]); // Solid lines for defined borders
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
 
             for (let i = 0; i < segments.length; i++) {
                 const seg = segments[i];

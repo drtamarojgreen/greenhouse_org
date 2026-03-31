@@ -281,7 +281,7 @@
             ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = '#357438';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif'; // #57 - Increased font size
             ctx.textAlign = 'left';
             ctx.fillText(t('legend_title'), legendX + 10, legendY + 20);
@@ -332,13 +332,13 @@
             gradient.addColorStop(1, 'rgba(245, 250, 255, 0.95)');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, panelHeight);
-            ctx.strokeStyle = 'rgba(53, 116, 56, 0.3)';
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.3)';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, panelHeight);
             ctx.lineTo(width, panelHeight);
             ctx.stroke();
-            ctx.fillStyle = '#357438';
+            ctx.fillStyle = '#A0AEC0';
             ctx.textAlign = 'left'; // Align left for better balance
             ctx.font = 'bold 24px "Quicksand", "Helvetica Neue", Arial, sans-serif'; // #4 - Reduced font size
             ctx.fillText(t('env_title'), 20, 30);

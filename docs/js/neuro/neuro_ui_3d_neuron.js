@@ -52,12 +52,12 @@
                     z += (z / 5) * disp;
                 }
 
-                // Rhythmic pulsing based on activity/pulseFreq
+                // Rhythmic pulsing based on activity/pulseFreq - Reduced intensity for accessibility
                 const activityPulse = Math.sin(Date.now() * pulseFreq * 2) * 0.5 + 0.5;
-                const activityDisp = activityPulse * (type === 'pyramidal' ? 1.2 : 0.8);
-                x *= (1 + activityDisp * 0.05);
-                y *= (1 + activityDisp * 0.05);
-                z *= (1 + activityDisp * 0.05);
+                const activityDisp = activityPulse * (type === 'pyramidal' ? 0.6 : 0.4);
+                x *= (1 + activityDisp * 0.03);
+                y *= (1 + activityDisp * 0.03);
+                z *= (1 + activityDisp * 0.03);
 
                 // Rotate Y
                 let tx = x * Math.cos(rotY) - z * Math.sin(rotY);
@@ -156,16 +156,18 @@
                     ctx.closePath();
                     ctx.fill();
 
-                    // Pattern overlay for accessibility
+                    // Pattern overlay for accessibility - Reinforced distinctions
                     if (type === 'pyramidal') {
                         // Sharp wireframe highlight for pyramidals
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
-                        ctx.lineWidth = 0.5;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+                        ctx.lineWidth = 1.0;
                         ctx.stroke();
                     } else {
                         // Soft stipple effect for stellates
-                        if (Math.random() < 0.2) {
-                            ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+                        if (Math.random() < 0.3) {
+                            ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
+                            ctx.beginPath();
+                            ctx.arc(v1.x, v1.y, 1, 0, Math.PI * 2);
                             ctx.fill();
                         }
                     }

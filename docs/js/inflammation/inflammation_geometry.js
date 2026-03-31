@@ -166,19 +166,19 @@
                 });
             };
 
-            // CPK Colors: C=#333, O=#ff4444, N=#4444ff, H=#eee
+            // CPK Colors (Monochromatic): High contrast grays
             if (type === 'pro-cytokine' || type === 'tnf') {
-                atom(0, 12, 0, '#ff4444', 5); atom(0, 4, 0, '#333333', 6); atom(-6, -4, 4, '#4444ff', 5);
-                atom(8, -8, 4, '#333333', 6); atom(14, -12, 8, '#ff4444', 5);
-                atom(-8, -8, 4, '#333333', 6); atom(-14, -12, 8, '#ff4444', 5);
+                atom(0, 12, 0, '#E0E0E0', 5); atom(0, 4, 0, '#333333', 6); atom(-6, -4, 4, '#A0AEC0', 5);
+                atom(8, -8, 4, '#333333', 6); atom(14, -12, 8, '#E0E0E0', 5);
+                atom(-8, -8, 4, '#333333', 6); atom(-14, -12, 8, '#E0E0E0', 5);
                 atom(0, -2, 8, '#eee', 3);
             } else if (type === 'anti-cytokine' || type === 'il10') {
-                atom(-10, 0, 0, '#44ffaa', 6); atom(-18, 5, 2, '#4444ff', 4); atom(-4, -5, -2, '#ff4444', 4);
-                atom(10, 0, 0, '#44ffaa', 6); atom(18, -5, -2, '#4444ff', 4); atom(4, 5, 2, '#ff4444', 4);
+                atom(-10, 0, 0, '#FFFFFF', 6); atom(-18, 5, 2, '#A0AEC0', 4); atom(-4, -5, -2, '#E0E0E0', 4);
+                atom(10, 0, 0, '#FFFFFF', 6); atom(18, -5, -2, '#A0AEC0', 4); atom(4, 5, 2, '#E0E0E0', 4);
             } else if (type === 'neurotransmitter') {
-                atom(0, 0, 0, '#333', 5); atom(0, 10, 0, '#4444ff', 5); atom(8, -4, 0, '#ff4444', 5); atom(4, -8, 4, '#ff4444', 4);
+                atom(0, 0, 0, '#333', 5); atom(0, 10, 0, '#D0D0D0', 5); atom(8, -4, 0, '#E0E0E0', 5); atom(4, -8, 4, '#E0E0E0', 4);
             } else {
-                atom(0, 0, 0, '#64d2ff', 4); atom(5, 5, 0, '#eee', 2); atom(-5, 5, 0, '#eee', 2);
+                atom(0, 0, 0, '#A0AEC0', 4); atom(5, 5, 0, '#eee', 2); atom(-5, 5, 0, '#eee', 2);
             }
             return { vertices, faces };
         },
@@ -196,10 +196,10 @@
                     const wave = Math.sin(x * 0.012 + y * 0.008) * 15;
 
                     const layers = [
-                        { z: wave + 25, type: 'head', color: '#64d2ff' },
+                        { z: wave + 25, type: 'head', color: '#D0D0D0' },
                         { z: wave + 10, type: 'tail', color: '#1a2a3a' },
                         { z: wave - 10, type: 'tail', color: '#1a2a3a' },
-                        { z: wave - 25, type: 'head', color: '#64d2ff' }
+                        { z: wave - 25, type: 'head', color: '#D0D0D0' }
                     ];
 
                     layers.forEach(l => {
@@ -229,7 +229,7 @@
             const faces = [];
             const somaRadius = 18 * scale;
             const soma = this.generateSphere(somaRadius, 12);
-            vertices.push(...soma.vertices.map(v => ({ ...v, color: '#ffb6c1' }))); // Light Pink soma
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: '#D0D0D0' }))); // Premium Gray soma
             faces.push(...soma.faces);
 
             // Internal granules (hallmark of mast cells)
@@ -244,7 +244,7 @@
                 const granule = this.generateSphere(5 * scale, 6);
                 const offset = vertices.length;
                 vertices.push(...granule.vertices.map(v => ({
-                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#990033' // Deep purple/red granules
+                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#666666' // Dark gray granules
                 })));
                 granule.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
             }
@@ -260,7 +260,7 @@
                 const receptor = this.generateSphere(2 * scale, 4);
                 const offset = vertices.length;
                 vertices.push(...receptor.vertices.map(v => ({
-                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#4169e1' // Royal Blue receptors
+                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#A0AEC0' // Muted gray receptors
                 })));
                 receptor.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
             }
@@ -275,8 +275,8 @@
             const somaRadius = (isAstro ? 12 : 8) * scale;
             const soma = this.generateSphere(somaRadius, 10);
 
-            // Astrocytes: Gold/Yellow; Microglia: Cyan/Blue-ish (Resting) or Red (Active)
-            const baseColor = isAstro ? '#ffcc00' : '#4ca1af';
+            // Astrocytes: Premium Silver; Microglia: Muted Gray (Monochromatic)
+            const baseColor = isAstro ? '#D0D0D0' : '#A0AEC0';
             vertices.push(...soma.vertices.map(v => ({ ...v, color: baseColor })));
             faces.push(...soma.faces);
 
@@ -302,7 +302,7 @@
                     const foot = this.generateSphere(8 * scale, 6);
                     const fOffset = vertices.length;
                     vertices.push(...foot.vertices.map(v => ({
-                        x: v.x + p2.x, y: v.y + p2.y, z: v.z + p2.z, color: '#ffea00'
+                        x: v.x + p2.x, y: v.y + p2.y, z: v.z + p2.z, color: '#D0D0D0'
                     })));
                     foot.faces.forEach(f => faces.push([f[0] + fOffset, f[1] + fOffset, f[2] + fOffset]));
                 }

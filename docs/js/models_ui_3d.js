@@ -469,38 +469,38 @@
                 }
             }
 
-            // Add brain regions as colored areas
+            // Add brain regions as monochromatic areas for accessibility
             this.brainShell.regions = {
                 prefrontalCortex: {
-                    color: 'rgba(100, 150, 255, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.4)', // Muted Gray-Blue
                     vertices: this.getRegionVertices('pfc')
                 },
                 amygdala: {
-                    color: 'rgba(255, 100, 100, 0.6)',
+                    color: 'rgba(140, 150, 170, 0.4)',
                     vertices: this.getRegionVertices('amygdala')
                 },
                 hippocampus: {
-                    color: 'rgba(100, 255, 150, 0.6)',
+                    color: 'rgba(150, 160, 180, 0.4)',
                     vertices: this.getRegionVertices('hippocampus')
                 },
                 temporalLobe: {
-                    color: 'rgba(255, 165, 0, 0.6)',
+                    color: 'rgba(160, 170, 190, 0.4)',
                     vertices: this.getRegionVertices('temporalLobe')
                 },
                 parietalLobe: {
-                    color: 'rgba(147, 112, 219, 0.6)',
+                    color: 'rgba(170, 180, 200, 0.4)',
                     vertices: this.getRegionVertices('parietalLobe')
                 },
                 occipitalLobe: {
-                    color: 'rgba(255, 192, 203, 0.6)',
+                    color: 'rgba(180, 190, 210, 0.4)',
                     vertices: this.getRegionVertices('occipitalLobe')
                 },
                 cerebellum: {
-                    color: 'rgba(64, 224, 208, 0.6)',
+                    color: 'rgba(190, 200, 220, 0.4)',
                     vertices: this.getRegionVertices('cerebellum')
                 },
                 brainstem: {
-                    color: 'rgba(255, 215, 0, 0.6)',
+                    color: 'rgba(200, 210, 230, 0.4)',
                     vertices: this.getRegionVertices('brainstem')
                 }
             };
@@ -725,8 +725,8 @@
 
                 // Only draw front-facing polygons
                 if (cross > 0) {
-                    // Determine if this face is part of a colored region
-                    let faceColor = 'rgba(128, 128, 128, 0.15)'; // Default gray
+                    // Determine if this face is part of a monochromatic region
+                    let faceColor = 'rgba(160, 174, 192, 0.15)'; // Default premium gray
                     let isHovered = false;
                     let matchedRegionKey = null;
                     
@@ -883,9 +883,10 @@
                     const avgDepth = (fromProj.depth + toProj.depth) / 2;
                     const alpha = GreenhouseModels3DMath.applyDepthFog(0.3, avgDepth);
 
+                    // Monochromatic connections
                     ctx.strokeStyle = this.state.darkMode ? 
-                        `rgba(100, 150, 255, ${alpha})` : 
-                        `rgba(50, 100, 200, ${alpha})`;
+                        `rgba(224, 224, 224, ${alpha})` :
+                        `rgba(208, 208, 208, ${alpha})`;
                     ctx.lineWidth = 1 + conn.weight;
 
                     ctx.beginPath();
@@ -924,10 +925,10 @@
                     ctx.fill();
                 }
 
-                // Draw neuron body
+                // Draw neuron body (monochromatic)
                 ctx.fillStyle = this.state.darkMode ? 
-                    `rgba(150, 200, 255, ${alpha})` : 
-                    `rgba(100, 150, 200, ${alpha})`;
+                    `rgba(224, 224, 224, ${alpha})` :
+                    `rgba(208, 208, 208, ${alpha})`;
                 ctx.beginPath();
                 ctx.arc(neuron.screenX, neuron.screenY, radius, 0, Math.PI * 2);
                 ctx.fill();

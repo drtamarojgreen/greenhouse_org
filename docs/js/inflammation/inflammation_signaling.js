@@ -39,14 +39,14 @@
 
             ctx.save();
 
-            // IL-1beta exchange directionality (Item 7)
-            this.drawSignalingEdge(ctx, pMast, pMic, '#ff5533', 'IL-1β', state.metrics.tnfAlpha);
+            // IL-1beta exchange directionality (Item 7) - Monochromatic
+            this.drawSignalingEdge(ctx, pMast, pMic, '#E0E0E0', 'IL-1β', state.metrics.tnfAlpha);
 
-            // TNF-alpha pulse from mast to glia (Item 6)
-            this.drawSignalingEdge(ctx, pMast, pAst, '#ff8844', 'TNF-α', state.metrics.tnfAlpha * 0.8);
+            // TNF-alpha pulse from mast to glia (Item 6) - Monochromatic
+            this.drawSignalingEdge(ctx, pMast, pAst, '#D0D0D0', 'TNF-α', state.metrics.tnfAlpha * 0.8);
 
-            // ATP / Purinergic Signaling (Item 11)
-            this.drawSignalingEdge(ctx, pAst, pMic, '#ffff00', 'ATP', state.metrics.atp / 5.0);
+            // ATP / Purinergic Signaling (Item 11) - Monochromatic
+            this.drawSignalingEdge(ctx, pAst, pMic, '#FFFFFF', 'ATP', state.metrics.atp / 5.0);
 
             ctx.restore();
         },
@@ -123,7 +123,7 @@
             ctx.strokeStyle = 'rgba(255,255,255,0.3)';
             ctx.strokeRect(-w/2, -h/2, w, h);
 
-            ctx.strokeStyle = '#00ffcc';
+            ctx.strokeStyle = '#E0E0E0';
             ctx.beginPath();
             ctx.moveTo(-w/2, h/2);
             for(let i=0; i<w; i++) {
@@ -143,7 +143,7 @@
             ctx.fillStyle = 'rgba(255,255,255,0.1)';
             ctx.fillRect(-w/2, ty, w, 4);
 
-            const color = val > 0.7 ? '#ff3300' : (val > 0.4 ? '#ffcc00' : '#00ffcc');
+            const color = val > 0.7 ? '#E0E0E0' : (val > 0.4 ? '#D0D0D0' : '#A0AEC0');
             ctx.fillStyle = color;
             ctx.fillRect(-w/2, ty, w * val, 4);
 

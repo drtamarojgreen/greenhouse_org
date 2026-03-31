@@ -44,8 +44,9 @@
             { id: 'showVolumeBounds', label: 'Micro Volume Bounds', type: 'checkbox', defaultValue: 0, category: 'research' },
             { id: 'showReceptors', label: 'Show Receptor Sites', type: 'checkbox', defaultValue: 0, category: 'research' },
             { id: 'showBridgeOverlay', label: 'Signaling Bridge Overlay', type: 'checkbox', defaultValue: 0, category: 'research' },
-            { id: 'colorTheme', label: 'Color Theme', defaultValue: 'default', options: [
+            { id: 'colorTheme', label: 'Color Theme', defaultValue: 'monochromatic', options: [
                 { value: 'default', label: 'DEFAULT' },
+                { value: 'monochromatic', label: 'MONOCHROMATIC' },
                 { value: 'deuteranopia', label: 'DEUTERANOPIA' }
             ], type: 'select', category: 'research' },
             { id: 'showMoleculeLabels', label: 'Show Molecule Labels', type: 'checkbox', defaultValue: 1, category: 'research' },
@@ -90,13 +91,13 @@
             { id: 'campPka', label: 'cAMP/PKA (Checkpoint)', unit: '%' }
         ],
         atlasLegend: {
-            'microglia': { region: 'hippocampus CA1', color: '#ff4444' },
-            'astrocyte': { region: 'thalamus', color: '#ffcc00' },
-            'tnfAlpha': { region: 'basal ganglia', color: '#ff5533' },
-            'il10': { region: 'prefrontal cortex', color: '#00ff99' },
-            'trp': { region: 'gut/blood', color: '#64FFC8' },
-            'kyn': { region: 'brain_isf', color: '#FFD264' },
-            'quin': { region: 'neurotoxic', color: '#FF3200' }
+            'microglia': { region: 'hippocampus CA1', color: '#E0E0E0' },
+            'astrocyte': { region: 'thalamus', color: '#D0D0D0' },
+            'tnfAlpha': { region: 'basal ganglia', color: '#A0AEC0' },
+            'il10': { region: 'prefrontal cortex', color: '#FFFFFF' },
+            'trp': { region: 'gut/blood', color: '#E0E0E0' },
+            'kyn': { region: 'brain_isf', color: '#D0D0D0' },
+            'quin': { region: 'neurotoxic', color: '#A0AEC0' }
         },
         diseasePresets: {
             'AD': { factors: ['chronicStress', 'poorSleep'], regions: ['hippocampus', 'pfc'] },
@@ -104,11 +105,11 @@
             'PD': { factors: ['pollutionExposure', 'chronicStress'], regions: ['basal_ganglia', 'vta'] }
         },
         lobes: [
-            { id: 'frontal', label: 'Frontal Lobe', color: 'rgba(255, 100, 100, 0.2)' },
-            { id: 'parietal', label: 'Parietal Lobe', color: 'rgba(100, 255, 100, 0.2)' },
-            { id: 'temporal', label: 'Temporal Lobe', color: 'rgba(100, 100, 255, 0.2)' },
-            { id: 'occipital', label: 'Occipital Lobe', color: 'rgba(255, 255, 100, 0.2)' },
-            { id: 'insular', label: 'Insular Lobe', color: 'rgba(255, 100, 255, 0.2)' }
+            { id: 'frontal', label: 'Frontal Lobe', color: 'rgba(224, 224, 224, 0.2)' },
+            { id: 'parietal', label: 'Parietal Lobe', color: 'rgba(208, 208, 208, 0.2)' },
+            { id: 'temporal', label: 'Temporal Lobe', color: 'rgba(160, 174, 192, 0.2)' },
+            { id: 'occipital', label: 'Occipital Lobe', color: 'rgba(240, 240, 240, 0.2)' },
+            { id: 'insular', label: 'Insular Lobe', color: 'rgba(120, 120, 120, 0.2)' }
         ],
         brodmannAreas: [
             { id: 'BA9', label: 'DLPFC (BA9)', region: 'pfc' },

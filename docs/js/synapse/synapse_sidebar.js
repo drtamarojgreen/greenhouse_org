@@ -33,17 +33,17 @@
 
             let html = `
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 30px;">
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #357438; box-shadow: 0 0 15px #357438;"></div>
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #A0AEC0; box-shadow: 0 0 15px #A0AEC0;"></div>
                     <h2 style="font-family: 'Quicksand', sans-serif; font-size: 28px; margin: 0; color: #fff;">Synaptic Bridge</h2>
                 </div>
 
                 <div style="margin-bottom: 25px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
-                    <label for="scenario-selector" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 8px; font-weight: 700;">Research Scenario</label>
+                    <label for="scenario-selector" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #A0AEC0; margin-bottom: 8px; font-weight: 700;">Research Scenario</label>
                     <select id="scenario-selector" aria-label="Select Research Scenario" style="width: 100%; background: #1a1c1e; color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; font-family: inherit; font-size: 14px; cursor: pointer; margin-bottom: 15px;">
                         ${scenarioOptions}
                     </select>
 
-                    <label for="nt-selector" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 8px; font-weight: 700;">Select Neurotransmitter</label>
+                    <label for="nt-selector" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #A0AEC0; margin-bottom: 8px; font-weight: 700;">Select Neurotransmitter</label>
                     <select id="nt-selector" aria-label="Select Neurotransmitter" style="width: 100%; background: #1a1c1e; color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; font-family: inherit; font-size: 14px; cursor: pointer;">
                         ${ntOptions}
                     </select>
@@ -63,8 +63,8 @@
 
             html += `
                 </div>
-                <div style="margin-top: 30px; padding: 20px; background: rgba(53, 116, 56, 0.1); border-radius: 15px; border: 1px solid rgba(53, 116, 56, 0.2);">
-                    <p style="font-size: 11px; color: #357438; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;">Mechanics & Pathophysiology</p>
+                <div style="margin-top: 30px; padding: 20px; background: rgba(160, 174, 192, 0.1); border-radius: 15px; border: 1px solid rgba(160, 174, 192, 0.2);">
+                    <p style="font-size: 11px; color: #A0AEC0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;">Mechanics & Pathophysiology</p>
                     <p id="nt-description" style="font-size: 13px; color: #ccc; line-height: 1.5; margin: 0;">
                         ${chem.scenarios[config.activeScenario || 'healthy'].description}
                     </p>
@@ -88,8 +88,8 @@
                 const dot = item.querySelector('.color-dot');
 
                 const handleEnter = () => {
-                    item.style.background = 'rgba(53, 116, 56, 0.15)';
-                    item.style.borderColor = 'rgba(53, 116, 56, 0.3)';
+                    item.style.background = 'rgba(160, 174, 192, 0.15)';
+                    item.style.borderColor = 'rgba(160, 174, 192, 0.3)';
                     dot.style.transform = 'scale(1.4)';
                     dot.style.boxShadow = `0 0 20px ${dot.style.backgroundColor}`;
                     if (onHover) onHover(id);

@@ -181,14 +181,14 @@
                 return p.life > 0;
             });
 
-            // GIRK Visual Flow (Category 3, #22)
+            // GIRK Visual Flow (Category 3, #22) - Monochromatic
             if (girkActivation > 0.5 && G.state.timer % 10 === 0) {
-                this.triggerPulse(200, 0, 150, 'rgba(79, 209, 197,'); // Scientific Teal
+                this.triggerPulse(200, 0, 150, 'rgba(224, 224, 224,'); // Scientific Gray
             }
         },
 
         triggerPulse(x, y, z, color) {
-            this.pulses.push({ x, y, z, radius: 10, life: 1.0, color: color || 'rgba(79, 209, 197,' });
+            this.pulses.push({ x, y, z, radius: 10, life: 1.0, color: color || 'rgba(224, 224, 224,' });
         },
 
         renderSignaling(ctx, project, cam, w, h) {
@@ -196,15 +196,15 @@
             const glowIntensity = Math.min(0.3, (this.calcium + this.cAMP * 0.1) * 0.05);
             if (glowIntensity > 0) {
                 const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
-                grad.addColorStop(0, `rgba(79, 209, 197, ${glowIntensity})`); // Scientific Teal
+                grad.addColorStop(0, `rgba(224, 224, 224, ${glowIntensity})`); // Scientific Gray
                 grad.addColorStop(1, 'transparent');
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, w, h);
             }
 
-            // Dynamic Signaling Waves (Category 10, #94)
-            if (this.cAMP > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(255, 159, 67,'); // Warning Orange
-            if (this.calcium > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(79, 209, 197,'); // Scientific Teal
+            // Dynamic Signaling Waves (Category 10, #94) - Monochromatic
+            if (this.cAMP > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(208, 208, 208,'); // Warning Gray
+            if (this.calcium > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(224, 224, 224,'); // Scientific Gray
 
             // Render pulses
             this.pulses.forEach(p => {

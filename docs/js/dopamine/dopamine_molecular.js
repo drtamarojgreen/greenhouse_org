@@ -442,12 +442,12 @@
         mState.clathrinPits.forEach(pit => {
             const p = project(pit.x, pit.y, pit.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.strokeStyle = '#4FD1C5';
+                ctx.strokeStyle = '#A0AEC0';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 20 * pit.progress * p.scale, 0, Math.PI);
                 ctx.stroke();
-                ctx.fillStyle = 'rgba(79, 209, 197, 0.2)';
+                ctx.fillStyle = 'rgba(160, 174, 192, 0.2)';
                 ctx.fill();
             }
         });
@@ -500,7 +500,7 @@
             const p = project(gp.x, gp.y, gp.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
                 ctx.fillStyle = '#A0AEC0';
-                if (gp.subunit === 'alpha' && gp.gtpBound) ctx.fillStyle = gp.type === 'Gs' ? '#4CAF50' : '#4FD1C5';
+                if (gp.subunit === 'alpha' && gp.gtpBound) ctx.fillStyle = gp.type === 'Gs' ? '#E0E0E0' : '#D0D0D0';
 
                 ctx.globalAlpha = Math.min(1, gp.life / 100);
                 const size = gp.subunit === 'alpha' ? 4 : 3;
@@ -553,7 +553,7 @@
         mState.plcPathway.ip3Particles.forEach(ip3 => {
             const p = project(ip3.x, ip3.y, ip3.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#4FD1C5';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.globalAlpha = Math.min(1, ip3.life / 50);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
@@ -571,7 +571,7 @@
                 const dz = Math.sin(angle) * r;
                 const p = project(dx, 0, dz, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.globalAlpha = mState.plcPathway.dag * 0.5;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
@@ -612,7 +612,7 @@
         mState.pka.subunits.forEach(s => {
             const p = project(s.x, s.y, s.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#4CAF50';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.globalAlpha = Math.min(1, s.life / 50);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 3 * p.scale, 0, Math.PI * 2);

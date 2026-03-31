@@ -56,7 +56,7 @@
 
                 // Highlight focused gene
                 if (p.isFocused) {
-                    ctx.strokeStyle = '#4FD1C5';
+                    ctx.strokeStyle = '#FFFFFF';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 15 * p.scale, 0, Math.PI * 2);
@@ -155,30 +155,37 @@
                         ctx.lineWidth = thickness;
                         ctx.lineCap = 'butt'; // Butt cap for clean join at middle
 
-                        // Structural differentiation for base pair types (Geometric differentiation)
+                        // Structural differentiation for base pair types (Geometric coding for nucleotides)
                         ctx.save();
-                        if (type === 0 || type === 1) { // A-T (Dashed / Triangular cap)
+                        if (type === 0) { // Adenine (Box cap)
                             ctx.setLineDash([thickness * 0.4, thickness * 0.2]);
                             ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-
-                            // Triangular cap at mid
+                            ctx.fillStyle = litColor;
+                            ctx.fillRect(x2 - thickness*0.3, y2 - thickness*0.3, thickness*0.6, thickness*0.6);
+                        } else if (type === 1) { // Thymine (Triangle Up cap)
+                            ctx.setLineDash([thickness * 0.4, thickness * 0.2]);
+                            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
                             ctx.fillStyle = litColor;
                             ctx.beginPath();
-                            ctx.moveTo(x2, y2 - thickness*0.4); ctx.lineTo(x2 + thickness*0.4, y2 + thickness*0.4); ctx.lineTo(x2 - thickness*0.4, y2 + thickness*0.4);
+                            ctx.moveTo(x2, y2 - thickness*0.5); ctx.lineTo(x2 + thickness*0.4, y2 + thickness*0.3); ctx.lineTo(x2 - thickness*0.4, y2 + thickness*0.3);
                             ctx.fill();
-                        } else { // C-G (Solid / Hexagonal cap)
+                        } else if (type === 2) { // Cytosine (Diamond cap)
                             ctx.setLineDash([]);
                             ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-
-                            // Hexagonal cap at mid
+                            ctx.fillStyle = litColor;
+                            ctx.beginPath();
+                            ctx.moveTo(x2, y2 - thickness*0.5); ctx.lineTo(x2 + thickness*0.4, y2); ctx.lineTo(x2, y2 + thickness*0.5); ctx.lineTo(x2 - thickness*0.4, y2);
+                            ctx.closePath(); ctx.fill();
+                        } else { // Guanine (Hexagon cap)
+                            ctx.setLineDash([]);
+                            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
                             ctx.fillStyle = litColor;
                             ctx.beginPath();
                             for(let k=0; k<6; k++) {
                                 const ang = k * Math.PI / 3;
                                 ctx.lineTo(x2 + thickness*0.4 * Math.cos(ang), y2 + thickness*0.4 * Math.sin(ang));
                             }
-                            ctx.closePath();
-                            ctx.fill();
+                            ctx.closePath(); ctx.fill();
                         }
                         ctx.restore();
 

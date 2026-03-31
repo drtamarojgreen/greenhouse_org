@@ -153,12 +153,12 @@
             ctx.fill(); ctx.stroke();
 
             const items = [
-                { c: '#ff4444', l: 'Pro-Cytokine (TNF-α)' },
-                { c: '#44ffaa', l: 'Anti-Cytokine (IL-10)' },
-                { c: '#ffb6c1', l: 'Mast Cell (Granular)' },
-                { c: '#ffcc00', l: 'Astrocyte (Endfeet)' },
-                { c: '#4ca1af', l: 'Microglia (Reactive)' },
-                { c: '#00ffcc', l: 'Signaling Trace (Active)' }
+                { c: '#E0E0E0', l: 'Pro-Cytokine (TNF-α)' },
+                { c: '#FFFFFF', l: 'Anti-Cytokine (IL-10)' },
+                { c: '#D0D0D0', l: 'Mast Cell (Granular)' },
+                { c: '#D0D0D0', l: 'Astrocyte (Endfeet)' },
+                { c: '#A0AEC0', l: 'Microglia (Reactive)' },
+                { c: '#E0E0E0', l: 'Signaling Trace (Active)' }
             ];
             items.forEach((item, i) => {
                 ctx.fillStyle = item.c; ctx.beginPath(); ctx.arc(lx + 15, ly + 20 + i * 20, 5, 0, Math.PI * 2); ctx.fill();
