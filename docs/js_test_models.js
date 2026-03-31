@@ -170,10 +170,26 @@
     };
 
     function clearEnvironment() {
+        console.log('[Harness] Clearing environment...');
         modelContainer.innerHTML = '';
         document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
         const overlay = document.getElementById('greenhouse-test-results-overlay');
         if (overlay) overlay.remove();
+
+        // Reset global Greenhouse attributes
+        const greenhouseGlobals = [
+            '_greenhouseScriptAttributes',
+            '_greenhouseNeuroAttributes',
+            '_greenhouseSynapseAttributes',
+            '_greenhouseStressAttributes',
+            '_greenhouseInflammationAttributes'
+        ];
+        greenhouseGlobals.forEach(g => {
+            if (window[g]) {
+                console.log(`[Harness] Clearing global attribute: ${g}`);
+                delete window[g];
+            }
+        });
 
         const apps = [
             'GreenhouseNeuroApp', 'GreenhouseGenetic', 'GreenhouseDopamine',
@@ -181,11 +197,25 @@
             'GreenhouseEmotionApp', 'GreenhouseCognitionApp', 'GreenhouseInflammationApp',
             'GreenhouseStressApp', 'GreenhousePathwayApp', 'GreenhouseSynapseApp'
         ];
-        apps.forEach(app => {
-            if (window[app]) {
-                if (window[app].isRunning !== undefined) window[app].isRunning = false;
-                if (window[app].stop) window[app].stop();
-                delete window[app];
+        apps.forEach(appKey => {
+            const app = window[appKey];
+            if (app) {
+                console.log(`[Harness] Stopping app: ${appKey}`);
+                if (app.isRunning !== undefined) app.isRunning = false;
+                if (app.stop) app.stop();
+                if (app.stopSimulation) app.stopSimulation();
+
+                // Clean up resilience observers and intervals managed by GreenhouseUtils
+                if (app._resilienceObserver) {
+                    console.log(`[Harness] Disconnecting resilience observer for ${appKey}`);
+                    app._resilienceObserver.disconnect();
+                }
+                if (app._sentinelInterval) {
+                    console.log(`[Harness] Clearing sentinel interval for ${appKey}`);
+                    clearInterval(app._sentinelInterval);
+                }
+
+                delete window[appKey];
             }
         });
         activeLabel.textContent = 'Active Model: None';
@@ -196,6 +226,8 @@
         const model = models[modelId];
         if (!model) return;
 
+        console.log(`[Harness] Loading model: ${modelId}`);
+        modelSelector.disabled = true;
         clearEnvironment();
 
         if (modelId === 'neuro') {
@@ -213,55 +245,60 @@
 
         loaderMessage.textContent = `Replicating Production Delay for ${model.label}...`;
         loadingOverlay.style.display = 'flex';
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Reduced delay for better harness UX
+        await new Promise(resolve => setTimeout(resolve, 1000));
         loadingOverlay.style.display = 'none';
 
-        const section1 = document.createElement('section'); section1.className = 'wixui-section';
-        section1.appendChild(document.createElement('div'));
-        const div2 = document.createElement('div'); section1.appendChild(div2);
-        const div2_1 = document.createElement('div'); div2.appendChild(div2_1);
-        const sectionInner = document.createElement('section'); div2_1.appendChild(sectionInner);
-        const idiv1 = document.createElement('div'); sectionInner.appendChild(idiv1);
-        idiv1.appendChild(document.createElement('div')); idiv1.appendChild(document.createElement('div'));
-        const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
-        sectionInner.appendChild(targetDiv);
-        modelContainer.appendChild(section1);
+        try {
+            const section1 = document.createElement('section'); section1.className = 'wixui-section';
+            section1.appendChild(document.createElement('div'));
+            const div2 = document.createElement('div'); section1.appendChild(div2);
+            const div2_1 = document.createElement('div'); div2.appendChild(div2_1);
+            const sectionInner = document.createElement('section'); div2_1.appendChild(sectionInner);
+            const idiv1 = document.createElement('div'); sectionInner.appendChild(idiv1);
+            idiv1.appendChild(document.createElement('div')); idiv1.appendChild(document.createElement('div'));
+            const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
+            sectionInner.appendChild(targetDiv);
+            modelContainer.appendChild(section1);
 
-        const script = document.createElement('script');
-        script.src = `${baseUrl}js/${model.js}`;
-        script.dataset.modelScript = "true";
-        script.setAttribute('data-target-selector-left', primarySelector);
-        script.setAttribute('data-target-selector-right', "");
-        script.setAttribute('data-base-url', baseUrl);
-        script.setAttribute('data-view', "default");
+            const script = document.createElement('script');
+            script.src = `${baseUrl}js/${model.js}`;
+            script.dataset.modelScript = "true";
+            script.setAttribute('data-target-selector-left', primarySelector);
+            script.setAttribute('data-target-selector-right', "");
+            script.setAttribute('data-base-url', baseUrl);
+            script.setAttribute('data-view', "default");
 
-        if (modelId === 'genetic') {
-            const gs = {
-                "genetic": primarySelector,
-                "geneticTitle": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
-                "geneticParagraph": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)"
+            const scriptAttributes = {
+                'target-selector-left': primarySelector,
+                'target-selector-right': '',
+                'base-url': baseUrl,
+                'view': 'default'
             };
-            script.setAttribute('data-genetic-selectors', JSON.stringify(gs));
+
+            if (modelId === 'genetic') {
+                const gs = {
+                    "genetic": primarySelector,
+                    "geneticTitle": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+                    "geneticParagraph": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)"
+                };
+                script.setAttribute('data-genetic-selectors', JSON.stringify(gs));
+                // Maintain 'data-' prefix for compatibility with GreenhouseGenetic.js
+                scriptAttributes['data-genetic-selectors'] = JSON.stringify(gs);
+            }
+
+            window._greenhouseScriptAttributes = scriptAttributes;
+
+            const config = { baseUrl, targetSelector: primarySelector };
+            if (modelId === 'neuro') window._greenhouseNeuroAttributes = config;
+            if (modelId === 'synapse') window._greenhouseSynapseAttributes = config;
+            if (modelId === 'stress') window._greenhouseStressAttributes = config;
+            if (modelId === 'inflammation') window._greenhouseInflammationAttributes = config;
+
+            document.body.appendChild(script);
+        } finally {
+            modelSelector.disabled = false;
         }
-
-        const scriptAttributes = {
-            'target-selector-left': primarySelector,
-            'target-selector-right': '',
-            'base-url': baseUrl,
-            'view': 'default'
-        };
-        if (modelId === 'genetic') {
-            scriptAttributes['data-genetic-selectors'] = script.getAttribute('data-genetic-selectors');
-        }
-        window._greenhouseScriptAttributes = scriptAttributes;
-
-        const config = { baseUrl, targetSelector: primarySelector };
-        if (modelId === 'neuro') window._greenhouseNeuroAttributes = config;
-        if (modelId === 'synapse') window._greenhouseSynapseAttributes = config;
-        if (modelId === 'stress') window._greenhouseStressAttributes = config;
-        if (modelId === 'inflammation') window._greenhouseInflammationAttributes = config;
-
-        document.body.appendChild(script);
     }
 
     async function executeTestBatch(testFiles, modelId = null) {
