@@ -17,14 +17,14 @@
             ctx.strokeStyle = 'rgba(76, 161, 175, 0.5)';
             ctx.strokeRect(app.canvas.width - 150, 10, 140, 45);
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 9px monospace';
             ctx.fillText(`CAM Z: ${cam.z.toFixed(0)}`, app.canvas.width - 140, 22);
             ctx.fillText(`ROT X: ${cam.rotationX.toFixed(2)}`, app.canvas.width - 140, 32);
             ctx.fillText(`ROT Y: ${cam.rotationY.toFixed(2)}`, app.canvas.width - 140, 42);
 
             if (app.showZoomFeedback) {
-                ctx.fillStyle = '#ffcc00';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.font = 'bold 10px Quicksand';
                 ctx.textAlign = 'right';
                 ctx.fillText('ZOOM LIMITS: -2000 to -100', app.canvas.width - 160, 25);
@@ -53,7 +53,7 @@
 
             // Checkbox Box
             ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
-            ctx.strokeStyle = isActive ? '#4ca1af' : 'rgba(255,255,255,0.3)';
+            ctx.strokeStyle = isActive ? '#A0AEC0' : 'rgba(255,255,255,0.3)';
             ctx.lineWidth = 1.5;
 
             const boxSize = 14;
@@ -107,9 +107,9 @@
 
             ctx.save();
             if (isActive) {
-                ctx.fillStyle = '#4ca1af';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.shadowBlur = 10;
-                ctx.shadowColor = '#4ca1af';
+                ctx.shadowColor = '#A0AEC0';
             } else {
                 ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)';
             }
@@ -140,7 +140,7 @@
 
             // Background
             ctx.fillStyle = isHovered ? 'rgba(76, 161, 175, 0.3)' : 'rgba(255, 255, 255, 0.05)';
-            ctx.strokeStyle = isHovered ? '#4ca1af' : 'rgba(255, 255, 255, 0.2)';
+            ctx.strokeStyle = isHovered ? '#A0AEC0' : 'rgba(255, 255, 255, 0.2)';
             ctx.lineWidth = 1;
 
             ctx.fillRect(header.x, header.y, header.w, header.h);
@@ -154,7 +154,7 @@
 
             // Active Badge (Item 13)
             if (activeCount > 0) {
-                ctx.fillStyle = '#4ca1af';
+                ctx.fillStyle = '#A0AEC0';
                 app.roundRect(ctx, header.x + ctx.measureText(header.label).width + 20, header.y + 6, 18, 14, 4, true);
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 9px monospace';
@@ -190,7 +190,7 @@
             if (app.roundRect) app.roundRect(ctx, x, y, w, h, 8, true, true);
             else ctx.fillRect(x, y, w, h);
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 11px Quicksand, sans-serif';
             ctx.fillText('ANATOMICAL ATLAS LEGEND', x + 15, y + 25);
 
@@ -227,7 +227,7 @@
             const { x: mx, y: my, w: mw, h: mh } = layout || { x: w - 140, y: 40, w: 100, h: 80 };
             ctx.save();
             ctx.fillStyle = 'rgba(0,0,0,0.8)';
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             if (app.roundRect) app.roundRect(ctx, mx, my, mw, mh, 5, true, true);
 
             ctx.fillStyle = 'rgba(76, 161, 175, 0.2)';
@@ -237,7 +237,7 @@
 
             // Camera Indicator
             const camRot = app.camera.rotationY || 0;
-            ctx.strokeStyle = '#ffcc00';
+            ctx.strokeStyle = '#E0E0E0';
             ctx.beginPath();
             ctx.moveTo(mx + mw/2, my + mh/2);
             ctx.lineTo(mx + mw/2 + Math.sin(camRot) * 20, my + mh/2 + Math.cos(camRot) * 20);
@@ -250,13 +250,13 @@
             // Mode Badge (Item 87)
             const modes = ['MACRO', 'MICRO', 'MOL', 'PATH'];
             const modeBadge = modes[app.engine.state.factors.viewMode || 0];
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.fillRect(mx + mw - 30, my + mh - 15, 25, 12);
             ctx.fillStyle = '#fff'; ctx.font = 'bold 7px Quicksand';
             ctx.textAlign = 'center';
             ctx.fillText(modeBadge, mx + mw - 17.5, my + mh - 6);
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = '9px Quicksand';
             ctx.textAlign = 'center';
             ctx.fillText('ORIENTATION', mx + mw/2, my + mh - 5);

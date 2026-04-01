@@ -21,13 +21,13 @@
             this.mappings = {
                 151: (ctx, w, h) => {
                     ctx.fillStyle = '#111'; ctx.fillRect(40, 110, w - 80, 120);
-                    ctx.strokeStyle = '#4fd1c5'; ctx.strokeRect(40, 110, w - 80, 120);
-                    ctx.fillStyle = '#39ff14'; ctx.font = '10px monospace';
+                    ctx.strokeStyle = '#A0AEC0'; ctx.strokeRect(40, 110, w - 80, 120);
+                    ctx.fillStyle = '#FFFFFF'; ctx.font = '10px monospace';
                     ctx.fillText(`> ${t('cog_label_propose_hypothesis')}`, 50, 130);
                     ctx.fillStyle = '#fff';
                     ctx.fillText('IF [Cortical_Layer_V_Activity] > [Threshold]', 50, 150);
                     ctx.fillText('THEN [Signal_Propagation] == [Efficient]', 50, 165);
-                    ctx.fillStyle = '#4fd1c5'; ctx.fillText(`[${t('cog_label_run_simulation')}]`, 50, 200);
+                    ctx.fillStyle = '#A0AEC0'; ctx.fillText(`[${t('cog_label_run_simulation')}]`, 50, 200);
                     const progress = (Date.now() * 0.001) % 1; ctx.fillRect(50, 210, (w-100) * progress, 4);
                 },
                 152: (ctx, w, h) => {
@@ -51,15 +51,15 @@
                         {t: 'DMN Restructuring', j: 'Neuron (2024)', a: 'Doe et al.'}
                     ];
                     results.forEach((r, i) => {
-                        ctx.fillStyle = '#4fd1c5'; ctx.font = 'bold 11px Arial'; ctx.fillText(r.t, 50, 130 + i * 40);
+                        ctx.fillStyle = '#A0AEC0'; ctx.font = 'bold 11px Arial'; ctx.fillText(r.t, 50, 130 + i * 40);
                         ctx.fillStyle = '#fff'; ctx.font = '9px Arial'; ctx.fillText(`${r.j} - ${r.a}`, 50, 142 + i * 40);
                         ctx.fillStyle = '#666'; ctx.fillText(t('cog_label_summary_investigating'), 50, 152 + i * 40);
                     });
                 },
                 154: (ctx, w, h) => {
                     ctx.fillStyle = '#000'; ctx.fillRect(50, 110, 200, 120);
-                    ctx.strokeStyle = '#39ff14'; ctx.strokeRect(50, 110, 200, 120);
-                    ctx.fillStyle = '#39ff14'; ctx.font = '8px monospace';
+                    ctx.strokeStyle = '#FFFFFF'; ctx.strokeRect(50, 110, 200, 120);
+                    ctx.fillStyle = '#FFFFFF'; ctx.font = '8px monospace';
                     ctx.fillText('{', 60, 125); ctx.fillText('  "experiment": "Cognition_v2",', 60, 135);
                     ctx.fillText('  "data": [', 60, 145); ctx.fillText('    {"id": 1, "score": 0.92},', 60, 155);
                     ctx.fillText('    {"id": 2, "score": 0.85}', 60, 165); ctx.fillText('  ]', 60, 175); ctx.fillText('}', 60, 185);
@@ -77,7 +77,7 @@
                 163: (ctx, w, h) => {
                     ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(50, 210); ctx.lineTo(150, 210);
                     ctx.moveTo(50, 210); ctx.lineTo(50, 130); ctx.stroke();
-                    ctx.beginPath(); ctx.strokeStyle = '#4fd1c5';
+                    ctx.beginPath(); ctx.strokeStyle = '#A0AEC0';
                     for(let i=0; i<100; i++) {
                         const x = 50 + i, y = 210 - 60 * Math.exp(-Math.pow(i-50, 2)/400);
                         if (i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);

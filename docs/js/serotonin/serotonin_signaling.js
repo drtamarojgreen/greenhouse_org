@@ -245,7 +245,7 @@
             ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 243);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
-                ctx.fillStyle = '#ffcc00';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.fillText('Glutamate Co-transmission: ON', w - 200, 243);
             }
 
@@ -253,13 +253,13 @@
             ctx.fillStyle = '#444';
             ctx.fillRect(w - 200, 265, 180, 8);
             const vWidth = ((this.membranePotential + 90) / 60) * 180;
-            ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
+            ctx.fillStyle = this.membranePotential > -60 ? '#E0E0E0' : '#D0D0D0';
             ctx.fillRect(w - 200, 265, Math.max(0, Math.min(180, vWidth)), 8);
 
             // Draw Pathway Bias indicator for 5-HT2A if active
             const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;
             if (ht2a && ht2a.state === 'Active') {
-                ctx.fillStyle = ht2a.biasedLigand ? '#ff00ff' : '#ff4d4d';
+                ctx.fillStyle = ht2a.biasedLigand ? '#A0AEC0' : '#E0E0E0';
                 ctx.fillText(ht2a.biasedLigand ? 'Biased Agonism Active' : 'Balanced Agonism', w - 200, 150);
             }
         }

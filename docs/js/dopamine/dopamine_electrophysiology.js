@@ -277,7 +277,7 @@
         }
 
         // Render Membrane Potential Graph
-        ctx.strokeStyle = '#00ffff';
+        ctx.strokeStyle = '#D0D0D0';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(10, h - 150);
@@ -286,7 +286,7 @@
 
         // Potential indicator
         const yPos = h - 150 - (eState.membranePotential + 80) * 2;
-        ctx.fillStyle = eState.isUpState ? '#ff5555' : '#55ff55';
+        ctx.fillStyle = eState.isUpState ? '#A0AEC0' : '#D0D0D0';
         ctx.beginPath();
         ctx.arc(w / 8, yPos, 5, 0, Math.PI * 2);
         ctx.fill();

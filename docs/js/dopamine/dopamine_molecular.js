@@ -452,12 +452,12 @@
             }
         });
 
-        // 8. GRK Phosphorylation visual (pulsing orange on receptors)
+        // 8. GRK Phosphorylation visual (pulsing halo on receptors)
         if (mState.grkPhosphorylation > 0.5) {
              G.state.receptors.forEach(r => {
                  const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                  if (p.scale > 0) {
-                     ctx.strokeStyle = '#ff9900';
+                     ctx.strokeStyle = '#E0E0E0';
                      ctx.globalAlpha = (Math.sin(G.state.timer * 0.1) * 0.5 + 0.5) * mState.grkPhosphorylation;
                      ctx.lineWidth = 15 * p.scale;
                      ctx.beginPath();
@@ -473,7 +473,7 @@
             G.state.receptors.forEach(r => {
                 const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    ctx.strokeStyle = '#ffff00';
+                    ctx.strokeStyle = '#FFFFFF';
                     ctx.globalAlpha = mState.camkii.active * 0.5;
                     ctx.lineWidth = 10 * p.scale;
                     ctx.beginPath();
@@ -488,7 +488,7 @@
         mState.rgsProteins.visual.forEach(rgs => {
             const p = project(rgs.x, rgs.y, rgs.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#FF9F43';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.globalAlpha = rgs.life / 60;
                 ctx.fillRect(p.x - 3*p.scale, p.y - 3*p.scale, 6*p.scale, 6*p.scale);
                 ctx.globalAlpha = 1.0;
@@ -625,7 +625,7 @@
         mState.erkPathway.visual.forEach(v => {
             const p = project(v.x, v.y, v.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#FF9F43';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.globalAlpha = v.life / 90;
                 ctx.font = `${8 * p.scale}px Arial`;
                 ctx.fillText("ERK", p.x, p.y);

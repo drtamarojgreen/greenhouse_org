@@ -357,7 +357,7 @@
                         id: `gene-${i}`,
                         text: gene.label,
                         position: { x: gene.x, y: gene.y, z: gene.z },
-                        color: gene.baseColor || '#FFD700',
+                        color: gene.baseColor || '#E0E0E0',
                         category: 'gene',
                         alwaysShow: false
                     });
@@ -390,7 +390,7 @@
                 id: `protein-${name}`,
                 text: name,
                 position: position,
-                color: '#E74C3C',
+                color: '#A0AEC0',
                 category: 'protein',
                 alwaysShow: false
             });

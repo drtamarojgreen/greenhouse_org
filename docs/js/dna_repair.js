@@ -62,7 +62,7 @@
             rotationPerPair: 0.5,
             colors: {
                 A: '#E0E0E0', T: '#E0E0E0', C: '#D0D0D0', G: '#D0D0D0',
-                backbone: '#A0AEC0', enzyme: '#B0B0B0', damage: '#FF9F43'
+                backbone: '#A0AEC0', enzyme: '#B0B0B0', damage: '#E0E0E0'
             }
         },
 
@@ -127,7 +127,7 @@
                 }
                 .dna-control-btn.active { background: #667eea; border-color: #5a67d8; color: white; }
                 .dna-info-overlay { position: absolute; bottom: 20px; left: 20px; background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; color: #fff; max-width: 300px; font-size: 13px; pointer-events: none; border-left: 4px solid #667eea; display: flex; flex-direction: column; gap: 10px; }
-                .dna-atp-counter { font-weight: bold; color: #48bb78; font-size: 14px; }
+                .dna-atp-counter { font-weight: bold; color: #E0E0E0; font-size: 14px; }
             `;
             document.head.appendChild(style);
         },
@@ -152,7 +152,7 @@
             const integrity = document.getElementById('dna-integrity-stat');
             if (integrity) {
                 integrity.innerText = `${t('genomic_integrity')}: ${Math.round(this.state.genomicIntegrity)}% | ${t('mutations')}: ${this.state.mutationCount}`;
-                integrity.style.color = this.state.genomicIntegrity < 100 ? '#f56565' : '#a0aec0';
+                integrity.style.color = this.state.genomicIntegrity < 100 ? '#D0D0D0' : '#a0aec0';
             }
             const analytics = document.getElementById('dna-analytics-stat');
             if (analytics) analytics.innerText = `${t('successful_repairs')}: ${this.state.successfulRepairs} | ${t('error_prone')}: ${this.state.mutatedRepairs}`;
@@ -277,7 +277,7 @@
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
                 const drawB = (sp, ep, type, dam) => {
                     if (!type) return;
-                    ctx.strokeStyle = dam ? '#FF9F43' : (this.config.colors[type] || '#E0E0E0');
+                    ctx.strokeStyle = dam ? '#E0E0E0' : (this.config.colors[type] || '#E0E0E0');
                     ctx.lineWidth = 5 * p1.scale;
 
                     // Structural signature for DNA base types (Geometric coding for nucleotides)

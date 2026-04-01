@@ -27,7 +27,7 @@
                 // Draw placeholder
                 ctx.save();
                 ctx.translate(x, y);
-                ctx.fillStyle = '#FF0000';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.font = '14px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText("No Brain Shell", w / 2, h / 2);
@@ -93,20 +93,32 @@
                     if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); a = parseFloat(match[4] || 1); }
                 }
                 const isTarget = (targetRegion && (f.region === targetRegion || (targetRegion === 'pfc' && f.region === 'prefrontalCortex')));
+                const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
+
                 if (isTarget) {
                     ctx.fillStyle = `rgba(255, 255, 255, ${GreenhouseModels3DMath.applyDepthFog(0.95, f.depth)})`;
                 } else {
                     const intensity = 0.3 + diffuse * 0.7;
-                    ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
+                    ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${fog})`;
                 }
                 ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.fill();
+
                 // Morphological Signature Overlay
+                ctx.save();
                 if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
-                    ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
-                    ctx.setLineDash([2, 4]); ctx.stroke(); ctx.restore();
+                    ctx.strokeStyle = `rgba(255,255,255,${fog * 0.5})`; ctx.lineWidth = 0.7;
+                    ctx.setLineDash([1, 2]); ctx.stroke();
                 } else if (f.region === 'cerebellum') {
-                    if (Math.floor(f.p1.y / 3) % 2 === 0) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fill(); }
+                    ctx.strokeStyle = `rgba(255,255,255,${fog * 0.4})`; ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y);
+                    ctx.moveTo(f.p1.x + 2, f.p1.y + 2); ctx.lineTo(f.p2.x + 2, f.p2.y + 2);
+                    ctx.stroke();
+                } else if (f.region === 'parietalLobe') {
+                    ctx.strokeStyle = `rgba(255,255,255,${fog * 0.2})`; ctx.lineWidth = 0.5;
+                    ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
                 }
+                ctx.restore();
             });
 
             // NEW: Topological Projection - Smooth Surface Overlay

@@ -158,7 +158,7 @@
         }
         if (t === 200) {
             this.consumeATP(20, pair.x, 0, 0);
-            this.spawnParticles(pair.x, 0, 0, 30, '#FF9F43');
+            this.spawnParticles(pair.x, 0, 0, 30, '#E0E0E0');
             this.state.basePairs.splice(targetIdx, 1);
             this.state.mutationCount++;
             this.state.mutatedRepairs++;
@@ -183,7 +183,7 @@
             });
         }
         if (t === 350) {
-            this.spawnParticles(pair.x, 0, 0, 50, '#FF9F43');
+            this.spawnParticles(pair.x, 0, 0, 50, '#E0E0E0');
             this.consumeATP(50, pair.x, 0, 0);
         }
         if (t > 400) {
@@ -219,7 +219,7 @@
             if (t % 5 === 0) { this.spawnParticles(pair.x + (Math.random() - 0.5) * 200, 100, 0, 2, '#667eea'); }
         }
         if (t > 200 && t < 400) {
-            if (t % 20 === 0) { this.consumeATP(5, pair.x, 50, 0); this.spawnParticles(pair.x, 50, 0, 10, '#00FF66'); }
+            if (t % 20 === 0) { this.consumeATP(5, pair.x, 50, 0); this.spawnParticles(pair.x, 50, 0, 10, '#D0D0D0'); }
         }
         if (t === 450) {
             this.consumeATP(30, pair.x, 0, 0);
@@ -270,7 +270,7 @@
         }
 
         if (t === 200) {
-            this.spawnParticles(pair.x, 0, 0, 40, '#FF9F43');
+            this.spawnParticles(pair.x, 0, 0, 40, '#E0E0E0');
             pair.isDamaged = false;
             pair.damageType = null;
             this.state.successfulRepairs++;

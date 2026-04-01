@@ -174,16 +174,22 @@
                     if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
                         // PFC - Executive Grid Pattern with high-frequency noise
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.4})`; ctx.lineWidth = 0.5;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.5})`; ctx.lineWidth = 0.7;
                         ctx.setLineDash([1, 2]); ctx.stroke();
                     } else if (f.region === 'cerebellum') {
-                        // Cerebellum - Foliated Parallel Hatching
+                    // Cerebellum - Foliated Parallel Hatching (Denser)
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.3})`; ctx.lineWidth = 0.5;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.4})`; ctx.lineWidth = 0.5;
                         ctx.beginPath();
                         ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y);
                         ctx.moveTo(f.p1.x + 2, f.p1.y + 2); ctx.lineTo(f.p2.x + 2, f.p2.y + 2);
+                    ctx.moveTo(f.p1.x + 4, f.p1.y + 4); ctx.lineTo(f.p2.x + 4, f.p2.y + 4);
                         ctx.stroke();
+                } else if (f.region === 'parietalLobe') {
+                    // Parietal - Gyral Contour Lines
+                    ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.2})`; ctx.lineWidth = 0.5;
+                    ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
                     } else if (f.region === 'temporalLobe') {
                         // Temporal Lobe - Dotted Wave
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();

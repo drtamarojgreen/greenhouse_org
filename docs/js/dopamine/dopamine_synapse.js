@@ -475,28 +475,28 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // 27. Render SNARE Proteins (small colored ticks/lines around vesicle)
+                // 27. Render SNARE Proteins (Monochromatic ticks around vesicle)
                 if (v.snareProteins) {
                     const radius = 9 * p.scale;
-                    // Syntaxin (Red)
+                    // Syntaxin (Premium Off-White)
                     if (v.snareProteins.syntaxin > 0.5) {
-                        ctx.strokeStyle = '#f00';
+                        ctx.strokeStyle = '#E0E0E0';
                         ctx.beginPath();
                         ctx.moveTo(p.x + radius, p.y);
                         ctx.lineTo(p.x + radius + 3*p.scale, p.y);
                         ctx.stroke();
                     }
-                    // SNAP-25 (Blue)
+                    // SNAP-25 (Silver)
                     if (v.snareProteins.snap25 > 0.5) {
-                        ctx.strokeStyle = '#00f';
+                        ctx.strokeStyle = '#D0D0D0';
                         ctx.beginPath();
                         ctx.moveTo(p.x, p.y + radius);
                         ctx.lineTo(p.x, p.y + radius + 3*p.scale);
                         ctx.stroke();
                     }
-                    // Synaptobrevin (Yellow)
+                    // Synaptobrevin (Neutral Gray)
                     if (v.snareProteins.synaptobrevin > 0.5) {
-                        ctx.strokeStyle = '#ff0';
+                        ctx.strokeStyle = '#A0AEC0';
                         ctx.beginPath();
                         ctx.moveTo(p.x - radius, p.y);
                         ctx.lineTo(p.x - radius - 3*p.scale, p.y);

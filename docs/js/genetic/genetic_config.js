@@ -21,14 +21,14 @@
                 enableZoom: true,
                 enableRotate: true,
                 autoRotate: true,
-                autoRotateSpeed: 0.005, // Smooth rotation for accessibility
+                autoRotateSpeed: 0.001, // Reduced for accessibility
                 panSpeed: 0.002,
                 zoomSpeed: 0.1,
                 rotateSpeed: 0.005,
                 inertia: true,
                 inertiaDamping: 0.95,
-                minZoom: -50,
-                maxZoom: -3000
+                minZoom: -150,
+                maxZoom: -1200 // Tightened to prevent model from moving off-screen
             }
         },
 
@@ -203,46 +203,46 @@
             }
         },
 
-        // Brain Regions Configuration
+        // Brain Regions Configuration - Anatomically correct monochromatic hierarchy
         regions: {
             pfc: {
                 name: 'Prefrontal Cortex',
-                color: 'rgba(160, 174, 192, 0.6)',
+                color: 'rgba(224, 224, 224, 0.6)', // Lightest (Frontal)
                 position: { x: 0, y: -100, z: 150 }
             },
             amygdala: {
                 name: 'Amygdala',
-                color: 'rgba(160, 174, 192, 0.6)',
+                color: 'rgba(180, 180, 180, 0.7)', // Mid-Tone Deep
                 position: { x: 50, y: 0, z: 0 }
             },
             hippocampus: {
                 name: 'Hippocampus',
-                color: 'rgba(160, 174, 192, 0.6)',
+                color: 'rgba(180, 180, 180, 0.7)', // Mid-Tone Deep
                 position: { x: -50, y: 0, z: 0 }
             },
             temporalLobe: {
                 name: 'Temporal Lobe',
-                color: 'rgba(160, 174, 192, 0.6)',
+                color: 'rgba(180, 180, 180, 0.5)', // Mid-Gray
                 position: { x: 100, y: 50, z: 0 }
             },
             parietalLobe: {
                 name: 'Parietal Lobe',
-                color: 'rgba(160, 174, 192, 0.6)',
+                color: 'rgba(200, 200, 200, 0.5)', // Neutral Mid
                 position: { x: 0, y: -50, z: 0 }
             },
             occipitalLobe: {
                 name: 'Occipital Lobe',
-                color: 'rgba(160, 174, 192, 0.6)',
+                color: 'rgba(140, 140, 140, 0.6)', // Darker (Sensory)
                 position: { x: 0, y: 0, z: -150 }
             },
             cerebellum: {
                 name: 'Cerebellum',
-                color: 'rgba(160, 174, 192, 0.6)',
+                color: 'rgba(120, 120, 120, 0.7)', // Distinct Dark
                 position: { x: 0, y: 150, z: -100 }
             },
             brainstem: {
                 name: 'Brainstem',
-                color: 'rgba(160, 174, 192, 0.6)',
+                color: 'rgba(100, 100, 100, 0.8)', // Darkest
                 position: { x: 0, y: 200, z: 0 }
             }
         },

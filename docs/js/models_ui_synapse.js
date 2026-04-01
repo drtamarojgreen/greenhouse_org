@@ -100,7 +100,7 @@
                  const cx = w / 2 + k.x;
                  const cy = postSynapticY + k.y; // Relative to post-synaptic area start
 
-                 ctx.fillStyle = k.active ? '#FFeb3b' : '#9c27b0';
+                 ctx.fillStyle = k.active ? '#FFFFFF' : '#A0AEC0';
                  ctx.beginPath();
                  // Pac-man shape
                  ctx.arc(cx, cy, 5, 0.2 * Math.PI, 1.8 * Math.PI);
@@ -127,7 +127,7 @@
             const postSynapticY = h / 2 + 80;
 
             ctx.save();
-            ctx.strokeStyle = this.state.darkMode ? '#00bcd4' : '#0097a7';
+            ctx.strokeStyle = this.state.darkMode ? '#A0AEC0' : '#0097a7';
             ctx.lineWidth = 2;
 
             rnaList.forEach(rna => {

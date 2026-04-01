@@ -69,7 +69,7 @@
                 }
 
                 tooltipElem.style.display = 'block';
-                tooltipElem.innerHTML = `<div style="font-weight: bold; color: #00F2FF;">${label}</div>${subtext}`;
+                tooltipElem.innerHTML = `<div style="font-weight: bold; color: #D0D0D0;">${label}</div>${subtext}`;
 
                 // Keep tooltip within bounds
                 const xOffset = mouseX + 25;
@@ -92,7 +92,7 @@
             // Static Labels (Subtle)
             const drawLabel = (x, y, text, id) => {
                 const isActive = activeId === id;
-                ctx.fillStyle = isActive ? '#00F2FF' : 'rgba(255,255,255,0.3)';
+                ctx.fillStyle = isActive ? '#D0D0D0' : 'rgba(255,255,255,0.3)';
                 ctx.fillText(text.toUpperCase(), x, y);
             };
 

@@ -106,7 +106,7 @@
 
         // 68. Render Epigenetic Markers (Histone Acetylation)
         if (pState.epigeneticShift > 0.2) {
-             ctx.fillStyle = '#ffff00';
+             ctx.fillStyle = '#FFFFFF';
              ctx.globalAlpha = pState.epigeneticShift * 0.3;
              // Draw some background "chromatin" or symbols
              for(let i=0; i<10; i++) {
@@ -119,7 +119,7 @@
         pState.bdnfParticles.forEach(p => {
             const pos = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (pos.scale > 0) {
-                ctx.fillStyle = '#ff00ff';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.globalAlpha = p.life / 100;
                 ctx.beginPath();
                 ctx.arc(pos.x, pos.y, 4 * pos.scale, 0, Math.PI * 2);

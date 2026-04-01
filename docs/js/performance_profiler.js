@@ -102,7 +102,7 @@
                 el.style.bottom = '10px';
                 el.style.right = '10px';
                 el.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                el.style.color = '#00ff00';
+                el.style.color = '#E0E0E0';
                 el.style.padding = '10px';
                 el.style.borderRadius = '5px';
                 el.style.fontFamily = 'monospace';
@@ -114,7 +114,7 @@
 
             el.innerHTML = `
                 <strong>Greenhouse Performance Report</strong><br>
-                Status: <span style="color:${report.status === 'PASS' ? '#00ff00' : '#ff0000'}">${report.status}</span><br>
+                Status: <span style="color:${report.status === 'PASS' ? '#E0E0E0' : '#E0E0E0'}">${report.status}</span><br>
                 FPS: ${report.finalFPS}<br>
                 Avg Mem: ${report.averageMemoryMB} MB<br>
                 Uptime: ${report.uptimeSeconds}s<br>

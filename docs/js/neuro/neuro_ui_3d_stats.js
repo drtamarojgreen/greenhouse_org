@@ -40,7 +40,7 @@
             ctx.fillText(`${t("Neurons")}: ${neuronCount}`, 20, 30);
             ctx.fillText(`${t("Connections")}: ${connectionCount}`, 20, 50);
 
-            ctx.fillStyle = '#00ffcc';
+            ctx.fillStyle = '#D0D0D0';
             ctx.fillText(t("Click PiP to select connection"), 20, 80);
         },
 
