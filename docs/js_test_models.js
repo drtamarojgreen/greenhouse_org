@@ -99,25 +99,42 @@
             'serotonin/test_serotonin_ui.js', 'serotonin/test_serotonin_model_logic.js', 'serotonin/test_serotonin_transport_unit.js'
         ],
         'inflammation': [
-            'models_util.js',
-            'inflammation/inflammation_config.js', 'inflammation/inflammation_geometry.js',
-            'inflammation/inflammation_pathway.js', 'inflammation/inflammation_ui_3d.js',
-            'inflammation/inflammation_analysis.js', 'inflammation/inflammation_app.js',
-            'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js'
+            'inflammation/test_inflammation_logic.js', 'inflammation/test_inflammation_ui.js', 'inflammation/test_inflammation_enhancements.js'
+        ],
+        'stress': [
+            'stress/test_stress_logic.js', 'stress/test_stress_ui.js', 'stress/test_stress_regression.js', 'stress/test_stress_enhancements.js', 'stress/test_stress_interventions.js'
+        ],
+        'dna': [
+            'dna/test_dna_ui.js', 'dna/test_dna_logic.js', 'dna/test_dna_page.js'
+        ],
+        'rna': [
+            'rna/test_rna_ui.js', 'rna/test_rna_page.js', 'rna/repro_rna_error.js'
+        ],
+        'synapse': [
+            'synapse/test_synapse_ui.js', 'synapse/test_synapse_logic.js', 'synapse/test_synapse_receptors.js', 'synapse/test_synapse_page_loader.js', 'synapse/test_synapse_page_new.js'
+        ],
+        'pathway': [
+            'pathway/test_pathway_ui.js', 'pathway/test_pathway_logic.js', 'pathway/test_pathway_page_loader.js', 'pathway/test_json_pathway_support.js', 'pathway/test_pathway_page_new.js'
+        ],
+        'emotion': [
+            'emotion/test_emotion_page.js', 'emotion/test_emotion_deep_dive.js'
+        ],
+        'cognition': [
+            'cognition/test_cognition_logic.js', 'cognition/test_cognition_ui.js', 'cognition/test_cognition_drawing.js', 'cognition/test_cognition_modules.js', 'cognition/test_cognition_regression.js', 'cognition/test_cognition_page.js'
         ],
         'common': [
             'common/test_accessibility.js', 'core/test_assertion_library.js', 'core/test_dependency_manager.js',
             'common/test_global_ux.js', 'core/test_greenhouse_utils.js', 'common/test_labeling_system.js',
             'common/test_models_3d_math.js', 'common/test_models_toc.js', 'common/test_models_util.js',
-            'common/test_models_data.js', 'common/test_models_ux.js', 'common/test_models_ui.js',
-            'core/test_performance_profiler_unit.js', 'common/test_performance_regression.js', 'common/test_react_compatibility.js',
-            'core/test_test_framework.js', 'common/test_v8_graph_renderer.js', 'mobile/test_mobile_edge_cases.js',
-            'mobile/test_mobile_integration.js', 'mobile/test_mobile_model_behaviors.js', 'mobile/test_mobile_models_lifecycle.js',
-            'mobile/test_mobile_regression.js', 'mobile/test_mobile_typography_contrast.js', 'mobile/test_mobile_ui_interactions.js',
-            'mobile/test_mobile_viewer.js', 'common/test_model_sync.js', 'common/test_patient_app_unit.js',
-            'common/test_dashboard_app_unit.js', 'common/test_meditation_app.js', 'common/test_scheduler_logic.js',
-            'common/test_tech_canvas.js', 'common/test_inspiration_logic.js', 'common/test_kegg_parser.js',
-            'common/test_models_page_new.js', 'common/test_layout_parity.js'
+            'core/test_performance_profiler_unit.js', 'common/test_performance_regression.js',
+            'common/test_react_compatibility.js', 'core/test_test_framework.js', 'common/test_v8_graph_renderer.js',
+            'mobile/test_mobile_edge_cases.js', 'mobile/test_mobile_integration.js', 'mobile/test_mobile_model_behaviors.js',
+            'mobile/test_mobile_models_lifecycle.js', 'mobile/test_mobile_regression.js', 'mobile/test_mobile_typography_contrast.js',
+            'mobile/test_mobile_ui_interactions.js', 'mobile/test_mobile_viewer.js', 'common/test_model_sync.js',
+            'common/test_patient_app_unit.js', 'common/test_dashboard_app_unit.js', 'common/test_meditation_app.js',
+            'common/test_scheduler_logic.js', 'common/test_tech_canvas.js', 'common/test_inspiration_logic.js',
+            'common/test_kegg_parser.js', 'common/test_models_page_new.js', 'common/test_layout_parity.js',
+            'test_production_resilience.js'
         ]
     };
 
@@ -139,7 +156,7 @@
             'genetic/genetic_ui_3d.js', 'genetic.js'
         ],
         'stress': [
-            'models_util.js', 'models_3d_math.js', 'neuro_ui_3d_geometry.js',
+            'models_util.js', 'models_3d_math.js', 'neuro/neuro_ui_3d_geometry.js',
             'stress/stress_config.js', 'stress/stress_geometry.js', 'stress/stress_app.js', 'stress/stress_macro.js',
             'stress/stress_pathway.js', 'stress/stress_systemic.js', 'stress/stress_controls.js',
             'stress/stress_tooltips.js', 'stress/stress_ui_3d.js'
@@ -151,6 +168,50 @@
             'inflammation/inflammation_analysis.js', 'inflammation/inflammation_app.js',
             'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js'
         ],
+        'synapse': [
+            'models_util.js', 'models_3d_math.js',
+            'synapse/synapse_chemistry.js', 'synapse/synapse_analytics.js',
+            'synapse/synapse_app.js', 'synapse/synapse_controls.js',
+            'synapse/synapse_neurotransmitters.js', 'synapse/synapse_3d.js'
+        ],
+        'pathway': [
+            'models_util.js', 'models_3d_math.js', 'kegg_parser.js',
+            'pathway/pathway_config.js', 'pathway/pathway_layout.js',
+            'pathway/pathway_ui_3d_brain.js', 'pathway/pathway_viewer.js'
+        ],
+        'dopamine': [
+            'models_util.js', 'models_3d_math.js',
+            'dopamine/dopamine_config.js', 'dopamine/dopamine_synapse.js',
+            'dopamine/dopamine_molecular.js', 'dopamine/dopamine_electrophysiology.js',
+            'dopamine/dopamine_controls.js', 'dopamine/dopamine_app.js'
+        ],
+        'serotonin': [
+            'models_util.js', 'models_3d_math.js',
+            'serotonin/serotonin_config.js', 'serotonin/serotonin_receptors.js',
+            'serotonin/serotonin_kinetics.js', 'serotonin/serotonin_signaling.js',
+            'serotonin/serotonin_transport.js', 'serotonin/serotonin_controls.js',
+            'serotonin.js'
+        ],
+        'dna': [
+            'models_util.js', 'models_3d_math.js',
+            'dna/dna_config.js', 'dna/dna_repair_mechanisms.js',
+            'dna/dna_repair_mutations.js', 'dna/dna_repair.js'
+        ],
+        'rna': [
+            'models_util.js', 'models_3d_math.js',
+            'rna/rna_config.js', 'rna/rna_repair.js'
+        ],
+        'emotion': [
+            'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js',
+            'emotion/emotion_config.js', 'emotion/emotion_regions.js',
+            'emotion/emotion_interventions.js', 'emotion/emotion_theories.js',
+            'emotion/emotion_ui_3d_brain.js', 'emotion/emotion_app.js'
+        ],
+        'cognition': [
+            'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js',
+            'cognition/cognition_config.js', 'cognition/cognition_drawing_utils.js',
+            'cognition/cognition_app.js'
+        ],
         'common': [
             'models_lang.js', 'models_util.js', 'models_data.js', 'models_ui_synapse.js',
             'models_ui_brain.js', 'models_ui_environment_overlay.js', 'models_ui_environment_hovers.js',
@@ -158,7 +219,8 @@
             'models_ui_environment_therapy.js', 'models_ui_environment.js', 'models_3d_math.js',
             'models_ui_3d.js', 'models_ui.js', 'models_ux.js', 'labeling_system.js',
             'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js',
-            'inspiration.js', 'kegg_parser.js', 'models_toc.js'
+            'inspiration.js', 'kegg_parser.js', 'models_toc.js', 'GreenhouseMobile.js',
+            'GreenhouseReactCompatibility.js', 'V8GraphRenderer.js'
         ]
     };
 
@@ -435,40 +497,17 @@
                 };
             }
 
-
             // Bridge TestFramework
             const tf = window.TestFramework;
             if (tf) {
                 tf.reset();
                 tf.it = (name, fn) => {
-                    const suite = tf.currentSuite;
-                    const suiteName = (suite ? suite.name : 'Unit');
-                    window.GreenhouseTestSuite.addTest('[' + suiteName + '] ' + name, async () => {
-                        if (suite && suite.beforeEach) {
-                            for (const h of suite.beforeEach) {
-                                try { await h(); } catch(e) { console.error('Error in beforeEach:', e); }
-                            }
-                        }
-                        try {
-                            await fn();
-                        } finally {
-                            if (suite && suite.afterEach) {
-                                for (const h of suite.afterEach) {
-                                    try { await h(); } catch(e) { console.error('Error in afterEach:', e); }
-                                }
-                            }
-                        }
+                    const suiteName = (tf.currentSuite ? tf.currentSuite.name : 'Unit');
+                    window.GreenhouseTestSuite.addTest(`[${suiteName}] ${name}`, async () => {
+                        if (tf.currentSuite && tf.currentSuite.beforeEach) { for (const h of tf.currentSuite.beforeEach) await h(); }
+                        try { await fn(); } finally { if (tf.currentSuite && tf.currentSuite.afterEach) { for (const h of tf.currentSuite.afterEach) await h(); } }
                     });
                 };
-                tf.describe = (name, fn) => {
-                    const prev = tf.currentSuite;
-                    const newSuite = { name: name, beforeEach: [], afterEach: [] };
-                    tf.currentSuite = newSuite;
-                    try { fn(); } catch(e) { console.error('Error in describe ' + name, e); }
-                    tf.currentSuite = prev;
-                };
-                tf.beforeEach = (fn) => { if (tf.currentSuite) tf.currentSuite.beforeEach.push(fn); };
-                tf.afterEach = (fn) => { if (tf.currentSuite) tf.currentSuite.afterEach.push(fn); };
             }
 
             // Load Implementations
