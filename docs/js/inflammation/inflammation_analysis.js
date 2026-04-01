@@ -65,7 +65,7 @@
             ctx.strokeStyle = 'rgba(76, 161, 175, 0.5)';
             ctx.strokeRect(x - 10, y - 30, 160, 150);
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 9px Quicksand';
             ctx.fillText('INFLAMMATION MATRIX', x, y - 15);
 
@@ -104,7 +104,7 @@
             ctx.fillText('TEMPORAL TRAJECTORY', x, y - 5);
 
             // Item 74: User-selectable timeline metrics
-            const colors = { tnfAlpha: '#ff5533', il10: '#00ff99', bbbIntegrity: '#64d2ff', microgliaActivation: '#ff4444', nfkbActivation: '#ffcc00', calcium: '#ff00ff', neuroprotection: '#ffff66', stressBurden: '#ff9900', ros: '#00ffff' };
+            const colors = { tnfAlpha: '#ff5533', il10: '#D0D0D0', bbbIntegrity: '#D0D0D0', microgliaActivation: '#ff4444', nfkbActivation: '#E0E0E0', calcium: '#FFFFFF', neuroprotection: '#ffff66', stressBurden: '#D0D0D0', ros: '#D0D0D0' };
 
             this.selectedMetrics.forEach((metricId, i) => {
                 const history = this.history[metricId];

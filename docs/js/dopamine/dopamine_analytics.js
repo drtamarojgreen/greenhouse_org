@@ -110,7 +110,7 @@
             ctx.strokeRect(startX, startY, graphW, graphH);
 
             ctx.beginPath();
-            ctx.strokeStyle = '#00ff00';
+            ctx.strokeStyle = '#E0E0E0';
             aState.doseResponse.points.forEach((p, i) => {
                 const x = startX + (p.dose / 10) * graphW;
                 const y = startY + graphH - (p.effect * graphH);
@@ -126,8 +126,8 @@
         }
 
         // Render mini history sparks
-        renderSpark(ctx, aState.history.da, 10, 50, 'DA', '#0f0');
-        renderSpark(ctx, aState.history.camp, 10, 80, 'cAMP', '#ff0');
+        renderSpark(ctx, aState.history.da, 10, 50, 'DA', '#E0E0E0');
+        renderSpark(ctx, aState.history.camp, 10, 80, 'cAMP', '#A0AEC0');
     };
 
     function renderSpark(ctx, data, x, y, label, color) {

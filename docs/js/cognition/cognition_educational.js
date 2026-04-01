@@ -25,14 +25,14 @@
                     ctx.fillText(`${t('cog_label_question')}: Which layer is the primary input for the cortex?`, 50, 130);
                     const options = ['A) Layer II', 'B) Layer IV (Granular)', 'C) Layer VI'];
                     options.forEach((opt, i) => {
-                        ctx.fillStyle = i === 1 ? '#4fd1c5' : '#fff';
+                        ctx.fillStyle = i === 1 ? '#A0AEC0' : '#fff';
                         ctx.strokeRect(50, 145 + i*25, 200, 20); ctx.fillText(opt, 60, 160 + i*25);
                     });
                 },
                 178: (ctx, w, h) => {
                     ctx.fillStyle = '#eee'; ctx.fillRect(40, 110, w - 80, 140);
                     ctx.strokeStyle = '#000'; ctx.strokeRect(40, 110, w - 80, 140);
-                    ctx.fillStyle = '#ff4d4d'; ctx.font = 'bold 14px "Courier New"';
+                    ctx.fillStyle = '#E0E0E0'; ctx.font = 'bold 14px "Courier New"';
                     ctx.fillText(`${t('cog_label_confidential')}: PATIENT_HM`, 55, 135);
                     ctx.fillStyle = '#333'; ctx.font = '10px Arial';
                     ctx.fillText('Procedure: Bilateral medial temporal lobectomy', 55, 155);
@@ -54,7 +54,7 @@
                 183: (ctx, w, h) => {
                     ctx.fillStyle = '#fff'; ctx.fillText(`${t('cog_label_scenario')}: The Distracted Student`, 50, 120);
                     ctx.font = 'italic 10px Arial'; ctx.fillText('You are studying, but your phone buzzes. What do you do?', 50, 140);
-                    ctx.font = 'bold 11px Arial'; ctx.fillStyle = '#4fd1c5';
+                    ctx.font = 'bold 11px Arial'; ctx.fillStyle = '#A0AEC0';
                     ctx.fillText('1. Ignore it (Engage Executive Control)', 60, 170);
                     ctx.fillText('2. Check it (Engage Salience Network)', 60, 195);
                 },
@@ -77,9 +77,9 @@
                     ctx.fillText(t('cog_label_flip_card'), w/2 - 60, 220);
                 },
                 194: (ctx, w, h) => {
-                    ctx.fillStyle = '#ff4d4d'; ctx.font = 'bold 12px Arial';
+                    ctx.fillStyle = '#E0E0E0'; ctx.font = 'bold 12px Arial';
                     ctx.fillText(`${t('cog_label_myth')}: We only use 10% of our brain.`, 50, 125);
-                    ctx.fillStyle = '#39ff14'; ctx.fillText(`${t('cog_label_fact')}: Brain imaging shows the entire`, 50, 155);
+                    ctx.fillStyle = '#FFFFFF'; ctx.fillText(`${t('cog_label_fact')}: Brain imaging shows the entire`, 50, 155);
                     ctx.fillText('brain has a baseline level of activity', 50, 170);
                     ctx.fillText('at all times, even during sleep.', 50, 185);
                 },
@@ -113,7 +113,7 @@
                 },
                 200: (ctx, w, h) => {
                     ctx.fillStyle = 'rgba(57, 255, 20, 0.2)'; ctx.fillRect(40, 110, 300, 60);
-                    ctx.fillStyle = '#39ff14'; ctx.font = 'bold 12px Arial';
+                    ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 12px Arial';
                     ctx.fillText(t('cog_label_wcag_compliant'), 55, 135);
                     ctx.fillStyle = '#fff'; ctx.font = '10px Arial';
                     ctx.fillText('Implementation: Screen reader tags, High contrast,', 55, 155);

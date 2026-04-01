@@ -353,14 +353,14 @@
                         enableZoom: true,
                         enableRotate: true,
                         autoRotate: true,
-                        autoRotateSpeed: 0.0003, // Reduced for accessibility
+                        autoRotateSpeed: 0.001, // Reduced for accessibility
                         panSpeed: 0.002,
                         zoomSpeed: 0.1,
                         rotateSpeed: 0.005,
                         inertia: true,
                         inertiaDamping: 0.95,
                         minZoom: -50,
-                        maxZoom: -4000 // Constrained to prevent model disappearing
+                        maxZoom: -1200 // Constrained to prevent model disappearing
                     }
                 },
                 get(path) {
@@ -528,7 +528,7 @@
             container.style.position = 'relative';
 
             const header = document.createElement('div');
-            header.style.cssText = `font-weight: bold; margin-bottom: ${isMobile ? '5px' : '10px'}; font-size: ${isMobile ? '16px' : '14px'}; color: #4ca1af; text-transform: uppercase; letter-spacing: 1px;`;
+            header.style.cssText = `font-weight: bold; margin-bottom: ${isMobile ? '5px' : '10px'}; font-size: ${isMobile ? '16px' : '14px'}; color: #A0AEC0; text-transform: uppercase; letter-spacing: 1px;`;
             header.textContent = t('pathway_control');
             if (!isMobile) uiContainer.appendChild(header);
 
@@ -542,7 +542,7 @@
             const pSelect = document.createElement('select');
             pSelect.id = 'master-pathway-selector';
             pSelect.style.cssText = `
-                width: 100%; background: #2a2a2a; color: #4ca1af; border: 1px solid #444; 
+                width: 100%; background: #2a2a2a; color: #A0AEC0; border: 1px solid #444;
                 padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: ${isMobile ? '16px' : '14px'};
             `;
             pathwayGroup.appendChild(pSelect);
@@ -582,7 +582,7 @@
             button.textContent = t('highlight_pathway');
             button.style.cssText = `
                 flex: 1;
-                background: linear-gradient(135deg, #4ca1af, #2c3e50); 
+                background: linear-gradient(135deg, #A0AEC0, #2c3e50);
                 color: white; 
                 border: none; 
                 padding: 10px; 
@@ -869,7 +869,7 @@
 
             // Draw Nodes in Minimap
             this.pathwayData.forEach(n => {
-                ctx.fillStyle = (n.id === this.highlightedNodeId) ? '#39ff14' : '#4ca1af';
+                ctx.fillStyle = (n.id === this.highlightedNodeId) ? '#FFFFFF' : '#A0AEC0';
                 ctx.beginPath();
                 ctx.arc(n.position3D.x * scale + offsetX, n.position3D.y * scale + offsetY, 1.5, 0, Math.PI * 2);
                 ctx.fill();
@@ -917,7 +917,7 @@
             };
 
             types.forEach((type, i) => {
-                const color = typeColors[type] || '#4ca1af';
+                const color = typeColors[type] || '#A0AEC0';
                 ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.arc(legendX + 20, legendY + padding + 10 + i * itemHeight, 5, 0, Math.PI * 2);

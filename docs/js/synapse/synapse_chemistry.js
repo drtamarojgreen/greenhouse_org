@@ -60,7 +60,7 @@
                 id: 'serotonin',
                 name: { en: 'Serotonin', es: 'Serotonina' },
                 type: 'modulatory',
-                color: '#00F2FF', // Electric Cyan
+                color: '#D0D0D0', // Electric Cyan
                 glow: 'rgba(0, 242, 255, 0.6)',
                 targets: ['gpcr'],
                 ionEffect: 'none',
@@ -265,7 +265,7 @@
         },
 
         retrograde: {
-            endocannabinoid: { name: '2-AG / Anandamide', color: '#9C27B0', effect: 'inhibit_release' }
+            endocannabinoid: { name: '2-AG / Anandamide', color: '#A0AEC0', effect: 'inhibit_release' }
         },
 
         ions: {
@@ -273,7 +273,7 @@
                 id: 'sodium',
                 name: { en: 'Sodium (Na+)', es: 'Sodio (Na+)' },
                 charge: '+',
-                color: '#ffd700', // Gold
+                color: '#E0E0E0', // Gold
                 effect: 'depolarize',
                 hydrationRadius: 2.8 // Angstroms
             },
@@ -281,7 +281,7 @@
                 id: 'potassium',
                 name: { en: 'Potassium (K+)', es: 'Potasio (K+)' },
                 charge: '+',
-                color: '#ff00ff', // Magenta
+                color: '#FFFFFF', // Magenta
                 effect: 'repolarize',
                 hydrationRadius: 3.3
             },

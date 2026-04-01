@@ -107,13 +107,13 @@
                 PSI: '#A0AEC0',
                 BACKBONE: '#A0AEC0',
                 ENZYME: 'rgba(160, 174, 192, 0.2)',
-                METHYL: '#FF9F43',
+                METHYL: '#E0E0E0',
                 GLOW: '#E0E0E0',
                 METAL: '#A0AEC0',
                 PROTEIN: '#A0AEC0',
                 RIBOSOME: '#D0D0D0',
                 ATP: '#A0AEC0',
-                DECAY: '#FF9F43'
+                DECAY: '#E0E0E0'
             };
 
             // Display state
@@ -678,10 +678,10 @@
                     this.ctx.save();
                     this.ctx.beginPath();
                     this.ctx.arc(base.x, base.y, 16, 0, Math.PI * 2);
-                    this.ctx.strokeStyle = '#FFD700';
+                    this.ctx.strokeStyle = '#E0E0E0';
                     this.ctx.lineWidth = 3;
                     this.ctx.shadowBlur = 15;
-                    this.ctx.shadowColor = '#FFD700';
+                    this.ctx.shadowColor = '#E0E0E0';
                     this.ctx.setLineDash([4, 4]);
                     this.ctx.stroke();
                     this.ctx.restore();

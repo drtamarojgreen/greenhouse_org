@@ -335,7 +335,7 @@
                 }
                 .gh-mobile-overlay * { box-sizing: border-box; }
                 .gh-mobile-overlay-header { padding: 50px 20px 10px; text-align: center; }
-                .gh-mobile-overlay-header h2 { color: #4ca1af; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; font-size: 1.4rem; margin: 0; opacity: 0.8; }
+                .gh-mobile-overlay-header h2 { color: #A0AEC0; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; font-size: 1.4rem; margin: 0; opacity: 0.8; }
                 
                 .gh-mobile-container {
                     display: flex; flex: 1; overflow-x: auto; scroll-snap-type: x mandatory;
@@ -358,7 +358,7 @@
                     display: flex; justify-content: space-between; align-items: center; z-index: 2;
                 }
                 .gh-model-title { color: #fff; font-weight: 500; font-size: 1.3rem; }
-                .gh-model-index { color: #4ca1af; font-size: 1.0rem; font-weight: 600; background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; }
+                .gh-model-index { color: #A0AEC0; font-size: 1.0rem; font-weight: 600; background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; }
                 
                 .gh-mobile-canvas-wrapper {
                     flex: 1; position: relative; background: #000; margin: 12px; border-radius: 20px;
@@ -370,7 +370,7 @@
                 /* Selection HUD */
                 .gh-mode-indicator {
                     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                    background: rgba(0, 0, 0, 0.8); color: #4ca1af; padding: 15px 30px;
+                    background: rgba(0, 0, 0, 0.8); color: #A0AEC0; padding: 15px 30px;
                     border-radius: 40px; font-weight: 600; font-size: 1.5rem; letter-spacing: 2px;
                     border: 1px solid rgba(76, 161, 175, 0.3); pointer-events: none;
                     opacity: 0; z-index: 100; transition: opacity 0.3s ease;
@@ -390,11 +390,11 @@
                     z-index: 100001; backdrop-filter: blur(10px);
                 }
                 .gh-swipe-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s ease; }
-                .gh-swipe-dot.active { background: #4ca1af; width: 22px; border-radius: 10px; }
+                .gh-swipe-dot.active { background: #A0AEC0; width: 22px; border-radius: 10px; }
 
                 .gh-mobile-loader {
                     width: 40px; height: 40px; border: 3px solid rgba(76, 161, 175, 0.2);
-                    border-top-color: #4ca1af; border-radius: 50%; animation: ghSpin 1s linear infinite;
+                    border-top-color: #A0AEC0; border-radius: 50%; animation: ghSpin 1s linear infinite;
                 }
 
                 @keyframes ghFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -503,7 +503,7 @@
                 config.init(container, baseUrl);
                 this.activeModels.set(container, modelId);
             } catch (e) {
-                container.innerHTML = `<p style="color: #e74c3c; padding: 20px;">Failed to load ${modelId}</p>`;
+                container.innerHTML = `<p style="color: #A0AEC0; padding: 20px;">Failed to load ${modelId}</p>`;
             }
         },
 

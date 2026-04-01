@@ -1,5 +1,5 @@
 (function () {
-    const baseUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
+    const baseUrl = "./";
     const modelContainer = document.getElementById('model-container');
     const modelSelector = document.getElementById('model-selector');
     const activeLabel = document.getElementById('active-label');
@@ -223,7 +223,7 @@
         const sectionInner = document.createElement('section'); div2_1.appendChild(sectionInner);
         const idiv1 = document.createElement('div'); sectionInner.appendChild(idiv1);
         idiv1.appendChild(document.createElement('div')); idiv1.appendChild(document.createElement('div'));
-        const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
+        const targetDiv = document.createElement('div'); targetDiv.id = "model-target"; targetDiv.style.height = "800px"; targetDiv.style.minHeight = "800px";
         sectionInner.appendChild(targetDiv);
         modelContainer.appendChild(section1);
 

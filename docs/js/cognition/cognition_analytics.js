@@ -30,24 +30,24 @@
                 },
                 2: (ctx, w, h) => {
                     const time = Date.now() * 0.002;
-                    utils().drawArrowLine(ctx, 100, h / 2, w - 100, h / 2, '#39ff14', t('cog_label_signal_path'));
+                    utils().drawArrowLine(ctx, 100, h / 2, w - 100, h / 2, '#FFFFFF', t('cog_label_signal_path'));
                     const progress = (time % 5) / 5;
                     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(100 + (w - 200) * progress, h / 2, 6, 0, Math.PI * 2); ctx.fill();
                 },
                 3: (ctx, w, h) => {
-                    ctx.strokeStyle = '#ff4d4d'; ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#E0E0E0'; ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.moveTo(w / 2, 100); ctx.lineTo(w / 2, h - 100); ctx.stroke();
-                    ctx.fillStyle = '#ff4d4d'; ctx.fillText(t('cog_label_system1'), w * 0.2, 120);
+                    ctx.fillStyle = '#E0E0E0'; ctx.fillText(t('cog_label_system1'), w * 0.2, 120);
                     ctx.fillStyle = '#4da6ff'; ctx.fillText(t('cog_label_system2'), w * 0.7, 120);
                 },
                 4: (ctx, w, h) => {
-                    ctx.strokeStyle = '#4fd1c5'; ctx.strokeRect(w - 150, 50, 120, 150);
+                    ctx.strokeStyle = '#A0AEC0'; ctx.strokeRect(w - 150, 50, 120, 150);
                     ctx.fillStyle = '#fff'; ctx.fillText(t('cog_label_hud'), w - 145, 70);
                 },
                 5: (ctx, w, h) => {
                     ctx.fillStyle = 'rgba(255, 77, 77, 0.3)'; ctx.beginPath();
                     ctx.arc(w / 2, h / 2, 60, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#ff4d4d'; ctx.fillText(t('cog_label_deficit'), w / 2 - 50, h / 2 + 80);
+                    ctx.fillStyle = '#E0E0E0'; ctx.fillText(t('cog_label_deficit'), w / 2 - 50, h / 2 + 80);
                 },
                 6: (ctx, w, h) => {
                     ctx.fillStyle = '#f6e05e'; ctx.font = 'bold 12px Arial';
@@ -141,14 +141,14 @@
             const load = (Math.sin(time) + 1) / 2;
             ctx.fillStyle = '#fff'; ctx.fillText(t('cog_label_cognitive_load') || 'COGNITIVE LOAD:', w / 2 - 100, h / 2 - 20);
             ctx.strokeStyle = '#fff'; ctx.strokeRect(w / 2 - 100, h / 2, 200, 20);
-            const color = load > 0.8 ? '#ff4d4d' : (load > 0.5 ? '#f6e05e' : '#4fd1c5');
+            const color = load > 0.8 ? '#E0E0E0' : (load > 0.5 ? '#f6e05e' : '#A0AEC0');
             ctx.fillStyle = color; ctx.fillRect(w / 2 - 100, h / 2, 200 * load, 20);
             ctx.fillText(`${(load * 100).toFixed(0)}%`, w / 2 + 110, h / 2 + 15);
         },
 
         drawPlasticity(ctx, w, h, time) {
             ctx.save();
-            ctx.strokeStyle = '#4fd1c5'; ctx.lineWidth = 3;
+            ctx.strokeStyle = '#A0AEC0'; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(w / 2 - 100, h / 2);
             ctx.bezierCurveTo(w / 2 - 50, h / 2 - 50, w / 2 + 50, h / 2 + 50, w / 2 + 100, h / 2);
             ctx.stroke();
@@ -204,7 +204,7 @@
             });
             const progress = (time % 10) / 10;
             const px = 50 + progress * (w - 100);
-            ctx.fillStyle = '#4fd1c5'; ctx.beginPath(); ctx.arc(px, h / 2 + 50, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#A0AEC0'; ctx.beginPath(); ctx.arc(px, h / 2 + 50, 6, 0, Math.PI * 2); ctx.fill();
             ctx.fillText(t('cog_label_dev_stage') || 'Development Stage', px - 40, h / 2 + 30);
         },
 
@@ -230,9 +230,9 @@
 
         drawBiasSimulator(ctx, w, h, time) {
             ctx.fillStyle = '#fff'; ctx.fillText(t('cog_label_bias_confirmation'), 30, 100);
-            ctx.strokeStyle = '#ff4d4d'; ctx.strokeRect(w / 2 - 50, h / 2 - 50, 100, 100);
+            ctx.strokeStyle = '#E0E0E0'; ctx.strokeRect(w / 2 - 50, h / 2 - 50, 100, 100);
             const dataIn = Math.sin(time * 3);
-            ctx.fillStyle = dataIn > 0 ? '#4fd1c5' : '#ff4d4d';
+            ctx.fillStyle = dataIn > 0 ? '#A0AEC0' : '#E0E0E0';
             ctx.beginPath(); ctx.arc(w / 2 - 150, h / 2, 10, 0, Math.PI * 2); ctx.fill();
             ctx.fillText(t('cog_label_incoming_data'), w / 2 - 180, h / 2 + 25);
             if (dataIn > 0) {

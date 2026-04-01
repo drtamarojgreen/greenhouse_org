@@ -126,7 +126,7 @@
             modal.style.zIndex = '1000';
             modal.style.padding = '25px';
             modal.style.borderRadius = '20px';
-            modal.style.border = '2px solid #4fd1c5';
+            modal.style.border = '2px solid #A0AEC0';
             modal.style.overflowY = 'auto';
             modal.style.display = 'none';
             modal.style.fontFamily = 'Arial, sans-serif';
@@ -134,15 +134,15 @@
         }
 
         modal.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4fd1c5; padding-bottom: 15px; margin-bottom: 20px;">
-                <h2 style="margin: 0; color: #4fd1c5; font-size: 24px; letter-spacing: 1px;">SCIENTIFIC ANALYSIS DASHBOARD</h2>
-                <button onclick="document.getElementById('scientific-dashboard-modal').style.display='none'" style="background: #f56565; color: #fff; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">CLOSE</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #A0AEC0; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #A0AEC0; font-size: 24px; letter-spacing: 1px;">SCIENTIFIC ANALYSIS DASHBOARD</h2>
+                <button onclick="document.getElementById('scientific-dashboard-modal').style.display='none'" style="background: #D0D0D0; color: #fff; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">CLOSE</button>
             </div>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px;">
                 <!-- Analytics Section -->
                 <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(79, 209, 197, 0.3);">
-                    <h3 style="margin-top: 0; color: #4fd1c5;">Real-Time Kinematics</h3>
+                    <h3 style="margin-top: 0; color: #A0AEC0;">Real-Time Kinematics</h3>
                     <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
                         <div>
                             <span style="font-size: 12px; color: #aaa;">Signal Transduction (cAMP/DA/Potential)</span>
@@ -169,31 +169,31 @@
 
                 <!-- Live Metrics Section -->
                 <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(79, 209, 197, 0.3);">
-                    <h3 style="margin-top: 0; color: #4fd1c5;">Live Bio-Metrics</h3>
+                    <h3 style="margin-top: 0; color: #A0AEC0;">Live Bio-Metrics</h3>
                     <div style="font-size: 13px; line-height: 1.8;">
                         <div style="display: flex; justify-content: space-between;"><span>Potential:</span> <span id="val-potential" style="color: #0ff;">-80 mV</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span>Synaptic Weight:</span> <span id="val-weight" style="color: #ff0;">1.000</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>Synaptic Weight:</span> <span id="val-weight" style="color: #A0AEC0;">1.000</span></div>
                         <div style="display: flex; justify-content: space-between;"><span>DOPAC / HVA:</span> <span id="val-metabolites" style="color: #f0f;">0.00 / 0.00</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span>DARPP-32 pT34:</span> <span id="val-darpp" style="color: #0f0;">0.0%</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>DARPP-32 pT34:</span> <span id="val-darpp" style="color: #E0E0E0;">0.0%</span></div>
                         <div style="display: flex; justify-content: space-between;"><span>DeltaFosB:</span> <span id="val-fosb" style="color: #f99;">0.000</span></div>
                         <div style="display: flex; justify-content: space-between;"><span>SNc Feedback:</span> <span id="val-snc" style="color: #99f;">100%</span></div>
                         <div style="display: flex; justify-content: space-between;"><span>Spine Density:</span> <span id="val-spine" style="color: #fff;">1.000</span></div>
                     </div>
-                    <div style="margin-top: 15px; padding: 10px; background: rgba(0,255,0,0.1); border-radius: 8px; font-size: 11px; color: #9f9;">
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(224, 224, 224, 0.1); border-radius: 8px; font-size: 11px; color: #9f9;">
                         <strong>System Status:</strong> 100 Enhancements Integrated. High-fidelity molecular and circuit dynamics active.
                     </div>
                 </div>
             </div>
 
-            <h3 style="color: #4fd1c5; border-bottom: 1px solid rgba(79, 209, 197, 0.3); padding-bottom: 10px;">100 Physiological Enhancements Tracking</h3>
+            <h3 style="color: #A0AEC0; border-bottom: 1px solid rgba(79, 209, 197, 0.3); padding-bottom: 10px;">100 Physiological Enhancements Tracking</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 15px;">
                 ${G.enhancements.map(e => `
-                    <div style="padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; border-left: 4px solid ${e.status === 'Active' ? '#48bb78' : '#cbd5e0'}; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+                    <div style="padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; border-left: 4px solid ${e.status === 'Active' ? '#E0E0E0' : '#cbd5e0'}; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
                         <div style="display: flex; flex-direction: column;">
                             <span style="font-size: 10px; color: #888; text-transform: uppercase;">${e.cat}</span>
-                            <span style="font-size: 12px; font-weight: 500;"><strong style="color: #4fd1c5; margin-right: 5px;">${e.id}.</strong> ${e.desc}</span>
+                            <span style="font-size: 12px; font-weight: 500;"><strong style="color: #A0AEC0; margin-right: 5px;">${e.id}.</strong> ${e.desc}</span>
                         </div>
-                        <span style="font-size: 9px; padding: 3px 8px; border-radius: 4px; background: ${e.status === 'Active' ? 'rgba(72, 187, 120, 0.2)' : '#4a5568'}; color: ${e.status === 'Active' ? '#48bb78' : '#fff'}; border: 1px solid ${e.status === 'Active' ? '#48bb78' : 'transparent'};">${e.status}</span>
+                        <span style="font-size: 9px; padding: 3px 8px; border-radius: 4px; background: ${e.status === 'Active' ? 'rgba(72, 187, 120, 0.2)' : '#4a5568'}; color: ${e.status === 'Active' ? '#E0E0E0' : '#fff'}; border: 1px solid ${e.status === 'Active' ? '#E0E0E0' : 'transparent'};">${e.status}</span>
                     </div>
                 `).join('')}
             </div>
@@ -225,9 +225,9 @@
             if (!data) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawSeries(ctx, data.camp, '#ffff00', 'cAMP (pM)', 0);
-            drawSeries(ctx, data.da, '#00ff00', 'DA Conc (nM)', 40);
-            drawSeries(ctx, data.potential, '#00ffff', 'Membrane (mV)', 80, -90, 40);
+            drawSeries(ctx, data.camp, '#FFFFFF', 'cAMP (pM)', 0);
+            drawSeries(ctx, data.da, '#E0E0E0', 'DA Conc (nM)', 40);
+            drawSeries(ctx, data.potential, '#D0D0D0', 'Membrane (mV)', 80, -90, 40);
 
             sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
             sCtx.fillStyle = '#000';
@@ -237,7 +237,7 @@
                 G.synapseState.cleftDA.forEach(da => {
                     const sx = (da.x + 300) / 600 * sCanvas.width;
                     const sy = (da.z + 150) / 300 * sCanvas.height;
-                    sCtx.fillStyle = '#0f0';
+                    sCtx.fillStyle = '#E0E0E0';
                     sCtx.beginPath();
                     sCtx.arc(sx, sy, 2.5, 0, Math.PI * 2);
                     sCtx.fill();

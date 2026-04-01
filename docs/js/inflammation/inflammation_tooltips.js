@@ -111,7 +111,7 @@
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
             if (app.roundRect) app.roundRect(ctx, tx, ty, w, h, 10, true, false);
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 11px Quicksand, sans-serif';
             ctx.fillText(t(label).toUpperCase(), tx + padding, ty + 25);
 

@@ -181,7 +181,7 @@
                 if (r.type.startsWith('D2')) {
                     const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                     if (p.scale > 0) {
-                        ctx.fillStyle = '#ff0000';
+                        ctx.fillStyle = '#A0AEC0';
                         ctx.beginPath();
                         ctx.arc(p.x + 10*p.scale, p.y - 10*p.scale, 3*p.scale, 0, Math.PI*2);
                         ctx.fill();
@@ -203,7 +203,7 @@
             ctx.lineTo(w - 150, h - 150); // Y-axis
             ctx.stroke();
 
-            ctx.strokeStyle = '#0f0';
+            ctx.strokeStyle = '#E0E0E0';
             ctx.lineWidth = 2;
             ctx.beginPath();
             pState.doseResponse.history.forEach((pt, i) => {

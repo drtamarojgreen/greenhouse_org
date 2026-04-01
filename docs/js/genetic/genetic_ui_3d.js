@@ -192,7 +192,7 @@
             btn.addEventListener('click', () => {
                 this.isEvolving = !this.isEvolving;
                 btn.textContent = this.isEvolving ? t("Pause Evolution") : t("Resume Evolution");
-                btn.style.background = this.isEvolving ? "" : "#e74c3c";
+                btn.style.background = this.isEvolving ? "" : "#A0AEC0";
                 btn.style.color = this.isEvolving ? "" : "white";
             });
 
@@ -264,7 +264,7 @@
             btn.style.padding = '15px 30px';
             btn.style.fontSize = '18px';
             btn.style.cursor = 'pointer';
-            btn.style.background = '#2ecc71';
+            btn.style.background = '#E0E0E0';
             btn.style.color = 'white';
             btn.style.border = 'none';
             btn.style.borderRadius = '5px';
@@ -640,7 +640,7 @@
                 ctx.fillRect(x, y, w, 20);
 
                 // Title
-                ctx.fillStyle = '#00ffff';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
@@ -1054,7 +1054,7 @@
                 // Debug: Show message if no genes
                 ctx.save();
                 ctx.translate(x, y);
-                ctx.fillStyle = '#FF0000';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.font = '14px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText("No DNA genes found", w / 2, h / 2);
@@ -1139,7 +1139,7 @@
                 // Draw label for the active gene
                 const currentActiveGene = this.neurons3D[this.activeGeneIndex];
                 if (currentActiveGene && currentActiveGene.type === 'gene' && currentActiveGene.label) {
-                    ctx.fillStyle = '#FFD700';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.font = 'bold 14px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';

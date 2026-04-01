@@ -75,7 +75,7 @@
                 el.style.fontFamily = '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
                 el.style.fontSize = '13px';
                 el.style.zIndex = '100000';
-                el.style.border = '1px solid #4ca1af';
+                el.style.border = '1px solid #A0AEC0';
                 el.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
                 el.style.maxWidth = '450px';
                 el.style.maxHeight = '80vh';
@@ -85,7 +85,7 @@
 
             const details = this.results.map(r => `
                 <div style="margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px;">
-                    <span style="color: ${r.status === 'PASS' ? '#00ff99' : '#ff5533'}; font-weight: bold;">
+                    <span style="color: ${r.status === 'PASS' ? '#D0D0D0' : '#ff5533'}; font-weight: bold;">
                         ${r.status === 'PASS' ? '✓' : '✗'} ${r.name}
                     </span>
                     <div style="font-size: 11px; color: #aaa; margin-left: 18px;">
@@ -95,8 +95,8 @@
             `).join('');
 
             el.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #4ca1af; padding-bottom: 10px;">
-                    <strong style="color:#4ca1af; font-size: 16px;">Test Results Dashboard</strong>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #A0AEC0; padding-bottom: 10px;">
+                    <strong style="color:#A0AEC0; font-size: 16px;">Test Results Dashboard</strong>
                     <span style="font-size: 12px; color: #888;">${summary.passed}/${summary.total} PASSED</span>
                 </div>
 
@@ -105,7 +105,7 @@
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <button onclick="window.GreenhouseTestSuite.runAll()" style="flex: 1; background:#4ca1af; border:none; padding:8px; border-radius:6px; cursor:pointer; color:#fff; font-weight:bold;">Rerun All</button>
+                    <button onclick="window.GreenhouseTestSuite.runAll()" style="flex: 1; background:#A0AEC0; border:none; padding:8px; border-radius:6px; cursor:pointer; color:#fff; font-weight:bold;">Rerun All</button>
                     <button onclick="this.closest('#greenhouse-test-results-overlay').remove()" style="background:#444; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; color:#fff;">Close</button>
                 </div>
             `;
@@ -196,7 +196,7 @@
 
         // Expected styles from greenhouse design system (approximate for now, based on CSS files)
         // RGB(76, 175, 80) is #4caf50
-        // RGB(76, 161, 175) is #4ca1af (seen in some buttons)
+        // RGB(76, 161, 175) is #A0AEC0 (seen in some buttons)
 
         // Greenhouse design colors typically involve 76, 161, 175 or 150 in RGB components
         const isThemed = ['76', '161', '175', '150'].some(c => backgroundColor.includes(c));

@@ -59,7 +59,7 @@
             ions.forEach(ion => {
                 if (ion.y > surfaceY) {
                     const gradient = ctx.createRadialGradient(ion.x, ion.y, 0, ion.x, ion.y, 15);
-                    const color = ion.color === '#ffd700' ? 'rgba(255, 215, 0, 0.1)' : 'rgba(173, 255, 47, 0.1)';
+                    const color = ion.color === '#E0E0E0' ? 'rgba(255, 215, 0, 0.1)' : 'rgba(173, 255, 47, 0.1)';
                     gradient.addColorStop(0, color);
                     gradient.addColorStop(1, 'transparent');
                     ctx.fillStyle = gradient;
@@ -68,7 +68,7 @@
                     ctx.fill();
                     // Structural Ion Identification
                     ctx.save(); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
-                    ctx.fillText(ion.color === '#ffd700' ? '+' : '-', ion.x, ion.y + 4);
+                    ctx.fillText(ion.color === '#E0E0E0' ? '+' : '-', ion.x, ion.y + 4);
                     ctx.restore();
                 }
             });

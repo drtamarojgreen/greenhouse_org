@@ -281,11 +281,11 @@ window.V8GraphRenderer = (function() {
 
         getGroupColor: function(group) {
             switch(group) {
-                case 'Disorder': return '#ff4d4d';
+                case 'Disorder': return '#E0E0E0';
                 case 'Drug': return '#4da1ff';
                 case 'ClinicalTrial': return '#4dffa1';
                 case 'Intervention': return '#ffea4d';
-                case 'PubMedArticle': return '#a14dff';
+                case 'PubMedArticle': return '#D0D0D0';
                 case 'Author': return '#888';
                 default: return '#666';
             }
@@ -317,7 +317,7 @@ window.V8GraphRenderer = (function() {
         },
 
         renderErrorState: function(msg) {
-            this.ctx.fillStyle = '#ff4d4d';
+            this.ctx.fillStyle = '#E0E0E0';
             this.ctx.textAlign = 'center';
             this.ctx.fillText("Error: " + msg, this.width/2, this.height/2);
         }

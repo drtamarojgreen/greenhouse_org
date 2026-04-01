@@ -17,7 +17,7 @@
 
             // Checkbox Box
             ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
-            ctx.strokeStyle = isActive ? '#4ca1af' : 'rgba(255,255,255,0.3)';
+            ctx.strokeStyle = isActive ? '#A0AEC0' : 'rgba(255,255,255,0.3)';
             ctx.lineWidth = 1.5;
 
             const boxSize = 14;
@@ -53,9 +53,9 @@
 
             ctx.save();
             if (isActive) {
-                ctx.fillStyle = '#4ca1af';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.shadowBlur = 10;
-                ctx.shadowColor = '#4ca1af';
+                ctx.shadowColor = '#A0AEC0';
             } else {
                 ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)';
             }
@@ -79,7 +79,7 @@
 
             // Background
             ctx.fillStyle = isHovered ? 'rgba(76, 161, 175, 0.6)' : 'rgba(76, 161, 175, 0.2)';
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
 
             // Use roundRect if available on ctx or passed app

@@ -78,66 +78,66 @@
                 }
             }
 
-            // Define regions with labels
+            // Define regions with labels - Anatomically correct monochromatic hierarchy
             brain.regions = {
                 pfc: {
                     name: 'Prefrontal Cortex',
-                    color: 'rgba(100, 150, 255, 0.6)',
+                    color: 'rgba(224, 224, 224, 0.6)',
                     vertices: []
                 },
                 motorCortex: {
                     name: 'Motor Cortex',
-                    color: 'rgba(255, 150, 100, 0.6)',
+                    color: 'rgba(210, 210, 210, 0.6)',
                     vertices: []
                 },
                 somatosensoryCortex: {
                     name: 'Somatosensory Cortex',
-                    color: 'rgba(150, 255, 150, 0.6)',
+                    color: 'rgba(200, 200, 200, 0.6)',
                     vertices: []
                 },
                 parietalLobe: {
                     name: 'Parietal Lobe',
-                    color: 'rgba(147, 112, 219, 0.6)',
+                    color: 'rgba(190, 190, 190, 0.6)',
                     vertices: []
                 },
                 temporalLobe: {
                     name: 'Temporal Lobe',
-                    color: 'rgba(255, 165, 0, 0.6)',
+                    color: 'rgba(180, 180, 180, 0.6)',
                     vertices: []
                 },
                 occipitalLobe: {
                     name: 'Occipital Lobe',
-                    color: 'rgba(255, 192, 203, 0.6)',
+                    color: 'rgba(140, 140, 140, 0.6)',
                     vertices: []
                 },
                 cerebellum: {
                     name: 'Cerebellum',
-                    color: 'rgba(64, 224, 208, 0.6)',
+                    color: 'rgba(120, 120, 120, 0.6)',
                     vertices: []
                 },
                 brainstem: {
                     name: 'Brainstem',
-                    color: 'rgba(255, 215, 0, 0.6)',
+                    color: 'rgba(100, 100, 100, 0.6)',
                     vertices: []
                 },
                 amygdala: {
                     name: 'Amygdala',
-                    color: 'rgba(255, 100, 100, 0.6)',
+                    color: 'rgba(160, 160, 160, 0.6)',
                     vertices: []
                 },
                 hippocampus: {
                     name: 'Hippocampus',
-                    color: 'rgba(100, 255, 150, 0.6)',
+                    color: 'rgba(160, 160, 160, 0.6)',
                     vertices: []
                 },
                 thalamus: {
                     name: 'Thalamus',
-                    color: 'rgba(100, 150, 255, 0.6)',
+                    color: 'rgba(150, 150, 150, 0.6)',
                     vertices: []
                 },
                 hypothalamus: {
                     name: 'Hypothalamus',
-                    color: 'rgba(255, 200, 100, 0.6)',
+                    color: 'rgba(150, 150, 150, 0.6)',
                     vertices: []
                 }
             };

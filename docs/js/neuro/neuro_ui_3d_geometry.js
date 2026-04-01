@@ -133,7 +133,7 @@
 
             // Central Soma
             const soma = this.generateSphere(10 * scale, 8);
-            vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff4444' })));
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#E0E0E0' : '#ff4444' })));
             faces.push(...soma.faces);
 
             // Processes (Dendrite-like branches)
@@ -150,7 +150,7 @@
 
                 const tube = this.generateTubeMesh(p1, p2, cp, 2 * scale, 6);
                 const offset = vertices.length;
-                vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff6666' })));
+                vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#E0E0E0' : '#ff6666' })));
                 tube.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
             }
             return { vertices, faces };

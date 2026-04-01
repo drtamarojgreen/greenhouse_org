@@ -241,7 +241,7 @@
             btn.style.padding = '15px 30px';
             btn.style.fontSize = '18px';
             btn.style.cursor = 'pointer';
-            btn.style.background = '#2ecc71';
+            btn.style.background = '#E0E0E0';
             btn.style.color = 'white';
             btn.style.border = 'none';
             btn.style.borderRadius = '5px';

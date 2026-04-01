@@ -132,7 +132,7 @@
                                 // REPAIR PULSE: Dynamic Wow Effect
                                 if (hasVariant && Math.sin(this.helixRotation + i * 0.5) > 0.8) {
                                     ctx.fillStyle = '#fff';
-                                    ctx.shadowBlur = 15; ctx.shadowColor = '#00ffcc';
+                                    ctx.shadowBlur = 15; ctx.shadowColor = '#D0D0D0';
                                     ctx.beginPath();
                                     ctx.arc(p.x, p.y, 1.5 * p.scale, 0, Math.PI * 2);
                                     ctx.fill();
@@ -461,7 +461,7 @@
                         ctx.fillText(t(region.name).toUpperCase(), endX, p.y - 45);
 
                         if (isVagus) {
-                            ctx.fillStyle = '#00ff99';
+                            ctx.fillStyle = '#D0D0D0';
                             ctx.fillText("VAGAL TONE ACTIVE", endX, p.y - 30);
                         }
                     }

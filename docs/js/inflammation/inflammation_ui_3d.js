@@ -151,7 +151,7 @@
                 const p2 = { x: -250 + i * 100, y: 150 - Math.random() * 100, z: (Math.random() - 0.5) * 200 };
                 const cp = { x: p1.x + (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 50, z: (Math.random() - 0.5) * 100 };
                 const mesh = window.GreenhouseInflammationGeometry.generateTubeMesh(p1, p2, cp, 4, 12);
-                this.neurons.push({ p1, p2, cp, mesh, baseColor: '#4ca1af' });
+                this.neurons.push({ p1, p2, cp, mesh, baseColor: '#A0AEC0' });
             }
             this.glia = [];
             for (let i = 0; i < 15; i++) {
@@ -284,7 +284,7 @@
             ctx.save();
             ctx.fillStyle = 'rgba(100, 255, 200, 0.1)';
             ctx.fillRect(40, 250, 150, 60);
-            ctx.strokeStyle = '#00ff99';
+            ctx.strokeStyle = '#D0D0D0';
             ctx.strokeRect(40, 250, 150, 60);
 
             ctx.fillStyle = '#fff'; ctx.font = 'bold 9px Quicksand';

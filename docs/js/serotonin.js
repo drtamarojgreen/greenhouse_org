@@ -115,7 +115,7 @@
                 @media (max-width: 1024px) {
                     .serotonin-btn { font-size: 16px; padding: 10px 20px; }
                 }
-                .serotonin-btn:focus { outline: 2px solid #00ffcc; outline-offset: 2px; }
+                .serotonin-btn:focus { outline: 2px solid #D0D0D0; outline-offset: 2px; }
                 .serotonin-checkbox-modal {
                     position: absolute; top: 100%; left: 0; background: #2d3748; border: 1px solid #4a5568;
                     padding: 10px; border-radius: 4px; display: flex; flex-direction: column; gap: 8px; min-width: 150px;
@@ -358,7 +358,7 @@
                     ctx.fill();
                     ctx.stroke();
                 }
-                ctx.fillStyle = r.state === 'Active' ? '#00ffcc' : '#111';
+                ctx.fillStyle = r.state === 'Active' ? '#D0D0D0' : '#111';
                 ctx.beginPath();
                 ctx.arc(0, 0, 30, 0, Math.PI * 2);
                 ctx.fill();
@@ -419,7 +419,7 @@
 
             // Sodium Allosteric Site (Category 2, #17)
             if (r.type === '5-HT1A') {
-                ctx.fillStyle = '#ffcc00';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.beginPath();
                 ctx.arc(0, 0, 12, 0, Math.PI * 2);
                 ctx.fill();
@@ -434,7 +434,7 @@
             ctx.fillText(t("serotonin_stability") + ": " + (r.stability ? r.stability.toFixed(2) : '1.00'), 0, 250);
 
             ctx.font = '12px Arial';
-            ctx.fillStyle = '#00ffcc';
+            ctx.fillStyle = '#D0D0D0';
             ctx.fillText(t("serotonin_return"), 0, 280);
 
             ctx.restore();

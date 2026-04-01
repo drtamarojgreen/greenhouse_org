@@ -122,9 +122,9 @@
                         const nxLine = -dy / len;
                         const nyLine = dx / len;
 
-                        let litColor = '#d8def4';
+                        let litColor = '#E0E0E0';
                         if (lighting) {
-                            const baseColor = lighting.parseColor('#b8c8ff');
+                            const baseColor = lighting.parseColor('#E0E0E0');
                             const material = config.get('materials.dna');
                             const normal = { x: nxLine, y: nyLine, z: 0 };
                             const position = { x: (x1 + x2) / 2, y: (y1 + y2) / 2, z: depth };
@@ -146,7 +146,7 @@
                             x1 - rx * rungThickness / 2, y1 - ry * rungThickness / 2,
                             x1 + rx * rungThickness / 2, y1 + ry * rungThickness / 2
                         );
-                        gradient.addColorStop(0, 'rgba(25, 30, 50, 0.55)');
+                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.55)');
                         gradient.addColorStop(0.3, litColor);
                         gradient.addColorStop(0.7, litColor);
                         gradient.addColorStop(1, 'rgba(255, 255, 255, 0.6)');

@@ -734,7 +734,7 @@
             G.config.elements.transporters.forEach(tr => {
                 let color = '#E0E0E0';
                 if (tr.type === 'SERT' && G.config.pharmacology?.ssriActive) color = '#ff4444';
-                if (tr.type.startsWith('VMAT')) color = '#9C27B0'; // Purple for VMAT
+                if (tr.type.startsWith('VMAT')) color = '#A0AEC0'; // Purple for VMAT
                 if (tr.type === 'NET') color = '#FF5722'; // Deep Orange for NET
 
                 ctx.fillStyle = color;

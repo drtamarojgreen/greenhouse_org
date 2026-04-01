@@ -158,7 +158,7 @@
             btn.setAttribute('aria-haspopup', 'true');
 
             // UI Micro-interactions (#36)
-            btn.onmouseenter = () => { btn.style.background = '#2d3748'; btn.style.boxShadow = '0 0 10px #00ffcc'; };
+            btn.onmouseenter = () => { btn.style.background = '#2d3748'; btn.style.boxShadow = '0 0 10px #D0D0D0'; };
             btn.onmouseleave = () => { btn.style.background = '#1a202c'; btn.style.boxShadow = 'none'; };
 
             const modal = document.createElement('div');
@@ -324,7 +324,7 @@
             portalLink.style.position = 'absolute';
             portalLink.style.bottom = '10px';
             portalLink.style.right = '10px';
-            portalLink.style.color = '#00ffcc';
+            portalLink.style.color = '#D0D0D0';
             portalLink.style.fontSize = '10px';
             container.appendChild(portalLink);
         }
@@ -444,7 +444,7 @@
 
         // Amygdala feedback loop (Category 8, #72)
         if (G.currentView === 'Amygdala Loop') {
-            ctx.strokeStyle = '#ff4d4d';
+            ctx.strokeStyle = '#E0E0E0';
             ctx.beginPath();
             ctx.arc(G.width / 2, G.height / 2, 80, 0, Math.PI * 2);
             ctx.stroke();

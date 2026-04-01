@@ -297,12 +297,12 @@
                 ctx.stroke();
 
                 if (isWeak && opacity < 0.2) {
-                    ctx.fillStyle = '#ff4d4d';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.fillText('✕', x + Math.cos(angle) * 45 - 4, y + Math.sin(angle) * 45 + 4);
                 }
             }
             if (label) {
-                ctx.fillStyle = '#ff4d4d';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.fillText(label, x - 80, y + 80);
             }
             ctx.restore();

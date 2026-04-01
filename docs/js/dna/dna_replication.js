@@ -71,7 +71,7 @@
             // Polymerase Leading (Orange)
             if (forkIndex > 5) {
                 const leadP = st.basePairs[forkIndex - 5];
-                this.spawnParticles(leadP.x, leadP.s1Offset.y, leadP.s1Offset.z, 2, '#ff9900');
+                this.spawnParticles(leadP.x, leadP.s1Offset.y, leadP.s1Offset.z, 2, '#D0D0D0');
             }
 
             // Polymerase Lagging (Red-Orange)

@@ -25,8 +25,8 @@
             pfc: { x: 0, y: -550, z: 200, label: 'PFC (Mesocortical)' }
         },
         compartments: {
-            striosome: { active: false, density: 1.5, color: 'rgba(255, 255, 0, 0.1)' },
-            matrix: { active: true, density: 1.0, color: 'rgba(0, 255, 255, 0.05)' },
+            striosome: { active: false, density: 1.5, color: 'rgba(224, 224, 224, 0.1)' },
+            matrix: { active: true, density: 1.0, color: 'rgba(160, 174, 192, 0.05)' },
             dorsal: { x: 0, y: -100, label: 'Dorsal Striatum (Motor)' },
             ventral: { x: 0, y: 100, label: 'Ventral Striatum (NAc/Reward)' }
         },
@@ -78,8 +78,8 @@
         }
         ctx.closePath();
 
-        ctx.strokeStyle = "rgba(139, 69, 19, 0.6)";
-        ctx.fillStyle = "rgba(139, 69, 19, 0.15)";
+        ctx.strokeStyle = "rgba(160, 174, 192, 0.6)";
+        ctx.fillStyle = "rgba(160, 174, 192, 0.15)";
         ctx.lineWidth = 2;
         ctx.fill();
         ctx.stroke();
@@ -93,7 +93,7 @@
             const x = cx + Math.cos(angle) * r;
             const y = cy + Math.sin(angle) * r;
 
-            ctx.fillStyle = "rgba(139, 69, 19, 0.8)";
+            ctx.fillStyle = "rgba(224, 224, 224, 0.8)";
             ctx.beginPath();
             ctx.arc(x, y, 2, 0, Math.PI * 2);
             ctx.fill();
