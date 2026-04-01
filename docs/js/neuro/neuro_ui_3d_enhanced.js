@@ -924,7 +924,7 @@
 
                 // ADHD: Hyperactive Firing Mode (Enhancement 3) / Binaural Beat Sync (Enhancement 38)
                 // Pulse speed is handled inside drawNeuron if we pass a frequency
-                let pulseFreq = adhd?.activeEnhancements?.has(3) ? 0.01 : 0.005;
+                let pulseFreq = adhd?.activeEnhancements?.has(3) ? 0.004 : 0.002;
                 if (adhd?.activeEnhancements?.has(38)) {
                     pulseFreq = 0.008 + Math.sin(Date.now() * 0.005) * 0.002;
                 }

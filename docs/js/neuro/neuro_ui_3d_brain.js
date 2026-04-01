@@ -103,25 +103,16 @@
                 // Diffuse
                 const diffuse = Math.max(0, f.nx * lightDir.x + f.ny * lightDir.y + f.nz * lightDir.z);
 
-                // Specular (View Vector is roughly 0,0,1 in camera space, but we are in world space)
-                // Camera is at 0,0,-800 (or similar). View vector is roughly towards -Z.
-                // Reflected Light
-                // R = 2(N.L)N - L
-                const rx = 2 * diffuse * f.nx - lightDir.x;
-                const ry = 2 * diffuse * f.ny - lightDir.y;
-                const rz = 2 * diffuse * f.nz - lightDir.z;
+                // Blinn-Phong Specular Highlight
+                // Halfway vector between Light and View (approx Z+ towards camera)
+                const viewDir = { x: 0, y: 0, z: 1 };
+                const hx = lightDir.x + viewDir.x;
+                const hy = lightDir.y + viewDir.y;
+                const hz = lightDir.z + viewDir.z;
+                const hLen = Math.sqrt(hx * hx + hy * hy + hz * hz);
+                const nx_h = hx / hLen, ny_h = hy / hLen, nz_h = hz / hLen;
 
-                // View Vector (Approximate towards camera)
-                // Since camera rotates, this is tricky without full matrix.
-                // Simplified: Specular is high when Normal points towards Camera.
-                // Camera vector in World Space depends on rotation.
-                // Let's use a simplified Blinn-Phong or just highlight based on Normal Z (if rotated).
-                // Actually, since we didn't rotate vertices, the normal is in World Space.
-                // The Camera is rotating. We need the Camera Position in World Space.
-                // Camera Rotation Y means Camera is at (sin(rotY)*dist, 0, cos(rotY)*dist).
-
-                // Simplified Specular: Just use diffuse power for "shininess" or a fixed highlight
-                const specular = Math.pow(diffuse, 30); // Sharp highlight
+                const specular = Math.pow(Math.max(0, f.nx * nx_h + f.ny * ny_h + f.nz * nz_h), 50);
 
                 // Base Color
                 let r = 100, g = 100, b = 100, a = 0.1;
@@ -174,16 +165,16 @@
                     if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
                         // PFC - Executive Grid Pattern with high-frequency noise
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.5})`; ctx.lineWidth = 0.7;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.6})`; ctx.lineWidth = 1.0;
                         ctx.setLineDash([1, 2]); ctx.stroke();
                     } else if (f.region === 'cerebellum') {
                     // Cerebellum - Foliated Parallel Hatching (Denser)
                         ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.4})`; ctx.lineWidth = 0.5;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.5})`; ctx.lineWidth = 0.8;
                         ctx.beginPath();
                         ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y);
                         ctx.moveTo(f.p1.x + 2, f.p1.y + 2); ctx.lineTo(f.p2.x + 2, f.p2.y + 2);
-                    ctx.moveTo(f.p1.x + 4, f.p1.y + 4); ctx.lineTo(f.p2.x + 4, f.p2.y + 4);
+                        ctx.moveTo(f.p1.x + 4, f.p1.y + 4); ctx.lineTo(f.p2.x + 4, f.p2.y + 4);
                         ctx.stroke();
                 } else if (f.region === 'parietalLobe') {
                     // Parietal - Gyral Contour Lines
@@ -221,7 +212,7 @@
         // Draws a subtle Lat/Lon grid to give a 'generic' scientific look
         drawSurfaceGrid(ctx, projectedVertices, brainShell) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 0.3;
             ctx.beginPath();
 

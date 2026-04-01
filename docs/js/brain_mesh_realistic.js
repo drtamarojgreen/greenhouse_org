@@ -18,8 +18,8 @@
 
             // Parameters for realistic brain shape
             const baseRadius = 200;
-            const latBands = 30; // Optimized resolution
-            const lonBands = 30;
+            const latBands = 60; // High resolution
+            const lonBands = 60;
 
             // Generate base ellipsoid with anatomical proportions
             for (let lat = 0; lat <= latBands; lat++) {
@@ -59,9 +59,6 @@
                         y: y / len,
                         z: z / len
                     };
-
-                    // Determine region
-                    const region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
 
                     brain.vertices.push({ x, y, z, normal, region });
                 }
@@ -274,6 +271,9 @@
             
             // Fine detail
             displacement += Math.sin(nx * 16 * freqMult + nz * 12 * freqMult) * Math.cos(ny * 14 * freqMult) * 0.02 * ampMult;
+
+            // Ultra-fine detail (4th Octave)
+            displacement += Math.sin(nx * 32 * freqMult + nz * 24 * freqMult) * 0.01 * ampMult;
 
             // Radial displacement (outward from center)
             const len = Math.sqrt(nx * nx + ny * ny + nz * nz);

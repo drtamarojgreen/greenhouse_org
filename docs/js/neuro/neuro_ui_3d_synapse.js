@@ -191,7 +191,7 @@
 
                 // --- Activity Signatures: Dynamic Particle Flow ---
                 const activityLevel = Math.abs(conn.weight);
-                const sparkCount = Math.floor(activityLevel * 3) + 1;
+                const sparkCount = Math.floor(activityLevel * 5) + 2;
                 const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
 
                 for (let s = 0; s < sparkCount; s++) {
@@ -573,10 +573,10 @@
             connection.synapseDetails.particles = connection.synapseDetails.particles.filter(p => p.life > 0);
 
             // Labels
-            ctx.font = 'bold 12px Quicksand, sans-serif';
+            ctx.font = 'bold 14px Quicksand, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowColor = 'rgba(10, 15, 25, 0.9)';
             ctx.shadowBlur = 4;
             ctx.shadowOffsetX = 1;
             ctx.shadowOffsetY = 1;

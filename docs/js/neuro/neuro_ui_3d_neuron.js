@@ -4,7 +4,7 @@
     const GreenhouseNeuroNeuron = {
         neuronMeshes: {},
 
-        drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq = 0.005, isHovered = false) {
+        drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq = 0.002, isHovered = false) {
             // Project Center for LOD and Culling
             const p = GreenhouseModels3DMath.project3DTo2D(neuron.x, neuron.y, neuron.z, camera, projection);
             if (p.scale <= 0) return;
@@ -21,8 +21,12 @@
             const meshKey = `${type}_lod${lod}`;
             if (!this.neuronMeshes[meshKey]) {
                 this.neuronMeshes[meshKey] = type === 'pyramidal'
-                    ? this.generatePyramidalMesh(lod)
-                    : this.generateStellateMesh(lod);
+                    ? this.generatePyramidalMesh()
+                    : this.generateStellateMesh();
+            }
+
+            if (!this.synapticPegMesh) {
+                this.synapticPegMesh = this.generateOctahedronMesh(3);
             }
             const mesh = this.neuronMeshes[meshKey];
 
@@ -31,7 +35,7 @@
             const neuronSeed = String(neuron.id ?? `${neuron.x}_${neuron.y}_${neuron.z}`)
                 .split('')
                 .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-            const firingOsc = Math.max(0, Math.sin(now * 0.02 + neuronSeed * 0.01));
+            const firingOsc = Math.max(0, Math.sin(now * 0.005 + neuronSeed * 0.01));
             const firingPulse = (neuron.isFiring || activation > 0.85) ? firingOsc * 0.12 : 0;
             const membraneDisplacement = activation * 0.8;
 
@@ -173,11 +177,81 @@
                     }
                     ctx.restore();
                 }
+            );
+
+            // Draw Synaptic Pegs (Octahedrons) representing synapses
+            const pegColor = '#D0D0D0';
+            const pegCount = type === 'pyramidal' ? 6 : 4;
+            for (let i = 0; i < pegCount; i++) {
+                const angle = (i / pegCount) * Math.PI * 2 + now * 0.001;
+                const r = type === 'pyramidal' ? 5 : 4;
+                const px = Math.cos(angle) * r;
+                const pz = Math.sin(angle) * r;
+                const py = (i % 2 === 0 ? 1 : -1) * (type === 'pyramidal' ? 4 : 2);
+
+                this.drawMeshAt(ctx, this.synapticPegMesh, {
+                    x: neuron.x + px,
+                    y: neuron.y + py,
+                    z: neuron.z + pz
+                }, camera, projection, pegColor, rotX, rotY, rotZ);
+            }
+        },
+
+        drawMeshAt(ctx, mesh, pos, camera, projection, colorStr, rotX, rotY, rotZ) {
+            const transformedVertices = mesh.vertices.map(v => {
+                let x = v.x, y = v.y, z = v.z;
+                // Simple Rotation
+                let tx = x * Math.cos(rotY) - z * Math.sin(rotY);
+                let tz = x * Math.sin(rotY) + z * Math.cos(rotY);
+                x = tx; z = tz;
+                let ty = y * Math.cos(rotX) - z * Math.sin(rotX);
+                tz = y * Math.sin(rotX) + z * Math.cos(rotX);
+                y = ty; z = tz;
+                tx = x * Math.cos(rotZ) - y * Math.sin(rotZ);
+                ty = x * Math.sin(rotZ) + y * Math.cos(rotZ);
+                x = tx; y = ty;
+                return { x: x + pos.x, y: y + pos.y, z: z + pos.z };
+            });
+
+            const projected = transformedVertices.map(v =>
+                GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
+            );
+
+            mesh.faces.forEach(face => {
+                const v1 = projected[face[0]], v2 = projected[face[1]], v3 = projected[face[2]];
+                if (v1.scale > 0 && v2.scale > 0 && v3.scale > 0) {
+                    const depth = (v1.depth + v2.depth + v3.depth) / 3;
+                    const alpha = GreenhouseModels3DMath.applyDepthFog(0.9, depth);
+                    if ((v2.x - v1.x) * (v3.y - v1.y) - (v2.y - v1.y) * (v3.x - v1.x) > 0) {
+                        ctx.fillStyle = colorStr;
+                        ctx.globalAlpha = alpha;
+                        ctx.beginPath();
+                        ctx.moveTo(v1.x, v1.y);
+                        ctx.lineTo(v2.x, v2.y);
+                        ctx.lineTo(v3.x, v3.y);
+                        ctx.fill();
+                        ctx.globalAlpha = 1.0;
+                    }
+                }
             });
         },
 
+        generateOctahedronMesh(size) {
+            const s = size || 3;
+            const vertices = [
+                { x: 0, y: s, z: 0 }, { x: 0, y: -s, z: 0 },
+                { x: s, y: 0, z: 0 }, { x: -s, y: 0, z: 0 },
+                { x: 0, y: 0, z: s }, { x: 0, y: 0, z: -s }
+            ];
+            const faces = [
+                [0, 2, 4], [0, 4, 3], [0, 3, 5], [0, 5, 2],
+                [1, 2, 4], [1, 4, 3], [1, 3, 5], [1, 5, 2]
+            ];
+            return { vertices, faces };
+        },
+
         generatePyramidalMesh() {
-            // True 3D Pyramid: Base triangle + Apex + Elongated Apical Dendrite
+            // Anatomically Detailed Pyramidal Mesh: Soma + Apical Dendrite + Basal Dendrites
             const r = 6;
             const h = 12;
             const vertices = [
@@ -185,33 +259,39 @@
                 { x: r, y: r, z: r },  // 1: Base 1
                 { x: -r, y: r, z: r }, // 2: Base 2
                 { x: 0, y: r, z: -r }, // 3: Base 3
-                // Add more complexity for geometric signature
-                { x: 0, y: -h * 1.5, z: 0 } // 4: Tip of apical dendrite
+                { x: 0, y: -h * 1.5, z: 0 }, // 4: Tip of apical dendrite
+                // Basal Dendrite Points
+                { x: r * 1.5, y: r * 1.2, z: -r }, // 5: Basal 1
+                { x: -r * 1.5, y: r * 1.2, z: -r }, // 6: Basal 2
+                { x: r, y: r * 1.2, z: r * 1.5 },   // 7: Basal 3
+                { x: -r, y: r * 1.2, z: r * 1.5 }   // 8: Basal 4
             ];
             const faces = [
                 [4, 1, 2], [4, 2, 3], [4, 3, 1], // Elongated head
                 [0, 1, 2], [0, 2, 3], [0, 3, 1], // Body
-                [1, 3, 2]  // Base
+                [1, 3, 2], // Base
+                // Connect Basal Dendrites
+                [1, 3, 5], [2, 3, 6], [1, 2, 7], [2, 1, 8]
             ];
             return { vertices, faces };
         },
 
         generateStellateMesh() {
-            // True 3D Star (Icosahedron-like spike ball)
-            // Simplified: Central cube with pyramids on each face
+            // Multi-polar Stellate Mesh with Randomized Spike Morphology
             const s = 4; // size
-            const p = 8; // spike length
+            const p = 8; // base spike length
+            const rnd = () => 0.8 + Math.random() * 0.4;
             const vertices = [
                 // Cube Vertices (0-7)
                 { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
                 { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s },
-                // Spikes (8-13)
-                { x: 0, y: 0, z: -s - p * 1.5 }, // Back (varied spike length)
-                { x: 0, y: 0, z: s + p },       // Front
-                { x: 0, y: -s - p, z: 0 },      // Top
-                { x: 0, y: s + p * 1.2, z: 0 }, // Bottom
-                { x: -s - p, z: 0, y: 0 },      // Left
-                { x: s + p * 0.8, y: 0, z: 0 }  // Right
+                // Randomized Spikes (8-13)
+                { x: 0, y: 0, z: (-s - p * 1.5) * rnd() }, // Back
+                { x: 0, y: 0, z: (s + p) * rnd() },        // Front
+                { x: 0, y: (-s - p) * rnd(), z: 0 },       // Top
+                { x: 0, y: (s + p * 1.2) * rnd(), z: 0 },  // Bottom
+                { x: (-s - p) * rnd(), z: 0, y: 0 },       // Left
+                { x: (s + p * 0.8) * rnd(), y: 0, z: 0 }   // Right
             ];
 
             const faces = [];

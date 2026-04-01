@@ -607,7 +607,7 @@
             if (window.GreenhouseNeuroNeuron) {
                 // Check if neuron is hovered (if applicable)
                 const isHovered = this.hoveredNeuronId === neuron.id;
-                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, null, 0.005, isHovered);
+                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, null, 0.002, isHovered);
             }
         },
 

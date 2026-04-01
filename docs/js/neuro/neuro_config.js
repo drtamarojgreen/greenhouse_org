@@ -57,7 +57,7 @@
             specular: {
                 enabled: true,
                 intensity: 0.5,
-                shininess: 30,
+                shininess: 50,
                 color: { r: 255, g: 255, b: 255 }
             },
             shadows: {
@@ -71,7 +71,7 @@
         materials: {
             brain: {
                 baseColor: { r: 160, g: 174, b: 192 },
-                alpha: 0.1,
+                alpha: 0.15,
                 metallic: 0.2,
                 roughness: 0.6,
                 subsurfaceScattering: true,
