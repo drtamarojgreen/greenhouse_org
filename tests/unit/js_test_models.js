@@ -304,7 +304,6 @@
         await new Promise(resolve => setTimeout(resolve, 1000));
         loadingOverlay.style.display = 'none';
 
-<<<<<<< HEAD
         try {
             const section1 = document.createElement('section'); section1.className = 'wixui-section';
             section1.appendChild(document.createElement('div'));
@@ -316,18 +315,6 @@
             const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
             sectionInner.appendChild(targetDiv);
             modelContainer.appendChild(section1);
-=======
-        const section1 = document.createElement('section'); section1.className = 'wixui-section';
-        section1.appendChild(document.createElement('div'));
-        const div2 = document.createElement('div'); section1.appendChild(div2);
-        const div2_1 = document.createElement('div'); div2.appendChild(div2_1);
-        const sectionInner = document.createElement('section'); div2_1.appendChild(sectionInner);
-        const idiv1 = document.createElement('div'); sectionInner.appendChild(idiv1);
-        idiv1.appendChild(document.createElement('div')); idiv1.appendChild(document.createElement('div'));
-        const targetDiv = document.createElement('div'); targetDiv.id = "model-target"; targetDiv.style.height = "800px"; targetDiv.style.minHeight = "800px";
-        sectionInner.appendChild(targetDiv);
-        modelContainer.appendChild(section1);
->>>>>>> monochromatic-accessibility-fix-411015576853214547
 
             const script = document.createElement('script');
             script.src = `${baseUrl}js/${model.js}`;
