@@ -42,6 +42,24 @@
 
         // Lighting Configuration
         lighting: {
+            preset: 'clinical', // 'clinical', 'lab', 'presentation'
+            presets: {
+                clinical: {
+                    ambient: { intensity: 0.2, color: { r: 255, g: 255, b: 255 } },
+                    directional: { intensity: 1.0, direction: { x: 0.5, y: -0.5, z: 1 }, color: { r: 255, g: 255, b: 255 } },
+                    exposure: 1.0
+                },
+                lab: {
+                    ambient: { intensity: 0.1, color: { r: 200, g: 220, b: 255 } },
+                    directional: { intensity: 1.5, direction: { x: -0.5, y: -1, z: 0.5 }, color: { r: 255, g: 245, b: 230 } },
+                    exposure: 1.2
+                },
+                presentation: {
+                    ambient: { intensity: 0.4, color: { r: 255, g: 255, b: 255 } },
+                    directional: { intensity: 0.8, direction: { x: 0, y: 0, z: 1 }, color: { r: 255, g: 255, b: 255 } },
+                    exposure: 1.1
+                }
+            },
             ambient: {
                 enabled: true,
                 intensity: 0.4,
@@ -144,6 +162,26 @@
 
         // Visual Effects Configuration
         effects: {
+            ssao: {
+                enabled: true,
+                intensity: 0.4,
+                radius: 10
+            },
+            shadows: {
+                enabled: true,
+                quality: 'medium', // 'low', 'medium', 'high'
+                opacity: 0.3
+            },
+            taa: {
+                enabled: true,
+                jitterScale: 0.5
+            },
+            dof: {
+                enabled: false,
+                focusDepth: 0.5,
+                aperture: 0.1,
+                maxBlur: 3
+            },
             depthFog: {
                 enabled: true,
                 start: 0.6,
@@ -155,15 +193,6 @@
                 threshold: 0.7,
                 intensity: 0.6,
                 radius: 3
-            },
-            motionBlur: {
-                enabled: false,
-                samples: 5,
-                intensity: 0.3
-            },
-            antialiasing: {
-                enabled: true,
-                samples: 4
             },
             glow: {
                 enabled: true,
@@ -259,7 +288,14 @@
             controlsPosition: 'bottom',
             theme: 'dark', // 'dark' or 'light'
             backgroundColor: '#050510',
-            textColor: '#ffffff'
+            textColor: '#ffffff',
+            background: 'neutral', // 'neutral', 'dark', 'white', 'grid'
+            backgrounds: {
+                neutral: { top: '#1a1a1a', bottom: '#0d0d0d' },
+                dark: { top: '#050505', bottom: '#000000' },
+                white: { top: '#ffffff', bottom: '#f0f0f0' },
+                grid: { top: '#111', bottom: '#111', showGrid: true }
+            }
         },
 
         // Performance Configuration

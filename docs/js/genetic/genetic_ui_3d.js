@@ -217,6 +217,11 @@
 
             this.ctx = this.canvas.getContext('2d');
 
+            // Initialize Post-Processor
+            if (window.GreenhousePostProcessor) {
+                window.GreenhousePostProcessor.init(this.canvas);
+            }
+
             // Add Start Overlay
             this.addStartOverlay(this.container);
 
@@ -610,7 +615,21 @@
         render() {
             if (!this.ctx || !this.canvas) return;
             const ctx = this.ctx;
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            const config = window.GreenhouseGeneticConfig;
+            const post = window.GreenhousePostProcessor;
+
+            // 1. Prepare Frame (e.g. TAA Jitter)
+            let jitter = { x: 0, y: 0 };
+            if (post && config) {
+                jitter = post.prepareFrame(config.get('effects'));
+            }
+
+            // 2. Draw Background
+            if (post && config) {
+                post.drawBackground(config.get('ui.background'), config.get('ui'));
+            } else {
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
 
             const activeGene = this.neurons3D[this.activeGeneIndex];
 
@@ -703,6 +722,11 @@
             // Draw Stats / Labels
             if (window.GreenhouseGeneticStats) {
                 window.GreenhouseGeneticStats.drawOverlayInfo(ctx, w, activeGene);
+            }
+
+            // --- Apply Advanced Post-Processing ---
+            if (post && config) {
+                post.applyEffects(config.get('effects'), this.camera);
             }
 
             // Draw Manual Controls

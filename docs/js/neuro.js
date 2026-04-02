@@ -68,6 +68,7 @@
             await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_3d_postprocess.js', baseUrl);
             await GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro/neuro_config.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic/genetic_camera_controls.js', baseUrl);

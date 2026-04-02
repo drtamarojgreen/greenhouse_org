@@ -1,5 +1,5 @@
-// docs/js/genetic_lighting.js
-// Enhanced Lighting System for Genetic Simulation (adapted from neuro_lighting.js)
+// docs/js/genetic/genetic_lighting.js
+// Enhanced PBR-lite Lighting System for Realistic 3D Rendering
 
 (function () {
     'use strict';
@@ -8,296 +8,115 @@
         config: null,
         lights: [],
 
-        /**
-         * Initialize lighting system
-         * @param {Object} config - Configuration object
-         */
         init(config) {
             this.config = config || window.GreenhouseGeneticConfig;
             this.setupLights();
-            console.log('GeneticLighting: System initialized');
+            console.log('GeneticLighting: PBR-lite System initialized');
         },
 
-        /**
-         * Setup lights from configuration
-         */
         setupLights() {
             this.lights = [];
+            const presetKey = this.config.get('lighting.preset') || 'clinical';
+            const preset = this.config.get(`lighting.presets.${presetKey}`);
 
-            // Ambient light
-            if (this.config.get('lighting.ambient.enabled')) {
+            if (preset) {
+                this.lights.push({
+                    type: 'ambient',
+                    intensity: preset.ambient.intensity,
+                    color: preset.ambient.color
+                });
+                const dir = preset.directional.direction;
+                const len = Math.sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+                this.lights.push({
+                    type: 'directional',
+                    intensity: preset.directional.intensity,
+                    color: preset.directional.color,
+                    direction: { x: dir.x / len, y: dir.y / len, z: dir.z / len }
+                });
+                this.exposure = preset.exposure || 1.0;
+            } else {
                 this.lights.push({
                     type: 'ambient',
                     intensity: this.config.get('lighting.ambient.intensity'),
                     color: this.config.get('lighting.ambient.color')
                 });
-            }
-
-            // Directional light
-            if (this.config.get('lighting.directional.enabled')) {
                 const dir = this.config.get('lighting.directional.direction');
                 const len = Math.sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
-                
                 this.lights.push({
                     type: 'directional',
                     intensity: this.config.get('lighting.directional.intensity'),
                     color: this.config.get('lighting.directional.color'),
-                    direction: {
-                        x: dir.x / len,
-                        y: dir.y / len,
-                        z: dir.z / len
-                    }
+                    direction: { x: dir.x / len, y: dir.y / len, z: dir.z / len }
                 });
+                this.exposure = 1.0;
             }
         },
 
-        /**
-         * Calculate lighting for a surface
-         * @param {Object} normal - Surface normal {x, y, z}
-         * @param {Object} position - Surface position {x, y, z}
-         * @param {Object} camera - Camera object
-         * @param {Object} material - Material properties
-         * @returns {Object} {r, g, b, a} - Final color with lighting
-         */
         calculateLighting(normal, position, camera, material) {
             let totalR = 0, totalG = 0, totalB = 0;
 
-            // Process each light
-            this.lights.forEach(light => {
-                if (light.type === 'ambient') {
-                    // Ambient light - constant contribution
-                    totalR += light.color.r * light.intensity;
-                    totalG += light.color.g * light.intensity;
-                    totalB += light.color.b * light.intensity;
-                } else if (light.type === 'directional') {
-                    // Diffuse lighting (Lambertian)
-                    const diffuse = Math.max(0, 
-                        normal.x * light.direction.x + 
-                        normal.y * light.direction.y + 
-                        normal.z * light.direction.z
-                    );
-
-                    totalR += light.color.r * light.intensity * diffuse;
-                    totalG += light.color.g * light.intensity * diffuse;
-                    totalB += light.color.b * light.intensity * diffuse;
-
-                    // Specular lighting (Blinn-Phong)
-                    if (this.config.get('lighting.specular.enabled')) {
-                        const specular = this.calculateSpecular(
-                            normal, 
-                            light.direction, 
-                            position, 
-                            camera
-                        );
-
-                        const specColor = this.config.get('lighting.specular.color');
-                        const specIntensity = this.config.get('lighting.specular.intensity');
-                        
-                        totalR += specColor.r * specIntensity * specular;
-                        totalG += specColor.g * specIntensity * specular;
-                        totalB += specColor.b * specIntensity * specular;
-                    }
-                }
-            });
-
-            // Apply material properties
-            const baseColor = material.baseColor || { r: 255, g: 255, b: 255 };
-            const metallic = material.metallic || 0;
-            const roughness = material.roughness || 0.5;
-
-            // Metallic surfaces reflect more light
-            const metallicFactor = 1 + metallic * 0.5;
-            
-            // Roughness reduces specular highlights
-            const roughnessFactor = 1 - roughness * 0.3;
-
-            let finalR = baseColor.r * (totalR / 255) * metallicFactor * roughnessFactor;
-            let finalG = baseColor.g * (totalG / 255) * metallicFactor * roughnessFactor;
-            let finalB = baseColor.b * (totalB / 255) * metallicFactor * roughnessFactor;
-
-            // Add emissive lighting
-            if (material.emissive && material.emissiveIntensity) {
-                finalR += baseColor.r * material.emissiveIntensity;
-                finalG += baseColor.g * material.emissiveIntensity;
-                finalB += baseColor.b * material.emissiveIntensity;
-            }
-
-            // Clamp values
-            finalR = Math.min(255, Math.max(0, finalR));
-            finalG = Math.min(255, Math.max(0, finalG));
-            finalB = Math.min(255, Math.max(0, finalB));
-
-            return {
-                r: finalR,
-                g: finalG,
-                b: finalB,
-                a: material.alpha || 1
-            };
-        },
-
-        /**
-         * Calculate specular highlight (Blinn-Phong)
-         * @param {Object} normal - Surface normal
-         * @param {Object} lightDir - Light direction
-         * @param {Object} position - Surface position
-         * @param {Object} camera - Camera object
-         * @returns {number} Specular intensity
-         */
-        calculateSpecular(normal, lightDir, position, camera) {
-            // View direction (from surface to camera)
             const viewX = camera.x - position.x;
             const viewY = camera.y - position.y;
             const viewZ = camera.z - position.z;
             const viewLen = Math.sqrt(viewX * viewX + viewY * viewY + viewZ * viewZ);
-            
-            const viewDirX = viewX / viewLen;
-            const viewDirY = viewY / viewLen;
-            const viewDirZ = viewZ / viewLen;
+            const viewDir = { x: viewX / viewLen, y: viewY / viewLen, z: viewZ / viewLen };
 
-            // Half vector (between light and view)
-            const halfX = (lightDir.x + viewDirX) / 2;
-            const halfY = (lightDir.y + viewDirY) / 2;
-            const halfZ = (lightDir.z + viewDirZ) / 2;
-            const halfLen = Math.sqrt(halfX * halfX + halfY * halfY + halfZ * halfZ);
-            
-            const halfDirX = halfX / halfLen;
-            const halfDirY = halfY / halfLen;
-            const halfDirZ = halfZ / halfLen;
+            const baseColor = this._toLinear(material.baseColor || { r: 255, g: 255, b: 255 });
+            const metallic = material.metallic || 0.2;
+            const roughness = material.roughness || 0.6;
 
-            // Specular = (N · H)^shininess
-            const NdotH = Math.max(0, 
-                normal.x * halfDirX + 
-                normal.y * halfDirY + 
-                normal.z * halfDirZ
-            );
+            this.lights.forEach(light => {
+                const lightColor = this._toLinear(light.color);
 
-            const shininess = this.config.get('lighting.specular.shininess') || 40;
-            return Math.pow(NdotH, shininess);
-        },
+                if (light.type === 'ambient') {
+                    totalR += baseColor.r * lightColor.r * light.intensity;
+                    totalG += baseColor.g * lightColor.g * light.intensity;
+                    totalB += baseColor.b * lightColor.b * light.intensity;
+                } else if (light.type === 'directional') {
+                    const NdotL = Math.max(0, normal.x * light.direction.x + normal.y * light.direction.y + normal.z * light.direction.z);
+                    const halfX = light.direction.x + viewDir.x;
+                    const halfY = light.direction.y + viewDir.y;
+                    const halfZ = light.direction.z + viewDir.z;
+                    const halfLen = Math.sqrt(halfX * halfX + halfY * halfY + halfZ * halfZ);
+                    const halfDir = { x: halfX / halfLen, y: halfY / halfLen, z: halfZ / halfLen };
 
-        /**
-         * Apply glow effect for DNA/genes
-         * @param {Object} color - Base color
-         * @param {number} intensity - Glow intensity
-         * @returns {Object} Modified color with glow
-         */
-        applyGlow(color, intensity) {
-            const glowFactor = 1 + intensity;
+                    const NdotH = Math.max(0, normal.x * halfDir.x + normal.y * halfDir.y + normal.z * halfDir.z);
+                    const specPower = Math.pow(NdotH, (1.0 - roughness) * 128);
+                    const specular = specPower * (1.0 - roughness) * (0.04 + 0.96 * metallic);
+
+                    const VdotH = Math.max(0, viewDir.x * halfDir.x + viewDir.y * halfDir.y + viewDir.z * halfDir.z);
+                    const fresnel = 0.04 + 0.96 * Math.pow(1.0 - VdotH, 5);
+
+                    const diffuseContrib = NdotL * (1.0 - fresnel) * (1.0 - metallic);
+                    const specContrib = fresnel * specular;
+
+                    totalR += (baseColor.r * diffuseContrib + specContrib) * lightColor.r * light.intensity;
+                    totalG += (baseColor.g * diffuseContrib + specContrib) * lightColor.g * light.intensity;
+                    totalB += (baseColor.b * diffuseContrib + specContrib) * lightColor.b * light.intensity;
+                }
+            });
+
+            totalR *= this.exposure; totalG *= this.exposure; totalB *= this.exposure;
+            const final = this._toSRGB({ r: totalR, g: totalG, b: totalB });
+
             return {
-                r: Math.min(255, color.r * glowFactor),
-                g: Math.min(255, color.g * glowFactor),
-                b: Math.min(255, color.b * glowFactor),
-                a: color.a
+                r: Math.min(255, final.r * 255),
+                g: Math.min(255, final.g * 255),
+                b: Math.min(255, final.b * 255),
+                a: material.alpha || 1
             };
         },
 
-        /**
-         * Apply subsurface scattering effect for proteins
-         * @param {Object} color - Base color
-         * @param {Object} normal - Surface normal
-         * @param {Object} lightDir - Light direction
-         * @param {number} thickness - Material thickness
-         * @returns {Object} Modified color
-         */
-        applySubsurfaceScattering(color, normal, lightDir, thickness) {
-            // Calculate light penetration
-            const backDot = Math.max(0, -(
-                normal.x * lightDir.x + 
-                normal.y * lightDir.y + 
-                normal.z * lightDir.z
-            ));
-
-            const sssIntensity = this.config.get('materials.protein.sssIntensity') || 0.2;
-            const penetration = backDot * sssIntensity * (1 - thickness);
-
-            // Add warm glow to simulate light passing through organic material
-            return {
-                r: Math.min(255, color.r + penetration * 50),
-                g: Math.min(255, color.g + penetration * 30),
-                b: Math.min(255, color.b + penetration * 20),
-                a: color.a
-            };
+        _toLinear(c) {
+            return { r: Math.pow(c.r / 255, 2.2), g: Math.pow(c.g / 255, 2.2), b: Math.pow(c.b / 255, 2.2) };
         },
 
-        /**
-         * Convert color object to CSS rgba string
-         * @param {Object} color - Color object {r, g, b, a}
-         * @returns {string} CSS rgba string
-         */
-        toRGBA(color) {
-            return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${color.a})`;
+        _toSRGB(c) {
+            return { r: Math.pow(c.r, 1 / 2.2), g: Math.pow(c.g, 1 / 2.2), b: Math.pow(c.b, 1 / 2.2) };
         },
 
-        /**
-         * Parse CSS color to color object
-         * @param {string} cssColor - CSS color string
-         * @returns {Object} Color object {r, g, b, a}
-         */
-        parseColor(cssColor) {
-            const match = cssColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-            if (match) {
-                return {
-                    r: parseInt(match[1]),
-                    g: parseInt(match[2]),
-                    b: parseInt(match[3]),
-                    a: parseFloat(match[4] || 1)
-                };
-            }
-            
-            // Fallback for hex colors
-            if (cssColor.startsWith('#')) {
-                const hex = cssColor.slice(1);
-                return {
-                    r: parseInt(hex.slice(0, 2), 16),
-                    g: parseInt(hex.slice(2, 4), 16),
-                    b: parseInt(hex.slice(4, 6), 16),
-                    a: 1
-                };
-            }
-
-            return { r: 255, g: 255, b: 255, a: 1 };
-        },
-
-        /**
-         * Update light direction (useful for dynamic lighting)
-         * @param {string} lightType - Type of light ('directional', etc.)
-         * @param {Object} direction - New direction {x, y, z}
-         */
-        updateLightDirection(lightType, direction) {
-            const light = this.lights.find(l => l.type === lightType);
-            if (light) {
-                const len = Math.sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
-                light.direction = {
-                    x: direction.x / len,
-                    y: direction.y / len,
-                    z: direction.z / len
-                };
-            }
-        },
-
-        /**
-         * Update light intensity
-         * @param {string} lightType - Type of light
-         * @param {number} intensity - New intensity
-         */
-        updateLightIntensity(lightType, intensity) {
-            const light = this.lights.find(l => l.type === lightType);
-            if (light) {
-                light.intensity = intensity;
-            }
-        },
-
-        /**
-         * Returns the primary directional light direction vector.
-         * @returns {Object} Normalized direction vector {x, y, z}.
-         */
         getDirectionalLight() {
-            const directionalLight = this.lights.find(l => l.type === 'directional' && l.intensity > 0);
-            if (directionalLight) {
-                return directionalLight.direction;
-            }
-            // Return a default light direction if none is configured
-            return { x: 0.5, y: 0.5, z: -1 };
+            return this.lights.find(l => l.type === 'directional')?.direction || { x: 0.5, y: -0.5, z: 1 };
         }
     };
 

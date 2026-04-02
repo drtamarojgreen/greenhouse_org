@@ -66,6 +66,12 @@
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth || 1000;
             this.canvas.height = 750;
+
+            // Initialize Post-Processor
+            if (window.GreenhousePostProcessor) {
+                window.GreenhousePostProcessor.init(this.canvas);
+            }
+
             this.canvas.style.width = '100%';
             this.canvas.style.height = '100%';
             this.canvas.style.backgroundColor = '#050510';
@@ -424,7 +430,22 @@
             const ctx = this.ctx;
             const w = this.canvas.width;
             const h = this.canvas.height;
-            ctx.clearRect(0, 0, w, h);
+
+            const config = window.GreenhouseNeuroConfig;
+            const post = window.GreenhousePostProcessor;
+
+            // 1. Prepare Frame (e.g. TAA Jitter)
+            let jitter = { x: 0, y: 0 };
+            if (post && config) {
+                jitter = post.prepareFrame(config.get('effects'));
+            }
+
+            // 2. Draw Background
+            if (post && config) {
+                post.drawBackground(config.get('ui.background'), config.get('ui'));
+            } else {
+                ctx.clearRect(0, 0, w, h);
+            }
 
             // Update Controllers (Physics & Auto-Rotate)
             if (this.networkCameraController) this.networkCameraController.update();
@@ -482,6 +503,11 @@
             const pipY = this.canvas.height - pipH - padding;
 
             this.drawNetworkView(ctx, pipX, pipY, pipW, pipH);
+
+            // --- Apply Advanced Post-Processing ---
+            if (post && config) {
+                post.applyEffects(config.get('effects'), this.camera);
+            }
 
             // --- Draw UI Overlay ---
             if (window.GreenhouseNeuroApp && window.GreenhouseNeuroApp.drawUI) {
