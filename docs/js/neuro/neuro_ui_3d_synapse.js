@@ -191,12 +191,12 @@
 
                 // --- Activity Signatures: Dynamic Particle Flow ---
                 const activityLevel = Math.abs(conn.weight);
-                const sparkCount = Math.floor(activityLevel * 3) + 1;
+                const sparkCount = Math.floor(activityLevel * 2) + 1; // Fewer particles
                 const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
 
                 for (let s = 0; s < sparkCount; s++) {
                     const sparkOffset = s / sparkCount;
-                    const t = (cycle + sparkOffset) % 1.0;
+                    const t = (cycle * 0.5 + sparkOffset) % 1.0; // Slower travel
                     const mt = 1 - t;
 
                     const sparkP = {

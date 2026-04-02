@@ -425,38 +425,77 @@
         },
 
         generatePyramidalMesh() {
+            // Anatomically Correct Pyramidal Neuron
             const r = 6;
-            const h = 12;
+            const h = 10;
             const vertices = [
-                { x: 0, y: -h, z: 0 },
-                { x: r, y: r, z: r },
-                { x: -r, y: r, z: r },
-                { x: 0, y: r, z: -r }
+                { x: 0, y: -h, z: 0 },    // 0: Soma Apex
+                { x: r, y: h/2, z: r },   // 1: Soma Base R
+                { x: -r, y: h/2, z: r },  // 2: Soma Base L
+                { x: 0, y: h/2, z: -r },  // 3: Soma Base B
+                { x: 0, y: -h * 2.5, z: 0 }, // 4: Apical Dendrite Tip
+                { x: r * 1.5, y: h, z: r * 1.5 },   // 5: Basal 1
+                { x: -r * 1.5, y: h, z: r * 1.5 },  // 6: Basal 2
+                { x: 0, y: h, z: -r * 1.8 }         // 7: Basal 3
             ];
             const faces = [
-                [0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]
+                [0, 1, 2], [0, 2, 3], [0, 3, 1],
+                [4, 0, 1], [4, 1, 3], [4, 3, 0],
+                [1, 5, 2], [2, 6, 3], [3, 7, 1]
             ];
+
+            // Add Synaptic Pegs
+            this._addSynapticPegs(vertices, faces, [
+                { x: 0, y: -h * 1.8, z: 0 },
+                { x: r * 0.8, y: h * 0.8, z: r * 0.8 }
+            ]);
+
             return { vertices, faces };
         },
 
         generateStellateMesh() {
-            const s = 4;
-            const p = 8;
+            // Anatomically Correct Stellate Neuron
+            const s = 5;
             const vertices = [
-                { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
-                { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s },
-                { x: 0, y: 0, z: -s - p }, { x: 0, y: 0, z: s + p },
-                { x: 0, y: -s - p, z: 0 }, { x: s + p, y: 0, z: 0 },
-                { x: -s - p, y: 0, z: 0 }, { x: s + p, y: 0, z: 0 }
+                { x: s, y: 0, z: 0 }, { x: -s, y: 0, z: 0 },
+                { x: 0, y: s, z: 0 }, { x: 0, y: -s, z: 0 },
+                { x: 0, y: 0, z: s }, { x: 0, y: 0, z: -s },
+                { x: s * 2, y: s, z: s }, { x: -s * 2, y: -s, z: s },
+                { x: s, y: s * 2, z: -s }, { x: -s, y: -s * 2, z: -s }
             ];
-            const faces = [];
-            faces.push([10, 0, 1], [10, 1, 5], [10, 5, 4], [10, 4, 0]);
-            faces.push([11, 3, 2], [11, 2, 6], [11, 6, 7], [11, 7, 3]);
-            faces.push([9, 4, 5], [9, 5, 6], [9, 6, 7], [9, 7, 4]);
-            faces.push([8, 1, 0], [8, 0, 3], [8, 3, 2], [8, 2, 1]);
-            faces.push([12, 0, 4], [12, 4, 7], [12, 7, 3], [12, 3, 0]);
-            faces.push([13, 5, 1], [13, 1, 2], [13, 2, 6], [13, 6, 5]);
+            const faces = [
+                [2, 0, 4], [2, 4, 1], [2, 1, 5], [2, 5, 0],
+                [3, 4, 0], [3, 1, 4], [3, 5, 1], [3, 0, 5],
+                [0, 6, 2], [1, 7, 3], [2, 8, 5], [3, 9, 4]
+            ];
+
+            // Add Synaptic Pegs
+            this._addSynapticPegs(vertices, faces, [
+                { x: s * 1.5, y: s * 0.8, z: s * 0.8 }
+            ]);
+
             return { vertices, faces };
+        },
+
+        _addSynapticPegs(vertices, faces, positions) {
+            positions.forEach(pos => {
+                const idx = vertices.length;
+                const size = 1.2;
+                vertices.push(
+                    { x: pos.x + size, y: pos.y, z: pos.z },
+                    { x: pos.x - size, y: pos.y, z: pos.z },
+                    { x: pos.x, y: pos.y + size, z: pos.z },
+                    { x: pos.x, y: pos.y - size, z: pos.z },
+                    { x: pos.x, y: pos.y, z: pos.z + size },
+                    { x: pos.x, y: pos.y, z: pos.z - size }
+                );
+                faces.push(
+                    [idx + 2, idx, idx + 4], [idx + 2, idx + 4, idx + 1],
+                    [idx + 2, idx + 1, idx + 5], [idx + 2, idx + 5, idx],
+                    [idx + 3, idx + 4, idx], [idx + 3, idx + 1, idx + 4],
+                    [idx + 3, idx + 5, idx + 1], [idx + 3, idx, idx + 5]
+                );
+            });
         },
 
         adjustColor(hex, amount) {
