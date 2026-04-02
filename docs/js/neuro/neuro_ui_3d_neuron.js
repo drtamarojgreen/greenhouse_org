@@ -145,34 +145,33 @@
                 const litG = Math.min(255, g * intensity);
                 const litB = Math.min(255, b * intensity);
 
-                    ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
+                ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
 
-                    // --- Structural Neuron Shading ---
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(v1.x, v1.y);
-                    ctx.lineTo(v2.x, v2.y);
-                    ctx.lineTo(v3.x, v3.y);
-                    ctx.closePath();
-                    ctx.fill();
+                // --- Structural Neuron Shading ---
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(v1.x, v1.y);
+                ctx.lineTo(v2.x, v2.y);
+                ctx.lineTo(v3.x, v3.y);
+                ctx.closePath();
+                ctx.fill();
 
-                    // Pattern overlay for accessibility - Reinforced distinctions
-                    if (type === 'pyramidal') {
-                        // Sharp wireframe highlight for pyramidals
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
-                        ctx.lineWidth = 1.0;
-                        ctx.stroke();
-                    } else {
-                        // Soft stipple effect for stellates
-                        if (Math.random() < 0.3) {
-                            ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
-                            ctx.beginPath();
-                            ctx.arc(v1.x, v1.y, 1, 0, Math.PI * 2);
-                            ctx.fill();
-                        }
+                // Pattern overlay for accessibility - Reinforced distinctions
+                if (type === 'pyramidal') {
+                    // Sharp wireframe highlight for pyramidals
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+                    ctx.lineWidth = 1.0;
+                    ctx.stroke();
+                } else {
+                    // Soft stipple effect for stellates
+                    if (Math.random() < 0.3) {
+                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
+                        ctx.beginPath();
+                        ctx.arc(v1.x, v1.y, 1, 0, Math.PI * 2);
+                        ctx.fill();
                     }
-                    ctx.restore();
                 }
+                ctx.restore();
             });
         },
 
