@@ -115,6 +115,10 @@
             return { r: Math.pow(c.r, 1 / 2.2), g: Math.pow(c.g, 1 / 2.2), b: Math.pow(c.b, 1 / 2.2) };
         },
 
+        toRGBA(color) {
+            return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${color.a})`;
+        },
+
         getDirectionalLight() {
             return this.lights.find(l => l.type === 'directional')?.direction || { x: 0.5, y: -0.5, z: 1 };
         }
