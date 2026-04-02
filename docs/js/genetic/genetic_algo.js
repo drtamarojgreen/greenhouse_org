@@ -94,15 +94,17 @@
     const GreenhouseGeneticAlgo = {
         population: [],
         generation: 0,
-        popSize: 20,
+        popSize: 15,
         mutationRate: 0.1,
         bestNetwork: null,
+        dims: { input: 6, hidden: 12, output: 6 },
 
         init() {
             console.log('Genetic Algo: Initializing population...');
             this.population = [];
+            const { input, hidden, output } = this.dims;
             for (let i = 0; i < this.popSize; i++) {
-                this.population.push(new Network(i, 10, 30, 10));
+                this.population.push(new Network(i, input, hidden, output));
             }
             this.generation = 1;
             this.evaluate();
@@ -204,7 +206,8 @@
 
         crossover(parentA, parentB) {
             // Uniform Crossover
-            const child = new Network(-1, 10, 30, 10); // Structure assumed static for now
+            const { input, hidden, output } = this.dims;
+            const child = new Network(-1, input, hidden, output);
 
             // Inherit connections
             // Assuming simplified fixed topology for crossover simplicity in this demo
@@ -224,7 +227,8 @@
         },
 
         cloneNetwork(network) {
-            const clone = new Network(network.id, 10, 30, 10);
+            const { input, hidden, output } = this.dims;
+            const clone = new Network(network.id, input, hidden, output);
             clone.nodes = JSON.parse(JSON.stringify(network.nodes));
             clone.connections = JSON.parse(JSON.stringify(network.connections));
             clone.fitness = network.fitness;

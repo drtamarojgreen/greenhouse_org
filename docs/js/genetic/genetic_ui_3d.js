@@ -647,6 +647,8 @@
 
             //this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
             this.drawConnections(ctx);
+            this.drawSynapticCues(ctx);
+
             // Helper to draw PiP Frame & Label
             const drawPiPFrame = (ctx, x, y, w, h, title) => {
                 ctx.save();
@@ -945,6 +947,38 @@
                     window.GreenhouseGeneticBrain.drawNeuron(ctx, p, this.neuronMeshes, this.camera, this.projection);
                 }
             }
+        },
+
+        drawSynapticCues(ctx) {
+            if (!this.neurons3D) return;
+            const neurons = this.neurons3D.filter(n => n.type === 'neuron');
+
+            neurons.forEach(n => {
+                const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                if (p.scale > 0.4) {
+                    // Draw "Synaptic Spark" to represent activity at junctions
+                    const activation = n.activation ?? 0;
+                    if (activation > 0.5) {
+                        const pulse = (Math.sin(Date.now() * 0.01) + 1) / 2;
+                        ctx.save();
+                        ctx.globalAlpha = (activation - 0.5) * 2 * pulse * GreenhouseModels3DMath.applyDepthFog(1, p.depth);
+                        ctx.fillStyle = '#FFF';
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 4 * p.scale, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Halo
+                        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 10 * p.scale);
+                        grad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                }
+            });
         },
 
         initializeBrainShell() {
@@ -1451,8 +1485,8 @@
                     GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, this.camera, this.projection)
                 );
 
-                // Nerve Pulse Animation logic
-                const pulseT = (Date.now() * 0.001 + (conn.from.id % 10) * 0.1) % 1.0;
+                // Nerve Pulse Animation logic - Slower and more organic (0.0005 instead of 0.001)
+                const pulseT = (Date.now() * 0.0005 + (conn.from.id % 10) * 0.1) % 1.0;
 
                 mesh.faces.forEach((faceIndices, fIdx) => {
                     const p1 = projectedVertices[faceIndices[0]];
@@ -1478,7 +1512,8 @@
                         const g = Math.floor(baseColor[1] * brightness);
                         const b = Math.floor(baseColor[2] * brightness);
 
-                        ctx.fillStyle = isPulse ? `rgba(255, 255, 255, ${alpha * 2})` : `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                        // Pulse alpha reduced for subtler look
+                        ctx.fillStyle = isPulse ? `rgba(255, 255, 255, ${alpha * 1.5})` : `rgba(${r}, ${g}, ${b}, ${alpha})`;
                         ctx.strokeStyle = ctx.fillStyle;
                         ctx.lineWidth = 0.2;
 
