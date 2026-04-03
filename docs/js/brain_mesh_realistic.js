@@ -45,7 +45,7 @@
                     z = deformed.z * baseRadius;
 
                     // Determine region
-                    const region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
+                    let region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
 
                     // Add cortical folds (gyri and sulci)
                     const folds = this.addCorticalFolds(x, y, z, baseRadius, region);
@@ -53,8 +53,18 @@
                     y += folds.y;
                     z += folds.z;
 
-                    // Initialize vertex with zero normal (will be calculated properly later)
-                    brain.vertices.push({ x, y, z, normal: { x: 0, y: 0, z: 0 }, region });
+                    // Calculate normal (approximate)
+                    const len = Math.sqrt(x * x + y * y + z * z);
+                    const normal = {
+                        x: x / len,
+                        y: y / len,
+                        z: z / len
+                    };
+
+                    // Determine region
+                    region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
+
+                    brain.vertices.push({ x, y, z, normal, region });
                 }
             }
 
