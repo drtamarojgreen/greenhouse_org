@@ -621,6 +621,7 @@
             while (newPopulation.length < this.populationSize) {
                 const parentA = this.selectParent();
                 const parentB = this.selectParent();
+                if (!parentA || !parentB) break;
                 const child = this.crossover(parentA, parentB);
                 this.mutate(child);
                 newPopulation.push(child);
@@ -643,11 +644,12 @@
         }
 
         selectParent() {
+            if (!this.population || this.population.length === 0) return null;
             const k = 3;
             let best = null;
             for (let i = 0; i < k; i++) {
                 const ind = this.population[Math.floor(this.nextRand() * this.population.length)];
-                if (!best || ind.fitness > best.fitness) {
+                if (ind && (!best || ind.fitness > best.fitness)) {
                     best = ind;
                 }
             }

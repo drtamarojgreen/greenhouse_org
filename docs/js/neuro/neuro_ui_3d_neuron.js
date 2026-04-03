@@ -101,7 +101,10 @@
             const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
-            facesWithDepth.forEach(({ vertices, origVertices, depth }) => {
+            facesWithDepth.forEach((faceData) => {
+                const vertices = faceData.vertices;
+                const origVertices = faceData.origVertices;
+                const depth = faceData.depth;
                 const [v1, v2, v3] = vertices;
                 const [ov1, ov2, ov3] = origVertices;
                 const alpha = GreenhouseModels3DMath.applyDepthFog(1, depth);
@@ -258,6 +261,27 @@
                     [idx + 3, idx + 5, idx + 1], [idx + 3, idx, idx + 5]
                 );
             });
+        },
+
+        drawLODIcon(ctx, p, neuron, type, colorOverride) {
+            const size = 3 * p.scale;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.fillStyle = colorOverride || neuron.baseColor || '#E0E0E0';
+            ctx.globalAlpha = GreenhouseModels3DMath.applyDepthFog(1, p.depth);
+            if (type === 'pyramidal') {
+                ctx.beginPath();
+                ctx.moveTo(0, -size * 1.5);
+                ctx.lineTo(size, size);
+                ctx.lineTo(-size, size);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
         }
     };
 

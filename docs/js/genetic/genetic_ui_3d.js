@@ -28,6 +28,7 @@
         neurons3D: [],
         connections3D: [],
         brainShell: null,
+        proteinCache: {},
         activeGeneIndex: 0,
         mainCameraController: null,
 
