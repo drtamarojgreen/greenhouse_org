@@ -45,8 +45,8 @@
             preset: 'clinical', // 'clinical', 'lab', 'presentation'
             presets: {
                 clinical: {
-                    ambient: { intensity: 0.15, color: { r: 255, g: 255, b: 255 } },
-                    directional: { intensity: 0.75, direction: { x: 0.5, y: -0.5, z: 1 }, color: { r: 255, g: 255, b: 255 } },
+                    ambient: { intensity: 0.08, color: { r: 255, g: 255, b: 255 } },
+                    directional: { intensity: 0.5, direction: { x: 0.5, y: -0.5, z: 1 }, color: { r: 255, g: 255, b: 255 } },
                     exposure: 1.0
                 },
                 lab: {
@@ -62,12 +62,12 @@
             },
             ambient: {
                 enabled: true,
-                intensity: 0.4,
+                intensity: 0.1,
                 color: { r: 255, g: 255, b: 255 }
             },
             directional: {
                 enabled: true,
-                intensity: 0.8,
+                intensity: 0.6,
                 direction: { x: 0.5, y: -0.5, z: 1 },
                 color: { r: 255, g: 255, b: 255 }
             },
@@ -190,8 +190,8 @@
             },
             bloom: {
                 enabled: true,
-                threshold: 0.85,
-                intensity: 0.6,
+                threshold: 0.9,
+                intensity: 0.5,
                 radius: 3
             },
             glow: {

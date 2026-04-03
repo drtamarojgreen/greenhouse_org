@@ -88,8 +88,65 @@
             });
 
             // HUD Overlays
+            this.drawBoundaries(ctx, brainShell, projectedVertices);
+            this.drawRegionLabels(ctx, brainShell, camera, projection);
             this.drawSurfaceGrid(ctx, projectedVertices);
             this.drawOrientationWidget(ctx, camera, width, height);
+        },
+
+        drawBoundaries(ctx, brainShell, projectedVertices) {
+            if (!brainShell.boundaries) return;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            brainShell.boundaries.forEach(b => {
+                const p1 = projectedVertices[b.i1];
+                const p2 = projectedVertices[b.i2];
+                if (p1 && p2 && p1.scale > 0 && p2.scale > 0) {
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                }
+            });
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawRegionLabels(ctx, brainShell, camera, projection) {
+            if (!brainShell.regions) return;
+            ctx.save();
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            Object.entries(brainShell.regions).forEach(([key, data]) => {
+                if (!data.vertices || data.vertices.length === 0) return;
+
+                // Calculate centroid
+                let cx = 0, cy = 0, cz = 0;
+                data.vertices.forEach(idx => {
+                    const v = brainShell.vertices[idx];
+                    cx += v.x; cy += v.y; cz += v.z;
+                });
+                cx /= data.vertices.length;
+                cy /= data.vertices.length;
+                cz /= data.vertices.length;
+
+                // Project to 2D with deconfliction offset
+                const p = GreenhouseModels3DMath.project3DTo2D(cx * 1.2, -cy * 1.2, cz * 1.2, camera, projection);
+                if (p.scale > 0.4 && p.x > 0 && p.x < projection.width) {
+                    const label = key.charAt(0).toUpperCase() + key.slice(1);
+
+                    // Only draw if not obscured by depth
+                    if (p.depth < 1000) {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        ctx.fillText(label, p.x + 1, p.y + 1);
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillText(label, p.x, p.y);
+                    }
+                }
+            });
+            ctx.restore();
         },
 
         drawSurfaceGrid(ctx, projectedVertices) {

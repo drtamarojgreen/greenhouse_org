@@ -31,6 +31,7 @@
         proteinCache: {},
         activeGeneIndex: 0,
         mainCameraController: null,
+        isEvolving: false,
 
         init(container, algo, selector = null) {
             if (algo && typeof algo !== 'string') this.algo = algo;
@@ -123,14 +124,16 @@
 
         resize() {
             if (!this.canvas) return;
-            this.canvas.width = this.canvas.offsetWidth;
-            this.canvas.height = this.canvas.offsetHeight;
-            this.projection.width = this.canvas.width;
-            this.projection.height = this.canvas.height;
+            this.canvas.width = this.canvas.offsetWidth || 800;
+            this.canvas.height = this.canvas.offsetHeight || 500;
+            if (this.projection) {
+                this.projection.width = this.canvas.width;
+                this.projection.height = this.canvas.height;
+            }
         },
 
         shouldEvolve() {
-            return this.isEvolving;
+            return !!this.isEvolving;
         },
 
         setupInteraction() {

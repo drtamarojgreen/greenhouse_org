@@ -120,7 +120,8 @@
         },
 
         toRGBA(color) {
-            return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${color.a})`;
+            if (!color) return 'rgba(0,0,0,0)';
+            return `rgba(${Math.round(color.r || 0)}, ${Math.round(color.g || 0)}, ${Math.round(color.b || 0)}, ${color.a ?? 1})`;
         }
     };
 

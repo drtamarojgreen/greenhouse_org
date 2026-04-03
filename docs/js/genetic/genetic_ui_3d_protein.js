@@ -139,12 +139,12 @@
                         const alpha = Math.min(1, Math.max(0.2, 1 - p.depth / 1000));
                         const size = 6 * p.scale;
 
-                        // CPK Coloring (Monochromatic Atoms)
+                        // CPK Coloring (Restored)
                         const atomType = p.index % 3; // 0: N, 1: C, 2: O (Simplified)
                         let color;
-                        if (atomType === 0) { color = '#E0E0E0'; } // N
-                        else if (atomType === 1) { color = '#A0AEC0'; } // C
-                        else { color = '#D0D0D0'; } // O
+                        if (atomType === 0) { color = '#3050F8'; } // Nitrogen (Blue)
+                        else if (atomType === 1) { color = '#333333'; } // Carbon (Dark Gray)
+                        else { color = '#FF0D0D'; } // Oxygen (Red)
 
                         ctx.fillStyle = color;
                         ctx.globalAlpha = alpha;
@@ -172,12 +172,12 @@
                         const alpha = Math.min(1, Math.max(0.2, 1 - p.depth / 1000));
                         const size = 12 * p.scale; // Larger size
 
-                        // CPK Coloring (Monochromatic)
+                        // CPK Coloring (Restored)
                         const atomType = p.index % 3; // 0: N, 1: C, 2: O
                         let color;
-                        if (atomType === 0) { color = '#E0E0E0'; } // N
-                        else if (atomType === 1) { color = '#A0AEC0'; } // C
-                        else { color = '#D0D0D0'; } // O
+                        if (atomType === 0) { color = '#3050F8'; } // Nitrogen (Blue)
+                        else if (atomType === 1) { color = '#333333'; } // Carbon (Dark Gray)
+                        else { color = '#FF0D0D'; } // Oxygen (Red)
 
                         ctx.fillStyle = color;
                         ctx.globalAlpha = alpha;
@@ -284,32 +284,32 @@
                 }
             };
 
-            drawSubunit(gAlphaPos, '#E0E0E0', 'Gα');
-            drawSubunit(gBetaPos, '#A0AEC0', 'Gβγ');
-            drawSubunit(gGammaPos, '#D0D0D0', 'Gγ');
+            drawSubunit(gAlphaPos, '#4facfe', 'Gα');
+            drawSubunit(gBetaPos, '#f093fb', 'Gβγ');
+            drawSubunit(gGammaPos, '#f093fb', 'Gγ');
 
             const gLabelP = GreenhouseModels3DMath.project3DTo2D(40, 80, 0, camera, projectionParams);
             if (gLabelP.scale > 0) {
-                ctx.fillStyle = '#aaa';
+                ctx.fillStyle = '#f093fb';
                 ctx.fillText(t("gpcr_gprotein"), gLabelP.x, gLabelP.y);
             }
 
-            // 4. Beta-Arrestin (Transitioned to Silver for accessibility)
+            // 4. Beta-Arrestin (Functional Restoration)
             const arrestinPos = { x: -40, y: 50 + Math.cos(time) * 5, z: 0 };
             const arrestinP = GreenhouseModels3DMath.project3DTo2D(arrestinPos.x, arrestinPos.y, arrestinPos.z, camera, projectionParams);
             if (arrestinP.scale > 0) {
-                ctx.fillStyle = '#D0D0D0';
+                ctx.fillStyle = '#f6d365';
                 ctx.fillRect(arrestinP.x - 10 * arrestinP.scale, arrestinP.y - 5 * arrestinP.scale, 20 * arrestinP.scale, 10 * arrestinP.scale);
                 ctx.fillStyle = '#050510'; // Dark text for contrast on light block
                 ctx.font = '7px Arial';
                 ctx.fillText(t("gpcr_arrestin"), arrestinP.x, arrestinP.y + 12 * arrestinP.scale);
             }
 
-            // 5. Adenyl Cyclase (Membrane bound)
+            // 5. Adenyl Cyclase (Functional Restoration)
             const acPos = { x: 80, y: 10, z: 0 };
             const acP = GreenhouseModels3DMath.project3DTo2D(acPos.x, acPos.y, acPos.z, camera, projectionParams);
             if (acP.scale > 0) {
-                ctx.fillStyle = '#E0E0E0';
+                ctx.fillStyle = '#4caf50';
                 ctx.beginPath();
                 ctx.rect(acP.x - 15 * acP.scale, acP.y - 15 * acP.scale, 30 * acP.scale, 20 * acP.scale);
                 ctx.fill();

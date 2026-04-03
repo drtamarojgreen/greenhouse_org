@@ -22,6 +22,11 @@
             const latBands = 80;
             const lonBands = 80;
 
+            // Ensure geometry dependencies are ready
+            if (!window.GreenhouseModels3DMath) {
+                console.warn('Realistic Brain: 3D Math not available during generation.');
+            }
+
             // Generate base ellipsoid with anatomical proportions
             for (let lat = 0; lat <= latBands; lat++) {
                 const theta = (lat * Math.PI) / latBands;
