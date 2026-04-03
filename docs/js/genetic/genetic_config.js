@@ -45,8 +45,8 @@
             preset: 'clinical', // 'clinical', 'lab', 'presentation'
             presets: {
                 clinical: {
-                    ambient: { intensity: 0.2, color: { r: 255, g: 255, b: 255 } },
-                    directional: { intensity: 1.0, direction: { x: 0.5, y: -0.5, z: 1 }, color: { r: 255, g: 255, b: 255 } },
+                    ambient: { intensity: 0.15, color: { r: 255, g: 255, b: 255 } },
+                    directional: { intensity: 0.75, direction: { x: 0.5, y: -0.5, z: 1 }, color: { r: 255, g: 255, b: 255 } },
                     exposure: 1.0
                 },
                 lab: {
@@ -123,10 +123,10 @@
                 sssIntensity: 0.2
             },
             brain: {
-                baseColor: { r: 120, g: 120, b: 140 },
-                alpha: 0.15,
+                baseColor: { r: 160, g: 174, b: 192 },
+                alpha: 0.35,
                 metallic: 0.2,
-                roughness: 0.6,
+                roughness: 0.75,
                 subsurfaceScattering: true,
                 sssIntensity: 0.3
             },
@@ -190,7 +190,7 @@
             },
             bloom: {
                 enabled: true,
-                threshold: 0.7,
+                threshold: 0.85,
                 intensity: 0.6,
                 radius: 3
             },

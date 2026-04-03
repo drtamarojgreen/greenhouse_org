@@ -48,16 +48,12 @@
             // Sort by depth (Back to Front)
             facesToDraw.sort((a, b) => b.depth - a.depth);
 
+            const material = (window.GreenhouseNeuroConfig && window.GreenhouseNeuroConfig.get) ?
+                window.GreenhouseNeuroConfig.get('materials.brain') :
+                { baseColor: { r: 160, g: 174, b: 192 }, roughness: 0.75, metalness: 0.2, alpha: 0.35, sss: true };
+
             // Draw Faces
             facesToDraw.forEach(f => {
-                const material = {
-                    baseColor: { r: 160, g: 174, b: 192 },
-                    roughness: 0.5,
-                    metalness: 0.1,
-                    sss: true,
-                    alpha: 0.15
-                };
-
                 const center = {
                     x: (brainShell.vertices[f.indices[0]].x + brainShell.vertices[f.indices[1]].x + brainShell.vertices[f.indices[2]].x) / 3,
                     y: (brainShell.vertices[f.indices[0]].y + brainShell.vertices[f.indices[1]].y + brainShell.vertices[f.indices[2]].y) / 3,
@@ -74,7 +70,7 @@
                 color.r *= ao; color.g *= ao; color.b *= ao;
 
                 const isTarget = targetRegion && (f.region === targetRegion);
-                const fog = GreenhouseModels3DMath.applyDepthFog(isTarget ? 0.9 : color.a, f.depth);
+                const fog = GreenhouseModels3DMath.applyDepthFog(isTarget ? 0.9 : material.alpha, f.depth);
 
                 ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${fog})`;
                 ctx.beginPath();
