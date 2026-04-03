@@ -128,6 +128,10 @@
             this.projection.height = this.canvas.height;
         },
 
+        shouldEvolve() {
+            return this.isEvolving;
+        },
+
         setupInteraction() {
             this.canvas.addEventListener('mousedown', e => {
                 if (window.GreenhouseGeneticPiPControls?.handleMouseDown(e, this.canvas)) return;

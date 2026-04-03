@@ -117,6 +117,10 @@
 
         getDirectionalLight() {
             return this.lights.find(l => l.type === 'directional')?.direction || { x: 0.5, y: -0.5, z: 1 };
+        },
+
+        toRGBA(color) {
+            return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${color.a})`;
         }
     };
 
