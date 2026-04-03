@@ -73,7 +73,7 @@
             ctx.restore();
         },
 
-        drawSlider(ctx, app, s, value) {
+        drawSlider(ctx, app, s, value, label) {
             const isHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === s.id;
 
             ctx.save();
@@ -91,8 +91,16 @@
             const hy = s.y + s.h / 2;
             ctx.fillStyle = isHovered ? '#fff' : '#A0AEC0';
             ctx.beginPath();
-            ctx.arc(hx, hy, 8, 0, Math.PI * 2); // Slightly larger handle
+            ctx.arc(hx, hy, 8, 0, Math.PI * 2);
             ctx.fill();
+
+            if (label) {
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.font = '8px Quicksand, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(label.toUpperCase(), s.x - 10, s.y + s.h/2);
+            }
+
             if (isHovered) {
                 ctx.strokeStyle = 'rgba(255,255,255,0.5)';
                 ctx.lineWidth = 2;

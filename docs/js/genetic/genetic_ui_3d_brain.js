@@ -1,83 +1,56 @@
+// docs/js/genetic/genetic_ui_3d_brain.js
+// Enhanced 3D Brain Rendering Engine for Genetic Model (adapted from neuro_ui_3d_brain.js)
+
 (function () {
     'use strict';
 
     const GreenhouseGeneticBrain = {
+        _vertexPool: [],
+        _facePool: [],
+        _precomputedBoundaries: null,
+
         drawTargetView(ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell, drawPiPFrameCallback, cameraState) {
-            // Log every call
-            if (!this._drawTargetCallCount) this._drawTargetCallCount = 0;
-            this._drawTargetCallCount++;
+            if (drawPiPFrameCallback) drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
+            if (!brainShell || !cameraState || !cameraState.camera) return;
 
-            if (this._drawTargetCallCount % 60 === 0) {
-                console.log('[drawTargetView] Called:', {
-                    activeGene: JSON.stringify(activeGene, null, 2),
-                    call: this._drawTargetCallCount,
-                    x, y, w, h,
-                    hasBrainShell: !!brainShell,
-                    hasCamera: !!(cameraState && cameraState.camera),
-                    cameraRotY: cameraState?.camera?.rotationY?.toFixed(3) || cameraState?.rotationY?.toFixed(3)
-                });
-            }
-
-            if (drawPiPFrameCallback) {
-                drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
-            }
-
-            // Use the same brain rendering as neuro page
-            if (!brainShell) {
-                // Draw placeholder
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.fillStyle = '#E0E0E0';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText("No Brain Shell", w / 2, h / 2);
-                ctx.restore();
-                return;
-            }
-
-            // Use the specific camera for this view - no fallback
-            if (!cameraState || !cameraState.camera) {
-                console.error('[drawTargetView] No camera provided!');
-                return;
-            }
             const targetCamera = cameraState.camera;
-
             const projection = { width: w, height: h, near: 10, far: 5000 };
 
-            // Use the new self-contained rendering function
             ctx.save();
             ctx.translate(x, y);
             ctx.beginPath();
             ctx.rect(0, 0, w, h);
             ctx.clip();
 
-            if (window.GreenhouseModels3DMath) {
+            if (window.GreenhouseModels3DMath && window.GreenhouseGeneticLighting) {
                 this.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h, activeGene);
             }
-
             ctx.restore();
         },
 
         drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null) {
-            if (!brainShell || !window.GreenhouseModels3DMath) return;
             const targetRegion = activeGene ? activeGene.region : null;
-            const regions = brainShell.regions;
-            const lightDir = { x: 0.5, y: -0.5, z: 1 };
-            const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
-            lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
+            if (!brainShell) return;
 
-            const projectedVertices = brainShell.vertices.map(v =>
-                GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
-            );
+            const projectedVertices = [];
+            for (let i = 0; i < brainShell.vertices.length; i++) {
+                const v = brainShell.vertices[i];
+                const p = GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
+                projectedVertices.push(p);
+            }
 
             const facesToDraw = [];
-            brainShell.faces.forEach(f => {
-                const p1 = projectedVertices[f.indices[0]], p2 = projectedVertices[f.indices[1]], p3 = projectedVertices[f.indices[2]];
+            for (let i = 0; i < brainShell.faces.length; i++) {
+                const face = brainShell.faces[i];
+                const indices = face.indices || face;
+                const p1 = projectedVertices[indices[0]], p2 = projectedVertices[indices[1]], p3 = projectedVertices[indices[2]];
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
-                    const isFront = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) < 0;
-                    const v1 = brainShell.vertices[f.indices[0]], v2 = brainShell.vertices[f.indices[1]], v3 = brainShell.vertices[f.indices[2]];
-                    const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
-                    facesToDraw.push({ p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: f.region, isFront });
+                    const cross = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+                    if (cross < 0) {
+                        const v1 = brainShell.vertices[indices[0]], v2 = brainShell.vertices[indices[1]], v3 = brainShell.vertices[indices[2]];
+                        const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
+                        facesToDraw.push({ indices, p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: face.region || v1.region });
+                    }
                 }
             });
 
@@ -96,114 +69,73 @@
             facesToDraw.sort((a, b) => b.depth - a.depth);
 
             facesToDraw.forEach(f => {
-                let nx = f.normal.x, ny = f.normal.y, nz = f.normal.z;
-                if (!f.isFront) { nx = -nx; ny = -ny; nz = -nz; }
-                const diffuse = Math.max(0, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
-                let r = 160, g = 174, b = 192, a = 0.1; // Default to Neural Gray
-                if (f.region && regions[f.region]) {
-                    const match = regions[f.region].color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-                    if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); a = parseFloat(match[4] || 1); }
-                }
-                const isTarget = (targetRegion && (f.region === targetRegion || (targetRegion === 'pfc' && f.region === 'prefrontalCortex')));
-                const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
+                const material = { baseColor: { r: 160, g: 174, b: 192 }, roughness: 0.5, metalness: 0.1, sss: true, alpha: 0.15 };
+                const center = {
+                    x: (brainShell.vertices[f.indices[0]].x + brainShell.vertices[f.indices[1]].x + brainShell.vertices[f.indices[2]].x) / 3,
+                    y: (brainShell.vertices[f.indices[0]].y + brainShell.vertices[f.indices[1]].y + brainShell.vertices[f.indices[2]].y) / 3,
+                    z: (brainShell.vertices[f.indices[0]].z + brainShell.vertices[f.indices[1]].z + brainShell.vertices[f.indices[2]].z) / 3
+                };
+
+                const v0 = brainShell.vertices[f.indices[0]];
+                const ao = 1.0 - (v0.curvature || 0) * 2.0;
+
+                const color = GreenhouseGeneticLighting.calculateLighting(f.normal, center, camera, material);
+                color.r *= ao; color.g *= ao; color.b *= ao;
+
+                const isTarget = targetRegion && (f.region === targetRegion);
+                const fog = GreenhouseModels3DMath.applyDepthFog(isTarget ? 0.9 : color.a, f.depth);
+
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${fog})`;
+                ctx.beginPath();
+                ctx.moveTo(f.p1.x, f.p1.y);
+                ctx.lineTo(f.p2.x, f.p2.y);
+                ctx.lineTo(f.p3.x, f.p3.y);
+                ctx.fill();
 
                 if (isTarget) {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${GreenhouseModels3DMath.applyDepthFog(0.95, f.depth)})`;
-                } else {
-                    const intensity = 0.3 + diffuse * 0.7;
-                    ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${fog})`;
-                }
-                ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.fill();
-
-                // Morphological Signature Overlay
-                ctx.save();
-                if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
-                    ctx.strokeStyle = `rgba(255,255,255,${fog * 0.5})`; ctx.lineWidth = 0.7;
-                    ctx.setLineDash([1, 2]); ctx.stroke();
-                } else if (f.region === 'cerebellum') {
-                    ctx.strokeStyle = `rgba(255,255,255,${fog * 0.4})`; ctx.lineWidth = 0.5;
-                    ctx.beginPath();
-                    ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y);
-                    ctx.moveTo(f.p1.x + 2, f.p1.y + 2); ctx.lineTo(f.p2.x + 2, f.p2.y + 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog})`;
+                    ctx.lineWidth = 1.5;
                     ctx.stroke();
-                } else if (f.region === 'parietalLobe') {
-                    ctx.strokeStyle = `rgba(255,255,255,${fog * 0.2})`; ctx.lineWidth = 0.5;
-                    ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
                 }
-                ctx.restore();
             });
 
-            // NEW: Topological Projection - Smooth Surface Overlay
-            this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
-            this.drawTopologicalBoundaries(ctx, projectedVertices, brainShell.vertices, brainShell.faces, brainShell, camera, projection);
+            this.drawSurfaceGrid(ctx, projectedVertices);
+            this.drawOrientationWidget(ctx, camera, width, height);
         },
 
-        drawSurfaceGrid(ctx, projectedVertices, brainShell) {
+        drawSurfaceGrid(ctx, projectedVertices) {
             ctx.save();
-            // HUD-style subtle grid
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
-            ctx.lineWidth = 0.3;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 0.5;
             ctx.beginPath();
-            const bands = 40;
-
-            for (let lat = 0; lat <= bands; lat += 5) {
-                for (let lon = 0; lon <= bands; lon++) {
-                    const i = lat * (bands + 1) + lon;
-                    const p = projectedVertices[i];
-                    if (p && p.scale > 0) {
-                        if (lon === 0) ctx.moveTo(p.x, p.y);
-                        else ctx.lineTo(p.x, p.y);
-                    }
+            for (let i = 0; i < projectedVertices.length; i += 10) {
+                const p = projectedVertices[i];
+                if (p && p.scale > 0) {
+                    ctx.moveTo(p.x, p.y);
+                    ctx.arc(p.x, p.y, 0.5, 0, Math.PI * 2);
                 }
             }
             ctx.stroke();
             ctx.restore();
         },
 
-        drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
-            if (!brainShell.regionalPlanes) return;
+        drawOrientationWidget(ctx, camera, width, height) {
+            const size = 60;
+            const ox = width - size - 20;
+            const oy = size + 20;
             ctx.save();
-            ctx.setLineDash([]); // Solid lines
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.lineWidth = 1.5;
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-            const radius = 200;
-
-            brainShell.regionalPlanes.forEach(plane => {
-                const axis = plane.axis;
-                const threshold = plane.value * radius;
-                faces.forEach(face => {
-                    const idx = face.indices || face;
-                    const v1 = vertices[idx[0]], v2 = vertices[idx[1]], v3 = vertices[idx[2]];
-                    const s1 = v1[axis] > threshold, s2 = v2[axis] > threshold, s3 = v3[axis] > threshold;
-
-                    if ((s1 !== s2) || (s1 !== s3) || (s2 !== s3)) {
-                        const points = [];
-                        const checkEdge = (va, vb) => {
-                            if ((va[axis] > threshold) !== (vb[axis] > threshold)) {
-                                const t = (threshold - va[axis]) / (vb[axis] - va[axis]);
-                                const inter = {
-                                    x: va.x + t * (vb.x - va.x),
-                                    y: va.y + t * (vb.y - va.y),
-                                    z: va.z + t * (vb.z - va.z)
-                                };
-                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
-                                if (proj.scale > 0 && proj.depth < 0.8) points.push(proj);
-                            }
-                        };
-                        checkEdge(v1, v2); checkEdge(v2, v3); checkEdge(v3, v1);
-                        if (points.length === 2) {
-                            ctx.beginPath();
-                            ctx.moveTo(points[0].x, points[0].y);
-                            ctx.lineTo(points[1].x, points[1].y);
-                            // Sharper depth clipping to keep lines internal
-                            const opacity = GreenhouseModels3DMath.applyDepthFog(1, points[0].depth, 0.2, 0.7);
-                            ctx.globalAlpha = 0.5 * opacity;
-                            ctx.stroke();
-                        }
-                    }
-                });
+            ctx.translate(ox, oy);
+            const axes = [
+                { x: 1, y: 0, z: 0, label: 'L', color: '#ff4444' },
+                { x: 0, y: 1, z: 0, label: 'S', color: '#44ff44' },
+                { x: 0, y: 0, z: 1, label: 'P', color: '#4444ff' }
+            ];
+            axes.forEach(axis => {
+                const p = GreenhouseModels3DMath.project3DTo2D(axis.x * 30, axis.y * 30, axis.z * 30,
+                    { x: 0, y: 0, z: -100, rotationX: camera.rotationX, rotationY: camera.rotationY, rotationZ: camera.rotationZ, fov: 200 },
+                    { width: 0, height: 0, near: 1, far: 1000 });
+                ctx.beginPath(); ctx.strokeStyle = axis.color; ctx.moveTo(0, 0); ctx.lineTo(p.x, p.y); ctx.stroke();
+                ctx.fillStyle = axis.color; ctx.font = '10px Arial'; ctx.fillText(axis.label, p.x, p.y);
             });
             ctx.restore();
         },
