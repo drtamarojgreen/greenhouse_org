@@ -133,7 +133,8 @@
             'mobile/test_mobile_ui_interactions.js', 'mobile/test_mobile_viewer.js', 'common/test_model_sync.js',
             'common/test_patient_app_unit.js', 'common/test_dashboard_app_unit.js', 'common/test_meditation_app.js',
             'common/test_scheduler_logic.js', 'common/test_tech_canvas.js', 'common/test_inspiration_logic.js',
-            'common/test_kegg_parser.js', 'common/test_models_page_new.js', 'common/test_layout_parity.js'
+            'common/test_kegg_parser.js', 'common/test_models_page_new.js', 'common/test_layout_parity.js',
+            'test_production_resilience.js'
         ]
     };
 
@@ -155,7 +156,7 @@
             'genetic/genetic_ui_3d.js', 'genetic.js'
         ],
         'stress': [
-            'models_util.js', 'models_3d_math.js', 'neuro_ui_3d_geometry.js',
+            'models_util.js', 'models_3d_math.js', 'neuro/neuro_ui_3d_geometry.js',
             'stress/stress_config.js', 'stress/stress_geometry.js', 'stress/stress_app.js', 'stress/stress_macro.js',
             'stress/stress_pathway.js', 'stress/stress_systemic.js', 'stress/stress_controls.js',
             'stress/stress_tooltips.js', 'stress/stress_ui_3d.js'
@@ -166,6 +167,60 @@
             'inflammation/inflammation_pathway.js', 'inflammation/inflammation_ui_3d.js',
             'inflammation/inflammation_analysis.js', 'inflammation/inflammation_app.js',
             'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js'
+        ],
+        'synapse': [
+            'models_util.js', 'models_3d_math.js',
+            'synapse/synapse_chemistry.js', 'synapse/synapse_analytics.js',
+            'synapse/synapse_app.js', 'synapse/synapse_controls.js',
+            'synapse/synapse_neurotransmitters.js', 'synapse/synapse_3d.js'
+        ],
+        'pathway': [
+            'models_util.js', 'models_3d_math.js', 'kegg_parser.js',
+            'pathway/pathway_config.js', 'pathway/pathway_layout.js',
+            'pathway/pathway_ui_3d_brain.js', 'pathway/pathway_viewer.js'
+        ],
+        'dopamine': [
+            'models_util.js', 'models_3d_math.js',
+            'dopamine/dopamine_config.js', 'dopamine/dopamine_synapse.js',
+            'dopamine/dopamine_molecular.js', 'dopamine/dopamine_electrophysiology.js',
+            'dopamine/dopamine_controls.js', 'dopamine/dopamine_app.js'
+        ],
+        'serotonin': [
+            'models_util.js', 'models_3d_math.js',
+            'serotonin/serotonin_config.js', 'serotonin/serotonin_receptors.js',
+            'serotonin/serotonin_kinetics.js', 'serotonin/serotonin_signaling.js',
+            'serotonin/serotonin_transport.js', 'serotonin/serotonin_controls.js',
+            'serotonin.js'
+        ],
+        'dna': [
+            'models_util.js', 'models_3d_math.js',
+            'dna/dna_config.js', 'dna/dna_repair_mechanisms.js',
+            'dna/dna_repair_mutations.js', 'dna/dna_repair.js'
+        ],
+        'rna': [
+            'models_util.js', 'models_3d_math.js',
+            'rna/rna_config.js', 'rna/rna_repair.js'
+        ],
+        'emotion': [
+            'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js',
+            'emotion/emotion_config.js', 'emotion/emotion_regions.js',
+            'emotion/emotion_interventions.js', 'emotion/emotion_theories.js',
+            'emotion/emotion_ui_3d_brain.js', 'emotion/emotion_app.js'
+        ],
+        'cognition': [
+            'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js',
+            'cognition/cognition_config.js', 'cognition/cognition_drawing_utils.js',
+            'cognition/cognition_app.js'
+        ],
+        'common': [
+            'models_lang.js', 'models_util.js', 'models_data.js', 'models_ui_synapse.js',
+            'models_ui_brain.js', 'models_ui_environment_overlay.js', 'models_ui_environment_hovers.js',
+            'models_ui_environment_background.js', 'models_ui_environment_medication.js',
+            'models_ui_environment_therapy.js', 'models_ui_environment.js', 'models_3d_math.js',
+            'models_ui_3d.js', 'models_ui.js', 'models_ux.js', 'labeling_system.js',
+            'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js',
+            'inspiration.js', 'kegg_parser.js', 'models_toc.js', 'GreenhouseMobile.js',
+            'GreenhouseReactCompatibility.js', 'V8GraphRenderer.js'
         ]
     };
 
@@ -249,7 +304,6 @@
         await new Promise(resolve => setTimeout(resolve, 1000));
         loadingOverlay.style.display = 'none';
 
-<<<<<<< HEAD
         try {
             const section1 = document.createElement('section'); section1.className = 'wixui-section';
             section1.appendChild(document.createElement('div'));
@@ -258,21 +312,9 @@
             const sectionInner = document.createElement('section'); div2_1.appendChild(sectionInner);
             const idiv1 = document.createElement('div'); sectionInner.appendChild(idiv1);
             idiv1.appendChild(document.createElement('div')); idiv1.appendChild(document.createElement('div'));
-            const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
+            const targetDiv = document.createElement('div'); targetDiv.id = "model-target"; targetDiv.style.height = "800px"; targetDiv.style.minHeight = "800px";
             sectionInner.appendChild(targetDiv);
             modelContainer.appendChild(section1);
-=======
-        const section1 = document.createElement('section'); section1.className = 'wixui-section';
-        section1.appendChild(document.createElement('div'));
-        const div2 = document.createElement('div'); section1.appendChild(div2);
-        const div2_1 = document.createElement('div'); div2.appendChild(div2_1);
-        const sectionInner = document.createElement('section'); div2_1.appendChild(sectionInner);
-        const idiv1 = document.createElement('div'); sectionInner.appendChild(idiv1);
-        idiv1.appendChild(document.createElement('div')); idiv1.appendChild(document.createElement('div'));
-        const targetDiv = document.createElement('div'); targetDiv.id = "model-target"; targetDiv.style.height = "800px"; targetDiv.style.minHeight = "800px";
-        sectionInner.appendChild(targetDiv);
-        modelContainer.appendChild(section1);
->>>>>>> monochromatic-accessibility-fix-411015576853214547
 
             const script = document.createElement('script');
             script.src = `${baseUrl}js/${model.js}`;
