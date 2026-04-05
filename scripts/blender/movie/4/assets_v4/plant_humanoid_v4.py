@@ -115,24 +115,22 @@ def create_iris_material_v4(name, color=(0.49, 0.36, 0.75)):
     node_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
 
-    # -- Coordinates: UV coords are baked into the sphere mesh surface --
-    # 'Generated' maps to the object bounding box — after BONE parenting
-    # the bbox origin is at the bone TAIL (not the sphere centre), so the
-    # gradient is displaced and only the sclera-white region is visible.
-    # 'UV' coords are baked into the mesh topology at build time and are
-    # immune to any world/local/bone-space offset.  The front pole of a
-    # bmesh UV sphere sits at UV (0.5, 0.75) — we centre the mapping there.
+    # -- Coordinates --
+    # NOTE: the procedural eyeball and pupil-disc meshes in this pipeline do
+    # not create an explicit UV layer, so `TexCoord.UV` can collapse to a
+    # constant value and wash the eye to sclera-white. Use Generated space so
+    # the iris ramp remains visible without requiring mesh UV authoring.
     tex_coord = nodes.new('ShaderNodeTexCoord')
     mapping   = nodes.new('ShaderNodeMapping')
     mapping.name = "PupilMapping"           # kept for dialogue_scene_v4 animation
-    links.new(tex_coord.outputs['UV'], mapping.inputs['Vector'])
+    links.new(tex_coord.outputs['Generated'], mapping.inputs['Vector'])
 
     # UV space is 0→1 across the sphere surface (not world-units).
     # Scale (3.5, 3.5, 3.5) makes the QUADRATIC_SPHERE gradient fill
     # roughly the front hemisphere, giving a clear pupil/iris/sclera split.
     # Location centres the gradient on the front pole of the UV sphere.
-    mapping.inputs['Scale'].default_value    = (3.5, 3.5, 3.5)
-    mapping.inputs['Location'].default_value = (-0.75, -1.25, 0.0)
+    mapping.inputs['Scale'].default_value    = (2.8, 2.8, 2.8)
+    mapping.inputs['Location'].default_value = (-0.5, -0.5, 0.0)
 
     grad = nodes.new('ShaderNodeTexGradient')
     grad.gradient_type = 'QUADRATIC_SPHERE'
