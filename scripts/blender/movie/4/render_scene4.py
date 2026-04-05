@@ -83,6 +83,56 @@ def render_scene4():
     
     # 4. Render Setup
     apply_render_preset(mode)
+
+    def enforce_render_safety():
+        """
+        Keep rig controls out of output even if keyed visibility toggles or
+        viewport-style render paths are used.
+        """
+        hidden_armatures = []
+        hidden_face_helpers = []
+
+        for obj in bpy.data.objects:
+            # Rig bones are carried by armature objects.
+            if obj.type == "ARMATURE":
+                obj.hide_render = True
+                obj.hide_viewport = True
+                obj.show_in_front = False
+                arm_data = getattr(obj, "data", None)
+                if arm_data is not None:
+                    # Extra hardening for viewport/openGL style renders where
+                    # bone overlays/custom shapes can still be drawn.
+                    for attr, value in (
+                        ("display_type", "WIRE"),
+                        ("show_names", False),
+                        ("show_axes", False),
+                        ("show_bone_custom_shapes", False),
+                    ):
+                        if hasattr(arm_data, attr):
+                            setattr(arm_data, attr, value)
+                hidden_armatures.append(obj.name)
+                continue
+
+            # Facial control helpers are bone-parented guide meshes.
+            if obj.parent_type == "BONE":
+                bone_name = obj.parent_bone or ""
+                obj_name = obj.name or ""
+                if (".Ctrl" in bone_name
+                        or "LidCorner" in obj_name
+                        or "Ctrl" in obj_name
+                        or "Flare" in obj_name):
+                    obj.hide_render = True
+                    obj.hide_viewport = True
+                    hidden_face_helpers.append(obj.name)
+
+        if hidden_armatures:
+            print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
+        if hidden_face_helpers:
+            print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
+
+    # Initial safety pass before frame stepping.
+    enforce_render_safety()
+
     output_dir = os.path.join(config.OUTPUT_BASE_DIR, "scene4", mode)
     os.makedirs(output_dir, exist_ok=True)
     
@@ -95,6 +145,8 @@ def render_scene4():
     
     for f in range(start_f, end_f + 1):
         scene.frame_set(f)
+        # Re-apply every frame in case keyframed visibility re-enables helpers.
+        enforce_render_safety()
         
         # Camera Switching
         marker = next((m for m in sorted(scene.timeline_markers, key=lambda x: x.frame, reverse=True) if m.frame <= f), None)

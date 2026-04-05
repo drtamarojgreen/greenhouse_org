@@ -21,6 +21,11 @@ def _smooth_all(obj):
     for p in obj.data.polygons:
         p.use_smooth = True
 
+def _set_non_render_helper(obj):
+    """Mark rig helper geometry as non-renderable guide-only content."""
+    obj.hide_render = True
+    obj.display_type = 'WIRE'
+
 
 def _new_obj(name, mesh_name, armature, bone_name):
     """Create a new mesh object parented to a bone."""
@@ -198,6 +203,7 @@ def _build_nose_tip(name, armature, bone_name, bark_material):
 
     obj.data.materials.append(bark_material)
     _smooth_all(obj)
+    _set_non_render_helper(obj)
     return obj
 
 
@@ -231,6 +237,7 @@ def _build_nose_ala(name, armature, bone_name, bark_material, side="L"):
 
     obj.data.materials.append(bark_material)
     _smooth_all(obj)
+    _set_non_render_helper(obj)
     return obj
 
 
@@ -264,6 +271,7 @@ def _build_lip_corner(name, armature, bone_name, bark_material, side="L"):
 
     obj.data.materials.append(bark_material)
     _smooth_all(obj)
+    _set_non_render_helper(obj)
     return obj
 
 
@@ -370,6 +378,9 @@ def _build_ear(name, armature, bone_name, bark_material, side="L"):
         # moves origin from tail back to head.
         obj.location = (0.0, -ear_bone.length, 0.0)
 
+    # In scene4 these ear markers read as rig helpers in camera shots.
+    _set_non_render_helper(obj)
+
     return obj
 
 def _build_chin(name, armature, bone_name, bark_material):
@@ -397,6 +408,7 @@ def _build_chin(name, armature, bone_name, bark_material):
 
     obj.data.materials.append(bark_material)
     _smooth_all(obj)
+    _set_non_render_helper(obj)
     return obj
 
 
