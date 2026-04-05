@@ -21,6 +21,11 @@ def _smooth_all(obj):
     for p in obj.data.polygons:
         p.use_smooth = True
 
+def _set_non_render_helper(obj):
+    """Mark rig helper geometry as non-renderable guide-only content."""
+    obj.hide_render = True
+    obj.display_type = 'WIRE'
+
 
 def _new_obj(name, mesh_name, armature, bone_name):
     """Create a new mesh object parented to a bone."""
@@ -198,6 +203,7 @@ def _build_nose_tip(name, armature, bone_name, bark_material):
 
     obj.data.materials.append(bark_material)
     _smooth_all(obj)
+    _set_non_render_helper(obj)
     return obj
 
 
@@ -231,6 +237,7 @@ def _build_nose_ala(name, armature, bone_name, bark_material, side="L"):
 
     obj.data.materials.append(bark_material)
     _smooth_all(obj)
+    _set_non_render_helper(obj)
     return obj
 
 
@@ -264,6 +271,7 @@ def _build_lip_corner(name, armature, bone_name, bark_material, side="L"):
 
     obj.data.materials.append(bark_material)
     _smooth_all(obj)
+    _set_non_render_helper(obj)
     return obj
 
 
@@ -284,10 +292,10 @@ def _build_ear(name, armature, bone_name, bark_material, side="L"):
 
     Construction approach
     ─────────────────────
-    Start with a UV sphere (radius 0.065).  Deform every vertex:
-      1. Flatten depth  (Y *= 0.22)  → thin plate
-      2. Widen slightly (X *= 0.75)
-      3. Elongate       (Z *= 1.25)  → taller than wide
+    Start with a UV sphere (radius 0.10).  Deform every vertex:
+      1. Flatten depth  (Y *= 0.18)  → thin plate
+      2. Preserve width (X *= 0.95)
+      3. Elongate       (Z *= 1.55)  → taller than wide
       4. Helix rim:  verts near the outer edge get Y pushed back (outward)
          to create the rolled-over rim.
       5. Concha scoop: verts near centre get Y pushed forward (inward)
@@ -309,46 +317,46 @@ def _build_ear(name, armature, bone_name, bark_material, side="L"):
     bm = bmesh.new()
 
     # ── Main ear cup (deformed sphere) ────────────────────────────────────
-    bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=20, radius=0.065)
+    bmesh.ops.create_uvsphere(bm, u_segments=30, v_segments=24, radius=0.10)
 
     for v in bm.verts:
         ox, oy, oz = v.co.x, v.co.y, v.co.z
 
         # 1. Basic shape squash
-        v.co.x = ox * 0.75
-        v.co.y = oy * 0.22       # very flat
-        v.co.z = oz * 1.25       # taller
+        v.co.x = ox * 0.95
+        v.co.y = oy * 0.18       # very flat ear plate
+        v.co.z = oz * 1.55       # taller, more mammalian silhouette
 
         # 2. Helix rim — lateral edge verts (|x| large) roll back in +Y
         lateral = abs(ox)        # use original x before squash
-        if lateral > 0.04:
-            rim_fac = (lateral - 0.04) / 0.025   # 0→1 as we reach the edge
+        if lateral > 0.05:
+            rim_fac = (lateral - 0.05) / 0.04    # 0→1 as we reach the edge
             rim_fac = max(0.0, min(1.0, rim_fac))
-            v.co.y += rim_fac * 0.018             # roll outward (+Y = back)
+            v.co.y += rim_fac * 0.03              # stronger rolled helix
 
         # 3. Concha bowl — central verts scoop inward (-Y = forward into head)
         dist_centre = math.sqrt(ox*ox + oz*oz)
-        if dist_centre < 0.035:
-            bowl_fac = 1.0 - (dist_centre / 0.035)
-            v.co.y -= bowl_fac * 0.014            # hollow cup forward
+        if dist_centre < 0.05:
+            bowl_fac = 1.0 - (dist_centre / 0.05)
+            v.co.y -= bowl_fac * 0.026            # deeper bowl
 
         # 4. Antihelix ridge — a secondary ridge ~60 % of the way from
         #    centre to edge, elevated in Z slightly
-        if 0.020 < dist_centre < 0.040 and oz > 0:
-            antihelix_fac = 1.0 - abs(dist_centre - 0.030) / 0.010
+        if 0.030 < dist_centre < 0.070 and oz > 0:
+            antihelix_fac = 1.0 - abs(dist_centre - 0.050) / 0.020
             antihelix_fac = max(0.0, min(1.0, antihelix_fac))
-            v.co.z += antihelix_fac * 0.010
+            v.co.z += antihelix_fac * 0.02
 
         # 5. Lower lobe — bottom verts (oz < -0.04) rounded and widened
-        if oz < -0.04:
-            lobe_fac = min(1.0, (abs(oz) - 0.04) / 0.025)
-            v.co.x *= (1.0 + lobe_fac * 0.3)     # wider lobe
-            v.co.y += lobe_fac * 0.006            # slight back-tilt
+        if oz < -0.05:
+            lobe_fac = min(1.0, (abs(oz) - 0.05) / 0.045)
+            v.co.x *= (1.0 + lobe_fac * 0.45)    # fuller lobe
+            v.co.y += lobe_fac * 0.01            # slight back-tilt
 
     # ── Tragus nub (small sphere at lower-front of canal) ────────────────
-    tragus_loc = mathutils.Vector((x_sign * 0.010, -0.016, -0.028))
+    tragus_loc = mathutils.Vector((x_sign * 0.014, -0.026, -0.040))
     tret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8,
-                                     radius=0.012,
+                                     radius=0.016,
                                      matrix=mathutils.Matrix.Translation(tragus_loc))
     # Flatten tragus in Y
     for v in tret['verts']:
@@ -397,6 +405,7 @@ def _build_chin(name, armature, bone_name, bark_material):
 
     obj.data.materials.append(bark_material)
     _smooth_all(obj)
+    _set_non_render_helper(obj)
     return obj
 
 
