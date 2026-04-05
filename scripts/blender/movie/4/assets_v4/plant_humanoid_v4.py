@@ -91,7 +91,7 @@ def setup_production_lighting(subjects):
             if armature: t.subtarget = "Torso"
             t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
 
-def create_iris_material_v4(name, color=(0.49, 0.36, 0.75)):
+def create_iris_material_v4(name, color=(0.36, 0.24, 0.62)):
     """
     Eye shader — pupil / iris / sclera rings visible from camera.
 
@@ -136,29 +136,24 @@ def create_iris_material_v4(name, color=(0.49, 0.36, 0.75)):
     grad.gradient_type = 'QUADRATIC_SPHERE'
     links.new(mapping.outputs['Vector'], grad.inputs['Vector'])
 
-    # -- Single color ramp: pupil(black) → iris(color) → sclera(white) --
+    # -- Single color ramp: pupil(light lavender) → iris(dark lavender) → sclera(white) --
     # Fac=0  = centre of gradient = pupil
     # Fac=1  = edge of gradient sphere = sclera
     cr = nodes.new('ShaderNodeValToRGB')
     cr.name = "IrisRamp"
     elems = cr.color_ramp.elements
 
-    # element [0] already exists at position 0 — set to black (pupil)
+    # element [0] already exists at position 0 — light lavender pupil core
     elems[0].position = 0.0
-    elems[0].color    = (0.0, 0.0, 0.0, 1.0)
+    elems[0].color    = (0.78, 0.70, 0.90, 1.0)
 
-    # iris inner edge (stronger saturation so lavender reads on bright keys)
+    # iris inner edge: transition into dark lavender
     e1 = elems.new(0.14)
-    e1.color = (color[0] * 0.75, color[1] * 0.75, color[2] * 0.85, 1.0)
+    e1.color = (0.30, 0.18, 0.45, 1.0)
 
-    # iris outer edge / peak colour (wider band + slightly boosted purple)
+    # iris outer edge / peak colour: keep deep lavender ring around pupil
     e2 = elems.new(0.56)
-    e2.color = (
-        min(1.0, color[0] * 1.15),
-        min(1.0, color[1] * 1.05),
-        min(1.0, color[2] * 1.25),
-        1.0
-    )
+    e2.color = (0.36, 0.22, 0.54, 1.0)
 
     # sclera boundary — sharp transition
     e3 = elems.new(0.62)
