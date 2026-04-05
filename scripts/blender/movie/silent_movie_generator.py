@@ -7,7 +7,7 @@ if script_dir not in sys.path:
     sys.path.append(script_dir)
 
 import bpy, os, sys, math, mathutils, random, logging
-import setup_engine, camera_controls, lighting_setup, compositor_settings, scene_orchestrator, scene_utils, setup_characters, animate_characters, animate_props, detail_config
+import setup_engine, camera_controls, lighting_setup, compositor_settings, scene_orchestrator, scene_utils, setup_characters, animate_characters, animate_props, detail_config, render_profiles
 from assets import plant_humanoid, gnome_antagonist, library_props, futuristic_props, greenhouse_structure, environment_props, weather_system, exterior_garden, greenhouse_interior, brain_neuron
 from master import BaseMaster
 from constants import SCENE_MAP

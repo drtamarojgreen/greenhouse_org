@@ -279,6 +279,24 @@ def place_random_prop(target_collection, asset_func, bounds_x, bounds_y, bounds_
             return obj
     return None
 
+def apply_dialogue_blocking(char_a, char_b, spacing=2.0):
+    """
+    Standardized dialogue blocking utility (from Version 4).
+    Positions characters to face each other with a specified spacing.
+    """
+    if not (char_a and char_b): return
+
+    # Position char_b relative to char_a
+    char_b.location = char_a.location + mathutils.Vector((spacing, 0, 0))
+
+    # Align eyelines
+    vec = char_b.location - char_a.location
+    angle = math.atan2(vec.y, vec.x)
+
+    # Adjust for forward vector orientation (Character looks towards -Y)
+    char_a.rotation_euler[2] = angle + (math.pi / 2)
+    char_b.rotation_euler[2] = angle - (math.pi / 2)
+
 def generate_subtitles(master, output_path="movie_subtitles.srt"):
     """Enhancement #85: Generates an SRT file based on intertitles and scene ranges."""
     from constants import SCENE_MAP

@@ -48,6 +48,28 @@ def ensure_camera(master):
     
     return cam, target
 
+def setup_rail_camera(master, name="RailCamera", location=(0, -15, 6), target_location=(0, 0, 1)):
+    """
+    Creates a Rail-Track Camera System to ensure 100% framing safety (from Version 2).
+    """
+    cam_data = bpy.data.cameras.new(name)
+    cam_obj = bpy.data.objects.new(name, cam_data)
+    bpy.context.collection.objects.link(cam_obj)
+    cam_obj.location = location
+
+    # Add a Focus Target
+    target_obj = bpy.data.objects.new(f"{name}_Target", None)
+    bpy.context.collection.objects.link(target_obj)
+    target_obj.location = target_location
+
+    # Track-To Constraint
+    tt = cam_obj.constraints.new('TRACK_TO')
+    tt.target = target_obj
+    tt.track_axis = 'TRACK_NEGATIVE_Z'
+    tt.up_axis = 'UP_Y'
+
+    return cam_obj, target_obj
+
 def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=4.5, env_min_dist=2.5):
     """
     P1-4: Prevent camera clipping through character and environmental bounds.

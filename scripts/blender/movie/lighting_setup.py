@@ -151,3 +151,59 @@ def setup_lighting(master_instance):
 
     # --- Enhancement #29: Soft Box Conversion ---
     style.replace_with_soft_boxes()
+
+def setup_cinematic_lighting(master, use_6_point=True):
+    """
+    Opt-in cinematic lighting setup (from Version 4).
+    Implements a full 6-point setup: Key, Fill, Rim, Kicker L, Kicker R, and Background.
+    """
+    # 1. Key Light
+    bpy.ops.object.light_add(type='AREA', location=(5, -5, 5))
+    key = bpy.context.object
+    key.name = "Cinematic_Key"
+    key.data.energy = 1000
+    key.data.size = 5.0
+
+    # 2. Fill Light
+    bpy.ops.object.light_add(type='AREA', location=(-5, -5, 3))
+    fill = bpy.context.object
+    fill.name = "Cinematic_Fill"
+    fill.data.energy = 300
+    fill.data.size = 8.0
+
+    # 3. Rim Light
+    bpy.ops.object.light_add(type='AREA', location=(0, 5, 5))
+    rim = bpy.context.object
+    rim.name = "Cinematic_Rim"
+    rim.data.energy = 800
+    rim.data.size = 3.0
+
+    if use_6_point:
+        # 4. Kicker Left
+        bpy.ops.object.light_add(type='SPOT', location=(-3, 3, 2))
+        kick_l = bpy.context.object
+        kick_l.name = "Cinematic_Kicker_L"
+        kick_l.data.energy = 200
+
+        # 5. Kicker Right
+        bpy.ops.object.light_add(type='SPOT', location=(3, 3, 2))
+        kick_r = bpy.context.object
+        kick_r.name = "Cinematic_Kicker_R"
+        kick_r.data.energy = 200
+
+        # 6. Background Light
+        bpy.ops.object.light_add(type='AREA', location=(0, 10, 5))
+        bg_light = bpy.context.object
+        bg_light.name = "Cinematic_BG"
+        bg_light.data.energy = 500
+        bg_light.data.size = 10.0
+
+    # Ensure all cinematic lights track the camera target
+    target = bpy.data.objects.get("CamTarget")
+    if target:
+        for obj in bpy.data.objects:
+            if "Cinematic_" in obj.name:
+                con = obj.constraints.new(type='TRACK_TO')
+                con.target = target
+                con.track_axis = 'TRACK_NEGATIVE_Z'
+                con.up_axis = 'UP_Y'

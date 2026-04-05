@@ -166,6 +166,22 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=1500
         modifier.frame_start, modifier.frame_end = frame_start, frame_end
         modifier.blend_in, modifier.blend_out = 10, 10
 
+def apply_secondary_motion(obj, motion_type="breathing", strength=1.0):
+    """
+    Applies procedural secondary motion using F-curve noise modifiers (from Version 4).
+    """
+    if motion_type == "breathing":
+        # Slow, subtle scale oscillation
+        insert_looping_noise(obj, "scale", strength=0.01 * strength, scale=50.0)
+    elif motion_type == "flicker":
+        # Rapid intensity oscillation (for lights)
+        if hasattr(obj.data, "energy"):
+            insert_looping_noise(obj.data, "energy", strength=50.0 * strength, scale=2.0)
+    elif motion_type == "sway":
+        # Gentle rotation sway
+        insert_looping_noise(obj, "rotation_euler", index=0, strength=0.02 * strength, scale=30.0)
+        insert_looping_noise(obj, "rotation_euler", index=1, strength=0.02 * strength, scale=35.0)
+
 def ease_action(obj, data_path, index=-1, interpolation='BEZIER', easing='EASE_IN_OUT'):
     """Sets easing for all keyframes of a specific data path in a 5.0 slot."""
     if not obj or not obj.animation_data or not obj.animation_data.action: return
