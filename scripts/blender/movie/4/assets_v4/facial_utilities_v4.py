@@ -84,14 +84,12 @@ def _build_pupil_disc(name, armature, bone_name, iris_material,
 
     # -- BONE parenting offset fix ------------------------------------------
     # With parent_type='BONE' Blender places the child's origin at the bone
-    # TAIL, not the head.  The Pupil bone points in -Y (same as Eye bone) so
-    # the tail is displaced further in -Y by the bone length (~0.032m).
-    # We compensate by moving the object origin back toward the bone head in
-    # bone-local space: +Y by the bone length so the disc sits on the cornea.
+    # TAIL, not the head. In bone-local space, head->tail is +Y, so to move
+    # the child back from tail to head we must offset by -Y bone length.
     pupil_bone = armature.data.bones.get(bone_name)
     if pupil_bone:
         bone_len = pupil_bone.length          # world-space bone length
-        obj.location = (0.0, bone_len, 0.0)  # push back to bone head in local
+        obj.location = (0.0, -bone_len, 0.0)
 
     # -- Orientation constraint --------------------------------------------
     # Copy the Eye bone's world rotation so the disc always faces the same
