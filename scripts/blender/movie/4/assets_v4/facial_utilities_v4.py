@@ -376,6 +376,9 @@ def _build_ear(name, armature, bone_name, bark_material, side="L"):
         # moves origin from tail back to head.
         obj.location = (0.0, -ear_bone.length, 0.0)
 
+    # In scene4 these ear markers read as rig helpers in camera shots.
+    _set_non_render_helper(obj)
+
     return obj
 
 def _build_chin(name, armature, bone_name, bark_material):
