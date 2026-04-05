@@ -147,16 +147,21 @@ def create_iris_material_v4(name, color=(0.49, 0.36, 0.75)):
     elems[0].position = 0.0
     elems[0].color    = (0.0, 0.0, 0.0, 1.0)
 
-    # iris inner edge
-    e1 = elems.new(0.18)
-    e1.color = (color[0] * 0.4, color[1] * 0.4, color[2] * 0.4, 1.0)
+    # iris inner edge (stronger saturation so lavender reads on bright keys)
+    e1 = elems.new(0.14)
+    e1.color = (color[0] * 0.75, color[1] * 0.75, color[2] * 0.85, 1.0)
 
-    # iris outer edge / peak colour
-    e2 = elems.new(0.38)
-    e2.color = (color[0], color[1], color[2], 1.0)
+    # iris outer edge / peak colour (wider band + slightly boosted purple)
+    e2 = elems.new(0.56)
+    e2.color = (
+        min(1.0, color[0] * 1.15),
+        min(1.0, color[1] * 1.05),
+        min(1.0, color[2] * 1.25),
+        1.0
+    )
 
     # sclera boundary — sharp transition
-    e3 = elems.new(0.42)
+    e3 = elems.new(0.62)
     e3.color = (0.95, 0.93, 0.90, 1.0)   # warm white sclera
 
     # element [1] was at position 1.0 by default — keep as sclera white
