@@ -125,10 +125,10 @@ def render_scene4():
                     obj.hide_viewport = True
                     hidden_face_helpers.append(obj.name)
 
-        if hidden_armatures:
-            print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
-        if hidden_face_helpers:
-            print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
+        #if hidden_armatures:
+        #    print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
+        #if hidden_face_helpers:
+        #    print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
 
     # Initial safety pass before frame stepping.
     enforce_render_safety()
