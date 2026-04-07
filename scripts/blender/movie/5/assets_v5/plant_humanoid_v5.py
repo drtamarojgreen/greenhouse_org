@@ -172,7 +172,7 @@ def create_iris_material_v5(name, color=(0.36, 0.24, 0.62)):
 
 
 def create_sclera_material_v5(name):
-    """Simple white sclera material for the eyeball base surface."""
+    """Simple white sclera material for eyeball base surface."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF")

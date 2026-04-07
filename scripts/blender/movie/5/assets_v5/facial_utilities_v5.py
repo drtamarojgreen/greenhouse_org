@@ -39,9 +39,16 @@ def _new_obj(name, mesh_name, armature, bone_name):
 # PUPIL / IRIS DISC
 # ---------------------------------------------------------------------------
 
-def _build_pupil_disc(name, armature, side,
-                      disc_radius=0.03, disc_depth=0.002,
-                      eye_radius=0.06, surface_offset=0.002):
+def _build_pupil_disc(
+    name,
+    armature,
+    side,
+    disc_radius=0.018,
+    disc_depth=0.002,
+    eye_radius=0.06,
+    surface_offset=0.010,
+    placement_direction=None,
+):
     """
     Thin disc that sits flush against the eyeball cornea, displaying the
     dark pupil ring on top of the iris shader.
@@ -76,7 +83,6 @@ def _build_pupil_disc(name, armature, side,
                           radius1=disc_radius,
                           radius2=disc_radius,
                           depth=disc_depth)
-
     # Rotate 90° around X: cone (along Z) → disc (flat in XZ, normal along +Y).
     rot_mx = mathutils.Euler((math.radians(90), 0, 0)).to_matrix().to_4x4()
     bmesh.ops.transform(bm, matrix=rot_mx, verts=bm.verts)
@@ -103,9 +109,13 @@ def _build_pupil_disc(name, armature, side,
     _smooth_all(obj)
 
     # -- Surface placement ---------------------------------------------------
-    # Lock pupil to eye centerline and place it on the front hemisphere.
-    # In this rig, local -Y is forward for the eye bones.
-    obj.location = (0.0, -(eye_radius - surface_offset), 0.0)
+    # Use rig-authored Eye -> Pupil.Ctrl direction when available, then clamp
+    # to corneal radius so the pupil stays surface-bound.
+    if placement_direction and placement_direction.length > 1e-8:
+        direction = placement_direction.normalized()
+    else:
+        direction = mathutils.Vector((0.0, -1.0, 0.0))
+    obj.location = tuple(direction * (eye_radius - surface_offset))
 
     # -- Orientation constraint --------------------------------------------
     # Copy the Eye bone's world rotation so the disc always faces the same
@@ -513,7 +523,20 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
         eye_bone_name = f"Eye.{side}"
         if not has_bone(eye_bone_name):
             continue
-        pobj = _build_pupil_disc(name, armature, side, eye_radius=eye_radius)
+        ctrl_bone_name = f"Pupil.Ctrl.{side}"
+        placement_dir = None
+        if has_bone(ctrl_bone_name):
+            eye_bone = armature.data.bones[eye_bone_name]
+            ctrl_bone = armature.data.bones[ctrl_bone_name]
+            placement_dir = ctrl_bone.head_local - eye_bone.head_local
+
+        pobj = _build_pupil_disc(
+            name,
+            armature,
+            side,
+            eye_radius=eye_radius,
+            placement_direction=placement_dir,
+        )
         eyeball = facial_objs.get(f"Eyeball.{side}")
         if eyeball:
             bpy.context.view_layer.update()
