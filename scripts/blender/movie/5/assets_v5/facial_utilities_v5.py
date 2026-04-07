@@ -40,11 +40,14 @@ def _new_obj(name, mesh_name, armature, bone_name):
 # ---------------------------------------------------------------------------
 
 def _build_pupil_disc(name, armature, side,
-                      disc_radius=0.015, disc_depth=0.002,
+                      disc_radius=0.03, disc_depth=0.002,
                       eye_radius=0.06, surface_offset=0.002):
     """
     Thin disc that sits flush against the eyeball cornea, displaying the
     dark pupil ring on top of the iris shader.
+
+    NOTE: disc_radius is intentionally oversized (0.03m) for current
+    debugging visibility so placement issues can be seen clearly in renders.
 
     Parented to Pupil.L / Pupil.R (structural — inset behind cornea).
     Animated via Pupil.Ctrl.L/R scale for dilation/constriction.
