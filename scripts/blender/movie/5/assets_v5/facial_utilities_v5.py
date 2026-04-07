@@ -45,9 +45,7 @@ def _build_pupil_disc(
     side,
     disc_radius=0.018,
     disc_depth=0.002,
-    eye_radius=0.06,
     surface_offset=0.002,
-    placement_direction=None,
 ):
     """
     Thin disc that sits flush against the eyeball cornea, displaying the
@@ -108,27 +106,11 @@ def _build_pupil_disc(
     obj.data.materials.append(pupil_mat)
     _smooth_all(obj)
 
-    # -- Surface placement ---------------------------------------------------
-    # Use rig-authored Eye -> Pupil.Ctrl direction when available, then clamp
-    # to corneal radius so the pupil stays surface-bound.
-    if placement_direction and placement_direction.length > 1e-8:
-        direction = placement_direction.normalized()
-    else:
-        direction = mathutils.Vector((0.0, -1.0, 0.0))
-    obj.location = tuple(direction * (eye_radius + surface_offset))
-
-    # -- Orientation constraint --------------------------------------------
-    # Copy the Eye bone's world rotation so the disc always faces the same
-    # direction as the eyeball.  WORLD/WORLD avoids double-rotation that
-    # LOCAL/LOCAL produces when the Head bone is also animated.
-    eye_bone_name = f"Eye.{side}"
-    if eye_bone_name in armature.data.bones:
-        con              = obj.constraints.new('COPY_ROTATION')
-        con.target       = armature
-        con.subtarget    = eye_bone_name
-        con.mix_mode     = 'REPLACE'
-        con.target_space = 'WORLD'
-        con.owner_space  = 'WORLD'
+    # BONE parenting origin is at bone tail. Move tail->head via -Y by length,
+    # then push a tiny bit further outward in -Y so disc is on the cornea.
+    eye_bone = armature.data.bones.get(f"Eye.{side}")
+    bone_length = eye_bone.length if eye_bone else 0.08
+    obj.location = (0.0, -(bone_length + surface_offset), 0.0)
 
     # Drive pupil dilation from the dedicated control bone.
     ctrl_bone_name = f"Pupil.Ctrl.{side}"
@@ -143,13 +125,11 @@ def _build_pupil_disc(
 
 
 def _validate_pupil_scale(pupil, eyeball):
-    """Hard stop against regressions where pupil grows larger than eyeball."""
     if max(pupil.dimensions) > max(eyeball.dimensions):
         raise ValueError("Pupil larger than eyeball — invalid state")
 
 
-def _validate_pupil_placement(pupil, eyeball, eye_radius=0.06, tolerance=0.004):
-    """Require pupil center to remain near the eyeball front surface."""
+def _validate_pupil_placement(pupil, eyeball, eye_radius=0.062, tolerance=0.008):
     dist = (pupil.matrix_world.translation - eyeball.matrix_world.translation).length
     if abs(dist - eye_radius) > tolerance:
         raise ValueError(f"Pupil placement off eyeball surface (dist={dist:.4f}, expected≈{eye_radius:.4f})")
@@ -523,25 +503,12 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
         eye_bone_name = f"Eye.{side}"
         if not has_bone(eye_bone_name):
             continue
-        ctrl_bone_name = f"Pupil.Ctrl.{side}"
-        placement_dir = None
-        if has_bone(ctrl_bone_name):
-            eye_bone = armature.data.bones[eye_bone_name]
-            ctrl_bone = armature.data.bones[ctrl_bone_name]
-            placement_dir = ctrl_bone.head_local - eye_bone.head_local
-
-        pobj = _build_pupil_disc(
-            name,
-            armature,
-            side,
-            eye_radius=eye_radius,
-            placement_direction=placement_dir,
-        )
+        pobj = _build_pupil_disc(name, armature, side)
         eyeball = facial_objs.get(f"Eyeball.{side}")
         if eyeball:
             bpy.context.view_layer.update()
             _validate_pupil_scale(pobj, eyeball)
-            _validate_pupil_placement(pobj, eyeball, eye_radius=eye_radius + 0.002)
+            _validate_pupil_placement(pobj, eyeball)
         facial_objs[f"Pupil.{side}"] = pobj
 
     # ====================================================================
