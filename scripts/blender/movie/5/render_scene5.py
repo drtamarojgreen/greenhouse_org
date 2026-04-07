@@ -9,15 +9,15 @@ MOVIE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__f
 if MOVIE_ROOT not in sys.path:
     sys.path.append(MOVIE_ROOT)
 
-# Ensure local Scene 4 directory is in path
-SCENE4_DIR = os.path.dirname(os.path.abspath(__file__))
-if SCENE4_DIR not in sys.path:
-    sys.path.append(SCENE4_DIR)
+# Ensure local Scene 5 directory is in path
+SCENE5_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCENE5_DIR not in sys.path:
+    sys.path.append(SCENE5_DIR)
 
 import config
-from generate_scene4 import generate_full_scene_v4, setup_scene4_cameras
+from generate_scene5 import generate_full_scene_v5, setup_scene5_cameras
 from render_presets import apply_render_preset
-from dialogue_scene_v4 import DialogueSceneV4
+from dialogue_scene_v5 import DialogueSceneV5
 
 def get_frame_range():
     """Parses --frames START-END from sys.argv."""
@@ -35,13 +35,13 @@ def get_frame_range():
             print("WARNING: Could not parse --frames argument. Using defaults.")
     return start, end
 
-def render_scene4():
-    """Builds and renders Scene 4 with explicit camera switching and safety resets."""
+def render_scene5():
+    """Builds and renders Scene 5 with explicit camera switching and safety resets."""
     mode = os.getenv("RENDER_MODE", "review")
-    print(f"\n--- SCENE 4 PRODUCTION RENDER [{mode.upper()}] ---")
+    print(f"\n--- SCENE 5 PRODUCTION RENDER [{mode.upper()}] ---")
     
     # 1. Initialize Scene (Environment, Assets, Lighting, 3-Camera Rig)
-    generate_full_scene_v4()
+    generate_full_scene_v5()
     scene = bpy.context.scene
     
     # 2. Safety Calibration: Ensure no post-processing blocks the scene
@@ -72,13 +72,13 @@ def render_scene4():
 
     # Dialogue blocking
     dialogue_lines = [
-        {"speaker_id": config.CHAR_HERBACEOUS, "start_frame": 24, "end_frame": 120},
-        {"speaker_id": config.CHAR_ARBOR, "start_frame": 150, "end_frame": 280},
-        {"speaker_id": config.CHAR_HERBACEOUS, "start_frame": 310, "end_frame": 450},
-        {"speaker_id": config.CHAR_ARBOR, "start_frame": 480, "end_frame": 580},
+        {"speaker_id": config.CHAR_HERBACEOUS, "anim": "blink", "start_frame": 24, "end_frame": 120},
+        {"speaker_id": config.CHAR_ARBOR, "anim": "nod", "start_frame": 150, "end_frame": 280},
+        {"speaker_id": config.CHAR_HERBACEOUS, "anim": "look_left", "start_frame": 310, "end_frame": 450},
+        {"speaker_id": config.CHAR_ARBOR, "anim": "smile", "start_frame": 480, "end_frame": 580},
     ]
 
-    scene_logic = DialogueSceneV4({config.CHAR_HERBACEOUS: {}, config.CHAR_ARBOR: {}}, dialogue_lines)
+    scene_logic = DialogueSceneV5({config.CHAR_HERBACEOUS: {}, config.CHAR_ARBOR: {}}, dialogue_lines)
     scene_logic.setup_scene(cameras)
     
     # 4. Render Setup
@@ -117,23 +117,25 @@ def render_scene4():
             if obj.parent_type == "BONE":
                 bone_name = obj.parent_bone or ""
                 obj_name = obj.name or ""
-                if (".Ctrl" in bone_name
+                # Exclude Pupil discs from being hidden by render safety.
+                # Pupil discs are renderable meshes, not just control helpers.
+                if ((".Ctrl" in bone_name and "Pupil" not in bone_name) # Hide Ctrl bones, but not Pupil.Ctrl parents
                         or "LidCorner" in obj_name
-                        or "Ctrl" in obj_name
+                        or ("Ctrl" in obj_name and "Pupil" not in obj_name)
                         or "Flare" in obj_name):
                     obj.hide_render = True
                     obj.hide_viewport = True
                     hidden_face_helpers.append(obj.name)
 
-        #if hidden_armatures:
-        #    print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
-        #if hidden_face_helpers:
-        #    print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
+        if hidden_armatures:
+            print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
+        if hidden_face_helpers:
+            print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
 
     # Initial safety pass before frame stepping.
     enforce_render_safety()
 
-    output_dir = os.path.join(config.OUTPUT_BASE_DIR, "scene4", mode)
+    output_dir = os.path.join(config.OUTPUT_BASE_DIR, "scene5", mode)
     os.makedirs(output_dir, exist_ok=True)
     
     # 5. Render Range Logic
@@ -169,4 +171,4 @@ def render_scene4():
         print(f"RENDER: Frame {f:04d}/{end_f:04d} done | {duration:.2f}s", flush=True)
 
 if __name__ == "__main__":
-    render_scene4()
+    render_scene5()

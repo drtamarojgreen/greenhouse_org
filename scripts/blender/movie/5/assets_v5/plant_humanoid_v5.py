@@ -12,9 +12,9 @@ if MOVIE_ROOT not in sys.path:
     sys.path.append(MOVIE_ROOT)
 
 import style_utilities as style
-from .facial_utilities_v4 import create_facial_props_v4
+from .facial_utilities_v5 import create_facial_props_v5
 
-def create_bark_material_v4(name, color=(0.05, 0.02, 0.01)):
+def create_bark_material_v5(name, color=(0.05, 0.02, 0.01)):
     """High-Contrast Mahogany Bark for Chroma Keying."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
@@ -91,7 +91,7 @@ def setup_production_lighting(subjects):
             if armature: t.subtarget = "Torso"
             t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
 
-def create_iris_material_v4(name, color=(0.36, 0.24, 0.62)):
+def create_iris_material_v5(name, color=(0.36, 0.24, 0.62)):
     """
     Eye shader — pupil / iris / sclera rings visible from camera.
 
@@ -122,7 +122,7 @@ def create_iris_material_v4(name, color=(0.36, 0.24, 0.62)):
     # the iris ramp remains visible without requiring mesh UV authoring.
     tex_coord = nodes.new('ShaderNodeTexCoord')
     mapping   = nodes.new('ShaderNodeMapping')
-    mapping.name = "PupilMapping"           # kept for dialogue_scene_v4 animation
+    mapping.name = "PupilMapping"           # kept for dialogue_scene_v5 animation
     links.new(tex_coord.outputs['Generated'], mapping.inputs['Vector'])
 
     # UV space is 0→1 across the sphere surface (not world-units).
@@ -130,38 +130,38 @@ def create_iris_material_v4(name, color=(0.36, 0.24, 0.62)):
     # roughly the front hemisphere, giving a clear pupil/iris/sclera split.
     # Location centres the gradient on the front pole of the UV sphere.
     mapping.inputs['Scale'].default_value    = (2.8, 2.8, 2.8)
-    mapping.inputs['Location'].default_value = (-0.5, -0.5, 0.0)
+    mapping.inputs['Location'].default_value = (0.5, 0.0, 0.5) # Center X, Front Y, Center Z
 
     grad = nodes.new('ShaderNodeTexGradient')
     grad.gradient_type = 'QUADRATIC_SPHERE'
     links.new(mapping.outputs['Vector'], grad.inputs['Vector'])
 
-    # -- Single color ramp: pupil(light lavender) → iris(dark lavender) → sclera(white) --
-    # Fac=0  = centre of gradient = pupil
-    # Fac=1  = edge of gradient sphere = sclera
+    # -- Single color ramp: sclera(white) -> iris(dark lavender) -> pupil(black) --
+    # In Blender, Spherical gradients evaluate to 1.0 at origin and 0.0 outwards.
+    # Therefore, Fac=1.0 is the exact center of the pupil. Fac=0.0 is the outside (sclera).
     cr = nodes.new('ShaderNodeValToRGB')
     cr.name = "IrisRamp"
     elems = cr.color_ramp.elements
 
-    # element [0] already exists at position 0 — light lavender pupil core
+    # element [0] already exists at position 0 — Sclera (White)
     elems[0].position = 0.0
-    elems[0].color    = (0.78, 0.70, 0.90, 1.0)
-
-    # iris inner edge: transition into dark lavender
-    e1 = elems.new(0.14)
-    e1.color = (0.30, 0.18, 0.45, 1.0)
-
-    # iris outer edge / peak colour: keep deep lavender ring around pupil
-    e2 = elems.new(0.56)
-    e2.color = (0.36, 0.22, 0.54, 1.0)
+    elems[0].color    = (0.95, 0.93, 0.90, 1.0)
 
     # sclera boundary — sharp transition
-    e3 = elems.new(0.62)
-    e3.color = (0.95, 0.93, 0.90, 1.0)   # warm white sclera
+    e1 = elems.new(0.38) # 1.0 - 0.62
+    e1.color = (0.95, 0.93, 0.90, 1.0)
 
-    # element [1] was at position 1.0 by default — keep as sclera white
+    # iris peak colour
+    e2 = elems.new(0.44) # 1.0 - 0.56
+    e2.color = (0.36, 0.22, 0.54, 1.0)
+
+    # iris inner edge: transition into black pupil
+    e3 = elems.new(0.86) # 1.0 - 0.14
+    e3.color = (0.0, 0.0, 0.0, 1.0)
+
+    # element [1] was at position 1.0 by default — exact core of pupil
     elems[-1].position = 1.0
-    elems[-1].color    = (0.95, 0.93, 0.90, 1.0)
+    elems[-1].color    = (0.0, 0.0, 0.0, 1.0)
 
     links.new(cr.outputs['Color'], node_bsdf.inputs['Base Color'])
 
@@ -170,7 +170,22 @@ def create_iris_material_v4(name, color=(0.36, 0.24, 0.62)):
 
     return mat
 
-def create_leaf_material_v4(name, color=(0.4, 0.6, 0.2)):
+
+def create_sclera_material_v5(name):
+    """Simple white sclera material for eyeball base surface."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    if bsdf:
+        bsdf.inputs["Base Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+        bsdf.inputs["Roughness"].default_value = 0.2
+        if "Specular IOR Level" in bsdf.inputs:
+            bsdf.inputs["Specular IOR Level"].default_value = 0.5
+        elif "Specular" in bsdf.inputs:
+            bsdf.inputs["Specular"].default_value = 0.5
+    return mat
+
+def create_leaf_material_v5(name, color=(0.4, 0.6, 0.2)):
     """Translucent botanical leaf material."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
@@ -304,35 +319,36 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
     defs = {}
 
     # ── PUPILS (structural — inset behind cornea) ──────────────────────
+    eye_y_center = -head_r * 0.84
     for side, sx in (("L", 1), ("R", -1)):
         xn = sx * pupil_x
-        y_surf = _sphere_surface_y(xn / head_r, pupil_z)  # already normalised
-        # Head ON sphere, tail pushed inward (deeper -Y = behind eyeball)
-        ph = (head_r * xn / head_r,
-              head_r * y_surf - head_r * pupil_y_offset,
+        # Pupil sits strictly on the front pole of the Eyeball (radius 0.06 + 0.001 physical epsilon)
+        ph = (head_r * xn,
+              eye_y_center - 0.043, # Adjusted to move pupil slightly forward to avoid Z-fighting/occlusion
               hcz + head_r * pupil_z)
         pt = (ph[0],
-              ph[1] - head_r * 0.05,
+              ph[1] - 0.04,
               ph[2])
         defs[f"Pupil.{side}"] = (ph, pt, f"Eye.{side}", 'structural')
 
     # Pupil control bones (dilate/constrict — scale driver)
     for side in ("L", "R"):
         base = defs[f"Pupil.{side}"][0]
-        ch, ct = ctrl(base, offset=(0, 0, 0.01), tail_offset=(0, 0, 0.03))
+        # 0 offset ensures the disc sits perfectly on the equator, tail points straight forward.
+        ch, ct = ctrl(base, offset=(0, 0, 0), tail_offset=(0, -0.05, 0))
         defs[f"Pupil.Ctrl.{side}"] = (ch, ct, f"Pupil.{side}", 'control')
 
     # ── EYELID MEDIAL CORNERS (structural) ────────────────────────────
     for side, sx in (("L", 1), ("R", -1)):
         xn = sx * eld_corner_med_x
-        h, t = proj(xn / head_r, eld_corner_z, tail_len=0.08)
+        h, t = proj(xn, eld_corner_z, tail_len=0.08)
         defs[f"Eyelid.Corner.Med.{side}"] = (h, t, "Head", 'structural')
 
     # ── EYELID LATERAL CORNERS (structural) ───────────────────────────
     for side, sx in (("L", 1), ("R", -1)):
         xn = sx * eld_corner_lat_x
         # Clamp: lateral X is large; sqrt may be small but valid
-        h, t = proj(xn / head_r, eld_corner_z, tail_len=0.08)
+        h, t = proj(xn, eld_corner_z, tail_len=0.08)
         defs[f"Eyelid.Corner.Lat.{side}"] = (h, t, "Head", 'structural')
 
     # ── EYELID CONTROL BONES (offset children of existing Eyelid bones) ─
@@ -342,12 +358,12 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
         xn = sx * eld_u_x
         y_u = head_r * _sphere_surface_y(eld_u_x, eld_u_z)
         z_u = hcz + head_r * eld_u_z
-        base_u = (head_r * xn / head_r, y_u, z_u)   # matches Eyelid.Upper bone head
+        base_u = (head_r * xn, y_u, z_u)   # matches Eyelid.Upper bone head
 
         y_l = head_r * _sphere_surface_y(eld_l_x, eld_l_z)
         z_l = hcz + head_r * eld_l_z
         xn_l = sx * eld_l_x
-        base_l = (head_r * xn_l / head_r, y_l, z_l)
+        base_l = (head_r * xn_l, y_l, z_l)
 
         # Upper control: sits just above the upper lid, outward +0.02r
         ch_u, ct_u = ctrl(base_u,
@@ -371,7 +387,7 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
     # Nose alar wings — project onto sphere surface
     for side, sx in (("L", 1), ("R", -1)):
         xn = sx * nose_ala_x
-        h_ala, t_ala = proj(xn / head_r, nose_ala_z, tail_len=0.10)
+        h_ala, t_ala = proj(xn, nose_ala_z, tail_len=0.10)
         defs[f"Nose.Ala.{side}"] = (h_ala, t_ala, "Nose", 'structural')
 
     # Nose flare controls (offset children of alar anchors)
@@ -385,7 +401,7 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
     # ── LIP CORNER BONES (structural) ─────────────────────────────────
     for side, sx in (("L", 1), ("R", -1)):
         xn = sx * lip_corner_x
-        h_lc, t_lc = proj(xn / head_r, lip_corner_z, tail_len=0.08)
+        h_lc, t_lc = proj(xn, lip_corner_z, tail_len=0.08)
         defs[f"Lip.Corner.{side}"] = (h_lc, t_lc, "Head", 'structural')
 
     # Lip corner controls (pull/push for smiles/frowns)
@@ -412,7 +428,7 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
     return defs
 
 
-def create_plant_humanoid_v4(name, location, height_scale=1.0, seed=None):
+def create_plant_humanoid_v5(name, location, height_scale=1.0, seed=None):
     """
     Upgraded Plant Humanoid for Scene 4:
     - Full rig with Shoulders, Elbows, Hips, Knees.
@@ -438,7 +454,7 @@ def create_plant_humanoid_v4(name, location, height_scale=1.0, seed=None):
     neck_h  = 0.2
     
     # ------------------------------------------------------------------
-    # BODY SKELETON  (unchanged from original V4)
+    # BODY SKELETON  (unchanged from original V5)
     # ------------------------------------------------------------------
     bones = {
         "Torso": ((0,0,0), (0,0,torso_h), None),
@@ -749,8 +765,8 @@ def create_plant_humanoid_v4(name, location, height_scale=1.0, seed=None):
     disp.strength = 0.06
     disp.vertex_group = "Torso"
 
-    mesh_obj.data.materials.append(create_bark_material_v4(f"Bark_{name}"))
-    mesh_obj.data.materials.append(create_leaf_material_v4(f"Leaf_{name}"))
+    mesh_obj.data.materials.append(create_bark_material_v5(f"Bark_{name}"))
+    mesh_obj.data.materials.append(create_leaf_material_v5(f"Leaf_{name}"))
 
     # A-Pose
     bpy.context.view_layer.objects.active = armature_obj
@@ -771,7 +787,7 @@ def create_plant_humanoid_v4(name, location, height_scale=1.0, seed=None):
     bpy.ops.object.mode_set(mode='OBJECT')
 
     # 3. Facial Props
-    # bones_map is used by create_facial_props_v4 to look up which bone name
+    # bones_map is used by create_facial_props_v5 to look up which bone name
     # to parent each mesh prop to.  The identity map covers all body/facial
     # anchor bones.  Pupil bones must be listed explicitly here so that
     # has_bone() passes AND _build_pupil_disc receives the correct bone name
@@ -779,10 +795,11 @@ def create_plant_humanoid_v4(name, location, height_scale=1.0, seed=None):
     # pupil disc creation).
     bones_map = {b.name: b.name for b in armature_obj.data.bones}
 
-    iris_mat = create_iris_material_v4(f"Iris_{name}")
-    bark_mat = create_bark_material_v4(f"FacialBark_{name}",
+    iris_mat = create_iris_material_v5(f"Iris_{name}")
+    sclera_mat = create_sclera_material_v5(f"Sclera_{name}")
+    bark_mat = create_bark_material_v5(f"FacialBark_{name}",
                                        color=(0.1, 0.15, 0.05))
 
-    create_facial_props_v4(name, armature_obj, bones_map, iris_mat, bark_mat)
+    create_facial_props_v5(name, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat)
     
     return armature_obj
