@@ -117,18 +117,20 @@ def render_scene5():
             if obj.parent_type == "BONE":
                 bone_name = obj.parent_bone or ""
                 obj_name = obj.name or ""
-                if (".Ctrl" in bone_name
+                # Exclude Pupil discs from being hidden by render safety.
+                # Pupil discs are renderable meshes, not just control helpers.
+                if ((".Ctrl" in bone_name and "Pupil" not in bone_name) # Hide Ctrl bones, but not Pupil.Ctrl parents
                         or "LidCorner" in obj_name
-                        or "Ctrl" in obj_name
+                        or ("Ctrl" in obj_name and "Pupil" not in obj_name)
                         or "Flare" in obj_name):
                     obj.hide_render = True
                     obj.hide_viewport = True
                     hidden_face_helpers.append(obj.name)
 
-        #if hidden_armatures:
-        #    print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
-        #if hidden_face_helpers:
-        #    print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
+        if hidden_armatures:
+            print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
+        if hidden_face_helpers:
+            print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
 
     # Initial safety pass before frame stepping.
     enforce_render_safety()
