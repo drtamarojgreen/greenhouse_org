@@ -170,6 +170,21 @@ def create_iris_material_v5(name, color=(0.36, 0.24, 0.62)):
 
     return mat
 
+
+def create_sclera_material_v5(name):
+    """Simple white sclera material for the eyeball base surface."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    if bsdf:
+        bsdf.inputs["Base Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+        bsdf.inputs["Roughness"].default_value = 0.2
+        if "Specular IOR Level" in bsdf.inputs:
+            bsdf.inputs["Specular IOR Level"].default_value = 0.5
+        elif "Specular" in bsdf.inputs:
+            bsdf.inputs["Specular"].default_value = 0.5
+    return mat
+
 def create_leaf_material_v5(name, color=(0.4, 0.6, 0.2)):
     """Translucent botanical leaf material."""
     mat = bpy.data.materials.new(name=name)
@@ -781,9 +796,10 @@ def create_plant_humanoid_v5(name, location, height_scale=1.0, seed=None):
     bones_map = {b.name: b.name for b in armature_obj.data.bones}
 
     iris_mat = create_iris_material_v5(f"Iris_{name}")
+    sclera_mat = create_sclera_material_v5(f"Sclera_{name}")
     bark_mat = create_bark_material_v5(f"FacialBark_{name}",
                                        color=(0.1, 0.15, 0.05))
 
-    create_facial_props_v5(name, armature_obj, bones_map, iris_mat, bark_mat)
+    create_facial_props_v5(name, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat)
     
     return armature_obj
