@@ -39,8 +39,16 @@ def _new_obj(name, mesh_name, armature, bone_name):
 # PUPIL / IRIS DISC
 # ---------------------------------------------------------------------------
 
-def _build_pupil_disc(name, armature, bone_name, iris_material,
-                      disc_radius=0.5, disc_depth=0.004): # Temporarily set to 0.5m radius for visibility test
+def _build_pupil_disc(
+    name,
+    armature,
+    side,
+    disc_radius=0.018,
+    disc_depth=0.002,
+    eye_radius=0.06,
+    surface_offset=0.002,
+    placement_direction=None,
+):
     """
     Thin disc that sits flush against the eyeball cornea, displaying the
     dark pupil ring on top of the iris shader.
@@ -61,9 +69,8 @@ def _build_pupil_disc(name, armature, bone_name, iris_material,
     default rig already points toward the camera (-Y world → +Y local after
     the bone's rest-pose matrix).
     """
-    side      = bone_name.split('.')[-1]          # 'L' or 'R'
     obj_name  = f"{name}_PupilDisc_{side}"
-    obj, mesh = _new_obj(obj_name, obj_name, armature, bone_name)
+    obj, mesh = _new_obj(obj_name, obj_name, armature, f"Eye.{side}")
 
     bm = bmesh.new()
     # Disc is flat in XZ plane — its face normal is along local +Y.
@@ -73,30 +80,9 @@ def _build_pupil_disc(name, armature, bone_name, iris_material,
                           radius1=disc_radius,
                           radius2=disc_radius,
                           depth=disc_depth)
-    
-    # --- TEMPORARY DIAGNOSTIC PRINTS ---
-    x_min_bm_pre = min(v.co.x for v in bm.verts)
-    x_max_bm_pre = max(v.co.x for v in bm.verts)
-    y_min_bm_pre = min(v.co.y for v in bm.verts)
-    y_max_bm_pre = max(v.co.y for v in bm.verts)
-    z_min_bm_pre = min(v.co.z for v in bm.verts)
-    z_max_bm_pre = max(v.co.z for v in bm.verts)
-    print(f"DIAGNOSTIC (BMesh Pre-Transform): X-dim={x_max_bm_pre - x_min_bm_pre:.4f}, Y-dim={y_max_bm_pre - y_min_bm_pre:.4f}, Z-dim={z_max_bm_pre - z_min_bm_pre:.4f}")
-    # --- END TEMPORARY DIAGNOSTIC PRINTS ---
-
     # Rotate 90° around X: cone (along Z) → disc (flat in XZ, normal along +Y).
     rot_mx = mathutils.Euler((math.radians(90), 0, 0)).to_matrix().to_4x4()
     bmesh.ops.transform(bm, matrix=rot_mx, verts=bm.verts)
-    
-    # --- TEMPORARY DIAGNOSTIC PRINTS ---
-    x_min_bm_post = min(v.co.x for v in bm.verts)
-    x_max_bm_post = max(v.co.x for v in bm.verts)
-    y_min_bm_post = min(v.co.y for v in bm.verts)
-    y_max_bm_post = max(v.co.y for v in bm.verts)
-    z_min_bm_post = min(v.co.z for v in bm.verts)
-    z_max_bm_post = max(v.co.z for v in bm.verts)
-    print(f"DIAGNOSTIC (BMesh Post-Transform): X-dim={x_max_bm_post - x_min_bm_post:.4f}, Y-dim={y_max_bm_post - y_min_bm_post:.4f}, Z-dim={z_max_bm_post - z_min_bm_post:.4f}")
-    # --- END TEMPORARY DIAGNOSTIC PRINTS ---
 
     bm.to_mesh(mesh)
     bm.free()
@@ -119,13 +105,14 @@ def _build_pupil_disc(name, armature, bone_name, iris_material,
     obj.data.materials.append(pupil_mat)
     _smooth_all(obj)
 
-    # -- BONE parenting offset fix ------------------------------------------
-    # With parent_type='BONE' Blender places the child's origin at the bone
-    # HEAD.  No additional offset is needed — (0,0,0) keeps the disc flush
-    # against the cornea surface where the Pupil.Ctrl bone head sits.
-    pupil_bone = armature.data.bones.get(bone_name)
-    if pupil_bone:
-        obj.location = (0.0, 0.0, 0.0)
+    # -- Surface placement ---------------------------------------------------
+    # Use rig-authored Eye -> Pupil.Ctrl direction when available, then clamp
+    # to corneal radius so the pupil stays surface-bound.
+    if placement_direction and placement_direction.length > 1e-8:
+        direction = placement_direction.normalized()
+    else:
+        direction = mathutils.Vector((0.0, -1.0, 0.0))
+    obj.location = tuple(direction * (eye_radius + surface_offset))
 
     # -- Orientation constraint --------------------------------------------
     # Copy the Eye bone's world rotation so the disc always faces the same
@@ -141,6 +128,19 @@ def _build_pupil_disc(name, armature, bone_name, iris_material,
         con.owner_space  = 'WORLD'
 
     return obj
+
+
+def _validate_pupil_scale(pupil, eyeball):
+    """Hard stop against regressions where pupil grows larger than eyeball."""
+    if max(pupil.dimensions) > max(eyeball.dimensions):
+        raise ValueError("Pupil larger than eyeball — invalid state")
+
+
+def _validate_pupil_placement(pupil, eyeball, eye_radius=0.06, tolerance=0.004):
+    """Require pupil center to remain near the eyeball front surface."""
+    dist = (pupil.matrix_world.translation - eyeball.matrix_world.translation).length
+    if abs(dist - eye_radius) > tolerance:
+        raise ValueError(f"Pupil placement off eyeball surface (dist={dist:.4f}, expected≈{eye_radius:.4f})")
 
 
 # ---------------------------------------------------------------------------
@@ -447,7 +447,7 @@ def _build_chin(name, armature, bone_name, bark_material):
 # MAIN ENTRY POINT
 # ---------------------------------------------------------------------------
 
-def create_facial_props_v5(name, armature, bones_map, iris_material, bark_material):
+def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_material, bark_material):
     """
     Upgraded facial prop creation for V5.
 
@@ -500,7 +500,7 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, bark_materi
                 v.co.y += 0.01
         bm.to_mesh(mesh); bm.free()
 
-        obj.data.materials.append(iris_material)
+        obj.data.materials.append(sclera_material)
         _smooth_all(obj)
         facial_objs[f"Eyeball.{side}"] = obj
 
@@ -508,10 +508,28 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, bark_materi
     # 2.  PUPIL DISCS  (NEW structural)
     # ====================================================================
     for side in ("L", "R"):
-        bone_name = f"Pupil.Ctrl.{side}"
-        if not has_bone(bone_name):
+        eye_bone_name = f"Eye.{side}"
+        if not has_bone(eye_bone_name):
             continue
-        pobj = _build_pupil_disc(name, armature, bone_name, iris_material)
+        ctrl_bone_name = f"Pupil.Ctrl.{side}"
+        placement_dir = None
+        if has_bone(ctrl_bone_name):
+            eye_bone = armature.data.bones[eye_bone_name]
+            ctrl_bone = armature.data.bones[ctrl_bone_name]
+            placement_dir = ctrl_bone.head_local - eye_bone.head_local
+
+        pobj = _build_pupil_disc(
+            name,
+            armature,
+            side,
+            eye_radius=eye_radius,
+            placement_direction=placement_dir,
+        )
+        eyeball = facial_objs.get(f"Eyeball.{side}")
+        if eyeball:
+            bpy.context.view_layer.update()
+            _validate_pupil_scale(pobj, eyeball)
+            _validate_pupil_placement(pobj, eyeball, eye_radius=eye_radius + 0.002)
         facial_objs[f"Pupil.{side}"] = pobj
 
     # ====================================================================
