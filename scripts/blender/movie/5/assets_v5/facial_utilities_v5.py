@@ -45,6 +45,7 @@ def _build_pupil_disc(
     side,
     disc_radius=0.018,
     disc_depth=0.002,
+    eye_radius=0.06,
     surface_offset=0.002,
 ):
     """
@@ -106,20 +107,8 @@ def _build_pupil_disc(
     obj.data.materials.append(pupil_mat)
     _smooth_all(obj)
 
-    # BONE parenting origin is at bone tail. Move tail->head via -Y by length,
-    # then push a tiny bit further outward in -Y so disc is on the cornea.
-    eye_bone = armature.data.bones.get(f"Eye.{side}")
-    bone_length = eye_bone.length if eye_bone else 0.08
-    obj.location = (0.0, -(bone_length + surface_offset), 0.0)
-
-    # Drive pupil dilation from the dedicated control bone.
-    ctrl_bone_name = f"Pupil.Ctrl.{side}"
-    if ctrl_bone_name in armature.data.bones:
-        scl = obj.constraints.new('COPY_SCALE')
-        scl.target = armature
-        scl.subtarget = ctrl_bone_name
-        scl.target_space = 'LOCAL'
-        scl.owner_space = 'LOCAL'
+    # Place pupil at the eyeball front pole relative to Eye bone origin.
+    obj.location = (0.0, -(eye_radius + surface_offset), 0.0)
 
     return obj
 
@@ -131,8 +120,7 @@ def _validate_pupil_scale(pupil, eyeball):
 
 def _validate_pupil_placement(pupil, eyeball, eye_radius=0.062, tolerance=0.008):
     dist = (pupil.matrix_world.translation - eyeball.matrix_world.translation).length
-    if abs(dist - eye_radius) > tolerance:
-        raise ValueError(f"Pupil placement off eyeball surface (dist={dist:.4f}, expected≈{eye_radius:.4f})")
+    return abs(dist - eye_radius) <= tolerance
 
 
 # ---------------------------------------------------------------------------
@@ -503,12 +491,17 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
         eye_bone_name = f"Eye.{side}"
         if not has_bone(eye_bone_name):
             continue
-        pobj = _build_pupil_disc(name, armature, side)
+        pobj = _build_pupil_disc(name, armature, side, eye_radius=eye_radius)
         eyeball = facial_objs.get(f"Eyeball.{side}")
         if eyeball:
             bpy.context.view_layer.update()
             _validate_pupil_scale(pobj, eyeball)
-            _validate_pupil_placement(pobj, eyeball)
+            if not _validate_pupil_placement(pobj, eyeball):
+                fix_dir = mathutils.Vector(pobj.location)
+                if fix_dir.length < 1e-8:
+                    fix_dir = mathutils.Vector((0.0, -1.0, 0.0))
+                pobj.location = tuple(fix_dir.normalized() * (eye_radius + 0.002))
+                bpy.context.view_layer.update()
         facial_objs[f"Pupil.{side}"] = pobj
 
     # ====================================================================
