@@ -53,6 +53,9 @@ def _build_pupil_disc(
     Thin disc that sits flush against the eyeball cornea, displaying the
     dark pupil ring on top of the iris shader.
 
+    NOTE: disc_radius is intentionally oversized (0.03m) for current
+    debugging visibility so placement issues can be seen clearly in renders.
+
     Parented to Pupil.L / Pupil.R (structural — inset behind cornea).
     Animated via Pupil.Ctrl.L/R scale for dilation/constriction.
 
@@ -126,6 +129,15 @@ def _build_pupil_disc(
         con.mix_mode     = 'REPLACE'
         con.target_space = 'WORLD'
         con.owner_space  = 'WORLD'
+
+    # Drive pupil dilation from the dedicated control bone.
+    ctrl_bone_name = f"Pupil.Ctrl.{side}"
+    if ctrl_bone_name in armature.data.bones:
+        scl = obj.constraints.new('COPY_SCALE')
+        scl.target = armature
+        scl.subtarget = ctrl_bone_name
+        scl.target_space = 'LOCAL'
+        scl.owner_space = 'LOCAL'
 
     return obj
 
