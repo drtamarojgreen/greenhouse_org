@@ -46,7 +46,7 @@ def _build_pupil_disc(
     disc_radius=0.018,
     disc_depth=0.002,
     eye_radius=0.06,
-    surface_offset=0.010,
+    surface_offset=0.002,
     placement_direction=None,
 ):
     """
@@ -115,7 +115,7 @@ def _build_pupil_disc(
         direction = placement_direction.normalized()
     else:
         direction = mathutils.Vector((0.0, -1.0, 0.0))
-    obj.location = tuple(direction * (eye_radius - surface_offset))
+    obj.location = tuple(direction * (eye_radius + surface_offset))
 
     # -- Orientation constraint --------------------------------------------
     # Copy the Eye bone's world rotation so the disc always faces the same
@@ -148,7 +148,7 @@ def _validate_pupil_scale(pupil, eyeball):
         raise ValueError("Pupil larger than eyeball — invalid state")
 
 
-def _validate_pupil_placement(pupil, eyeball, eye_radius=0.06, tolerance=0.015):
+def _validate_pupil_placement(pupil, eyeball, eye_radius=0.06, tolerance=0.004):
     """Require pupil center to remain near the eyeball front surface."""
     dist = (pupil.matrix_world.translation - eyeball.matrix_world.translation).length
     if abs(dist - eye_radius) > tolerance:
@@ -541,7 +541,7 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
         if eyeball:
             bpy.context.view_layer.update()
             _validate_pupil_scale(pobj, eyeball)
-            _validate_pupil_placement(pobj, eyeball, eye_radius=eye_radius)
+            _validate_pupil_placement(pobj, eyeball, eye_radius=eye_radius + 0.002)
         facial_objs[f"Pupil.{side}"] = pobj
 
     # ====================================================================
