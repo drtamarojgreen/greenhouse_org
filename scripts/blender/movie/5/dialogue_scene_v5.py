@@ -47,33 +47,56 @@ class DialogueSceneV5:
         # 2. Apply Dialogue & Camera Switching
         setup_dialogue_camera_switching(self.dialogue_lines, cameras)
         
-        from animation_library_v5 import apply_nod, apply_shake_head, apply_smile
+        from animation_library_v5 import apply_nod, apply_shake_head, apply_smile, apply_talking_arms
 
         for line in self.dialogue_lines:
             speaker = line["speaker_id"]
             start_f = line["start_frame"]
             end_f = line["end_frame"]
+            
+            # Apply Lip Sync
             self._animate_dual_lip_dialogue(speaker, start_f, end_f)
+            
+            # Apply Expressive Arms
+            arm_rig = bpy.data.objects.get(self.characters[speaker].get("rig_name", speaker))
+            if arm_rig:
+                apply_talking_arms(arm_rig, start_f, end_f - start_f)
 
-            anim_tag = line.get("anim")
-            if anim_tag:
+            anim_tags = line.get("anim")
+            if anim_tags:
+                if isinstance(anim_tags, str):
+                    anim_tags = [anim_tags]
+                
                 arm_rig = bpy.data.objects.get(self.characters[speaker].get("rig_name", speaker))
                 if arm_rig:
-                    if anim_tag == "nod":
-                        apply_nod(arm_rig, start_f, duration=24)
-                    elif anim_tag == "shake":
-                        apply_shake_head(arm_rig, start_f, duration=30)
-                    elif anim_tag == "smile":
-                        apply_smile(arm_rig, start_f, duration=30)
-                    elif anim_tag == "blink":
-                        from animation_library_v5 import apply_blink
-                        apply_blink(arm_rig, start_f, duration=6)
-                    elif anim_tag == "look_left":
-                        from animation_library_v5 import apply_look_side
-                        apply_look_side(arm_rig, start_f, duration=15, side="LEFT")
-                    elif anim_tag == "look_right":
-                        from animation_library_v5 import apply_look_side
-                        apply_look_side(arm_rig, start_f, duration=15, side="RIGHT")
+                    from animation_library_v5 import (
+                        apply_nod, apply_shake_head, apply_smile, apply_blink,
+                        apply_look_side, apply_shiver, apply_droop, apply_stretch,
+                        apply_wiggle, apply_reach_out, apply_worry, apply_joyful
+                    )
+                    
+                    anim_map = {
+                        "nod": apply_nod,
+                        "shake": apply_shake_head,
+                        "smile": apply_smile,
+                        "blink": apply_blink,
+                        "look_left": lambda r, s, duration: apply_look_side(r, s, duration, side="LEFT"),
+                        "look_right": lambda r, s, duration: apply_look_side(r, s, duration, side="RIGHT"),
+                        "shiver": apply_shiver,
+                        "droop": apply_droop,
+                        "stretch": apply_stretch,
+                        "wiggle": apply_wiggle,
+                        "reach_out": apply_reach_out,
+                        "worry": apply_worry,
+                        "joyful": apply_joyful,
+                    }
+
+                    for tag in anim_tags:
+                        anim_func = anim_map.get(tag)
+                        if anim_func:
+                            # Typical animation duration is 30-40 frames, or the line duration
+                            dur = min(40, end_f - start_f)
+                            anim_func(arm_rig, start_f, duration=dur)
 
     def _animate_body_limbs(self, arm_obj, start, end):
         """Procedural hip, shoulder, and arm animation."""

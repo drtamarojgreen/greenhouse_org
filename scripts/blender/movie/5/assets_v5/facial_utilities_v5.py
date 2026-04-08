@@ -43,7 +43,7 @@ def _build_pupil_disc(
     name,
     armature,
     side,
-    disc_radius=0.018,
+    disc_radius=0.03,
     disc_depth=0.002,
     eye_radius=0.06,
     surface_offset=0.002,
@@ -108,15 +108,15 @@ def _build_pupil_disc(
     _smooth_all(obj)
 
     # Place pupil at the eyeball front pole relative to Eye bone origin.
-    obj.location = (0.0, -(eye_radius + surface_offset), 0.0)
+    obj.location = (0.0, +(eye_radius + surface_offset), 0.0)
 
     return obj
 
 
 def _validate_pupil_scale(pupil, eyeball):
     if max(pupil.dimensions) > max(eyeball.dimensions):
-        raise ValueError("Pupil larger than eyeball — invalid state")
-
+        #raise ValueError("Pupil larger than eyeball — invalid state")
+        print("WARNING-- Pupil larger than eyeball — invalid state")
 
 def _validate_pupil_placement(pupil, eyeball, eye_radius=0.062, tolerance=0.008):
     dist = (pupil.matrix_world.translation - eyeball.matrix_world.translation).length

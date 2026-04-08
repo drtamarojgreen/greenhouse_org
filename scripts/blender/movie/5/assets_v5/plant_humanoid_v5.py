@@ -738,8 +738,23 @@ def create_plant_humanoid_v5(name, location, height_scale=1.0, seed=None):
                 for face in v.link_faces:
                     face.material_index = 1
 
-    # 5. Global Smoothing
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.03)
+    # 5. Global Smoothing and Cleaning
+    # Reduced distance to avoid over-merging arm/torso intersections
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.005) 
+    
+    # 5b. Post-merge weight isolation: 
+    # Ensure Arm weights don't leak into the Torso/Hips area
+    # and Torso weights don't leak into the Arms.
+    for v in bm.verts:
+        weights = v[dlayer]
+        # Identify the primary group (max weight) to prevent multiple group influences 
+        # that cause "stretching" or "hip pulling".
+        if len(weights) > 1:
+            max_vg = max(weights.keys(), key=lambda k: weights[k])
+            for vg_idx in list(weights.keys()):
+                if vg_idx != max_vg:
+                    v[dlayer][vg_idx] = 0.0
+
     for _ in range(10):
         bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.7)
     
