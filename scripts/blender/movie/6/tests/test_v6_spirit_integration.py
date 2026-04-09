@@ -328,6 +328,121 @@ class TestV6SpiritIntegration(unittest.TestCase):
             bpy.data.objects.get(config.BACKDROP_NAME), "Backdrop missing"
         )
 
+    def test_background_visibility(self):
+        """Check why backgrounds might not be displaying."""
+        print("\nChecking Background Visibility...")
+        
+        # 1. Check World Shader
+        world = bpy.context.scene.world
+        self.assertIsNotNone(world, "ERROR: No World defined in scene.")
+        self.assertTrue(world.use_nodes, "ERROR: World does not use nodes.")
+        
+        # 2. Check Camera Clipping
+        cam_obj = bpy.context.scene.camera
+        if cam_obj:
+            clip_end = cam_obj.data.clip_end
+            print(f"DEBUG: Camera Clip End: {clip_end}")
+            self.assertGreaterEqual(clip_end, 1000, "WARNING: Camera clip_end might be too short to see backgrounds.")
+        
+        # 3. Check Object Render Visibility
+        bg_keywords = ["bg", "background", "environment", "sky"]
+        bg_found = False
+        for obj in bpy.data.objects:
+            if any(k in obj.name.lower() for k in bg_keywords):
+                bg_found = True
+                self.assertFalse(obj.hide_render, f"ERROR: Background object {obj.name} is hidden in render.")
+                self.assertFalse(obj.hide_viewport, f"ERROR: Background object {obj.name} is hidden in viewport.")
+        
+        # Diagnostic: Check World Shader node structure
+        if world and world.node_tree:
+            output = next((n for n in world.node_tree.nodes if n.type == 'OUTPUT_WORLD'), None)
+            self.assertIsNotNone(output, "DIAGNOSTIC: World has no Output node.")
+            self.assertTrue(output.inputs['Surface'].is_linked, "DIAGNOSTIC: World output Surface not connected.")
+            
+            bg_node = next((n for n in world.node_tree.nodes if n.type == 'BACKGROUND'), None)
+            if bg_node:
+                print(f"DEBUG: World Background Color: {bg_node.inputs[0].default_value[:]}")
+
+        if not bg_found:
+            print("WARNING: No objects containing 'background' keywords found.")
+
+    def test_pipeline_6a_6b_readiness(self):
+        """Verify pipeline stages for 6/a and 6/b."""
+        print("\nChecking 6/a and 6/b Pipeline Stages...")
+        
+        collections = bpy.data.collections
+        
+        # Pipeline 6/a: Asset/Character focus
+        col_6a = next((col for col in collections if "6a" in col.name.lower() or "asset" in col.name.lower()), None)
+        has_6a = col_6a is not None
+        
+        # Pipeline 6/b: Environment/Backdrop focus
+        col_6b = next((col for col in collections if "6b" in col.name.lower() or "env" in col.name.lower()), None)
+        has_6b = col_6b is not None
+        
+        print(f"DEBUG: 6/a Stage Detected: {has_6a}")
+        if col_6a:
+            print(f"DEBUG: 6/a Objects: {[o.name for o in col_6a.objects]}")
+        print(f"DEBUG: 6/b Stage Detected: {has_6b}")
+        if col_6b:
+            print(f"DEBUG: 6/b Objects: {[o.name for o in col_6b.objects]}")
+        
+        # If either is missing, it suggests the pipeline hasn't been merged into the master scene
+        self.assertTrue(has_6a or has_6b, "ERROR: Neither 6/a nor 6/b pipeline markers found in collections.")
+
+    def test_camera_curve_animation(self):
+        """Verify Blender 5 camera curve animation logic."""
+        print("\nVerifying Camera Curve Animation...")
+        
+        cam = bpy.context.scene.camera
+        self.assertIsNotNone(cam, "ERROR: No active camera in scene.")
+        
+        # Check for Follow Path constraint
+        follow_path = next((c for c in cam.constraints if c.type == 'FOLLOW_PATH'), None)
+        
+        self.assertIsNotNone(follow_path, f"ERROR: Camera {cam.name} is not following a path (Curve).")
+        self.assertIsNotNone(follow_path.target, "ERROR: Follow Path constraint has no target object.")
+        self.assertEqual(follow_path.target.type, 'CURVE', "ERROR: Follow Path target is not a Curve.")
+        
+        # Check for animation data on the constraint (fixed path vs animated path)
+        has_anim = (cam.animation_data and cam.animation_data.action) or \
+                   (follow_path.target.animation_data and follow_path.target.animation_data.action)
+            
+        print(f"DEBUG: Camera Path: {follow_path.target.name if follow_path.target else 'None'}")
+        self.assertTrue(has_anim, "ERROR: No animation data found for camera or its path.")
+        
+        # Targeted Diagnostic: Check evaluation of offset
+        if follow_path and follow_path.use_fixed_location:
+            print(f"DEBUG: Fixed Position: {follow_path.offset_factor}")
+            # Check for keyframes on offset_factor
+            if cam.animation_data and cam.animation_data.action:
+                fcurves = cam.animation_data.action.fcurves
+                has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
+                self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
+
+    def test_diagnostic_occlusion_and_sync(self):
+        """Deep dive into raycast occlusion and coordinate sync issues."""
+        print("\nDIAGNOSTIC: Analyzing Occlusion and Sync...")
+        
+        # 1. Check backdrop vs character distance
+        cam = bpy.data.objects.get(config.CAMERA_NAME)
+        backdrop = bpy.data.objects.get("ChromaBackdrop_Wide")
+        leafy = bpy.data.objects.get(config.CHAR_LEAFY_MESH)
+        
+        if cam and backdrop and leafy:
+            c_loc = cam.matrix_world.to_translation()
+            b_loc = backdrop.matrix_world.to_translation()
+            l_loc = leafy.matrix_world.to_translation()
+            
+            d_cam_bg = (b_loc - c_loc).length
+            d_cam_char = (l_loc - c_loc).length
+            print(f"DEBUG: Cam->Backdrop: {d_cam_bg:.2f}m, Cam->Character: {d_cam_char:.2f}m")
+            
+        # 2. Check Rig/Mesh Matrix Alignment
+        rig = bpy.data.objects.get(config.CHAR_LEAFY_RIG)
+        if rig and leafy:
+            print(f"DEBUG: Rig World Matrix Translation: {rig.matrix_world.to_translation()}")
+            print(f"DEBUG: Mesh World Matrix Translation: {leafy.matrix_world.to_translation()}")
 
 if __name__ == "__main__":
     unittest.main(argv=[sys.argv[0]])
