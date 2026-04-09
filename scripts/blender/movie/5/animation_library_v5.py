@@ -1,6 +1,54 @@
 import bpy
 import math
 import random
+import mathutils
+
+# ---------------------------------------------------------------------------
+# MODULAR ANIMATION REGISTRY
+# ---------------------------------------------------------------------------
+
+def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=None):
+    """Dispatcher to apply animations based on modular tags."""
+    # Handle tags with arguments (e.g. "grasp:WaterCan")
+    full_tag = tag
+    arg = None
+    if ":" in tag:
+        tag, arg = tag.split(":", 1)
+    
+    # Default durations if not provided
+    registry = {
+        "nod": (apply_nod, 24),
+        "shake": (apply_shake_head, 45),
+        "blink": (apply_blink, 6),
+        "smile": (apply_smile, 30),
+        "talking": (apply_talking_arms, duration or 60),
+        "shiver": (apply_shiver, 48),
+        "droop": (apply_droop, 60),
+        "stretch": (apply_stretch, 40),
+        "wiggle": (apply_wiggle, 40),
+        "reach_out": (apply_reach_out, 60),
+        "worry": (apply_worry, 40),
+        "joyful": (apply_joyful, 40),
+        "bend_down": (apply_bend_down, 40),
+        "grasp": (apply_grasp, 20),
+        "pouring": (apply_pouring, 60),
+        "spraying": (apply_spraying, 60),
+        "dance": (apply_dance, duration or 600),
+    }
+    
+    if tag in registry:
+        func, def_dur = registry[tag]
+        dur = duration if duration is not None else def_dur
+        
+        # Specific handling for prop-based tags
+        if tag == "grasp" and prop_obj:
+             func(arm_obj, prop_obj, start_frame, duration=dur)
+        elif tag in ["pouring", "spraying"] and prop_obj:
+             func(arm_obj, prop_obj, start_frame, duration=dur)
+        else:
+             func(arm_obj, start_frame, duration=dur)
+        return True
+    return False
 
 def apply_nod(arm_obj, start_frame, duration=24):
     """Applies a gentle approving nod over the given duration."""
@@ -312,3 +360,133 @@ def apply_joyful(arm_obj, start_frame, duration=40):
         b.scale *= 1.5
         b.keyframe_insert(data_path="scale", frame=start_frame + 10)
         b.keyframe_insert(data_path="scale", frame=end)
+
+def apply_bend_down(arm_obj, start_frame, duration=60):
+    """Bends the character down to reach the ground."""
+    torso = arm_obj.pose.bones.get("Torso")
+    head = arm_obj.pose.bones.get("Head")
+    if not (torso and head): return
+    
+    mid = start_frame + duration // 2
+    end = start_frame + duration
+    
+    torso.rotation_mode = 'XYZ'
+    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
+    torso.keyframe_insert(data_path="location", index=2, frame=start_frame)
+    
+    # Pitch forward (Negative X) and lower Z
+    torso.rotation_euler[0] = math.radians(-50)
+    torso.location[2] -= 0.6
+    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=mid)
+    torso.keyframe_insert(data_path="location", index=2, frame=mid)
+    
+    # Stay down until end of duration or return? Let's stay down.
+    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=end)
+    torso.keyframe_insert(data_path="location", index=2, frame=end)
+    
+    # Head keeps looking forward
+    head.rotation_mode = 'XYZ'
+    head.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
+    head.rotation_euler[0] = math.radians(40) # Look up while body is down
+    head.keyframe_insert(data_path="rotation_euler", index=0, frame=mid)
+    head.keyframe_insert(data_path="rotation_euler", index=0, frame=end)
+
+def apply_grasp(arm_obj, start_frame, side="L", duration=30):
+    """Curses fingers to grasp an object."""
+    fingers = [arm_obj.pose.bones.get(f"Finger.{i}.{side}") for i in range(1, 4)]
+    
+    for f in fingers:
+        if not f: continue
+        f.rotation_mode = 'XYZ'
+        f.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
+        # Curl (Negative X)
+        f.rotation_euler[0] = math.radians(-70)
+        f.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + 10)
+        f.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration)
+
+def attach_prop(arm_obj, prop_obj, bone_name="Hand.L", frame=1):
+    """Uses a Child Of constraint to attach a prop to a character bone."""
+    # Ensure current frame
+    bpy.context.scene.frame_set(frame)
+    
+    # Remove existing constraints of same name
+    const_name = "CharacterGrasp"
+    if const_name in prop_obj.constraints:
+        prop_obj.constraints.remove(prop_obj.constraints[const_name])
+        
+    con = prop_obj.constraints.new('CHILD_OF')
+    con.name = const_name
+    con.target = arm_obj
+    con.subtarget = bone_name
+    
+    # Set Inverse to fix target position at current location
+    bpy.context.view_layer.update()
+    # Blender doesn't have a simple 'Set Inverse' in API easily without context magic,
+    # but we can do it by getting the matrix.
+    con.inverse_matrix = (arm_obj.matrix_world @ arm_obj.pose.bones[bone_name].matrix).inverted()
+    
+    # Keyframe influence
+    con.influence = 1.0
+    con.keyframe_insert(data_path="influence", frame=frame)
+
+def apply_pouring(prop_obj, start_frame, duration=60):
+    """Tilts the prop (e.g. WaterCan) to simulate pouring."""
+    prop_obj.rotation_mode = 'XYZ'
+    prop_obj.keyframe_insert(data_path="rotation_euler", frame=start_frame)
+    
+    mid = start_frame + duration // 2
+    prop_obj.rotation_euler[0] += math.radians(45) # Tilt forward
+    prop_obj.keyframe_insert(data_path="rotation_euler", frame=mid)
+    
+    prop_obj.keyframe_insert(data_path="rotation_euler", frame=start_frame + duration)
+
+def apply_spraying(prop_obj, start_frame, duration=60):
+    """Jitters the prop (e.g. GardenHose) to simulate spraying pressure."""
+    prop_obj.rotation_mode = 'XYZ'
+    for f in range(start_frame, start_frame + duration, 2):
+        prop_obj.rotation_euler[0] += random.uniform(-0.05, 0.05)
+        prop_obj.rotation_euler[1] += random.uniform(-0.05, 0.05)
+        prop_obj.keyframe_insert(data_path="rotation_euler", frame=f)
+def apply_dance(arm_obj, start_frame, duration=600):
+    """Synchronized celebratory dance: rhythmic bobbing and side-to-side arm waving."""
+    torso = arm_obj.pose.bones.get("Torso")
+    arm_l = arm_obj.pose.bones.get("Arm.L")
+    arm_r = arm_obj.pose.bones.get("Arm.R")
+    if not torso: return
+    
+    # Rhythmic cycle duration (in frames)
+    cycle = 30 
+    
+    for f in range(start_frame, start_frame + duration, cycle // 2):
+        t = (f - start_frame) / cycle
+        # 1. Torso Bobbing (Z location)
+        # Using sine for smooth vertical movement
+        torso.location[2] = 0.05 * math.sin(t * 2 * math.pi)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=f)
+        
+        # 2. Torso Sway (Z rotation)
+        torso.rotation_mode = 'XYZ'
+        torso.rotation_euler[2] = math.radians(10) * math.sin(t * math.pi)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=f)
+        
+        # 3. Arm Waving (X rotation)
+        if arm_l and arm_r:
+            wave = math.radians(30) * math.sin(t * math.pi)
+            arm_l.rotation_mode = 'XYZ'
+            arm_r.rotation_mode = 'XYZ'
+            arm_l.rotation_euler[0] = math.radians(-40) + wave
+            arm_r.rotation_euler[0] = math.radians(-40) - wave
+            arm_obj.keyframe_insert(data_path=f'pose.bones["{arm_l.name}"].rotation_euler', index=0, frame=f)
+            arm_obj.keyframe_insert(data_path=f'pose.bones["{arm_r.name}"].rotation_euler', index=0, frame=f)
+
+    # Reset poses at the end
+    end_f = start_frame + duration
+    torso.location[2] = 0
+    torso.rotation_euler[2] = 0
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=end_f)
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=end_f)
+    if arm_l and arm_r:
+        arm_l.rotation_euler[0] = math.radians(-40)
+        arm_r.rotation_euler[0] = math.radians(-40)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{arm_l.name}"].rotation_euler', index=0, frame=end_f)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{arm_r.name}"].rotation_euler', index=0, frame=end_f)

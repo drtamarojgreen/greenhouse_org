@@ -12,8 +12,6 @@ class DialogueSceneV5:
 
     def setup_scene(self, cameras):
         """Assembles the scene with V5 animations and camera switching."""
-        frame_end = 600
-        
         # 1. Apply baseline 'Life' animations
         for char_id, props in self.characters.items():
             rig_name = props.get("rig_name") if props.get("rig_name") else char_id
@@ -25,29 +23,29 @@ class DialogueSceneV5:
             # Breathing & Torso Shrugs
             torso = arm_obj.pose.bones.get("Torso")
             if torso:
-                style.animate_breathing(torso, 1, frame_end, amplitude=0.06)
-                style.animate_shoulder_shrug(torso, 1, frame_end)
+                style.animate_breathing(torso, 1, config.TOTAL_FRAMES, amplitude=0.06)
+                style.animate_shoulder_shrug(torso, 1, config.TOTAL_FRAMES)
             
             # Limb Movements (Hips, Shoulders, Arms)
-            self._animate_body_limbs(arm_obj, 1, frame_end)
+            self._animate_body_limbs(arm_obj, 1, config.TOTAL_FRAMES)
             
             # Eyes and Eyebrow details
             for side in ["L", "R"]:
                 lid_u = arm_obj.pose.bones.get(f"Eyelid.Upper.{side}")
                 lid_l = arm_obj.pose.bones.get(f"Eyelid.Lower.{side}")
                 if lid_u and lid_l:
-                    self._animate_eyelid_blink(arm_obj, lid_u, lid_l, 1, frame_end)
+                    self._animate_eyelid_blink(arm_obj, lid_u, lid_l, 1, config.TOTAL_FRAMES)
                 
                 # Pupil movement via shader nodes
-                self._animate_pupil_movement(char_id, lid_u, 1, frame_end)
+                self._animate_pupil_movement(char_id, lid_u, 1, config.TOTAL_FRAMES)
                 
             # Advanced eye details (Pupil dilation, Darting, Corner twitches)
-            self._animate_advanced_eyes(arm_obj, 1, frame_end)
+            self._animate_advanced_eyes(arm_obj, 1, config.TOTAL_FRAMES)
 
         # 2. Apply Dialogue & Camera Switching
         setup_dialogue_camera_switching(self.dialogue_lines, cameras)
         
-        from animation_library_v5 import apply_nod, apply_shake_head, apply_smile, apply_talking_arms
+        from animation_library_v5 import apply_animation_by_tag, apply_talking_arms
 
         for line in self.dialogue_lines:
             speaker = line["speaker_id"]
@@ -67,36 +65,41 @@ class DialogueSceneV5:
                 if isinstance(anim_tags, str):
                     anim_tags = [anim_tags]
                 
-                arm_rig = bpy.data.objects.get(self.characters[speaker].get("rig_name", speaker))
-                if arm_rig:
-                    from animation_library_v5 import (
-                        apply_nod, apply_shake_head, apply_smile, apply_blink,
-                        apply_look_side, apply_shiver, apply_droop, apply_stretch,
-                        apply_wiggle, apply_reach_out, apply_worry, apply_joyful
-                    )
+                for tag in anim_tags:
+                    prop_obj = None
+                    if ":" in tag:
+                        pname = tag.split(":")[1]
+                        prop_obj = bpy.data.objects.get(pname)
                     
-                    anim_map = {
-                        "nod": apply_nod,
-                        "shake": apply_shake_head,
-                        "smile": apply_smile,
-                        "blink": apply_blink,
-                        "look_left": lambda r, s, duration: apply_look_side(r, s, duration, side="LEFT"),
-                        "look_right": lambda r, s, duration: apply_look_side(r, s, duration, side="RIGHT"),
-                        "shiver": apply_shiver,
-                        "droop": apply_droop,
-                        "stretch": apply_stretch,
-                        "wiggle": apply_wiggle,
-                        "reach_out": apply_reach_out,
-                        "worry": apply_worry,
-                        "joyful": apply_joyful,
-                    }
+                    apply_animation_by_tag(arm_rig, tag, start_f, duration=end_f - start_f, prop_obj=prop_obj)
 
-                    for tag in anim_tags:
-                        anim_func = anim_map.get(tag)
-                        if anim_func:
-                            # Typical animation duration is 30-40 frames, or the line duration
-                            dur = min(40, end_f - start_f)
-                            anim_func(arm_rig, start_f, duration=dur)
+        # 3. FINAL DANCE SEQUENCE (3600 - 4200)
+        self._setup_dance_finale(3600, 4200)
+
+    def _setup_dance_finale(self, start_f, end_f):
+        """Characters face the wide camera, dance, then face each other."""
+        from animation_library_v5 import apply_dance
+        
+        # Camera is at -8Y. Facing camera means rotating Z to 0.
+        # Initial: Herb faces right (+X), Arbor faces left (-X)
+        for char_id in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
+            arm_obj = bpy.data.objects.get(char_id)
+            if not arm_obj: continue
+            
+            # Frame 3600: Rotate to face camera (Z=0)
+            arm_obj.keyframe_insert(data_path="rotation_euler", index=2, frame=start_f - 10)
+            arm_obj.rotation_euler[2] = 0 # Face -Y
+            arm_obj.keyframe_insert(data_path="rotation_euler", index=2, frame=start_f)
+            
+            # Apply Dance
+            apply_dance(arm_obj, start_f, duration=end_f - start_f - 50)
+            
+            # Frame 4150: Turn back (Restoring original euler[2])
+            # Herb was at ~1.57 (pi/2), Arbor was at ~-1.4
+            orig_rot = 1.74 if char_id == config.CHAR_HERBACEOUS else -1.4
+            arm_obj.keyframe_insert(data_path="rotation_euler", index=2, frame=end_f - 50)
+            arm_obj.rotation_euler[2] = orig_rot
+            arm_obj.keyframe_insert(data_path="rotation_euler", index=2, frame=end_f)
 
     def _animate_body_limbs(self, arm_obj, start, end):
         """Procedural hip, shoulder, and arm animation."""

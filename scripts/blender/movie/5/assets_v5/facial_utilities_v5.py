@@ -424,10 +424,62 @@ def _build_chin(name, armature, bone_name, bark_material):
 
 
 # ---------------------------------------------------------------------------
+# TEETH AND MOLES
+# ---------------------------------------------------------------------------
+
+def _build_teeth(name, armature):
+    """Simple row of white teeth hidden inside the mouth, parented to Head."""
+    obj_name = f"{name}_Teeth"
+    # Parent to Head so they stay stable relative to jaw movements
+    obj, mesh = _new_obj(obj_name, obj_name, armature, "Head")
+    
+    bm = bmesh.new()
+    # Upper teeth row
+    bmesh.ops.create_cube(bm, size=0.1)
+    for v in bm.verts:
+        v.co.x *= 1.5
+        v.co.z *= 0.2
+        v.co.y *= 0.1
+    # Lower teeth row
+    bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0,0,-0.05)))
+    
+    bm.to_mesh(mesh)
+    bm.free()
+    
+    teeth_mat = bpy.data.materials.new(name=f"{name}_TeethMat")
+    teeth_mat.use_nodes = True
+    teeth_mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (0.9, 0.9, 0.9, 1)
+    obj.data.materials.append(teeth_mat)
+    
+    # Position inside the mouth (in Head local space)
+    obj.location = (0, -0.35, -0.2) 
+    return obj
+
+def _build_mole(name, armature):
+    """Small dark mole for character distinction, parented to Head."""
+    obj_name = f"{name}_Mole"
+    obj, mesh = _new_obj(obj_name, obj_name, armature, "Head")
+    
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.012)
+    bm.to_mesh(mesh)
+    bm.free()
+    
+    mole_mat = bpy.data.materials.new(name=f"{name}_MoleMat")
+    mole_mat.use_nodes = True
+    mole_mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (0.05, 0.03, 0.02, 1)
+    obj.data.materials.append(mole_mat)
+    
+    # Position on side of face
+    obj.location = (0.15, -0.38, 0.1)
+    return obj
+
+
+# ---------------------------------------------------------------------------
 # MAIN ENTRY POINT
 # ---------------------------------------------------------------------------
 
-def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_material, bark_material):
+def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_material, bark_material, lip_material):
     """
     Upgraded facial prop creation for V5.
 
@@ -597,7 +649,7 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
             v.co.y -= (dist_x * dist_x) * 3.0
 
         bm.to_mesh(mesh); bm.free()
-        obj.data.materials.append(bark_material)
+        obj.data.materials.append(lip_material)
         _smooth_all(obj)
         facial_objs[f"Lip.{lip_type}"] = obj
 
@@ -753,5 +805,12 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
         jaw_obj.hide_render = True
         jaw_obj.display_type = 'WIRE'
         facial_objs["Jaw.Ctrl"] = jaw_obj
+
+    # ====================================================================
+    # 16. TEETH AND MOLE (NEW)
+    # ====================================================================
+    facial_objs["Teeth"] = _build_teeth(name, armature)
+    if "Arbor" in name:
+        facial_objs["Mole"] = _build_mole(name, armature)
 
     return facial_objs

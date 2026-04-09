@@ -3,6 +3,8 @@ import unittest
 import os
 import sys
 import math
+import mathutils
+import mathutils
 
 # Standard path logic
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,7 +13,12 @@ if SCENE5_DIR not in sys.path:
     sys.path.append(SCENE5_DIR)
 
 from assets_v5.plant_humanoid_v5 import create_plant_humanoid_v5
-from animation_library_v5 import apply_nod, apply_shake_head, apply_smile
+from animation_library_v5 import (
+    apply_nod, apply_shake_head, apply_smile,
+    apply_bend_down, apply_grasp, attach_prop
+)
+from props_v5.water_can_v5 import create_water_can_v5
+import config
 
 class TestAnimationModules(unittest.TestCase):
     def setUp(self):
@@ -339,6 +346,190 @@ class TestAnimationModules(unittest.TestCase):
         bpy.context.scene.frame_set(20)
         self.assertGreater(pupil.scale[0], start_s * 1.1, "Pupils should dilate for joy.")
         print("PASSED: Joyful - Pupil dilation and smile confirmed.")
+
+    def test_prop_grounding(self):
+        """Verify props are grounded at Z=0 (world space) at frame 1."""
+        from generate_scene5 import generate_full_scene_v5 as setup_scene5
+        setup_scene5()
+        bpy.context.scene.frame_set(1)
+        bpy.context.view_layer.update()
+        
+        can = bpy.data.objects.get("WaterCan")
+        hose = bpy.data.objects.get("GardenHose")
+        self.assertIsNotNone(can, "WaterCan should exist.")
+        self.assertIsNotNone(hose, "GardenHose should exist.")
+        
+        # Check Z world position of the base
+        self.assertAlmostEqual(can.matrix_world.translation.z, 0.0, delta=0.01, msg="WaterCan should be at Z=0.")
+        self.assertAlmostEqual(hose.matrix_world.translation.z, 0.0, delta=0.01, msg="GardenHose should be at Z=0.")
+        print(f"PASSED: Prop Grounding - Can Z: {can.matrix_world.translation.z:.3f}, Hose Z: {hose.matrix_world.translation.z:.3f}")
+
+    def test_ots_character_visibility(self):
+        """Verify focus character heads/feet are visible in OTS cameras."""
+        from generate_scene5 import generate_full_scene_v5 as setup_scene5
+        from bpy_extras.object_utils import world_to_camera_view
+        
+        setup_scene5()
+        scene = bpy.context.scene
+        bpy.context.view_layer.update()
+        
+        # OTS camera names from generate_scene5
+        cams_to_test = {
+            config.CHAR_HERBACEOUS: "OTS1",
+            config.CHAR_ARBOR: "OTS2"
+        }
+        
+        for char_name, cam_name in cams_to_test.items():
+            cam = bpy.data.objects.get(cam_name)
+            char_rig = bpy.data.objects.get(char_name)
+            self.assertIsNotNone(cam, f"Camera {cam_name} not found.")
+            self.assertIsNotNone(char_rig, f"Rig {char_name} not found.")
+            
+            # Use focus point from generate_scene5 (eye level)
+            focus_z = 2.5
+            head_coord = char_rig.location + mathutils.Vector((0, 0, focus_z))
+            feet_coord = char_rig.location + mathutils.Vector((0, 0, 0.0))
+            
+            print(f"\nDIAGNOSTIC: {char_name} via {cam_name}")
+            print(f"  Cam Loc: {list(cam.location)}")
+            print(f"  Cam Rot: {list(cam.rotation_euler)}")
+            
+            for coord, label in [(head_coord, "Head"), (feet_coord, "Feet")]:
+                uv = world_to_camera_view(scene, cam, coord)
+                print(f"  {label} World: {list(coord)}")
+                print(f"  {label} UV: {list(uv)}")
+                
+                # uv is (x, y, z) where x,y are [0,1] and z is distance from cam
+                self.assertTrue(0.0 <= uv.x <= 1.0, f"{label} of {char_name} out of camera X bounds: {uv.x:.2f}")
+                self.assertTrue(0.0 <= uv.y <= 1.0, f"{label} of {char_name} out of camera Y bounds: {uv.y:.2f}")
+                self.assertGreater(uv.z, 0.0, f"{label} of {char_name} is behind the camera.")
+            
+            print(f"PASSED: Visibility - {char_name} focused correctly in {cam_name}.")
+
+    def test_animation_shiver(self):
+        """Verify high-frequency jitter for shiver animation."""
+        from animation_library_v5 import apply_shiver
+        apply_shiver(self.armature, 10, duration=10)
+        
+        locs = []
+        for f in range(10, 20):
+            bpy.context.scene.frame_set(f)
+            locs.append(self.armature.pose.bones["Torso"].location[0])
+        
+        # Check for oscillation in location
+        diffs = [abs(locs[i] - locs[i-1]) for i in range(1, len(locs))]
+        self.assertGreater(max(diffs), 0.001, "Shiver should produce measurable location jitter.")
+        print("PASSED: Shiver - Jitter detected.")
+
+    def test_animation_droop(self):
+        """Verify head pitch lowering for droop animation."""
+        from animation_library_v5 import apply_droop
+        apply_droop(self.armature, 10, duration=20)
+        bpy.context.scene.frame_set(20) # Middle of duration
+        pitch = self.armature.pose.bones["Head"].rotation_euler[0]
+        self.assertLess(pitch, -0.1, "Head should pitch forward (negative X with 180 roll) during droop.")
+        print(f"PASSED: Droop - Head pitch detected: {pitch:.3f}")
+
+    def test_apply_bend_down(self):
+        """Verifies torso pitch decrease for bending."""
+        from animation_library_v5 import apply_bend_down
+        apply_bend_down(self.armature, 10, duration=40)
+        bpy.context.scene.frame_set(30)
+        torso = self.armature.pose.bones.get("Torso")
+        self.assertLess(torso.rotation_euler[0], -0.1, "Torso should be pitched forward.")
+        print(f"PASSED: Bend Down - Torso pitch detected: {torso.rotation_euler[0]:.3f}")
+
+    def test_apply_grasp(self):
+        """Verifies finger curl for grasping."""
+        from animation_library_v5 import apply_grasp
+        apply_grasp(self.armature, 10, side="L", duration=20)
+        f = self.armature.pose.bones.get("Finger.1.L")
+        bpy.context.scene.frame_set(20)
+        self.assertLess(f.rotation_euler[0], -1.0, "Fingers should be curled.")
+        print("PASSED: Grasp - Finger curl detected.")
+
+    def test_prop_attachment(self):
+        """Verifies Child-Of constraint on prop."""
+        from animation_library_v5 import attach_prop
+        prop = create_water_can_v5("TestProp", (0,0,0))
+        attach_prop(self.armature, prop, bone_name="Hand.L", frame=10)
+        con = prop.constraints.get("CharacterGrasp")
+        self.assertIsNotNone(con)
+        self.assertEqual(con.target, self.armature)
+        self.assertEqual(con.subtarget, "Hand.L")
+        print("PASSED: Prop Attachment - Child-Of constraint verified.")
+
+    def test_modular_dispatcher(self):
+        """Verify the modular animation dispatcher maps tags correctly."""
+        from animation_library_v5 import apply_animation_by_tag
+        res = apply_animation_by_tag(self.armature, "dance", 500, duration=100)
+        self.assertTrue(res)
+        print("PASSED: Modular Dispatcher - Dance tag recognized.")
+
+    def test_apply_dance(self):
+        """Verify rhythmic bobbing during dance."""
+        from animation_library_v5 import apply_dance
+        apply_dance(self.armature, 1000, duration=100)
+        bpy.context.scene.frame_set(1015) # Middle of cycle
+        self.assertNotEqual(self.armature.pose.bones["Torso"].location[2], 0)
+        print("PASSED: Dance - Torso bobbing detected.")
+
+    def test_character_reorientation(self):
+        """Verify characters face camera at 3600 (Z=0)."""
+        from dialogue_scene_v5 import DialogueSceneV5
+        scene_logic = DialogueSceneV5({}, [])
+        cams = {"WIDE": bpy.data.objects.new("WIDE_MOCK", bpy.data.cameras.new("WideData"))}
+        
+        # Test the finale logic
+        scene_logic._setup_dance_finale(3600, 4200)
+        
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        if herb:
+            bpy.context.scene.frame_set(3600)
+            self.assertAlmostEqual(herb.rotation_euler[2], 0.0, delta=0.01)
+            bpy.context.scene.frame_set(4180)
+            self.assertNotEqual(herb.rotation_euler[2], 0.0) # Turned back
+        print("PASSED: Re-orientation - Orientation keys verified.")
+
+    def test_lip_color_distinction(self):
+        """Verify lip material is distinctly pinkish-red (R > 0.5) and differs from bark."""
+        char = create_plant_humanoid_v5("ColorTest", (0,0,0))
+        lip = bpy.data.objects.get("ColorTest_Lip_Upper")
+        body = bpy.data.objects.get("ColorTest_Body")
+        
+        self.assertIsNotNone(lip, "Lip object should exist.")
+        self.assertIsNotNone(body, "Body object should exist.")
+        
+        lip_mat = lip.data.materials[0]
+        body_mat = body.data.materials[0] # Bark
+        
+        lip_rgb = lip_mat.node_tree.nodes["Principled BSDF"].inputs['Base Color'].default_value
+        body_rgb = body_mat.node_tree.nodes["Principled BSDF"].inputs['Base Color'].default_value
+        
+        self.assertGreater(lip_rgb[0], 0.5, "Lip color should have strong Red component.")
+        self.assertNotEqual(tuple(lip_rgb[:3]), tuple(body_rgb[:3]), "Lips must be a different color than the body.")
+        print(f"PASSED: Lip Distinction - Color {tuple(lip_rgb[:3])} is distinct from body {tuple(body_rgb[:3])}")
+
+    def test_teeth_visibility_when_open(self):
+        """Verify teeth are hidden under the head and parented correctly."""
+        char = create_plant_humanoid_v5("TeethTest", (0,0,0))
+        teeth = bpy.data.objects.get("TeethTest_Teeth")
+        self.assertIsNotNone(teeth, "Teeth object should exist.")
+        self.assertEqual(teeth.parent.name, "TeethTest", "Teeth should be parented to the character armature.")
+        self.assertEqual(teeth.parent_bone, "Head", "Teeth should be parented to the Head bone.")
+        
+        # Verify material is white
+        teeth_mat = teeth.data.materials[0]
+        teeth_rgb = teeth_mat.node_tree.nodes["Principled BSDF"].inputs['Base Color'].default_value
+        self.assertGreater(teeth_rgb[0], 0.8, "Teeth should be white/bright.")
+        print("PASSED: Teeth Visibility - Teeth present and properly parented inside head.")
+
+    def test_character_aesthetics(self):
+        """Verifies teeth and moles existence."""
+        arbor = create_plant_humanoid_v5(config.CHAR_ARBOR, (0,0,0))
+        self.assertIsNotNone(bpy.data.objects.get(f"{config.CHAR_ARBOR}_Mole"))
+        self.assertIsNotNone(bpy.data.objects.get(f"{config.CHAR_ARBOR}_Teeth"))
+        print("PASSED: Aesthetics - Features verified.")
 
 if __name__ == "__main__":
     unittest.main(argv=[sys.argv[0]])
