@@ -160,29 +160,32 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 self.assertGreater(dist_xy, MIN_DIST, f"Overlap: {n1} <-> {n2}")
 
     def test_armature_mesh_synchronization(self):
+        """
+        Verify synchronization using Parent-Child or Constraint.
+        In modern 5.0 pipeline, Mesh is child of Rig with 0,0,0 local transform.
+        """
         self.scene_logic._link_spirit_assets()
 
         targets = [
-            (config.CHAR_LEAFY_RIG,    config.CHAR_LEAFY_MESH,    config.SPIRIT_LEAFY_POS),
-            (config.CHAR_JOY_RIG,      config.CHAR_JOY_MESH,      config.SPIRIT_JOY_POS),
-            (config.CHAR_LEAFCHAR_RIG, config.CHAR_LEAFCHAR_MESH,  (0.0, 4.0, 0.0)),
+            (config.CHAR_LEAFY_RIG,    config.CHAR_LEAFY_MESH),
+            (config.CHAR_JOY_RIG,      config.CHAR_JOY_MESH),
+            (config.CHAR_LEAFCHAR_RIG, config.CHAR_LEAFCHAR_MESH),
         ]
 
-        for rig_name, mesh_name, target_pos in targets:
+        for rig_name, mesh_name in targets:
             rig  = bpy.data.objects.get(rig_name)
             mesh = bpy.data.objects.get(mesh_name)
             if not rig or not mesh:
                 continue
 
-            self.assertIsNone(mesh.parent,
-                              f"Mesh {mesh_name} should be sibling to Rig {rig_name}")
+            # Standard production hierarchy check
+            self.assertEqual(mesh.parent, rig, f"Mesh {mesh_name} not child of Rig {rig_name}")
 
             m_loc = mesh.matrix_world.to_translation()
             r_loc = rig.matrix_world.to_translation()
             dist  = (m_loc - r_loc).length
-            print(f"SYNC AUDIT {mesh_name}: Sibling Dist={dist:.4f}")
-            self.assertLess(dist, 0.1,
-                            f"Mesh {mesh_name} not following Rig {rig_name}")
+            print(f"SYNC AUDIT {mesh_name}: Dist={dist:.4f}")
+            self.assertLess(dist, 0.1, f"Mesh {mesh_name} spatially decoupled from Rig {rig_name}")
 
     def test_character_visibility(self):
         targets  = [config.CHAR_HERBACEOUS + "_Body", config.CHAR_ARBOR + "_Body"]
@@ -446,37 +449,38 @@ class TestV6SpiritIntegration(unittest.TestCase):
         # Targeted Diagnostic: Check evaluation of offset
         if follow_path and follow_path.use_fixed_location:
             print(f"DEBUG: Fixed Position: {follow_path.offset_factor}")
+
             # Check for keyframes on offset_factor
+            has_offset_keys = False
             if cam.animation_data and cam.animation_data.action:
                 action = cam.animation_data.action
-                has_offset_keys = False
 
                 # Case 1: Legacy / Simple Actions
                 if hasattr(action, "fcurves"):
                      has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in action.fcurves)
 
-            # Case 2: Blender 5 Slotted Actions (Utilizing style utility patterns)
-            if not has_offset_keys:
-                 try:
-                     # Check slots
-                     if hasattr(action, "slots"):
-                         for slot in action.slots:
-                             # Check channel bags via anim_utils if possible
-                             from bpy_extras import anim_utils
-                             bag = anim_utils.action_get_channelbag_for_slot(action, slot)
-                             if bag and hasattr(bag, "fcurves"):
-                                 if any(fc.data_path.endswith("offset_factor") for fc in bag.fcurves):
-                                     has_offset_keys = True
-                                     break
-                 except Exception as e:
-                     print(f"DEBUG: Slotted Action check failed: {e}")
+                # Case 2: Blender 5 Slotted Actions (Utilizing style utility patterns)
+                if not has_offset_keys:
+                     try:
+                         # Check slots
+                         if hasattr(action, "slots"):
+                             for slot in action.slots:
+                                 # Check channel bags via anim_utils if possible
+                                 from bpy_extras import anim_utils
+                                 bag = anim_utils.action_get_channelbag_for_slot(action, slot)
+                                 if bag and hasattr(bag, "fcurves"):
+                                     if any(fc.data_path.endswith("offset_factor") for fc in bag.fcurves):
+                                         has_offset_keys = True
+                                         break
+                     except Exception as e:
+                         print(f"DEBUG: Slotted Action check failed: {e}")
 
                 # Case 3: If still not found, check the object's own fcurves if possible
                 if not has_offset_keys and hasattr(cam.animation_data, "action"):
                      # Sometimes action.fcurves is what we want
                      pass
 
-                self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
+            self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
 
     def test_diagnostic_occlusion_and_sync(self):
         """Deep dive into raycast occlusion and coordinate sync issues."""

@@ -171,69 +171,56 @@ class SylvanEnsembleManager:
     # ------------------------------------------------------------------
 
     def renormalize_objects(self):
-        """Standardizes naming and basic hierarchy for production ensemble."""
-        print("ASSET_MANAGER: Executing Production Asset Renormalization...")
+        """
+        Robust 5.0 Renormalization.
+        Scopes changes ONLY to ensemble members to avoid distorting background or environment.
+        """
+        print("ASSET_MANAGER: Scoped Production Renormalization...")
 
+        ensemble_objects = []
+
+        # 1. Scope Identification
         for src_mesh, art_name in self.ensemble.items():
             is_protagonist = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
             sep = "_" if is_protagonist else "."
-            target_mesh_name = f"{art_name}{sep}Body"
-            target_rig_name = f"{art_name}{sep}Rig"
+            t_mesh = f"{art_name}{sep}Body"
+            t_rig  = f"{art_name}{sep}Rig"
 
-            # 1. Asset Identification (Idempotent)
-            mesh_obj = bpy.data.objects.get(target_mesh_name) or bpy.data.objects.get(src_mesh)
-            if not mesh_obj:
-                print(f"ASSET_MANAGER WARNING: Mesh '{art_name}' not found.")
-                continue
+            mesh = bpy.data.objects.get(t_mesh) or bpy.data.objects.get(src_mesh)
+            if not mesh: continue
 
-            mesh_obj.name = target_mesh_name
+            mesh.name = t_mesh
 
-            # 2. Rig Identification
-            src_rig_name = self.rig_map.get(art_name)
-            rig_obj = (bpy.data.objects.get(target_rig_name) or
-                       (bpy.data.objects.get(src_rig_name) if src_rig_name else None) or
-                       mesh_obj.find_armature())
+            src_rig = self.rig_map.get(art_name)
+            rig = (bpy.data.objects.get(t_rig) or
+                   (bpy.data.objects.get(src_rig) if src_rig else None) or
+                   mesh.find_armature())
 
-            if rig_obj:
-                rig_obj.name = target_rig_name
-                rig_obj.parent = None
+            if rig:
+                rig.name = t_rig
+                ensemble_objects.extend([mesh, rig])
 
-                # SIBLING HIERARCHY (Phase A Requirement)
-                # We move both objects to the same origin to avoid double-transform distortion
-                # while keeping them as top-level siblings.
-                mesh_obj.parent = None
+                # Enforce Standard Production Hierarchy
+                # Rig is top-level; Mesh is child with identity transforms to avoid distortion
+                mesh.parent = rig
+                mesh.location = (0, 0, 0)
+                mesh.rotation_euler = (0, 0, 0)
+                mesh.scale = (1, 1, 1)
 
-                # If the Rig has moved but the Mesh is still at origin, we sync them
-                # but we do it PASSIVELY to avoid the "distorting everything" issue.
-                # Only apply if Mesh is truly at origin and Rig has moved.
-                if mesh_obj.location.length < 0.001 and rig_obj.location.length > 0.001:
-                     mesh_obj.location = rig_obj.location.copy()
-                     mesh_obj.rotation_euler = rig_obj.rotation_euler.copy()
-                     mesh_obj.scale = rig_obj.scale.copy()
+                # Clear all constraints/modifiers and restore only Armature
+                mesh.constraints.clear()
+                mesh.modifiers.clear()
+                arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
+                arm_mod.object = rig
 
-                # Ensure Armature modifier is present and targeting the rig
-                arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
-                if not arm_mod:
-                    arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = rig_obj
+            # Visibility: Scope unhide ONLY to these objects
+            mesh.hide_render = mesh.hide_viewport = False
+            if rig: rig.hide_render = rig.hide_viewport = False
 
-                # Remove any harmful constraints that might cause distortion
-                for con in list(mesh_obj.constraints):
-                    if con.type == 'COPY_TRANSFORMS':
-                        mesh_obj.constraints.remove(con)
-            else:
-                print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
-
-        # Restore full visibility (hidden objects cause render-safety confusion later)
-        for obj in bpy.data.objects:
-            obj.hide_render   = False
-            obj.hide_viewport = False
-
-        # Root_Guardian is a technical helper — keep it invisible
+        # 2. Targeted cleanup of known technical helpers
         for obj in bpy.data.objects:
             if "Root_Guardian" in obj.name:
-                obj.hide_render   = True
-                obj.hide_viewport = True
+                obj.hide_render = obj.hide_viewport = True
 
     # ------------------------------------------------------------------
     # MATERIAL REPAIR
