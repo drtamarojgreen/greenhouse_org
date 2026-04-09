@@ -89,7 +89,7 @@ def setup_chroma_green_backdrop():
         nodes.clear()
 
         emit = nodes.new(type='ShaderNodeEmission')
-        # Blender 4.0/5.0+ compatibility: Use socket names or indices
+        # Blender 5.0+ compatibility: Use socket names or indices
         strength_socket = emit.inputs.get("Strength") or emit.inputs[1]
         color_socket = emit.inputs.get("Color") or emit.inputs[0]
 
@@ -131,7 +131,7 @@ def setup_chroma_green_backdrop():
     bg_neutral = w_nodes.new(type='ShaderNodeBackground')
     w_out      = w_nodes.new(type='ShaderNodeOutputWorld')
 
-    # Blender 4.0/5.0+ compatibility
+    # Blender 5.0+ compatibility
     bg_dark_color = bg_dark.inputs.get("Color") or bg_dark.inputs[0]
     bg_neutral_color = bg_neutral.inputs.get("Color") or bg_neutral.inputs[0]
 

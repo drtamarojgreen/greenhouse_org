@@ -100,7 +100,7 @@ def extract_assets():
             bpy.context.view_layer.objects.active = rig
 
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
-            # Blender 4.0/5.0+ compatible export settings
+            # Blender 5.0+ compatible export settings
             bpy.ops.export_scene.fbx(
                 filepath=fbx_path,
                 use_selection=True,

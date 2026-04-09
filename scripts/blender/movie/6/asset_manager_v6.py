@@ -190,7 +190,7 @@ class SylvanEnsembleManager:
                 print(f"ASSET_MANAGER WARNING: Texture not found: {img_path}")
 
             links = mat.node_tree.links
-            # Blender 4.0+ Principled BSDF uses "Base Color"
+            # Blender 5.0+ Principled BSDF uses "Base Color"
             target_socket = n_bsdf.inputs.get("Base Color") or n_bsdf.inputs[0]
             links.new(n_tex.outputs['Color'],  target_socket)
             links.new(n_bsdf.outputs['BSDF'],  n_out.inputs['Surface'])
