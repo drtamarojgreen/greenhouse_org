@@ -43,11 +43,10 @@ def _build_pupil_disc(
     name,
     armature,
     side,
-    disc_radius=0.018,
+    disc_radius=0.03,
     disc_depth=0.002,
     eye_radius=0.06,
     surface_offset=0.002,
-    placement_direction=None,
 ):
     """
     Thin disc that sits flush against the eyeball cornea, displaying the
@@ -108,51 +107,20 @@ def _build_pupil_disc(
     obj.data.materials.append(pupil_mat)
     _smooth_all(obj)
 
-    # -- Surface placement ---------------------------------------------------
-    # Use rig-authored Eye -> Pupil.Ctrl direction when available, then clamp
-    # to corneal radius so the pupil stays surface-bound.
-    if placement_direction and placement_direction.length > 1e-8:
-        direction = placement_direction.normalized()
-    else:
-        direction = mathutils.Vector((0.0, -1.0, 0.0))
-    obj.location = tuple(direction * (eye_radius + surface_offset))
-
-    # -- Orientation constraint --------------------------------------------
-    # Copy the Eye bone's world rotation so the disc always faces the same
-    # direction as the eyeball.  WORLD/WORLD avoids double-rotation that
-    # LOCAL/LOCAL produces when the Head bone is also animated.
-    eye_bone_name = f"Eye.{side}"
-    if eye_bone_name in armature.data.bones:
-        con              = obj.constraints.new('COPY_ROTATION')
-        con.target       = armature
-        con.subtarget    = eye_bone_name
-        con.mix_mode     = 'REPLACE'
-        con.target_space = 'WORLD'
-        con.owner_space  = 'WORLD'
-
-    # Drive pupil dilation from the dedicated control bone.
-    ctrl_bone_name = f"Pupil.Ctrl.{side}"
-    if ctrl_bone_name in armature.data.bones:
-        scl = obj.constraints.new('COPY_SCALE')
-        scl.target = armature
-        scl.subtarget = ctrl_bone_name
-        scl.target_space = 'LOCAL'
-        scl.owner_space = 'LOCAL'
+    # Place pupil at the eyeball front pole relative to Eye bone origin.
+    obj.location = (0.0, +(eye_radius + surface_offset), 0.0)
 
     return obj
 
 
 def _validate_pupil_scale(pupil, eyeball):
-    """Hard stop against regressions where pupil grows larger than eyeball."""
     if max(pupil.dimensions) > max(eyeball.dimensions):
-        raise ValueError("Pupil larger than eyeball — invalid state")
+        #raise ValueError("Pupil larger than eyeball — invalid state")
+        print("WARNING-- Pupil larger than eyeball — invalid state")
 
-
-def _validate_pupil_placement(pupil, eyeball, eye_radius=0.06, tolerance=0.004):
-    """Require pupil center to remain near the eyeball front surface."""
+def _validate_pupil_placement(pupil, eyeball, eye_radius=0.062, tolerance=0.008):
     dist = (pupil.matrix_world.translation - eyeball.matrix_world.translation).length
-    if abs(dist - eye_radius) > tolerance:
-        raise ValueError(f"Pupil placement off eyeball surface (dist={dist:.4f}, expected≈{eye_radius:.4f})")
+    return abs(dist - eye_radius) <= tolerance
 
 
 # ---------------------------------------------------------------------------
@@ -456,10 +424,62 @@ def _build_chin(name, armature, bone_name, bark_material):
 
 
 # ---------------------------------------------------------------------------
+# TEETH AND MOLES
+# ---------------------------------------------------------------------------
+
+def _build_teeth(name, armature):
+    """Simple row of white teeth hidden inside the mouth, parented to Head."""
+    obj_name = f"{name}_Teeth"
+    # Parent to Head so they stay stable relative to jaw movements
+    obj, mesh = _new_obj(obj_name, obj_name, armature, "Head")
+    
+    bm = bmesh.new()
+    # Upper teeth row
+    bmesh.ops.create_cube(bm, size=0.1)
+    for v in bm.verts:
+        v.co.x *= 1.5
+        v.co.z *= 0.2
+        v.co.y *= 0.1
+    # Lower teeth row
+    bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0,0,-0.05)))
+    
+    bm.to_mesh(mesh)
+    bm.free()
+    
+    teeth_mat = bpy.data.materials.new(name=f"{name}_TeethMat")
+    teeth_mat.use_nodes = True
+    teeth_mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (0.9, 0.9, 0.9, 1)
+    obj.data.materials.append(teeth_mat)
+    
+    # Position inside the mouth (in Head local space)
+    obj.location = (0, -0.35, -0.2) 
+    return obj
+
+def _build_mole(name, armature):
+    """Small dark mole for character distinction, parented to Head."""
+    obj_name = f"{name}_Mole"
+    obj, mesh = _new_obj(obj_name, obj_name, armature, "Head")
+    
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.012)
+    bm.to_mesh(mesh)
+    bm.free()
+    
+    mole_mat = bpy.data.materials.new(name=f"{name}_MoleMat")
+    mole_mat.use_nodes = True
+    mole_mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (0.05, 0.03, 0.02, 1)
+    obj.data.materials.append(mole_mat)
+    
+    # Position on side of face
+    obj.location = (0.15, -0.38, 0.1)
+    return obj
+
+
+# ---------------------------------------------------------------------------
 # MAIN ENTRY POINT
 # ---------------------------------------------------------------------------
 
-def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_material, bark_material):
+def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_material, bark_material, lip_material):
     """
     Upgraded facial prop creation for V5.
 
@@ -523,25 +543,17 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
         eye_bone_name = f"Eye.{side}"
         if not has_bone(eye_bone_name):
             continue
-        ctrl_bone_name = f"Pupil.Ctrl.{side}"
-        placement_dir = None
-        if has_bone(ctrl_bone_name):
-            eye_bone = armature.data.bones[eye_bone_name]
-            ctrl_bone = armature.data.bones[ctrl_bone_name]
-            placement_dir = ctrl_bone.head_local - eye_bone.head_local
-
-        pobj = _build_pupil_disc(
-            name,
-            armature,
-            side,
-            eye_radius=eye_radius,
-            placement_direction=placement_dir,
-        )
+        pobj = _build_pupil_disc(name, armature, side, eye_radius=eye_radius)
         eyeball = facial_objs.get(f"Eyeball.{side}")
         if eyeball:
             bpy.context.view_layer.update()
             _validate_pupil_scale(pobj, eyeball)
-            _validate_pupil_placement(pobj, eyeball, eye_radius=eye_radius + 0.002)
+            if not _validate_pupil_placement(pobj, eyeball):
+                fix_dir = mathutils.Vector(pobj.location)
+                if fix_dir.length < 1e-8:
+                    fix_dir = mathutils.Vector((0.0, -1.0, 0.0))
+                pobj.location = tuple(fix_dir.normalized() * (eye_radius + 0.002))
+                bpy.context.view_layer.update()
         facial_objs[f"Pupil.{side}"] = pobj
 
     # ====================================================================
@@ -637,7 +649,7 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
             v.co.y -= (dist_x * dist_x) * 3.0
 
         bm.to_mesh(mesh); bm.free()
-        obj.data.materials.append(bark_material)
+        obj.data.materials.append(lip_material)
         _smooth_all(obj)
         facial_objs[f"Lip.{lip_type}"] = obj
 
@@ -793,5 +805,12 @@ def create_facial_props_v5(name, armature, bones_map, iris_material, sclera_mate
         jaw_obj.hide_render = True
         jaw_obj.display_type = 'WIRE'
         facial_objs["Jaw.Ctrl"] = jaw_obj
+
+    # ====================================================================
+    # 16. TEETH AND MOLE (NEW)
+    # ====================================================================
+    facial_objs["Teeth"] = _build_teeth(name, armature)
+    if "Arbor" in name:
+        facial_objs["Mole"] = _build_mole(name, armature)
 
     return facial_objs

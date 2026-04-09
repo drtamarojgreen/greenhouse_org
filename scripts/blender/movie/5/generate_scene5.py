@@ -10,6 +10,8 @@ if MOVIE_ROOT not in sys.path:
     sys.path.append(MOVIE_ROOT)
 
 from assets_v5.plant_humanoid_v5 import create_plant_humanoid_v5, setup_production_lighting
+from props_v5.water_can_v5 import create_water_can_v5
+from props_v5.garden_hose_v5 import create_garden_hose_v5
 from chroma_green_setup import setup_chroma_green_backdrop
 from dialogue_blocking import set_eyeline_alignment
 import config
@@ -27,18 +29,17 @@ ARBOR_EYE_LEVEL = (1.75, 0.3, 2.5)
 CAM_WIDE_LOC = (0.0, -8.0, 2.0) 
 CAM_WIDE_ROT = (math.radians(90), 0.0, 0.0)
 
-# OTS Camera Paths (True Over-The-Shoulder Framing - OFFSET laterally to clear shoulders)
-# OTS1: Focus on Herbaceous (-1.75, -0.3, 2.5), Camera behind Arbor (+1.75, 0.3, 2.5)
-CAM_HERB_OTS_START = (4.0, 3.0, 2.8) 
-CAM_HERB_OTS_END = (4.2, 3.1, 2.9)
+# OTS Camera Paths (True Over-The-Shoulder Framing - MOVED BACK SIGNIFICANTLY)
+CAM_HERB_OTS_START = (13.5, 11.0, 6.0) 
+CAM_HERB_OTS_END = (13.8, 11.2, 6.1)
 
 # OTS2: Focus on Arbor (+1.75, 0.3, 2.5), Camera behind Herb (-1.75, -0.3, 2.5)
-CAM_ARBOR_OTS_START = (-4.0, -3.0, 2.8)
-CAM_ARBOR_OTS_END = (-4.2, -3.1, 2.9)
+CAM_ARBOR_OTS_START = (-13.5, -11.0, 6.0)
+CAM_ARBOR_OTS_END = (-13.8, -11.2, 6.1)
 
-# Static Camera Positions (Matching new offset OTS framing)
-CAM_STATIC_1_POS = (4.0, 3.0, 2.8)
-CAM_STATIC_2_POS = (-4.0, -3.0, 2.8)
+# Static Camera Positions
+CAM_STATIC_1_POS = (13.5, 11.0, 6.0)
+CAM_STATIC_2_POS = (-13.5, -11.0, 6.0)
 
 def setup_scene5_cameras():
     """Builds a professional 3-camera cinematic rig with strategic tracking."""
@@ -181,6 +182,11 @@ def generate_full_scene_v5():
     # 2. Asset Generation (Humanoid V5)
     herb = create_plant_humanoid_v5(config.CHAR_HERBACEOUS, HERB_BASE)
     arbor = create_plant_humanoid_v5(config.CHAR_ARBOR, ARBOR_BASE)
+    
+    # 2b. Prop Generation
+    # Position props on the ground between the characters
+    create_water_can_v5("WaterCan", location=(0.0, -0.4, 0.0))
+    create_garden_hose_v5("GardenHose", location=(0.0, 0.4, 0.0))
     
     # Update for initial matrix evaluation
     bpy.context.view_layer.update()

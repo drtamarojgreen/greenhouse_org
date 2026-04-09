@@ -2,7 +2,7 @@ import os
 
 # Scene 5 Configuration
 SCENE_NUMBER = 4
-TOTAL_FRAMES = 600
+TOTAL_FRAMES = 4200
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

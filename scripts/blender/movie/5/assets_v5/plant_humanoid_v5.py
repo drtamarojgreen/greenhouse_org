@@ -12,9 +12,10 @@ if MOVIE_ROOT not in sys.path:
     sys.path.append(MOVIE_ROOT)
 
 import style_utilities as style
+import config
 from .facial_utilities_v5 import create_facial_props_v5
 
-def create_bark_material_v5(name, color=(0.05, 0.02, 0.01)):
+def create_bark_material_v5(name, color=(0.15, 0.08, 0.05)):
     """High-Contrast Mahogany Bark for Chroma Keying."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
@@ -36,6 +37,15 @@ def create_bark_material_v5(name, color=(0.05, 0.02, 0.01)):
     links.new(node_noise.outputs['Fac'], node_bump.inputs['Height'])
     links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
     
+    return mat
+
+def create_lip_material_v5(name):
+    """Pinkish-Red fleshy material for lip visibility."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs['Base Color'].default_value = (0.8, 0.2, 0.3, 1.0)
+    bsdf.inputs['Roughness'].default_value = 0.4 # Slight sheen
     return mat
 
 def setup_production_lighting(subjects):
@@ -544,6 +554,8 @@ def create_plant_humanoid_v5(name, location, height_scale=1.0, seed=None):
     for bname, (h, t, p) in bones.items():
         bone = armature_data.edit_bones.new(bname)
         bone.head, bone.tail = h, t
+        if bname == "Head":
+             bone.roll = math.radians(180)
         if p:
             bone.parent = armature_data.edit_bones[p]
 
@@ -738,8 +750,23 @@ def create_plant_humanoid_v5(name, location, height_scale=1.0, seed=None):
                 for face in v.link_faces:
                     face.material_index = 1
 
-    # 5. Global Smoothing
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.03)
+    # 5. Global Smoothing and Cleaning
+    # Reduced distance to avoid over-merging arm/torso intersections
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.005) 
+    
+    # 5b. Post-merge weight isolation: 
+    # Ensure Arm weights don't leak into the Torso/Hips area
+    # and Torso weights don't leak into the Arms.
+    for v in bm.verts:
+        weights = v[dlayer]
+        # Identify the primary group (max weight) to prevent multiple group influences 
+        # that cause "stretching" or "hip pulling".
+        if len(weights) > 1:
+            max_vg = max(weights.keys(), key=lambda k: weights[k])
+            for vg_idx in list(weights.keys()):
+                if vg_idx != max_vg:
+                    v[dlayer][vg_idx] = 0.0
+
     for _ in range(10):
         bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.7)
     
@@ -749,10 +776,11 @@ def create_plant_humanoid_v5(name, location, height_scale=1.0, seed=None):
     # Modifiers
     mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
 
-    wave = mesh_obj.modifiers.new(name="WindSway", type='WAVE')
-    wave.use_x = True; wave.use_y = True
-    wave.height = 0.05; wave.width = 1.5; wave.narrowness = 1.5
-    wave.speed = 0.15; wave.vertex_group = "Foliage"
+    # mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF').levels = 2
+    # wave = mesh_obj.modifiers.new(name="WindSway", type='WAVE')
+    # wave.use_x = True; wave.use_y = True
+    # wave.height = 0.05; wave.width = 1.5; wave.narrowness = 1.5
+    # wave.speed = 0.15; wave.vertex_group = "Foliage"
     
     mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF').levels = 2
     mesh_obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
@@ -765,8 +793,11 @@ def create_plant_humanoid_v5(name, location, height_scale=1.0, seed=None):
     disp.strength = 0.06
     disp.vertex_group = "Torso"
 
-    mesh_obj.data.materials.append(create_bark_material_v5(f"Bark_{name}"))
-    mesh_obj.data.materials.append(create_leaf_material_v5(f"Leaf_{name}"))
+    bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
+    leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
+    
+    mesh_obj.data.materials.append(create_bark_material_v5(f"Bark_{name}", color=bark_color))
+    mesh_obj.data.materials.append(create_leaf_material_v5(f"Leaf_{name}", color=leaf_color))
 
     # A-Pose
     bpy.context.view_layer.objects.active = armature_obj
@@ -797,9 +828,9 @@ def create_plant_humanoid_v5(name, location, height_scale=1.0, seed=None):
 
     iris_mat = create_iris_material_v5(f"Iris_{name}")
     sclera_mat = create_sclera_material_v5(f"Sclera_{name}")
-    bark_mat = create_bark_material_v5(f"FacialBark_{name}",
-                                       color=(0.1, 0.15, 0.05))
+    bark_mat = create_bark_material_v5(f"FacialBark_{name}", color=bark_color)
+    lip_mat = create_lip_material_v5(f"LipMat_{name}")
 
-    create_facial_props_v5(name, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat)
+    create_facial_props_v5(name, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
     
     return armature_obj

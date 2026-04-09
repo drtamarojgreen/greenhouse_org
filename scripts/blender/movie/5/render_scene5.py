@@ -69,16 +69,26 @@ def render_scene5():
     if cameras["WIDE"]:
         m3 = scene.timeline_markers.new("WIDE", frame=3)
         m3.camera = cameras["WIDE"]
+        m4 = scene.timeline_markers.new("Dance_Wide", frame=3600)
+        m4.camera = cameras["WIDE"]
 
-    # Dialogue blocking
+    # Dialogue blocking (3,600 Frames)
     dialogue_lines = [
-        {"speaker_id": config.CHAR_HERBACEOUS, "anim": "blink", "start_frame": 24, "end_frame": 120},
-        {"speaker_id": config.CHAR_ARBOR, "anim": "nod", "start_frame": 150, "end_frame": 280},
-        {"speaker_id": config.CHAR_HERBACEOUS, "anim": "look_left", "start_frame": 310, "end_frame": 450},
-        {"speaker_id": config.CHAR_ARBOR, "anim": "smile", "start_frame": 480, "end_frame": 580},
+        {"speaker_id": config.CHAR_HERBACEOUS, "anim": ["shiver", "droop", "worry"], "start_frame": 1, "end_frame": 300},
+        {"speaker_id": config.CHAR_ARBOR, "anim": ["nod", "reach_out", "relief"], "start_frame": 310, "end_frame": 600},
+        {"speaker_id": config.CHAR_HERBACEOUS, "anim": ["look_down", "worry"], "start_frame": 610, "end_frame": 900},
+        {"speaker_id": config.CHAR_ARBOR, "anim": ["bend_down", "grasp:WaterCan"], "start_frame": 910, "end_frame": 1200},
+        {"speaker_id": config.CHAR_ARBOR, "anim": ["stretch"], "start_frame": 1210, "end_frame": 1500},
+        {"speaker_id": config.CHAR_HERBACEOUS, "anim": ["joyful", "pouring"], "start_frame": 1510, "end_frame": 1800},
+        {"speaker_id": config.CHAR_ARBOR, "anim": ["grasp:GardenHose", "spraying", "joyful", "smile"], "start_frame": 1810, "end_frame": 2100},
+        {"speaker_id": config.CHAR_HERBACEOUS, "anim": ["stretch", "relief"], "start_frame": 2110, "end_frame": 2400},
+        {"speaker_id": config.CHAR_ARBOR, "anim": ["smile", "celebrate"], "start_frame": 2410, "end_frame": 2800},
+        {"speaker_id": config.CHAR_HERBACEOUS, "anim": ["wiggle", "joyful"], "start_frame": 2810, "end_frame": 3100},
+        {"speaker_id": config.CHAR_ARBOR, "anim": ["nod", "smile"], "start_frame": 3110, "end_frame": 3600},
     ]
 
-    scene_logic = DialogueSceneV5({config.CHAR_HERBACEOUS: {}, config.CHAR_ARBOR: {}}, dialogue_lines)
+    scene_logic = DialogueSceneV5({config.CHAR_HERBACEOUS: {"rig_name": config.CHAR_HERBACEOUS}, 
+                                    config.CHAR_ARBOR: {"rig_name": config.CHAR_ARBOR}}, dialogue_lines)
     scene_logic.setup_scene(cameras)
     
     # 4. Render Setup
@@ -127,10 +137,10 @@ def render_scene5():
                     obj.hide_viewport = True
                     hidden_face_helpers.append(obj.name)
 
-        if hidden_armatures:
-            print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
-        if hidden_face_helpers:
-            print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
+        #if hidden_armatures:
+        #    print(f"RENDER SAFETY: Hidden armatures: {hidden_armatures}")
+        #if hidden_face_helpers:
+        #    print(f"RENDER SAFETY: Hidden face helpers: {hidden_face_helpers}")
 
     # Initial safety pass before frame stepping.
     enforce_render_safety()
