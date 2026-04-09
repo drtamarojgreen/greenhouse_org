@@ -12,13 +12,17 @@ class DialogueSceneV6:
         self.dialogue_lines = dialogue_lines
         self.asset_manager = SylvanEnsembleManager()
 
-    def setup_scene(self, cameras=None):
+    def setup_scene(self, cameras=None, use_fbx=False):
         """Assembles the production scene with modular managers."""
         start_t = time.time()
         print("\n[DIAGNOSTIC] Commencing Scene 6 Production Assembly...")
         
         # 1. Assets (The Sylvan Ensemble)
-        self.asset_manager.link_ensemble()
+        if use_fbx:
+            self.asset_manager.import_fbx_ensemble()
+        else:
+            self.asset_manager.link_ensemble()
+
         self.asset_manager.renormalize_objects()
         self.asset_manager.repair_materials()
         

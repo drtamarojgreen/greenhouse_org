@@ -16,6 +16,16 @@ def run_production_audit():
     print(f"PRODUCTION AUDIT: Scene 6 Ensemble Integrity")
     print("="*120)
 
+    # 0. Asset Folder Audit
+    asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+    print(f"\nASSETS: Checking directory {asset_dir}...")
+    if os.path.exists(asset_dir):
+        fbx_files = [f for f in os.listdir(asset_dir) if f.endswith(".fbx")]
+        tex_files = [f for f in os.listdir(asset_dir) if f.endswith((".png", ".jpg", ".jpeg"))]
+        print(f"        Found {len(fbx_files)} FBX files and {len(tex_files)} texture files.")
+    else:
+        print("        WARNING: Assets directory missing!")
+
     # 1. Collection Audit
     spirit_coll = bpy.data.collections.get("SET.SPIRITS")
     if not spirit_coll:
@@ -80,7 +90,9 @@ def run_production_audit():
         loc = body.matrix_world.to_translation() if body else mathutils.Vector((0,0,0))
         loc_str = f"{loc.x:.1f},{loc.y:.1f},{loc.z:.1f}"
         
-        print(f"{art_name:<15} | {b_st:<10} | {r_st:<10} | {bone_count:<6} | {anim_status:<10} | {growth_status:<15} | {loc_str:<15} | {vis}")
+        # Check if FBX exists in assets
+        fbx_exists = "YES" if os.path.exists(os.path.join(asset_dir, f"{art_name}.fbx")) else "NO"
+        print(f"{art_name:<15} | {b_st:<10} | {r_st:<10} | {bone_count:<6} | {anim_status:<10} | {growth_status:<15} | {loc_str:<15} | {vis} | FBX:{fbx_exists}")
     
     # Audit Protagonists
     for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
