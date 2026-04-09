@@ -68,7 +68,7 @@ def setup_production_environment():
     nodes = mat.node_tree.nodes
     bsdf = next((n for n in nodes if n.type == 'BSDF_PRINCIPLED'), None)
     if bsdf:
-        # Blender 4.0+ uses "Base Color"
+        # Blender 5.0+ uses "Base Color"
         color_input = bsdf.inputs.get("Base Color") or bsdf.inputs[0]
         color_input.default_value = (0, 1, 0, 1)
     obj.data.materials.append(mat)
