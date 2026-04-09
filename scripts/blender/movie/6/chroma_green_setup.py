@@ -33,6 +33,12 @@ def setup_chroma_green_backdrop():
         # Scene was already set up — just return the wide backdrop.
         return existing_wide
 
+    # Create collection for 6b pipeline markers
+    coll_6b = bpy.data.collections.get("ENV.CHROMA.6b")
+    if not coll_6b:
+        coll_6b = bpy.data.collections.new("ENV.CHROMA.6b")
+        bpy.context.scene.collection.children.link(coll_6b)
+
     import math
     import mathutils
     import json
@@ -66,6 +72,10 @@ def setup_chroma_green_backdrop():
     vec_o2 = cam_ots2_loc - mathutils.Vector((50, 20, 5))
     bo2.rotation_euler = vec_o2.to_track_quat('Z', 'Y').to_euler()
     planes.append(bo2)
+
+    # Link planes to 6b collection
+    for plane in planes:
+        coll_6b.objects.link(plane)
 
     # Disable light interaction on all backdrops (prevent green spill)
     for backdrop in planes:
