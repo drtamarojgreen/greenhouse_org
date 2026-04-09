@@ -23,7 +23,7 @@ class SylvanDirector:
 
         # 1. WIDE master (v5 standard) — name must match config.CAMERA_NAME ("WIDE")
         wide_cam = self._create_camera("WIDE", (0, -18, 5.5), (math.radians(82), 0, 0), coll, lens=22)
-        self._setup_camera_path_animation(wide_cam, coll)
+        self._setup_camera_curve(wide_cam, coll)
 
         # 2. OTS rigs (v5 names preserved for naming-parity tests)
         ots_targets = {
@@ -40,41 +40,35 @@ class SylvanDirector:
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
                 cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
 
-    def _setup_camera_path_animation(self, cam, coll):
-        """Creates a Bezier curve and constrains the camera to follow it."""
-        curve_name = f"Path.{cam.name}"
-        curve_obj = bpy.data.objects.get(curve_name)
+    def _setup_camera_curve(self, cam_obj, coll):
+        """Creates a curve and adds a FOLLOW_PATH constraint for the camera."""
+        curve_name = f"Curve.{cam_obj.name}"
+        curve_data = bpy.data.curves.new(curve_name, type='CURVE')
+        curve_data.dimensions = '3D'
 
+        curve_obj = bpy.data.objects.get(curve_name)
         if not curve_obj:
-            curve_data = bpy.data.curves.new(curve_name, type='CURVE')
-            curve_data.dimensions = '3D'
             curve_obj = bpy.data.objects.new(curve_name, curve_data)
             coll.objects.link(curve_obj)
 
-            # Create a simple path: straight line from current camera pos backward
-            polyline = curve_data.splines.new('BEZIER')
-            polyline.bezier_points.add(1)
-            p0 = polyline.bezier_points[0]
-            p1 = polyline.bezier_points[1]
+        # Create a simple path
+        spline = curve_data.splines.new('BEZIER')
+        spline.bezier_points.add(1)
+        spline.bezier_points[0].co = (cam_obj.location.x - 5, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[1].co = (cam_obj.location.x + 5, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[0].handle_left = (cam_obj.location.x - 7, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[0].handle_right = (cam_obj.location.x - 3, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[1].handle_left = (cam_obj.location.x + 3, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[1].handle_right = (cam_obj.location.x + 7, cam_obj.location.y, cam_obj.location.z)
 
-            p0.co = cam.location
-            p0.handle_left = p0.co + mathutils.Vector((0, -2, 0))
-            p0.handle_right = p0.co + mathutils.Vector((0, 2, 0))
-
-            p1.co = cam.location + mathutils.Vector((0, -10, 2))
-            p1.handle_left = p1.co + mathutils.Vector((0, -2, 0))
-            p1.handle_right = p1.co + mathutils.Vector((0, 2, 0))
-
-        # Add Follow Path constraint
-        con_name = "FollowPath"
-        con = cam.constraints.get(con_name) or cam.constraints.new(type='FOLLOW_PATH')
+        # Add constraint
+        con = cam_obj.constraints.get("Follow Path")
+        if not con:
+            con = cam_obj.constraints.new(type='FOLLOW_PATH')
         con.target = curve_obj
         con.use_fixed_location = True
-        con.forward_axis = 'TRACK_NEGATIVE_Z'
-        con.up_axis = 'UP_Y'
 
-        # Animate the offset factor
-        cam.animation_data_create()
+        # Animate offset
         con.offset_factor = 0.0
         con.keyframe_insert(data_path="offset_factor", frame=1)
         con.offset_factor = 1.0

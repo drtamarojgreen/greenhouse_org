@@ -41,6 +41,10 @@ PROTAGONIST_SOURCE = {
 }
 
 # 4. LEGACY MESH / RIG ALIASES (used by tests — single canonical definition)
+# Protagonist Blend Source (v5 reference)
+PROTAGONIST_SOURCE_BLEND = os.path.join(EQUIPMENT_DIR, "MHD2_characters_v5.blend")
+
+# 3. LEGACY MESH / RIG ALIASES (used by tests — single canonical definition)
 CHAR_LEAFY_MESH    = "Sylvan_Majesty.Body"
 CHAR_JOY_MESH      = "Radiant_Aura.Body"
 CHAR_LEAFCHAR_MESH = "Verdant_Sprite.Body"

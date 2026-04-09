@@ -11,21 +11,21 @@ def setup_cinematic_rig():
     """Step 2: Implementation of WIDE, OTS, and Static camera rigs."""
     cameras = ["WIDE", "OTS1", "OTS2", "OTS_Static_1", "OTS_Static_2"]
     scene = bpy.context.scene
-    
+
     for cam_name in cameras:
         if cam_name not in bpy.data.objects:
             bpy.ops.object.camera_add()
             cam = bpy.context.active_object
             cam.name = cam_name
-            
+
             # Restore v5 Standard: 35mm, Clip End 1000
             cam.data.lens = 35
             cam.data.clip_end = 1000.0
-            
+
             # Ensure WIDE is set as the active scene camera
             if cam_name == "WIDE":
                 scene.camera = cam
-            
+
             # Implement Camera Curve Animation (Blender 5 feature)
             if "Static" not in cam_name:
                 setup_camera_path(cam)
@@ -35,16 +35,16 @@ def setup_camera_path(cam_obj):
     bpy.ops.curve.primitive_bezier_curve_add(radius=5.0)
     curve = bpy.context.active_object
     curve.name = f"Path_{cam_obj.name}"
-    
+
     con = cam_obj.constraints.new(type='FOLLOW_PATH')
     con.target = curve
     con.use_curve_follow = True # Orient camera along the curve
-    
+
     # Animate the path to make the camera move along it
     # This operator adds keyframes to the constraint's offset_factor
     bpy.context.view_layer.objects.active = cam_obj # Make camera active for the operator
     bpy.ops.constraint.followpath_path_animate(constraint=con.name, owner='OBJECT')
-    
+
     print(f"PROD_ASSEMBLY: Curve animation established for {cam_obj.name}")
 
 
@@ -56,22 +56,22 @@ def setup_environmental_restoration():
         bg = bpy.context.active_object
         bg.name = backdrop_name
         bg.rotation_euler[0] = math.radians(90)
-        
+
         # Assign Chroma material logic from v5 standards
         mat_name = "ChromaKey_V6"
         mat = bpy.data.materials.get(mat_name) or bpy.data.materials.new(name=mat_name)
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
-        
+
         # Clear default nodes for a clean shader setup
         nodes.clear()
         node_output = nodes.new(type='ShaderNodeOutputMaterial')
         bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
-        
+
         # Set Base Color and link BSDF to Output
         bsdf.inputs['Base Color'].default_value = (0.0, 1.0, 0.0, 1.0) # Pure Green
         mat.node_tree.links.new(bsdf.outputs['BSDF'], node_output.inputs['Surface'])
-        
+
         if not bg.data.materials:
             bg.data.materials.append(mat)
         else:
@@ -94,17 +94,17 @@ def link_fbx_assets():
 def initialize_production():
     """Main assembly sequence."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    
+
     # Create Pipeline Collections
     col_6a = bpy.data.collections.new("6a_Assets")
     col_6b = bpy.data.collections.new("6b_Environment")
     bpy.context.scene.collection.children.link(col_6a)
     bpy.context.scene.collection.children.link(col_6b)
-    
+
     setup_environmental_restoration()
     setup_cinematic_rig()
     link_fbx_assets()
-    
+
     bpy.context.view_layer.update()
 
 if __name__ == "__main__":
