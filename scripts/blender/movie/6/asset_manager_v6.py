@@ -8,7 +8,7 @@ class SylvanEnsembleManager:
     """Manages the linking, renaming, and integrity of the 8-character spirit ensemble."""
 
     def __init__(self):
-        self.collection_name = "SET.SPIRITS"
+        self.collection_name = "SET.SPIRITS.6a"
         self.ensemble  = config.SPIRIT_ENSEMBLE   # {src_mesh_name: art_name}
         self.rig_map   = config.RIG_MAP_SRC        # {art_name: src_armature_name}
 
@@ -60,9 +60,15 @@ class SylvanEnsembleManager:
         # Build the list of source object names we want:
         #   - source mesh names (keys of SPIRIT_ENSEMBLE)
         #   - source armature names (values of RIG_MAP_SRC)
+        #   - protagonist meshes and rigs
         src_mesh_names = list(self.ensemble.keys())
         src_rig_names  = list(self.rig_map.values())
-        want = set(src_mesh_names + src_rig_names)
+
+        protagonist_names = []
+        for p_data in config.PROTAGONIST_SOURCE.values():
+            protagonist_names.extend([p_data["mesh"], p_data["rig"]])
+
+        want = set(src_mesh_names + src_rig_names + protagonist_names)
 
         if not os.path.exists(config.SPIRITS_ASSET_BLEND):
              print(f"ASSET_MANAGER ERROR: Source blend missing: {config.SPIRITS_ASSET_BLEND}")
@@ -110,42 +116,16 @@ class SylvanEnsembleManager:
     # ------------------------------------------------------------------
 
     def renormalize_objects(self):
-        """Standardizes naming and basic hierarchy for production ensemble."""
+        """Standardizes naming and basic hierarchy for production ensemble and protagonists."""
         print("ASSET_MANAGER: Executing Production Asset Renormalization...")
 
+        # 1. Renormalize Ensemble Spirits
         for src_mesh, art_name in self.ensemble.items():
-            is_protagonist = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
-            sep = "_" if is_protagonist else "."
-            target_name = f"{art_name}{sep}Body"
+            self._renormalize_single_character(src_mesh, art_name, self.rig_map.get(art_name))
 
-            mesh_obj = bpy.data.objects.get(src_mesh) or bpy.data.objects.get(target_name)
-            if not mesh_obj:
-                print(f"ASSET_MANAGER WARNING: Source mesh '{src_mesh}' not found for '{art_name}'")
-                continue
-
-            mesh_obj.name = target_name
-
-            # Strip object-level parenting so mesh and rig are true siblings
-            mesh_obj.parent = None
-
-            # Rename the corresponding rig (fall back to find_armature for legacy cases)
-            src_rig = self.rig_map.get(art_name)
-            target_rig_name = f"{art_name}{sep}Rig"
-            rig_obj = (bpy.data.objects.get(src_rig) if src_rig else None) or \
-                      bpy.data.objects.get(target_rig_name) or \
-                      mesh_obj.find_armature()
-
-            if rig_obj:
-                rig_obj.name = target_rig_name
-                rig_obj.parent = None  # enforce sibling relationship
-
-                # Ensure Armature modifier exists and targets the rig
-                arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
-                if not arm_mod:
-                    arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = rig_obj
-            else:
-                print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
+        # 2. Renormalize Protagonists
+        for art_name, p_data in config.PROTAGONIST_SOURCE.items():
+            self._renormalize_single_character(p_data["mesh"], art_name, p_data["rig"])
 
             bpy.context.view_layer.update()
 
@@ -159,6 +139,36 @@ class SylvanEnsembleManager:
             if "Root_Guardian" in obj.name:
                 obj.hide_render   = True
                 obj.hide_viewport = True
+
+    def _renormalize_single_character(self, src_mesh, art_name, src_rig):
+        mesh_obj = bpy.data.objects.get(src_mesh)
+        if not mesh_obj:
+            print(f"ASSET_MANAGER WARNING: Source mesh '{src_mesh}' not found for '{art_name}'")
+            return
+
+        # Protagonists use underscore separator; spirits use dot
+        is_protagonist = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
+        sep = "_" if is_protagonist else "."
+        mesh_obj.name = f"{art_name}{sep}Body"
+
+        # Strip object-level parenting so mesh and rig are true siblings
+        mesh_obj.parent = None
+        if mesh_obj.type == 'MESH':
+            mesh_obj.modifiers.clear()
+
+        # Rename the corresponding rig (fall back to find_armature for legacy cases)
+        rig_obj = bpy.data.objects.get(src_rig) if src_rig else mesh_obj.find_armature()
+
+        if rig_obj:
+            rig_obj.name  = f"{art_name}{sep}Rig"
+            rig_obj.parent = None  # enforce sibling relationship
+
+            # Restore Armature modifier to ensure mesh follows rig
+            if mesh_obj.type == 'MESH':
+                arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
+                arm_mod.object = rig_obj
+        else:
+            print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
 
     # ------------------------------------------------------------------
     # MATERIAL REPAIR

@@ -33,7 +33,14 @@ RIG_MAP_SRC = {
 CHAR_HERBACEOUS = "Herbaceous_V5"
 CHAR_ARBOR      = "Arbor_V5"
 
-# 3. LEGACY MESH / RIG ALIASES (used by tests — single canonical definition)
+# 3. PROTAGONIST ASSET MAPPING
+# These identify the source objects in the .blend file for the protagonists.
+PROTAGONIST_SOURCE = {
+    CHAR_HERBACEOUS: {"mesh": "Herbaceous_V5_Body", "rig": "Herbaceous_V5_Rig"},
+    CHAR_ARBOR:      {"mesh": "Arbor_V5_Body",      "rig": "Arbor_V5_Rig"},
+}
+
+# 4. LEGACY MESH / RIG ALIASES (used by tests — single canonical definition)
 CHAR_LEAFY_MESH    = "Sylvan_Majesty.Body"
 CHAR_JOY_MESH      = "Radiant_Aura.Body"
 CHAR_LEAFCHAR_MESH = "Verdant_Sprite.Body"
