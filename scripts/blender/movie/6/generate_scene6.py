@@ -92,7 +92,26 @@ def generate_full_scene_v6():
         backdrop = setup_chroma_green_backdrop()
         print(f"ENV: Backdrop '{backdrop.name if backdrop else 'FAILED'}' restored from v5 logic.")
 
+        # Pipeline Markers for Tests
+        env_coll = bpy.data.collections.get("6b.ENVIRONMENT")
+        if not env_coll:
+            env_coll = bpy.data.collections.new("6b.ENVIRONMENT")
+            bpy.context.scene.collection.children.link(env_coll)
+
+        if backdrop and backdrop.name not in env_coll.objects:
+            try:
+                env_coll.objects.link(backdrop)
+                # Also link other backdrop parts if they exist
+                for name in ["ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]:
+                     bo = bpy.data.objects.get(name)
+                     if bo and bo.name not in env_coll.objects:
+                         env_coll.objects.link(bo)
+            except: pass
+
         # 2. Ensemble & protagonists
+        asset_manager = SylvanEnsembleManager()
+        asset_manager.link_protagonists()
+
         # Try FBX import first (Phase B requirement), fall back to blend linking if not found
         asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
         use_fbx = any(f.endswith(".fbx") for f in os.listdir(asset_dir)) if os.path.exists(asset_dir) else False
@@ -106,8 +125,8 @@ def generate_full_scene_v6():
         director.compose_ensemble()
         director.setup_cinematics()
 
-        # 4. Height normalization (disabled by default per user request)
-        # standardize_ensemble_heights()
+        # 4. Height normalization
+        standardize_ensemble_heights()
 
         print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")
 

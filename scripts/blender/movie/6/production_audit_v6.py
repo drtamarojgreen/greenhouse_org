@@ -27,12 +27,12 @@ def run_production_audit():
         print("        WARNING: Assets directory missing!")
 
     # 1. Collection Audit
-    spirit_coll = bpy.data.collections.get("SET.SPIRITS")
+    spirit_coll = bpy.data.collections.get("6a.ASSETS")
     if not spirit_coll:
-        print("CRITICAL: Collection 'SET.SPIRITS' is missing!")
+        print("CRITICAL: Collection '6a.ASSETS' is missing!")
         return
     else:
-        print(f"COLLECTION: 'SET.SPIRITS' verified ({len(spirit_coll.objects)} objects)")
+        print(f"COLLECTION: '6a.ASSETS' verified ({len(spirit_coll.objects)} objects)")
 
     # 2. Detailed Ensemble Table
     print("\n" + "-"*145)

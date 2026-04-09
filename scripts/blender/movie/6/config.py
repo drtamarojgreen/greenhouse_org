@@ -33,6 +33,9 @@ RIG_MAP_SRC = {
 CHAR_HERBACEOUS = "Herbaceous_V5"
 CHAR_ARBOR      = "Arbor_V5"
 
+# Protagonist Blend Source (v5 reference)
+PROTAGONIST_SOURCE_BLEND = os.path.join(EQUIPMENT_DIR, "MHD2_characters_v5.blend")
+
 # 3. LEGACY MESH / RIG ALIASES (used by tests — single canonical definition)
 CHAR_LEAFY_MESH    = "Sylvan_Majesty.Body"
 CHAR_JOY_MESH      = "Radiant_Aura.Body"

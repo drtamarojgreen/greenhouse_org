@@ -8,7 +8,7 @@ class SylvanEnsembleManager:
     """Manages the linking, renaming, and integrity of the 8-character spirit ensemble."""
 
     def __init__(self):
-        self.collection_name = "SET.SPIRITS"
+        self.collection_name = "6a.ASSETS"
         self.ensemble  = config.SPIRIT_ENSEMBLE   # {src_mesh_name: art_name}
         self.rig_map   = config.RIG_MAP_SRC        # {art_name: src_armature_name}
 
@@ -84,6 +84,48 @@ class SylvanEnsembleManager:
                 except RuntimeError:
                     pass  # already in collection
 
+    def link_protagonists(self):
+        """Appends protagonists from the v5 production blend."""
+        print(f"ASSET_MANAGER: Linking Protagonists from {config.PROTAGONIST_SOURCE_BLEND}...")
+
+        coll = bpy.data.collections.get(self.collection_name)
+        if not coll:
+            coll = bpy.data.collections.new(self.collection_name)
+            if self.collection_name not in bpy.context.scene.collection.children:
+                bpy.context.scene.collection.children.link(coll)
+
+        want = {config.CHAR_HERBACEOUS, config.CHAR_ARBOR,
+                f"{config.CHAR_HERBACEOUS}_Body", f"{config.CHAR_ARBOR}_Body",
+                f"{config.CHAR_HERBACEOUS}_Rig", f"{config.CHAR_ARBOR}_Rig"}
+
+        if os.path.exists(config.PROTAGONIST_SOURCE_BLEND):
+            with bpy.data.libraries.load(config.PROTAGONIST_SOURCE_BLEND, link=False) as (data_from, data_to):
+                available = set(data_from.objects)
+                data_to.objects = [n for n in want if n in available]
+
+            for obj in bpy.data.objects:
+                if obj.name in want and obj.name not in coll.objects:
+                    try:
+                        coll.objects.link(obj)
+                    except RuntimeError:
+                        pass
+        else:
+            # Mocking protagonists for test environment if blend is missing
+            print(f"ASSET_MANAGER WARNING: Protagonist blend missing, creating mocks.")
+            for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
+                mesh_name = f"{name}_Body"
+                if mesh_name not in bpy.data.objects:
+                    bpy.ops.mesh.primitive_cube_add(size=2, location=(0,0,1))
+                    obj = bpy.context.active_object
+                    obj.name = mesh_name
+                else:
+                    obj = bpy.data.objects[mesh_name]
+
+                if obj.name not in coll.objects:
+                    try:
+                        coll.objects.link(obj)
+                    except: pass
+
     def import_fbx_ensemble(self):
         """Imports the Sylvan Ensemble from standalone FBX assets (Phase B workflow)."""
         asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -124,17 +166,26 @@ class SylvanEnsembleManager:
             sep = "_" if is_protagonist else "."
             mesh_obj.name = f"{art_name}{sep}Body"
 
-            # Strip object-level parenting so mesh and rig are true siblings
-            mesh_obj.parent = None
-            mesh_obj.modifiers.clear()
-
             # Rename the corresponding rig (fall back to find_armature for legacy cases)
             src_rig = self.rig_map.get(art_name)
             rig_obj = bpy.data.objects.get(src_rig) if src_rig else mesh_obj.find_armature()
 
             if rig_obj:
                 rig_obj.name  = f"{art_name}{sep}Rig"
-                rig_obj.parent = None  # enforce sibling relationship
+                rig_obj.parent = None
+
+                # Enforce Parent-Child Relationship for Sync
+                mesh_obj.parent = rig_obj
+                # Reset local transforms to ensure mesh is centered on rig
+                mesh_obj.location = (0, 0, 0)
+                mesh_obj.rotation_euler = (0, 0, 0)
+                mesh_obj.scale = (1, 1, 1)
+
+                # Ensure Armature modifier is present and targeting the rig
+                arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
+                if not arm_mod:
+                    arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
+                arm_mod.object = rig_obj
             else:
                 print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
 

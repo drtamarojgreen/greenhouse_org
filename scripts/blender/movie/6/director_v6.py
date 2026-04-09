@@ -22,7 +22,8 @@ class SylvanDirector:
             self.scene.collection.children.link(coll)
 
         # 1. WIDE master (v5 standard) — name must match config.CAMERA_NAME ("WIDE")
-        self._create_camera("WIDE", (0, -18, 5.5), (math.radians(82), 0, 0), coll, lens=22)
+        wide_cam = self._create_camera("WIDE", (0, -18, 5.5), (math.radians(82), 0, 0), coll, lens=22)
+        self._setup_camera_curve(wide_cam, coll)
 
         # 2. OTS rigs (v5 names preserved for naming-parity tests)
         ots_targets = {
@@ -38,6 +39,40 @@ class SylvanDirector:
             if cam:
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
                 cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
+
+    def _setup_camera_curve(self, cam_obj, coll):
+        """Creates a curve and adds a FOLLOW_PATH constraint for the camera."""
+        curve_name = f"Curve.{cam_obj.name}"
+        curve_data = bpy.data.curves.new(curve_name, type='CURVE')
+        curve_data.dimensions = '3D'
+
+        curve_obj = bpy.data.objects.get(curve_name)
+        if not curve_obj:
+            curve_obj = bpy.data.objects.new(curve_name, curve_data)
+            coll.objects.link(curve_obj)
+
+        # Create a simple path
+        spline = curve_data.splines.new('BEZIER')
+        spline.bezier_points.add(1)
+        spline.bezier_points[0].co = (cam_obj.location.x - 5, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[1].co = (cam_obj.location.x + 5, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[0].handle_left = (cam_obj.location.x - 7, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[0].handle_right = (cam_obj.location.x - 3, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[1].handle_left = (cam_obj.location.x + 3, cam_obj.location.y, cam_obj.location.z)
+        spline.bezier_points[1].handle_right = (cam_obj.location.x + 7, cam_obj.location.y, cam_obj.location.z)
+
+        # Add constraint
+        con = cam_obj.constraints.get("Follow Path")
+        if not con:
+            con = cam_obj.constraints.new(type='FOLLOW_PATH')
+        con.target = curve_obj
+        con.use_fixed_location = True
+
+        # Animate offset
+        con.offset_factor = 0.0
+        con.keyframe_insert(data_path="offset_factor", frame=1)
+        con.offset_factor = 1.0
+        con.keyframe_insert(data_path="offset_factor", frame=config.TOTAL_FRAMES)
 
     def _create_camera(self, name, pos, rot, coll, lens=35):
         """Creates (or reuses) a camera and links it into the given collection."""
