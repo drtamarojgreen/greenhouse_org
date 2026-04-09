@@ -444,8 +444,19 @@ class TestV6SpiritIntegration(unittest.TestCase):
             print(f"DEBUG: Fixed Position: {follow_path.offset_factor}")
             # Check for keyframes on offset_factor
             if cam.animation_data and cam.animation_data.action:
-                fcurves = cam.animation_data.action.fcurves
-                has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
+                action = cam.animation_data.action
+                # Blender 5 Slotted Action API support
+                fcurves = getattr(action, "fcurves", None)
+                if fcurves is None and hasattr(action, "slots"):
+                     # Fallback for slotted actions
+                     has_offset_keys = False
+                     for slot in action.slots:
+                          if any(fc.data_path.endswith("offset_factor") for fc in slot.fcurves):
+                               has_offset_keys = True
+                               break
+                else:
+                    has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves) if fcurves else False
+
                 self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
 
     def test_diagnostic_occlusion_and_sync(self):

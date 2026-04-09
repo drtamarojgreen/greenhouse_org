@@ -37,15 +37,22 @@ def force_majestic_height(rig, target_h):
 
 def standardize_ensemble_heights():
     """Ensures Sylvan spirits meet the 'Double Majesty' scale requirements."""
+    print("ASSET_MANAGER: Normalizing Ensemble Heights...")
     for obj in bpy.data.objects:
         if ".Rig" not in obj.name:
             continue
+
+        # Prevent double-scaling if normalization was already applied
+        if obj.get("normalized_height"):
+             continue
+
         target = config.MAJESTIC_HEIGHT
         if "Sprite" in obj.name:
             target = config.SPRITE_HEIGHT
         if "Phoenix" in obj.name:
             target = config.PHEONIX_HEIGHT
         force_majestic_height(obj, target)
+        obj["normalized_height"] = True
 
 
 # ---------------------------------------------------------------------------

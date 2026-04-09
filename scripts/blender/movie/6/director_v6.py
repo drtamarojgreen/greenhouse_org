@@ -144,8 +144,10 @@ class SylvanDirector:
     def position_protagonists(self):
         """Places Herbaceous and Arbor at their production positions."""
         herb = (bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig")
+                or bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
                 or bpy.data.objects.get(config.CHAR_HERBACEOUS))
         arbor = (bpy.data.objects.get(config.CHAR_ARBOR + "_Rig")
+                 or bpy.data.objects.get(config.CHAR_ARBOR + "_Body")
                  or bpy.data.objects.get(config.CHAR_ARBOR))
 
         if herb:
