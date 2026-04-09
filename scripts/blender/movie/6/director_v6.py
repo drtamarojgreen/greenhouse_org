@@ -90,10 +90,10 @@ class SylvanDirector:
             rig.scale = (1.0, 1.0, 1.0)
             rig.keyframe_insert(data_path="scale", frame=1)
 
-            rig.scale = (1.5, 1.5, 1.5)
+            rig.scale = (1.05, 1.05, 1.05)
             rig.keyframe_insert(data_path="scale", frame=2)
 
-            rig.scale = (1.2, 1.2, 1.2)
+            rig.scale = (1.0, 1.0, 1.0)
             rig.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
 
             # Gentle ascent over the full scene
@@ -108,10 +108,12 @@ class SylvanDirector:
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at their production positions."""
-        herb = (bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig")
-                or bpy.data.objects.get(config.CHAR_HERBACEOUS))
-        arbor = (bpy.data.objects.get(config.CHAR_ARBOR + "_Rig")
-                 or bpy.data.objects.get(config.CHAR_ARBOR))
+        herb = (bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig") or
+                bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body") or
+                bpy.data.objects.get(config.CHAR_HERBACEOUS))
+        arbor = (bpy.data.objects.get(config.CHAR_ARBOR + "_Rig") or
+                 bpy.data.objects.get(config.CHAR_ARBOR + "_Body") or
+                 bpy.data.objects.get(config.CHAR_ARBOR))
 
         if herb:
             herb.location = config.CHAR_HERBACEOUS_POS

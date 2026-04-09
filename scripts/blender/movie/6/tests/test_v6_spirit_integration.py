@@ -12,6 +12,7 @@ if V6_DIR    not in sys.path: sys.path.append(V6_DIR)
 
 from animation_library_v6 import get_bone
 from dialogue_scene_v6 import DialogueSceneV6
+from style_utilities.fcurves_operations import get_action_curves
 import config
 
 print(f"DIAGNOSTIC: Config loaded from {getattr(config, '__file__', 'unknown')}")
@@ -416,7 +417,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
             print(f"DEBUG: Fixed Position: {follow_path.offset_factor}")
             # Check for keyframes on offset_factor
             if cam.animation_data and cam.animation_data.action:
-                fcurves = cam.animation_data.action.fcurves
+                fcurves = get_action_curves(cam.animation_data.action, obj=cam)
                 has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
                 self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
 
