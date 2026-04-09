@@ -114,29 +114,40 @@ class SylvanEnsembleManager:
         print("ASSET_MANAGER: Executing Production Asset Renormalization...")
 
         for src_mesh, art_name in self.ensemble.items():
-            mesh_obj = bpy.data.objects.get(src_mesh)
+            is_protagonist = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
+            sep = "_" if is_protagonist else "."
+            target_name = f"{art_name}{sep}Body"
+
+            mesh_obj = bpy.data.objects.get(src_mesh) or bpy.data.objects.get(target_name)
             if not mesh_obj:
                 print(f"ASSET_MANAGER WARNING: Source mesh '{src_mesh}' not found for '{art_name}'")
                 continue
 
-            # Protagonists use underscore separator; spirits use dot
-            is_protagonist = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
-            sep = "_" if is_protagonist else "."
-            mesh_obj.name = f"{art_name}{sep}Body"
+            mesh_obj.name = target_name
 
             # Strip object-level parenting so mesh and rig are true siblings
             mesh_obj.parent = None
-            mesh_obj.modifiers.clear()
 
             # Rename the corresponding rig (fall back to find_armature for legacy cases)
             src_rig = self.rig_map.get(art_name)
-            rig_obj = bpy.data.objects.get(src_rig) if src_rig else mesh_obj.find_armature()
+            target_rig_name = f"{art_name}{sep}Rig"
+            rig_obj = (bpy.data.objects.get(src_rig) if src_rig else None) or \
+                      bpy.data.objects.get(target_rig_name) or \
+                      mesh_obj.find_armature()
 
             if rig_obj:
-                rig_obj.name  = f"{art_name}{sep}Rig"
+                rig_obj.name = target_rig_name
                 rig_obj.parent = None  # enforce sibling relationship
+
+                # Ensure Armature modifier exists and targets the rig
+                arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
+                if not arm_mod:
+                    arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
+                arm_mod.object = rig_obj
             else:
                 print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
+
+            bpy.context.view_layer.update()
 
         # Restore full visibility (hidden objects cause render-safety confusion later)
         for obj in bpy.data.objects:

@@ -106,8 +106,8 @@ def generate_full_scene_v6():
         director.compose_ensemble()
         director.setup_cinematics()
 
-        # 4. Height normalization (disabled by default per user request)
-        # standardize_ensemble_heights()
+        # 4. Height normalization
+        standardize_ensemble_heights()
 
         print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")
 
