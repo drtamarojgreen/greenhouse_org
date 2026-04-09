@@ -58,10 +58,29 @@ def extract_assets():
         else:
             print(f"  INFO: No separate rig for {art_name!r} — skipping rig rename")
 
-    # 4. Export to FBX
+    # 4. Texture Decoupling
     asset_dir = os.path.join(V6_DIR, "assets")
     os.makedirs(asset_dir, exist_ok=True)
-    print(f"\nEXPORTING TO: {asset_dir}")
+    print(f"\nDECOUPLING TEXTURES TO: {asset_dir}")
+
+    import shutil
+    for obj in bpy.data.objects:
+        if not hasattr(obj.data, "materials"): continue
+        for mat in obj.data.materials:
+            if not mat or not mat.use_nodes: continue
+            for node in mat.node_tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.image:
+                    src_path = bpy.path.abspath(node.image.filepath)
+                    if os.path.exists(src_path):
+                        dest_path = os.path.join(asset_dir, os.path.basename(src_path))
+                        if not os.path.exists(dest_path):
+                            shutil.copy2(src_path, dest_path)
+                            print(f"  Copied texture: {os.path.basename(src_path)}")
+                    else:
+                        print(f"  WARNING: Texture source missing: {src_path}")
+
+    # 5. Export to FBX
+    print(f"\nEXPORTING TO FBX: {asset_dir}")
 
     exported = []
     skipped  = []
@@ -81,11 +100,14 @@ def extract_assets():
             bpy.context.view_layer.objects.active = rig
 
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
+            # Blender 4.0/5.0+ compatible export settings
             bpy.ops.export_scene.fbx(
                 filepath=fbx_path,
                 use_selection=True,
-                apply_unit_scale=False,  # maintain raw scale per Phase A spec
+                apply_unit_scale=False,
                 bake_anim=False,
+                path_mode='COPY',
+                embed_textures=False,
             )
             print(f"  SUCCESS: {art_name} -> {fbx_path}")
             exported.append(art_name)
@@ -102,6 +124,8 @@ def extract_assets():
                 use_selection=True,
                 apply_unit_scale=False,
                 bake_anim=False,
+                path_mode='COPY',
+                embed_textures=False,
             )
             print(f"  SUCCESS (rig-only): {art_name} -> {fbx_path}")
             exported.append(art_name)
@@ -113,7 +137,7 @@ def extract_assets():
             print(f"  SKIP: {art_name} — {', '.join(msg)}")
             skipped.append(art_name)
 
-    # 5. Summary
+    # 6. Summary
     print(f"\nPHASE A COMPLETE: {len(exported)} exported, {len(skipped)} skipped.")
     if skipped:
         print(f"  Skipped: {skipped}")

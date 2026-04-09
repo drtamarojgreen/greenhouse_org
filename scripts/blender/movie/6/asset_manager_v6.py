@@ -64,6 +64,10 @@ class SylvanEnsembleManager:
         src_rig_names  = list(self.rig_map.values())
         want = set(src_mesh_names + src_rig_names)
 
+        if not os.path.exists(config.SPIRITS_ASSET_BLEND):
+             print(f"ASSET_MANAGER ERROR: Source blend missing: {config.SPIRITS_ASSET_BLEND}")
+             return
+
         with bpy.data.libraries.load(config.SPIRITS_ASSET_BLEND, link=False) as (data_from, data_to):
             available = set(data_from.objects)
             data_to.objects = [n for n in want if n in available]
@@ -79,6 +83,27 @@ class SylvanEnsembleManager:
                     coll.objects.link(obj)
                 except RuntimeError:
                     pass  # already in collection
+
+    def import_fbx_ensemble(self):
+        """Imports the Sylvan Ensemble from standalone FBX assets (Phase B workflow)."""
+        asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+        print(f"ASSET_MANAGER: Importing Sylvan Ensemble from FBX: {asset_dir}")
+
+        coll = bpy.data.collections.get(self.collection_name)
+        if not coll:
+            coll = bpy.data.collections.new(self.collection_name)
+        if self.collection_name not in bpy.context.scene.collection.children:
+            bpy.context.scene.collection.children.link(coll)
+
+        for art_name in self.ensemble.values():
+            fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
+            if os.path.exists(fbx_path):
+                # Ensure we import into the correct collection
+                with bpy.context.temp_override(collection=coll):
+                    bpy.ops.import_scene.fbx(filepath=fbx_path)
+                print(f"  Imported: {art_name}")
+            else:
+                print(f"  WARNING: FBX not found for {art_name}: {fbx_path}")
 
     # ------------------------------------------------------------------
     # RENORMALIZATION
@@ -165,7 +190,9 @@ class SylvanEnsembleManager:
                 print(f"ASSET_MANAGER WARNING: Texture not found: {img_path}")
 
             links = mat.node_tree.links
-            links.new(n_tex.outputs['Color'],  n_bsdf.inputs['Base Color'])
+            # Blender 4.0+ Principled BSDF uses "Base Color"
+            target_socket = n_bsdf.inputs.get("Base Color") or n_bsdf.inputs[0]
+            links.new(n_tex.outputs['Color'],  target_socket)
             links.new(n_bsdf.outputs['BSDF'],  n_out.inputs['Surface'])
 
     # ------------------------------------------------------------------

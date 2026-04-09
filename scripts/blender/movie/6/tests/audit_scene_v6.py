@@ -36,7 +36,13 @@ def audit_scene():
     # 3. Audit Cameras
     print(f"\nACTIVE CAMERA: {bpy.context.scene.camera.name if bpy.context.scene.camera else '!!!! MISSING !!!!'}")
     all_cams = [o.name for o in bpy.data.objects if o.type == 'CAMERA']
+    required_cams = {"WIDE", "OTS1", "OTS2", "OTS_Static_1", "OTS_Static_2"}
+    missing_cams = required_cams - set(all_cams)
     print(f"ALL CAMERAS: {all_cams}")
+    if missing_cams:
+        print(f"MISSING REQUIRED CAMERAS: {missing_cams}")
+    else:
+        print("ALL REQUIRED CAMERAS FOUND.")
 
     # 4. Audit World
     world = bpy.context.scene.world

@@ -65,7 +65,12 @@ def setup_production_environment():
 
     mat = bpy.data.materials.new(name="Mat.Chroma")
     mat.use_nodes = True
-    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 1, 0, 1)
+    nodes = mat.node_tree.nodes
+    bsdf = next((n for n in nodes if n.type == 'BSDF_PRINCIPLED'), None)
+    if bsdf:
+        # Blender 4.0+ uses "Base Color"
+        color_input = bsdf.inputs.get("Base Color") or bsdf.inputs[0]
+        color_input.default_value = (0, 1, 0, 1)
     obj.data.materials.append(mat)
     return obj
 
@@ -88,9 +93,13 @@ def generate_full_scene_v6():
         print(f"ENV: Backdrop '{backdrop.name if backdrop else 'FAILED'}' restored from v5 logic.")
 
         # 2. Ensemble & protagonists
+        # Try FBX import first (Phase B requirement), fall back to blend linking if not found
+        asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+        use_fbx = any(f.endswith(".fbx") for f in os.listdir(asset_dir)) if os.path.exists(asset_dir) else False
+
         characters = {}   # extend here when protagonist rigs are available
         scene_logic = DialogueSceneV6(characters, [])
-        scene_logic.setup_scene()
+        scene_logic.setup_scene(use_fbx=use_fbx)
 
         # 3. Cinematic direction
         director.position_protagonists()

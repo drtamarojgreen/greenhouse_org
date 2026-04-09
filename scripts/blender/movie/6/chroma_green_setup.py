@@ -89,7 +89,11 @@ def setup_chroma_green_backdrop():
         nodes.clear()
 
         emit = nodes.new(type='ShaderNodeEmission')
-        emit.inputs[1].default_value = 1.0  # strength
+        # Blender 4.0/5.0+ compatibility: Use socket names or indices
+        strength_socket = emit.inputs.get("Strength") or emit.inputs[1]
+        color_socket = emit.inputs.get("Color") or emit.inputs[0]
+
+        strength_socket.default_value = 1.0  # strength
 
         if bg_images and i < len(bg_images):
             img_path = bg_images[i]
@@ -100,11 +104,11 @@ def setup_chroma_green_backdrop():
 
                 tex_coord = nodes.new(type='ShaderNodeTexCoord')
                 mat.node_tree.links.new(tex_coord.outputs['Window'], tex_img.inputs['Vector'])
-                mat.node_tree.links.new(tex_img.outputs['Color'],    emit.inputs[0])
+                mat.node_tree.links.new(tex_img.outputs['Color'],    color_socket)
             else:
-                emit.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
+                color_socket.default_value = (color[0], color[1], color[2], 1.0)
         else:
-            emit.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
+            color_socket.default_value = (color[0], color[1], color[2], 1.0)
 
         out = nodes.new(type='ShaderNodeOutputMaterial')
         mat.node_tree.links.new(emit.outputs[0], out.inputs[0])
@@ -127,8 +131,12 @@ def setup_chroma_green_backdrop():
     bg_neutral = w_nodes.new(type='ShaderNodeBackground')
     w_out      = w_nodes.new(type='ShaderNodeOutputWorld')
 
-    bg_dark.inputs[0].default_value    = (0.01, 0.01, 0.01, 1.0)  # near-black for camera rays
-    bg_neutral.inputs[0].default_value = (0.05, 0.05, 0.05, 1.0)  # very dim neutral for lighting
+    # Blender 4.0/5.0+ compatibility
+    bg_dark_color = bg_dark.inputs.get("Color") or bg_dark.inputs[0]
+    bg_neutral_color = bg_neutral.inputs.get("Color") or bg_neutral.inputs[0]
+
+    bg_dark_color.default_value    = (0.01, 0.01, 0.01, 1.0)  # near-black for camera rays
+    bg_neutral_color.default_value = (0.05, 0.05, 0.05, 1.0)  # very dim neutral for lighting
 
     world.node_tree.links.new(lp.outputs['Is Camera Ray'],  mix.inputs[0])
     world.node_tree.links.new(bg_neutral.outputs[0],        mix.inputs[1])
