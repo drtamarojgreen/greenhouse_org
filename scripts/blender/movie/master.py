@@ -6,8 +6,7 @@ import mathutils
 import random
 import style_utilities as style
 import scene_utils
-from constants import SCENE_MAP
-from render_profiles import apply_render_profile
+from constants import SCENE_MAP, QUALITY_PRESETS
 from profiler import Profiler
 
 # Wilderness set coordinates relative to origin
@@ -49,24 +48,20 @@ class BaseMaster:
             style.clear_scene_selective()
             scene = bpy.context.scene; scene.frame_start, scene.frame_end, scene.render.fps = 1, self.total_frames, 24
             
-            # Apply unified render profile
-            profile = apply_render_profile(scene, self.quality)
+            q = QUALITY_PRESETS.get(self.quality, QUALITY_PRESETS['test'])
+            res_scale = q.get('resolution_scale', 100)
             
             scene.render.resolution_x, scene.render.resolution_y = 1920, 1080
+            scene.render.resolution_percentage = res_scale
             # Point 142: Use 5-digit padding (#####) for high-frame-count movie production
             if self.output_dir:
                 scene.render.filepath = os.path.join(self.output_dir, "#####")
             else:
                 scene.render.filepath = f"//renders/{'sequel' if self.total_frames == 6000 else 'full_movie'}/#####"
-
             scene.display_settings.display_device, scene.view_settings.view_transform = 'sRGB', 'Filmic'
             # Point 142: Moderated exposure for Cycles (standardized at 0.2 to resolve whiteout)
             scene.view_settings.exposure = 0.2
-
-            # Override profile motion blur if explicitly requested
-            if hasattr(self, 'use_motion_blur'):
-                scene.render.use_motion_blur = self.use_motion_blur
-
+            scene.render.use_motion_blur = self.use_motion_blur
             scene.render.film_transparent = not self.chroma_green
             
             if self.chroma_green:
@@ -92,9 +87,9 @@ class BaseMaster:
                     scene.cycles.device = 'CPU'
 
             if self.mode == 'SILENT_FILM':
-                # Force Eevee for silent film mode if profile is not already Eevee
-                if scene.render.engine != style.get_eevee_engine_id():
-                    scene.render.engine = style.get_eevee_engine_id()
+                scene.render.engine = style.get_eevee_engine_id()
+                q = QUALITY_PRESETS.get(self.quality, QUALITY_PRESETS['test'])
+                scene.eevee.taa_render_samples = q['samples']
                 
                 # Eevee-specific optimizations (Blender 5.0 handles these differently)
                 if hasattr(scene.eevee, "use_gtao"): scene.eevee.use_gtao = True
@@ -104,7 +99,12 @@ class BaseMaster:
                 
                 bg = scene.world.node_tree.nodes.get("Background")
                 if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
+                q = QUALITY_PRESETS.get(self.quality, QUALITY_PRESETS['test'])
+                scene.cycles.samples, scene.cycles.use_denoising, scene.cycles.denoiser = q['samples'], q['denoising'], 'OPENIMAGEDENOISE'
+                bg = scene.world.node_tree.nodes.get("Background")
+                if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
             else:
+                scene.render.engine = style.get_eevee_engine_id()
                 scene.world.use_nodes = True
                 bg = scene.world.node_tree.nodes.get("Background")
                 if bg: bg.inputs[0].default_value = (0.05, 0.05, 0.1, 1)
@@ -121,55 +121,41 @@ class BaseMaster:
             bpy.ops.object.light_add(type='SPOT', location=(0, -15, 10)); self.spot = bpy.context.object; self.spot.data.energy = 10000
 
     def _set_visibility(self, objs, ranges):
-        """
-        Phase 6 Visibility: Ensure Z is restored and keyed correctly.
-        Updated with scale-culling from Version 2 to avoid Z-shift drift.
-        """
+        """Phase 6 Visibility: Ensure Z is restored and keyed correctly."""
         with Profiler.profile("set_visibility"):
             for obj in objs:
                 def process_recursive(obj):
                     if not obj.animation_data: obj.animation_data_create()
                     orig_z = obj.location.z
-                    orig_scale = obj.scale.copy()
-
-                    # Default hidden, underground, and scaled to zero at start
+                    # Default hidden and underground at start
                     obj.hide_render = obj.hide_viewport = True
                     obj.keyframe_insert(data_path="hide_render", frame=1)
                     obj.location.z = -50.0
                     obj.keyframe_insert(data_path="location", index=2, frame=1)
-                    obj.scale = (0, 0, 0)
-                    for i in range(3): obj.keyframe_insert(data_path="scale", index=i, frame=1)
                     
                     for rs, re in ranges:
                         if rs > 1:
-                            # Ensure hidden, underground, and scaled to zero just before the scene starts
+                            # Ensure hidden and underground just before the scene starts
                             obj.hide_render = obj.hide_viewport = True
                             obj.keyframe_insert(data_path="hide_render", frame=rs-1)
                             obj.location.z = -50.0
                             obj.keyframe_insert(data_path="location", index=2, frame=rs-1)
-                            obj.scale = (0, 0, 0)
-                            for i in range(3): obj.keyframe_insert(data_path="scale", index=i, frame=rs-1)
                         
-                        # Visible, Above Ground, and Restored Scale
+                        # Visible and Above Ground
                         obj.hide_render = obj.hide_viewport = False
                         obj.keyframe_insert(data_path="hide_render", frame=rs)
                         obj.location.z = orig_z # Restore to where it was created
                         obj.keyframe_insert(data_path="location", index=2, frame=rs)
-                        obj.scale = orig_scale
-                        for i in range(3): obj.keyframe_insert(data_path="scale", index=i, frame=rs)
                         
-                        # Hidden, Underground, and Scaled to zero again at end
+                        # Hidden and Underground again at end
                         obj.hide_render = obj.hide_viewport = True
                         obj.keyframe_insert(data_path="hide_render", frame=re)
                         obj.location.z = -50.0
                         obj.keyframe_insert(data_path="location", index=2, frame=re)
-                        obj.scale = (0, 0, 0)
-                        for i in range(3): obj.keyframe_insert(data_path="scale", index=i, frame=re)
                     
                     obj.location.z = orig_z
-                    obj.scale = orig_scale
                     for fc in style.get_action_curves(obj.animation_data.action, obj=obj):
-                        if "hide_render" in fc.data_path or ("location" in fc.data_path and fc.array_index == 2) or "scale" in fc.data_path:
+                        if "hide_render" in fc.data_path or ("location" in fc.data_path and fc.array_index == 2):
                             for kp in fc.keyframe_points: kp.interpolation = 'CONSTANT'
                     
                     for child in obj.children:

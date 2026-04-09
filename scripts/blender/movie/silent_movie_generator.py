@@ -7,7 +7,7 @@ if script_dir not in sys.path:
     sys.path.append(script_dir)
 
 import bpy, os, sys, math, mathutils, random, logging
-import setup_engine, camera_controls, lighting_setup, compositor_settings, scene_orchestrator, scene_utils, setup_characters, animate_characters, animate_props, detail_config, render_profiles
+import setup_engine, camera_controls, lighting_setup, compositor_settings, scene_orchestrator, scene_utils, setup_characters, animate_characters, animate_props, detail_config
 from assets import plant_humanoid, gnome_antagonist, library_props, futuristic_props, greenhouse_structure, environment_props, weather_system, exterior_garden, greenhouse_interior, brain_neuron
 from master import BaseMaster
 from constants import SCENE_MAP
@@ -44,11 +44,8 @@ scene16_dialogue, scene17_dialogue, scene18_dialogue, scene19_dialogue, scene20_
     [safe_import_scene(f"scene{i}_dialogue") for i in range(16, 22)] + [safe_import_scene("scene22_retreat")]
 
 class MovieMaster(BaseMaster):
-    def __init__(self, mode='SILENT_FILM', quality='test', device_type='HIP', use_motion_blur=True, output_dir=None, use_cinematic_lighting=False, use_rail_camera=False, use_secondary_motion=False, chroma_green=False):
-        super().__init__(mode=mode, total_frames=15000, quality=quality, device_type=device_type, use_motion_blur=use_motion_blur, output_dir=output_dir, chroma_green=chroma_green)
-        self.use_cinematic_lighting = use_cinematic_lighting
-        self.use_rail_camera = use_rail_camera
-        self.use_secondary_motion = use_secondary_motion
+    def __init__(self, mode='SILENT_FILM', quality='test', device_type='HIP', use_motion_blur=True, output_dir=None):
+        super().__init__(mode=mode, total_frames=15000, quality=quality, device_type=device_type, use_motion_blur=use_motion_blur, output_dir=output_dir)
 
     def load_assets(self):
         # Point 142: Ensure camera exists early for lighting setup
@@ -75,9 +72,6 @@ class MovieMaster(BaseMaster):
 
     def animate_master(self):
         with Profiler.profile("animate_master"):
-            if self.use_rail_camera:
-                camera_controls.setup_rail_camera(self)
-
             camera_controls.setup_all_camera_logic(self); setup_characters.setup_gaze_system(self)
             scene_orchestrator.orchestrate_scenes(self); animate_characters.animate_characters(self); animate_props.animate_props(self)
             
@@ -168,11 +162,6 @@ class MovieMaster(BaseMaster):
         with Profiler.profile("total_setup"):
             super().run(start_frame=start_frame, end_frame=end_frame, quick=quick)
 
-            if self.use_secondary_motion:
-                from style_utilities.fcurves_operations import apply_secondary_motion
-                for char in [self.h1, self.h2, self.gnome]:
-                    if char: apply_secondary_motion(char, "breathing")
-
     def place_character(self, char, loc, rot, frame):
         """Phase 6: Place character with simple collision avoidance."""
         import mathutils
@@ -195,10 +184,7 @@ class MovieMaster(BaseMaster):
 
     def setup_lighting(self):
         with Profiler.profile("setup_lighting_wrapper"):
-            if self.use_cinematic_lighting:
-                lighting_setup.setup_cinematic_lighting(self)
-            else:
-                lighting_setup.setup_lighting(self)
+            lighting_setup.setup_lighting(self)
     def setup_compositor(self):
         with Profiler.profile("setup_compositor_wrapper"):
             compositor_settings.setup_compositor(self)
@@ -216,13 +202,7 @@ if __name__ == "__main__":
     if out_dir and not out_dir.startswith("//") and not os.path.isabs(out_dir):
         out_dir = os.path.abspath(out_dir)
 
-    # Point 155: Cinematic extensions
-    use_cinematic = '--cinematic-lighting' in args
-    use_rail = '--rail-camera' in args
-    use_secondary = '--secondary-motion' in args
-    chroma = '--chroma' in args
-
-    master = MovieMaster(mode=mode, quality=quality, device_type=device, use_motion_blur=use_blur, output_dir=out_dir, use_cinematic_lighting=use_cinematic, use_rail_camera=use_rail, use_secondary_motion=use_secondary, chroma_green=chroma)
+    master = MovieMaster(mode=mode, quality=quality, device_type=device, use_motion_blur=use_blur, output_dir=out_dir)
     
     # Range handling from SCENE_MAP or explicit frames
     start_f, end_f = (None, None)
