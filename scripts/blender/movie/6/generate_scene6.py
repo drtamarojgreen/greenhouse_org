@@ -31,7 +31,16 @@ def force_majestic_height(rig, target_h):
         curr_h = abs(h_pos - f_pos)
         if curr_h > 0.01:
             factor = target_h / curr_h
-            rig.scale = tuple(s * factor for s in rig.scale)
+
+            # Apply to Mesh instead of Rig to avoid conflict with Director's rig animation
+            mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name in o.name and ".Body" in o.name), None)
+            if mesh:
+                 mesh.scale = tuple(s * factor for s in mesh.scale)
+                 print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f}")
+            else:
+                 rig.scale = tuple(s * factor for s in rig.scale)
+                 print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f}")
+
             bpy.context.view_layer.update()
 
 
@@ -132,7 +141,7 @@ def generate_full_scene_v6():
         director.compose_ensemble()
         director.setup_cinematics()
 
-        # 4. Height normalization
+        # 4. Height normalization (apply scale before keyframing or adjust)
         standardize_ensemble_heights()
 
         print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")

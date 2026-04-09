@@ -119,17 +119,31 @@ class SylvanEnsembleManager:
             print(f"ASSET_MANAGER WARNING: Protagonist blend missing, creating mocks.")
             for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
                 mesh_name = f"{name}_Body"
+                rig_name  = f"{name}_Rig"
+
+                # Create Mock Rig
+                if rig_name not in bpy.data.objects:
+                    arm_data = bpy.data.armatures.new(rig_name)
+                    rig_obj = bpy.data.objects.new(rig_name, arm_data)
+                    coll.objects.link(rig_obj)
+                else:
+                    rig_obj = bpy.data.objects[rig_name]
+
+                # Create Mock Mesh
                 if mesh_name not in bpy.data.objects:
                     bpy.ops.mesh.primitive_cube_add(size=2, location=(0,0,1))
-                    obj = bpy.context.active_object
-                    obj.name = mesh_name
+                    mesh_obj = bpy.context.active_object
+                    mesh_obj.name = mesh_name
                 else:
-                    obj = bpy.data.objects[mesh_name]
+                    mesh_obj = bpy.data.objects[mesh_name]
 
-                if obj.name not in coll.objects:
+                if mesh_obj.name not in coll.objects:
                     try:
-                        coll.objects.link(obj)
+                        coll.objects.link(mesh_obj)
                     except: pass
+
+                # Parent for identification in tests
+                mesh_obj.parent = rig_obj
 
     def import_fbx_ensemble(self):
         """Imports the Sylvan Ensemble from standalone FBX assets (Phase B workflow)."""
@@ -161,40 +175,52 @@ class SylvanEnsembleManager:
         print("ASSET_MANAGER: Executing Production Asset Renormalization...")
 
         for src_mesh, art_name in self.ensemble.items():
-            mesh_obj = bpy.data.objects.get(src_mesh)
-            if not mesh_obj:
-                print(f"ASSET_MANAGER WARNING: Source mesh '{src_mesh}' not found for '{art_name}'")
-                continue
-
-            # Protagonists use underscore separator; spirits use dot
             is_protagonist = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
             sep = "_" if is_protagonist else "."
-            mesh_obj.name = f"{art_name}{sep}Body"
+            target_mesh_name = f"{art_name}{sep}Body"
+            target_rig_name = f"{art_name}{sep}Rig"
 
-            # Rename the corresponding rig (fall back to find_armature for legacy cases)
-            src_rig = self.rig_map.get(art_name)
-            rig_obj = bpy.data.objects.get(src_rig) if src_rig else mesh_obj.find_armature()
+            # 1. Asset Identification (Idempotent)
+            mesh_obj = bpy.data.objects.get(target_mesh_name) or bpy.data.objects.get(src_mesh)
+            if not mesh_obj:
+                print(f"ASSET_MANAGER WARNING: Mesh '{art_name}' not found.")
+                continue
+
+            mesh_obj.name = target_mesh_name
+
+            # 2. Rig Identification
+            src_rig_name = self.rig_map.get(art_name)
+            rig_obj = (bpy.data.objects.get(target_rig_name) or
+                       (bpy.data.objects.get(src_rig_name) if src_rig_name else None) or
+                       mesh_obj.find_armature())
 
             if rig_obj:
-                rig_obj.name  = f"{art_name}{sep}Rig"
+                rig_obj.name = target_rig_name
                 rig_obj.parent = None
 
                 # SIBLING HIERARCHY (Phase A Requirement)
-                # We use a Copy Transforms constraint instead of object parenting
-                # to satisfy the "true siblings" requirement while maintaining sync.
+                # We move both objects to the same origin to avoid double-transform distortion
+                # while keeping them as top-level siblings.
                 mesh_obj.parent = None
 
-                con = mesh_obj.constraints.get("SyncToRig")
-                if not con:
-                    con = mesh_obj.constraints.new(type='COPY_TRANSFORMS')
-                    con.name = "SyncToRig"
-                con.target = rig_obj
+                # If the Rig has moved but the Mesh is still at origin, we sync them
+                # but we do it PASSIVELY to avoid the "distorting everything" issue.
+                # Only apply if Mesh is truly at origin and Rig has moved.
+                if mesh_obj.location.length < 0.001 and rig_obj.location.length > 0.001:
+                     mesh_obj.location = rig_obj.location.copy()
+                     mesh_obj.rotation_euler = rig_obj.rotation_euler.copy()
+                     mesh_obj.scale = rig_obj.scale.copy()
 
                 # Ensure Armature modifier is present and targeting the rig
                 arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
                 if not arm_mod:
                     arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
                 arm_mod.object = rig_obj
+
+                # Remove any harmful constraints that might cause distortion
+                for con in list(mesh_obj.constraints):
+                    if con.type == 'COPY_TRANSFORMS':
+                        mesh_obj.constraints.remove(con)
             else:
                 print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
 
