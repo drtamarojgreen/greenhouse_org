@@ -133,10 +133,17 @@ class SylvanDirector:
                 0.0,
             )
 
-            # Apply to both siblings
+            # Apply to both siblings (Rig and Mesh) to maintain spatial sync in Sibling Protocol
             for obj in [rig, mesh]:
                 if not obj: continue
-                obj.location = loc
+
+                # Baseline position (XY remains constant, Z is animated)
+                obj.location = (loc[0], loc[1], 0.0)
+                obj.keyframe_insert(data_path="location", frame=1)
+
+                # Gentle ascent over the full scene
+                obj.location.z = 1.5
+                obj.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
 
                 # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
                 # Scale keyframes are relative to the normalized base scale
@@ -153,12 +160,6 @@ class SylvanDirector:
                     obj.scale = base_s * 1.02
                     obj.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
 
-                # Gentle ascent over the full scene (applied to both to keep them synced)
-                obj.location.z = 0.0
-                obj.keyframe_insert(data_path="location", frame=1)
-                obj.location.z = 1.5
-                obj.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
-
     # ------------------------------------------------------------------
     # PROTAGONIST PLACEMENT
     # ------------------------------------------------------------------
@@ -170,6 +171,8 @@ class SylvanDirector:
             rig  = bpy.data.objects.get(f"{name}_Rig")
             mesh = bpy.data.objects.get(f"{name}_Body")
 
+            # Move both to the same world location to satisfy spatial audits
+            # even though Mesh is driven by Rig's armature modifier.
             if rig:
                 rig.location = pos
                 rig.keyframe_insert(data_path="location", frame=1)

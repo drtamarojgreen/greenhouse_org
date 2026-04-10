@@ -3,6 +3,7 @@ import bpy
 import os
 import mathutils
 import sys
+import math
 
 # Ensure movie root and v6 are in path
 V6_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -192,7 +193,12 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def test_character_visibility(self):
         targets  = [config.CHAR_HERBACEOUS + "_Body", config.CHAR_ARBOR + "_Body"]
-        targets += [name + ".Body" for name in config.SPIRIT_ENSEMBLE.values()]
+        # Include characters that might be Rigs only (like Root_Guardian)
+        for name in config.SPIRIT_ENSEMBLE.values():
+            if name == "Root_Guardian":
+                targets.append("Root_Guardian.Rig")
+            else:
+                targets.append(name + ".Body")
 
         # Ensure we are at a frame where characters have been positioned
         bpy.context.scene.frame_set(1)
@@ -326,17 +332,17 @@ class TestV6SpiritIntegration(unittest.TestCase):
             if hit and hit_obj:
                 print(f"RAYCAST {name} -> {hit_obj.name}")
                 art_base = name.split('.')[0]
-                is_hit = art_base in hit_obj.name or hit_obj.name in art_base
+                is_hit = (art_base in hit_obj.name or hit_obj.name in art_base)
 
                 d_hit = (loc - origin).length
                 d_obj = (target_pt - origin).length
 
-                # If we hit a backdrop, check if it's behind
+                # If we hit a backdrop, check if it's behind the character
                 if not is_hit and "Backdrop" in hit_obj.name:
                      if d_hit > d_obj:
                           is_hit = True
 
-                self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} (Dist hit={d_hit:.2f}, obj={d_obj:.2f})")
+                self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} (Dist hit={d_hit:.2f}, char={d_obj:.2f})")
             else:
                 print(f"RAYCAST {name} -> MISS")
                 # Fallback: try origin of object

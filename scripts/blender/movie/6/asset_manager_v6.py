@@ -107,6 +107,10 @@ class SylvanEnsembleManager:
                 if obj and obj.name not in coll.objects:
                     try:
                         coll.objects.link(obj)
+                        # Ensure we link children too, so Meshes aren't missed
+                        for child in obj.children_recursive:
+                            if child.name not in coll.objects:
+                                coll.objects.link(child)
                     except RuntimeError:
                         pass
         else:
@@ -218,9 +222,10 @@ class SylvanEnsembleManager:
 
             # Special case for shared rigs or self-rigged armatures
             if not rig:
-                if art_name == "Root_Guardian" and mesh and mesh.type == 'ARMATURE':
-                    rig = mesh
-                else:
+                if art_name == "Root_Guardian":
+                     rig = bpy.data.objects.get("Root_Guardian.Rig") or bpy.data.objects.get("Root_Guardian.Body")
+
+                if not rig:
                     src_rig_name = self.rig_map.get(art_name)
                     if src_rig_name and src_rig_name in src_map:
                         obj = src_map[src_rig_name]
@@ -232,34 +237,34 @@ class SylvanEnsembleManager:
 
             if rig:
                 # 1. Isolation: Store world matrices and unparent EVERYTHING
-                # This prevents children (cameras, etc.) from being distorted by character normalization
-                # and ensures character siblings keep their current world position during unparenting.
+                # This prevents children (cameras, etc.) from being distorted by character normalization.
                 r_wm = rig.matrix_world.copy()
-                m_wm = mesh.matrix_world.copy() if mesh != rig else r_wm
+                m_wm = mesh.matrix_world.copy() if (mesh and mesh != rig) else r_wm
 
+                # Clear Rig Hierarchy
                 for child in list(rig.children):
                     c_wm = child.matrix_world.copy()
                     child.parent = None
                     child.matrix_world = c_wm
 
+                # Clear Mesh Hierarchy (Sibling Protocol)
                 if mesh and mesh != rig:
                     for child in list(mesh.children):
                         c_wm = child.matrix_world.copy()
                         child.parent = None
                         child.matrix_world = c_wm
 
-                # 2. Reset transforms to identity (baseline)
-                rig.parent = None
-                rig.matrix_world = r_wm # Keep rig where it was
+                    # UNPARENT MESH FROM RIG (Crucial for Sibling Protocol)
+                    mesh.parent = None
+                    mesh.matrix_world = m_wm
 
-                # We reset rig local transforms to baseline but preserve its world position if it was already moved.
-                # Actually, for normalization, we want them at origin (0,0,0) before director moves them.
+                # 2. Reset transforms to baseline identity at origin
+                rig.parent = None
                 rig.location = (0, 0, 0)
                 rig.rotation_euler = (0, 0, 0)
                 rig.scale = (1, 1, 1)
 
-                if mesh != rig and mesh.type == 'MESH':
-                    mesh.parent = None
+                if mesh and mesh != rig and mesh.type == 'MESH':
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
                     mesh.scale = (1, 1, 1)
@@ -274,7 +279,8 @@ class SylvanEnsembleManager:
 
                 rig.hide_render = rig.hide_viewport = False
 
-            mesh.hide_render = mesh.hide_viewport = False
+            if mesh:
+                mesh.hide_render = mesh.hide_viewport = False
 
         # 4. Targeted cleanup: ensure all assets are visible
         for obj in coll.objects:
