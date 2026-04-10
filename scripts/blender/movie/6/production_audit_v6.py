@@ -5,10 +5,13 @@ import mathutils
 
 # Ensure movie root and v6 are in path
 V6_DIR = os.path.dirname(os.path.abspath(__file__))
+MOVIE_ROOT = os.path.dirname(V6_DIR)
 if V6_DIR not in sys.path: sys.path.append(V6_DIR)
+if MOVIE_ROOT not in sys.path: sys.path.append(MOVIE_ROOT)
 
 import config
 from animation_library_v6 import get_bone
+from style_utilities.engine_operations import update_view_layer
 
 def run_production_audit():
     """Performs a comprehensive audit of the Scene 6 production environment."""
@@ -57,16 +60,16 @@ def run_production_audit():
                 if f_bone: break
                 
             if h_bone and f_bone:
-                bpy.context.view_layer.update()
+                update_view_layer()
                 height = abs((rig.matrix_world @ h_bone.head).z - (rig.matrix_world @ f_bone.tail).z)
         
         # Growth Audit (F1 vs F2)
         bpy.context.scene.frame_set(1)
-        bpy.context.view_layer.update()
+        update_view_layer()
         h1 = height # Use detected height as baseline
         
         bpy.context.scene.frame_set(2)
-        bpy.context.view_layer.update()
+        update_view_layer()
         h2 = 0
         if rig and h_bone and f_bone:
              h2 = abs((rig.matrix_world @ h_bone.head).z - (rig.matrix_world @ f_bone.tail).z)
@@ -105,7 +108,7 @@ if __name__ == "__main__":
     # 1. CLEAN ASSEMBLY
     bpy.ops.wm.read_factory_settings(use_empty=True)
     generate_full_scene_v6()
-    bpy.context.view_layer.update()
+    update_view_layer()
     
     # 2. RUN AUDIT
     run_production_audit()

@@ -13,6 +13,7 @@ if V6_DIR    not in sys.path: sys.path.append(V6_DIR)
 from animation_library_v6 import get_bone
 from dialogue_scene_v6 import DialogueSceneV6
 from style_utilities.fcurves_operations import get_action_curves
+from style_utilities.engine_operations import update_view_layer
 import config
 
 print(f"DIAGNOSTIC: Config loaded from {getattr(config, '__file__', 'unknown')}")
@@ -26,7 +27,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
         bpy.ops.wm.read_factory_settings(use_empty=True)
         from generate_scene6 import generate_full_scene_v6
         generate_full_scene_v6()
-        bpy.context.view_layer.update()
+        update_view_layer()
 
     def setUp(self):
         self.scene_logic = DialogueSceneV6({}, [])
@@ -80,7 +81,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
         leafy = bpy.data.objects.get("LeafySpirit_Mesh1_Mesh1.044")
         if leafy:
             leafy.scale = config.SPIRIT_LEAFY_SCALE
-            bpy.context.view_layer.update()
+            update_view_layer()
             h_herb  = self.get_world_height(herb_mock)
             h_leafy = self.get_world_height(leafy)
             print(f"DIAGNOSTIC: Herb Mock height={h_herb:.2f}, Leafy height={h_leafy:.2f}")
@@ -193,7 +194,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
             obj = bpy.data.objects.get(name)
             self.assertIsNotNone(obj, f"{name} is MISSING from scene data")
 
-            bpy.context.view_layer.update()
+            update_view_layer()
             loc = obj.matrix_world.to_translation()
             print(f"VISIBILITY {name}: Loc={loc}, Hidden={obj.hide_render}")
 

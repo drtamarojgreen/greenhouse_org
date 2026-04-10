@@ -45,3 +45,24 @@ def clear_scene_selective():
     for block in (bpy.data.meshes, bpy.data.materials, bpy.data.actions, bpy.data.curves, bpy.data.armatures, bpy.data.node_groups):
         for item in block:
             if item.users == 0: block.remove(item)
+
+def update_view_layer():
+    """
+    Robust view_layer update for Blender 5.0+.
+    Falls back to scene-level access if context is unstable (e.g. background/headless mode).
+    """
+    try:
+        if bpy.context.view_layer:
+            bpy.context.view_layer.update()
+            return True
+    except (AttributeError, RuntimeError): pass
+
+    try:
+        # Fallback for background execution or missing context
+        for scene in bpy.data.scenes:
+            if hasattr(scene, "view_layers") and scene.view_layers:
+                scene.view_layers[0].update()
+        return True
+    except Exception as e:
+        print(f"Debug: update_view_layer fallback failed: {e}")
+    return False

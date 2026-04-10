@@ -1,7 +1,15 @@
 import bpy
 import os
 import time
+import sys
+
+# Ensure movie root is in path for style_utilities
+V6_DIR = os.path.dirname(os.path.abspath(__file__))
+MOVIE_ROOT = os.path.dirname(V6_DIR)
+if MOVIE_ROOT not in sys.path: sys.path.append(MOVIE_ROOT)
+
 import config
+from style_utilities.engine_operations import update_view_layer
 
 
 class SylvanEnsembleManager:
@@ -131,7 +139,7 @@ class SylvanEnsembleManager:
             else:
                 print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
 
-            bpy.context.view_layer.update()
+            update_view_layer()
 
         # Restore full visibility (hidden objects cause render-safety confusion later)
         for obj in bpy.data.objects:
@@ -211,7 +219,7 @@ class SylvanEnsembleManager:
             f_bone = next((get_bone(rig, b) for b in f_bone_names if get_bone(rig, b)), None)
 
             if h_bone and f_bone:
-                bpy.context.view_layer.update()
+                update_view_layer()
                 h_pos = (rig.matrix_world @ h_bone.head).z
                 f_pos = (rig.matrix_world @ f_bone.tail).z
                 current_h = abs(h_pos - f_pos)
@@ -221,7 +229,7 @@ class SylvanEnsembleManager:
                     rig.scale    = tuple(s * scale_factor for s in rig.scale)
                     print(f"ASSET_MANAGER: Scaled {art_name} by {scale_factor:.2f} "
                           f"to reach {config.MAJESTIC_HEIGHT} m")
-                    bpy.context.view_layer.update()
+                    update_view_layer()
 
     def _normalize_vertex_groups(self, mesh, rig):
         """Ensures vertex group names match bone names exactly."""

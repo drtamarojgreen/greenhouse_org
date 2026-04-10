@@ -1,12 +1,20 @@
 import bpy
 import os
 import time
+import sys
+
+# Ensure movie root is in path for style_utilities
+V6_DIR = os.path.dirname(os.path.abspath(__file__))
+MOVIE_ROOT = os.path.dirname(V6_DIR)
+if MOVIE_ROOT not in sys.path: sys.path.append(MOVIE_ROOT)
+
 import config
 
 from asset_manager_v6 import SylvanEnsembleManager
 from director_v6 import SylvanDirector
 from dialogue_scene_v6 import DialogueSceneV6
 from chroma_green_setup import setup_chroma_green_backdrop
+from style_utilities.engine_operations import update_view_layer
 
 
 # ---------------------------------------------------------------------------
@@ -25,7 +33,7 @@ def force_majestic_height(rig, target_h):
             or get_bone(rig, "LeftFoot"))
 
     if head and foot:
-        bpy.context.view_layer.update()
+        update_view_layer()
         h_pos  = (rig.matrix_world @ head.head).z
         f_pos  = (rig.matrix_world @ foot.tail).z
         curr_h = abs(h_pos - f_pos)
@@ -39,7 +47,7 @@ def force_majestic_height(rig, target_h):
             if mesh:
                 mesh.scale = rig.scale
 
-            bpy.context.view_layer.update()
+            update_view_layer()
 
 
 def standardize_ensemble_heights():
@@ -108,13 +116,14 @@ def generate_full_scene_v6():
         scene_logic = DialogueSceneV6(characters, [])
         scene_logic.setup_scene()
 
-        # 3. Cinematic direction
+        # 3. Height normalization (BEFORE animation keyframes)
+        standardize_ensemble_heights()
+        update_view_layer()
+
+        # 4. Cinematic direction
         director.position_protagonists()
         director.compose_ensemble()
         director.setup_cinematics()
-
-        # 4. Height normalization
-        standardize_ensemble_heights()
 
         print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")
 
