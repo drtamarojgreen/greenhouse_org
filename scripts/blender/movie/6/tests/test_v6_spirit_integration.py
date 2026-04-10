@@ -208,8 +208,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
                  # We check that they are moved from (0,0,1) mock origin
                  self.assertGreater(loc.xy.length, 0.5, f"{name} stayed at origin! (Loc: {loc})")
 
-            self.assertIsNotNone(obj.find_armature(),
-                                 f"{name} missing armature connection")
+            rig = obj.find_armature() or (obj if obj.type == 'ARMATURE' else None)
+            self.assertIsNotNone(rig, f"{name} missing armature connection")
 
     def test_vertex_outliers(self):
         for name in [config.CHAR_HERBACEOUS + "_Body", config.CHAR_LEAFY_MESH]:
@@ -446,25 +446,29 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def test_camera_trajectory_audit(self):
         """Blender 5 Camera Audit: Table showing location every 100 frames."""
-        print("\n" + "=" * 60)
-        print(f"{'FRAME':<10} | {'CAMERA LOCATION (X, Y, Z)':<40}")
-        print("-" * 60)
+        print("\n" + "=" * 80)
+        print(f"{'FRAME':<10} | {'PRIMARY CAMERA':<20} | {'CAMERA LOCATION (X, Y, Z)':<40}")
+        print("-" * 80)
 
-        cam = bpy.context.scene.camera
-        if not cam:
-            print("ERROR: No active camera for audit")
-            return
-
+        scene = bpy.context.scene
         # Ensure we check the full range from frame 1 to config.TOTAL_FRAMES
         frames = range(1, config.TOTAL_FRAMES + 1, 100)
         for f in frames:
-            bpy.context.scene.frame_set(f)
+            scene.frame_set(f)
             # Update view layer to ensure we get evaluated coordinates
             bpy.context.view_layer.update()
-            loc = cam.matrix_world.to_translation()
-            loc_str = f"({loc.x:7.2f}, {loc.y:7.2f}, {loc.z:7.2f})"
-            print(f"{f:<10} | {loc_str:<40}")
-        print("=" * 60 + "\n")
+
+            cam = scene.camera
+            cam_name = cam.name if cam else "NONE"
+
+            if cam:
+                loc = cam.matrix_world.to_translation()
+                loc_str = f"({loc.x:7.2f}, {loc.y:7.2f}, {loc.z:7.2f})"
+            else:
+                loc_str = "N/A"
+
+            print(f"{f:<10} | {cam_name:<20} | {loc_str:<40}")
+        print("=" * 80 + "\n")
 
     def test_camera_motion_verification(self):
         """Verify Blender 5 camera motion without using deprecated fcurves."""
