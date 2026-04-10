@@ -226,6 +226,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
             self.assertIsNotNone(arm, f"{name} missing armature connection")
 
     def test_vertex_outliers(self):
+        """Audit vertex shards at rest and after scaling."""
         for name in [config.CHAR_HERBACEOUS + "_Body", config.CHAR_LEAFY_MESH]:
             obj = bpy.data.objects.get(name)
             if not obj or obj.type != 'MESH':
@@ -250,6 +251,46 @@ class TestV6SpiritIntegration(unittest.TestCase):
                     for g in v_max.groups
                 ]
                 print(f"  CRITICAL: Shard at {z_max}m! Influences: {weights}")
+
+    def test_scaling_stress_and_shards(self):
+        """Stress test scaling to 1.1x and check for exploding vertices."""
+        print("\nPerforming Scaling Stress Test...")
+        for name in [config.CHAR_HERBACEOUS + "_Rig", config.CHAR_LEAFY_RIG]:
+            rig = bpy.data.objects.get(name)
+            if not rig: continue
+
+            # Find sibling mesh
+            mesh_name = name.replace("_Rig", "_Body").replace(".Rig", ".Body")
+            mesh = bpy.data.objects.get(mesh_name)
+            if not mesh or mesh.type != 'MESH': continue
+
+            print(f"DEBUG: Stress testing {name} at 1.1x scale")
+            orig_scale = rig.scale.copy()
+            rig.scale *= 1.1
+            if mesh != rig:
+                mesh.scale *= 1.1
+
+            bpy.context.view_layer.update()
+            dg = bpy.context.evaluated_depsgraph_get()
+            eval_mesh = mesh.evaluated_get(dg)
+
+            shard_count = 0
+            for i, v in enumerate(eval_mesh.data.vertices):
+                # Check local space coordinates
+                if v.co.length > 10.0:
+                    shard_count += 1
+                    if shard_count <= 3:
+                        weights = [f"{mesh.vertex_groups[g.group].name}:{g.weight:.2f}" for g in v.groups if g.weight > 0.1]
+                        print(f"  EXPLODING VERTEX [{i}]: Loc={v.co}, Weights={weights}")
+
+            if shard_count > 0:
+                 print(f"  RESULT: {name} has {shard_count} exploding vertices at 1.1x scale!")
+
+            # Restore scale
+            rig.scale = orig_scale
+            if mesh != rig:
+                mesh.scale = orig_scale
+            bpy.context.view_layer.update()
 
     def test_spatial_audit_table(self):
         targets  = [config.CHAR_HERBACEOUS + "_Body", config.CHAR_ARBOR + "_Body"]
@@ -398,6 +439,32 @@ class TestV6SpiritIntegration(unittest.TestCase):
             self.assertGreater(dist, 10, f"Backdrop {name} too close to characters")
             self.assertLess(dist, 200, f"Backdrop {name} too far away")
 
+    def test_backdrop_integrity(self):
+        """Audit backdrop materials and properties for visibility issues."""
+        print("\nChecking Backdrop Integrity...")
+        backdrops = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
+
+        for name in backdrops:
+            obj = bpy.data.objects.get(name)
+            self.assertIsNotNone(obj, f"Backdrop {name} missing")
+
+            # 1. Material Audit
+            self.assertGreater(len(obj.data.materials), 0, f"Backdrop {name} has no material")
+            mat = obj.data.materials[0]
+            self.assertTrue(mat.use_nodes, f"Backdrop {name} material does not use nodes")
+
+            nodes = mat.node_tree.nodes
+            emit = next((n for n in nodes if n.type == 'EMISSION'), None)
+            self.assertIsNotNone(emit, f"Backdrop {name} material missing Emission node")
+
+            strength = emit.inputs.get("Strength") or emit.inputs[1]
+            print(f"DEBUG: Backdrop {name} Emission Strength: {strength.default_value}")
+            self.assertGreaterEqual(strength.default_value, 1.0, f"Backdrop {name} emission too dim")
+
+            # 2. View Layer Audit
+            self.assertFalse(obj.hide_render, f"Backdrop {name} hidden in render")
+            self.assertFalse(obj.hide_viewport, f"Backdrop {name} hidden in viewport")
+
     def test_background_visibility(self):
         """Check why backgrounds might not be displaying."""
         print("\nChecking Background Visibility...")
@@ -415,7 +482,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
             self.assertGreaterEqual(clip_end, 1000, "WARNING: Camera clip_end might be too short to see backgrounds.")
 
         # 3. Check Object Render Visibility
-        bg_keywords = ["bg", "background", "environment", "sky"]
+        bg_keywords = ["bg", "background", "environment", "sky", "chroma", "backdrop"]
         bg_found = False
         for obj in bpy.data.objects:
             if any(k in obj.name.lower() for k in bg_keywords):

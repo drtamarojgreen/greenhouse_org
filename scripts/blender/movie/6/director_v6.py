@@ -94,6 +94,9 @@ class SylvanDirector:
         if name == config.CAMERA_NAME:
             self.scene.camera = obj
 
+        # Ensure sufficient clipping distance for backdrops
+        cam_data.clip_end = 2000.0
+
         return obj
 
     # ------------------------------------------------------------------

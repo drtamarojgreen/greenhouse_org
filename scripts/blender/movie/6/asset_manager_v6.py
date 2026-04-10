@@ -282,9 +282,11 @@ class SylvanEnsembleManager:
             if mesh:
                 mesh.hide_render = mesh.hide_viewport = False
 
-        # 4. Targeted cleanup: ensure all assets are visible
+        # 4. Targeted cleanup: ensure all assets are visible and sanitized
         for obj in coll.objects:
             obj.hide_render = obj.hide_viewport = False
+            if obj.type == 'MESH':
+                self.sanitize_shards(obj)
 
     # ------------------------------------------------------------------
     # MATERIAL REPAIR
@@ -377,3 +379,38 @@ class SylvanEnsembleManager:
                     if core.lower() in b_name.lower():
                         vg.name = b_name
                         break
+
+    def sanitize_shards(self, mesh_obj, threshold=10.0):
+        """Identifies and snaps 'exploding' vertices (shards) to the object origin."""
+        if not mesh_obj or mesh_obj.type != 'MESH':
+            return
+
+        print(f"ASSET_MANAGER: Sanitizing shards for {mesh_obj.name} (Threshold: {threshold}m)...")
+
+        # We edit the mesh data directly
+        mesh = mesh_obj.data
+        shard_count = 0
+
+        # Check rest position shards
+        for v in mesh.vertices:
+            if v.co.length > threshold:
+                v.co = (0, 0, 0)
+                shard_count += 1
+
+        # Optional: check evaluated position shards (if rig is already deforming it)
+        try:
+            dg = bpy.context.evaluated_depsgraph_get()
+            eval_obj = mesh_obj.evaluated_get(dg)
+            eval_mesh = eval_obj.data
+
+            for i, v in enumerate(eval_mesh.vertices):
+                if v.co.length > threshold:
+                    # If it explodes only when animated/scaled, it's likely a weight issue.
+                    # Snapping the rest position vertex to origin usually fixes it.
+                    mesh.vertices[i].co = (0, 0, 0)
+                    shard_count += 1
+        except:
+            pass
+
+        if shard_count > 0:
+            print(f"  CLEANED: Removed {shard_count} shard vertices from {mesh_obj.name}")

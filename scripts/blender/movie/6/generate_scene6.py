@@ -3,11 +3,6 @@ import os
 import sys
 import time
 
-# Ensure movie root and v6 are in path for shared utility access
-V6_DIR    = os.path.dirname(os.path.abspath(__file__))
-MOVIE_ROOT = os.path.dirname(V6_DIR)
-if MOVIE_ROOT not in sys.path: sys.path.append(MOVIE_ROOT)
-if V6_DIR    not in sys.path: sys.path.append(V6_DIR)
 
 import config
 from asset_manager_v6 import SylvanEnsembleManager

@@ -103,7 +103,7 @@ def setup_chroma_green_backdrop():
         strength_socket = emit.inputs.get("Strength") or emit.inputs[1]
         color_socket = emit.inputs.get("Color") or emit.inputs[0]
 
-        strength_socket.default_value = 1.0  # strength
+        strength_socket.default_value = 5.0  # Boosted strength for better visibility
 
         if bg_images and i < len(bg_images):
             img_path = bg_images[i]
