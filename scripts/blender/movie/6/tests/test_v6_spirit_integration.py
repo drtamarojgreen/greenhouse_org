@@ -45,7 +45,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def test_bone_mapping_mixamo(self):
         """Verifies that get_bone resolves standard names to Mixamo bones."""
-        arm = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
+        # Find a production rig (not a mock)
+        arm = next((o for o in bpy.data.objects if o.type == 'ARMATURE' and ".Rig" in o.name), None)
         if arm:
             head = get_bone(arm, "Head")
             self.assertIsNotNone(head, f"Head bone not resolved for {arm.name}")
@@ -333,6 +334,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
                      if d_hit > d_obj:
                           is_hit = True
 
+                # DEBUG: Cam->Hit: {d_hit:.2f}m, Cam->Target: {d_obj:.2f}m
                 self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} (Dist hit={d_hit:.2f}, obj={d_obj:.2f})")
             else:
                 print(f"RAYCAST {name} -> MISS")
@@ -465,19 +467,23 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
                 # Case 2: Blender 5 Slotted Actions (Utilizing style utility patterns)
                 if not has_offset_keys:
-                     try:
-                         # Check slots
-                         if hasattr(action, "slots"):
-                             for slot in action.slots:
-                                 # Check channel bags via anim_utils if possible
-                                 from bpy_extras import anim_utils
-                                 bag = anim_utils.action_get_channelbag_for_slot(action, slot)
-                                 if bag and hasattr(bag, "fcurves"):
-                                     if any(fc.data_path.endswith("offset_factor") for fc in bag.fcurves):
-                                         has_offset_keys = True
-                                         break
-                     except Exception as e:
-                         print(f"DEBUG: Slotted Action check failed: {e}")
+                    try:
+                        # Check slots
+                        if hasattr(action, "slots"):
+                            from bpy_extras import anim_utils
+                            for slot in action.slots:
+                                # Use anim_utils to get channel bag
+                                try:
+                                    bag = anim_utils.action_get_channelbag_for_slot(action, slot)
+                                    if bag and hasattr(bag, "fcurves"):
+                                        if any(fc.data_path.endswith("offset_factor") for fc in bag.fcurves):
+                                            has_offset_keys = True
+                                            break
+                                except:
+                                    # Some slots might not have bags
+                                    continue
+                    except Exception as e:
+                        print(f"DEBUG: Slotted Action check failed: {e}")
 
                 # Case 3: If still not found, check the object's own fcurves if possible
                 if not has_offset_keys and hasattr(cam.animation_data, "action"):
