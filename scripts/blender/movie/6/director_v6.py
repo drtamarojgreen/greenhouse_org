@@ -140,18 +140,20 @@ class SylvanDirector:
 
                 # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
                 # Scale keyframes are relative to the normalized base scale
-                base_s = obj.scale.copy()
+                # Movie 6: ONLY scale the Rig to prevent double-transform distortion on Mesh
+                if obj == rig:
+                    base_s = obj.scale.copy()
 
-                obj.scale = base_s
-                obj.keyframe_insert(data_path="scale", frame=1)
+                    obj.scale = base_s
+                    obj.keyframe_insert(data_path="scale", frame=1)
 
-                obj.scale = base_s * 1.05
-                obj.keyframe_insert(data_path="scale", frame=2)
+                    obj.scale = base_s * 1.05
+                    obj.keyframe_insert(data_path="scale", frame=2)
 
-                obj.scale = base_s * 1.02
-                obj.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
+                    obj.scale = base_s * 1.02
+                    obj.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
 
-                # Gentle ascent over the full scene
+                # Gentle ascent over the full scene (applied to both to keep them synced)
                 obj.location.z = 0.0
                 obj.keyframe_insert(data_path="location", frame=1)
                 obj.location.z = 1.5
@@ -168,5 +170,9 @@ class SylvanDirector:
             rig  = bpy.data.objects.get(f"{name}_Rig")
             mesh = bpy.data.objects.get(f"{name}_Body")
 
-            if rig:  rig.location = pos
-            if mesh: mesh.location = pos
+            if rig:
+                rig.location = pos
+                rig.keyframe_insert(data_path="location", frame=1)
+            if mesh:
+                mesh.location = pos
+                mesh.keyframe_insert(data_path="location", frame=1)

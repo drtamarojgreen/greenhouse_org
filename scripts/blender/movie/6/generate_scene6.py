@@ -49,13 +49,11 @@ def force_majestic_height(rig, target_h):
             if 0.99 < factor < 1.01:
                  return
 
-            # Movie 6: Scale BOTH Rig and Mesh to maintain sync in Sibling hierarchy
+            # Movie 6 Sibling Hierarchy: Scale ONLY the Rig.
+            # The Mesh (Body) sibling stays at scale 1.0 but is deformed by the Rig.
+            # Scaling both leads to double-transformation distortion.
             rig.scale = tuple(s * factor for s in rig.scale)
-            if mesh and mesh != rig:
-                 mesh.scale = tuple(s * factor for s in mesh.scale)
-                 print(f"ASSET_MANAGER: Scaled Rig {rig.name} and Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
-            else:
-                 print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
+            print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
 
             bpy.context.view_layer.update()
 
@@ -68,9 +66,18 @@ def standardize_ensemble_heights():
         print("ASSET_MANAGER WARNING: No 6a.ASSETS collection found for normalization.")
         return
 
+    # Whitelist of assets to renormalize to prevent distorting environment/cameras
+    RENORM_WHITELIST = [
+        "Herbaceous_V5", "Arbor_V5", "Sylvan_Majesty", "Radiant_Aura",
+        "Verdant_Sprite", "Shadow_Weaver", "Emerald_Sentinel",
+        "Phoenix_Herald", "Golden_Phoenix", "Root_Guardian"
+    ]
+
     for obj in coll.objects:
         # Include characters with .Rig suffix OR characters that ARE armatures (Root_Guardian)
-        is_spirit_rig = ".Rig" in obj.name or (obj.type == 'ARMATURE' and "Body" in obj.name)
+        is_spirit_rig = any(name in obj.name for name in RENORM_WHITELIST) and (
+            ".Rig" in obj.name or (obj.type == 'ARMATURE' and "Body" in obj.name)
+        )
         if not is_spirit_rig:
             continue
 
