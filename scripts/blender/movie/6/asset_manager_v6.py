@@ -251,12 +251,14 @@ class SylvanEnsembleManager:
                     # If mesh is rig (Root_Guardian), ensure it has no parent
                     rig.parent = None
 
-                # Restore Armature modifier correctly
-                mesh.constraints.clear()
-                arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
-                if not arm_mod:
-                    arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = rig
+                # Restore Armature modifier correctly (only for MESH objects)
+                if mesh.type == 'MESH':
+                    mesh.constraints.clear()
+                    arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
+                    if not arm_mod:
+                        arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
+                    if arm_mod:
+                        arm_mod.object = rig
 
                 rig.hide_render = rig.hide_viewport = False
 
