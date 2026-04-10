@@ -95,13 +95,18 @@ def get_action_curves(action, obj=None):
             except: pass
 
     # 3. Last Resort: Global fallback if still no curves found (Point 142)
-    if not curves and hasattr(action, "fcurves"):
-        for fc in action.fcurves:
-            try: ptr = fc.as_pointer()
-            except: ptr = id(fc)
-            if ptr not in seen_ids:
-                seen_ids.add(ptr)
-                curves.append(FCurveProxy(fc, fc.data_path))
+    # Avoid direct .fcurves access for Blender 5 compatibility
+    if not curves:
+        try:
+            # Some versions might still have it, but we prefer not to use it directly
+            fcs = getattr(action, "fcurves", [])
+            for fc in fcs:
+                try: ptr = fc.as_pointer()
+                except: ptr = id(fc)
+                if ptr not in seen_ids:
+                    seen_ids.add(ptr)
+                    curves.append(FCurveProxy(fc, fc.data_path))
+        except: pass
 
     return curves
 

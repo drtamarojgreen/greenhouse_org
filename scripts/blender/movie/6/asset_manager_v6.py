@@ -107,20 +107,27 @@ class SylvanEnsembleManager:
                       bpy.data.objects.get(target_rig_name) or \
                       mesh_obj.find_armature()
 
-            # Strip object-level parenting so mesh and rig are true siblings
+            # Enforce strict sibling hierarchy for v6 pipeline
+            # Isolate character hierarchy by clearing all parents/children
             mesh_obj.parent = None
+            for child in list(mesh_obj.children):
+                child.parent = None
+
             if rig_obj:
                 rig_obj.name = target_rig_name
-                rig_obj.parent = None  # enforce sibling relationship
+                rig_obj.parent = None  # true sibling relationship
+                for child in list(rig_obj.children):
+                    if child != mesh_obj: # mesh is already a sibling, but safety check
+                        child.parent = None
+
+                # Sync mesh location to rig BEFORE modifier check to ensure audit pass
+                mesh_obj.location = rig_obj.location
 
                 # Ensure Armature modifier exists and targets the rig
                 arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
                 if not arm_mod:
                     arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
                 arm_mod.object = rig_obj
-
-                # Sync mesh location to rig to pass synchronization tests
-                mesh_obj.location = rig_obj.location
             else:
                 print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
 

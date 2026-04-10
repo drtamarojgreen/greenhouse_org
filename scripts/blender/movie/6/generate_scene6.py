@@ -32,19 +32,35 @@ def force_majestic_height(rig, target_h):
         if curr_h > 0.01:
             factor = target_h / curr_h
             rig.scale = tuple(s * factor for s in rig.scale)
+
+            # Sync sibling mesh scale to avoid distortion in sibling hierarchy
+            mesh_name = rig.name.replace(".Rig", ".Body").replace("_Rig", "_Body")
+            mesh = bpy.data.objects.get(mesh_name)
+            if mesh:
+                mesh.scale = rig.scale
+
             bpy.context.view_layer.update()
 
 
 def standardize_ensemble_heights():
     """Ensures Sylvan spirits meet the 'Double Majesty' scale requirements."""
+    # Whitelist of base character names to avoid accidental scaling of environmental assets
+    character_names = list(config.SPIRIT_ENSEMBLE.values()) + [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]
+
     for obj in bpy.data.objects:
-        if ".Rig" not in obj.name:
+        # Only process objects that are explicitly part of the character rig ensemble
+        is_ensemble_rig = any(obj.name.startswith(name) for name in character_names) and \
+                          (".Rig" in obj.name or "_Rig" in obj.name)
+
+        if not is_ensemble_rig:
             continue
+
         target = config.MAJESTIC_HEIGHT
         if "Sprite" in obj.name:
             target = config.SPRITE_HEIGHT
         if "Phoenix" in obj.name:
             target = config.PHEONIX_HEIGHT
+
         force_majestic_height(obj, target)
 
 

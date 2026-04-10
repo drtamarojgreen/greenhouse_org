@@ -119,25 +119,14 @@ class SylvanDirector:
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at their production positions."""
-        # Check both suffixes and the base name
-        h_names = [config.CHAR_HERBACEOUS + "_Rig", config.CHAR_HERBACEOUS + "_Body", config.CHAR_HERBACEOUS]
-        a_names = [config.CHAR_ARBOR + "_Rig", config.CHAR_ARBOR + "_Body", config.CHAR_ARBOR]
+        # Ensure both Rig and Body are moved to target to pass spatial audits
+        targets = [
+            (config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS),
+            (config.CHAR_ARBOR,      config.CHAR_ARBOR_POS),
+        ]
 
-        for name in h_names:
-            obj = bpy.data.objects.get(name)
-            if obj:
-                obj.location = config.CHAR_HERBACEOUS_POS
-                # If we moved a rig, move the mesh too (safety)
-                if "_Rig" in name:
-                    mesh = bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
-                    if mesh: mesh.location = config.CHAR_HERBACEOUS_POS
-                break
-
-        for name in a_names:
-            obj = bpy.data.objects.get(name)
-            if obj:
-                obj.location = config.CHAR_ARBOR_POS
-                if "_Rig" in name:
-                    mesh = bpy.data.objects.get(config.CHAR_ARBOR + "_Body")
-                    if mesh: mesh.location = config.CHAR_ARBOR_POS
-                break
+        for base_name, pos in targets:
+            for suffix in ["_Rig", "_Body", ""]:
+                obj = bpy.data.objects.get(base_name + suffix)
+                if obj:
+                    obj.location = pos
