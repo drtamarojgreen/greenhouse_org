@@ -86,6 +86,8 @@ class SylvanDirector:
 
         obj.location      = pos
         obj.rotation_euler = rot
+        obj.scale          = (1, 1, 1)
+        obj.parent         = None
 
         if obj.name not in coll.objects:
             coll.objects.link(obj)

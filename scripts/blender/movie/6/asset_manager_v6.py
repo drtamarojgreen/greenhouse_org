@@ -149,7 +149,9 @@ class SylvanEnsembleManager:
                 arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
                 if not arm_mod:
                     arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = rig_obj
+
+                if arm_mod:
+                    arm_mod.object = rig_obj
 
     def import_fbx_ensemble(self):
         """Imports the Sylvan Ensemble from standalone FBX assets (Phase B workflow)."""
@@ -186,10 +188,14 @@ class SylvanEnsembleManager:
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
 
-        # 1. Process Assets explicitly from ensemble definitions
-        for src_mesh_name, art_name in self.ensemble.items():
-            is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
-            sep = "_" if is_p else "."
+        # 1. Build list of characters to process (Ensemble + Protagonists)
+        targets = []
+        for src, art in self.ensemble.items():
+             targets.append((src, art, "."))
+        for art in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR):
+             targets.append((f"{art}_Body", art, "_"))
+
+        for src_mesh_name, art_name, sep in targets:
             t_mesh_name = f"{art_name}{sep}Body"
             t_rig_name  = f"{art_name}{sep}Rig"
 
@@ -246,10 +252,18 @@ class SylvanEnsembleManager:
                 rig.parent = None
                 mesh.parent = None
 
-                # Isolation: Unparent rogue children from rig
+                # Isolation: Unparent rogue children from rig while keeping world transforms
+                # to avoid distortion if the parent was scaled.
                 for child in list(rig.children):
                     if child != mesh:
+                        mw = child.matrix_world.copy()
                         child.parent = None
+                        child.matrix_world = mw
+
+                for child in list(mesh.children):
+                    mw = child.matrix_world.copy()
+                    child.parent = None
+                    child.matrix_world = mw
 
                 # Sync transforms (identity at origin before director takes over)
                 if not rig.get("normalized_height"):
@@ -272,8 +286,10 @@ class SylvanEnsembleManager:
                             break
                     if not arm_mod:
                         try:
+                            # Use mesh.modifiers.new which returns the modifier or raises error
                             arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
-                        except: pass
+                        except Exception:
+                            arm_mod = None
 
                     if arm_mod:
                         arm_mod.object = rig
