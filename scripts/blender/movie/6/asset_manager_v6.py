@@ -300,9 +300,8 @@ class SylvanEnsembleManager:
                     obj.parent = None
                     obj.matrix_world = mw
 
-                # ONLY reset scale/loc/rot for WHITELISTED characters
+                # ONLY reset loc/rot for WHITELISTED characters (PRESERVE SCALE)
                 if obj.name in valid_targets or any(v in obj.name for v in valid_targets):
-                    obj.scale = (1, 1, 1)
                     obj.location = (0, 0, 0)
                     obj.rotation_euler = (0, 0, 0)
 
@@ -367,9 +366,9 @@ class SylvanEnsembleManager:
                         if rig.name != t_rig_name:
                             rig.name = t_rig_name
 
-                rig.scale = (1, 1, 1) # Force unit scale to prevent inherited distortion
+                # PRESERVE rig.scale
 
-                # Enforce clean hierarchy: Mesh as child of Rig with identity transforms
+                # Enforce clean hierarchy: Mesh as child of Rig
                 if mesh != rig:
                     # Isolation: Unparent rogue children (cameras, empties) from the rig
                     for child in list(rig.children):
@@ -381,10 +380,10 @@ class SylvanEnsembleManager:
                                 child.matrix_world = mw_child
 
                     if not mesh.is_library_indirect:
+                        # Preserve Mesh world matrix during parenting to keep scale/pos sync
+                        mw_mesh = mesh.matrix_world.copy()
                         mesh.parent = rig
-                        mesh.location = (0, 0, 0)
-                        mesh.rotation_euler = (0, 0, 0)
-                        mesh.scale = (1, 1, 1)
+                        mesh.matrix_world = mw_mesh
                 else:
                     # If mesh is rig (Root_Guardian), ensure it has no parent
                     if not rig.is_library_indirect:

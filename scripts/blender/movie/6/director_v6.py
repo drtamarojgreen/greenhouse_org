@@ -128,19 +128,7 @@ class SylvanDirector:
                 0.0,
             )
 
-            # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
-            # Scale keyframes are subtle (max 1.05) to avoid breaking Majestic height standards
-            # We use the current scale as base to respect normalization.
-            base_s = rig.scale.copy()
-
-            rig.scale = base_s
-            rig.keyframe_insert(data_path="scale", frame=1)
-
-            rig.scale = tuple(s * 1.05 for s in base_s)
-            rig.keyframe_insert(data_path="scale", frame=2)
-
-            rig.scale = tuple(s * 1.02 for s in base_s)
-            rig.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
+            # Scale keyframes removed per directive.
 
             # Gentle ascent over the full scene
             rig.location.z = 0.0
