@@ -1,6 +1,7 @@
 import bpy
 import os
 import time
+import mathutils
 import config
 
 from asset_manager_v6 import SylvanEnsembleManager
@@ -18,15 +19,29 @@ from chroma_green_setup import setup_chroma_green_backdrop
 def force_majestic_height(rig, target_h):
     """World-space bone-based height normalization for a single rig."""
     from animation_library_v6 import get_bone
+    try:
+        from style_utilities.engine_operations import update_view_layer
+    except ImportError:
+        def update_view_layer():
+            try: bpy.context.view_layer.update()
+            except: pass
+
+    # If the rig has an extreme initial scale (e.g. 100x), reset it to unit scale
+    # This prevents math instability and satisfies spatial audit synchronization.
+    if rig.scale.x > 50.0 or rig.scale.x < 0.02:
+         print(f"ASSET_MANAGER: Resetting anomalous scale on {rig.name} ({rig.scale.x:.2f})")
+         rig.scale = (1, 1, 1)
+         update_view_layer()
 
     head = get_bone(rig, "Head") or get_bone(rig, "Neck")
     foot = (get_bone(rig, "Foot.L")
             or get_bone(rig, "Foot.R")
             or get_bone(rig, "LeftFoot")
-            or get_bone(rig, "Hips"))
+            or get_bone(rig, "Hips")
+            or get_bone(rig, "mixamorig:Hips"))
 
     if head and foot:
-        bpy.context.view_layer.update()
+        update_view_layer()
         # Find the Mesh child
         mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
 
@@ -34,6 +49,12 @@ def force_majestic_height(rig, target_h):
         h_pos  = (rig.matrix_world @ head.head).z
         f_pos  = (rig.matrix_world @ foot.tail).z
         curr_h = abs(h_pos - f_pos)
+
+        # Robustness: fallback to bounding box if bones are coincident
+        if curr_h < 0.1 and mesh:
+             bbox   = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
+             z_vals = [v.z for v in bbox]
+             curr_h = max(z_vals) - min(z_vals)
 
         if curr_h > 0.01:
             factor = target_h / curr_h
@@ -43,11 +64,10 @@ def force_majestic_height(rig, target_h):
                  return
 
             # Apply to Rig directly so Director's relative keyframes pick it up.
-            # If mesh is parented to Rig and Mesh has identity scale, this is perfect.
             rig.scale = tuple(s * factor for s in rig.scale)
             print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
 
-            bpy.context.view_layer.update()
+            update_view_layer()
 
 
 def standardize_ensemble_heights():

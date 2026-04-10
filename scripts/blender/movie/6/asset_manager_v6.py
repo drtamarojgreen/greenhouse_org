@@ -3,6 +3,15 @@ import os
 import time
 import config
 
+try:
+    from style_utilities.engine_operations import update_view_layer
+except ImportError:
+    def update_view_layer():
+        try: bpy.context.view_layer.update()
+        except:
+            try: bpy.context.scene.update()
+            except: pass
+
 
 class SylvanEnsembleManager:
     """Manages the linking, renaming, and integrity of the 8-character spirit ensemble."""
@@ -77,9 +86,20 @@ class SylvanEnsembleManager:
 
         with bpy.data.libraries.load(config.SPIRITS_ASSET_BLEND, link=False) as (data_from, data_to):
             available = set(data_from.objects)
-            data_to.objects = [n for n in want if n in available]
+            to_load = [n for n in want if n in available]
 
-        missing = want - set(data_from.objects if hasattr(data_from, 'objects') else [])
+            # Fuzzy match for missing assets (e.g. 'skeleton' -> 'skeleton.001')
+            missing_want = want - set(to_load)
+            for m in list(missing_want):
+                 fuzzy = next((a for a in available if a.startswith(m + ".")), None)
+                 if fuzzy:
+                      print(f"ASSET_MANAGER: Fuzzy matched {m} to {fuzzy}")
+                      to_load.append(fuzzy)
+
+            data_to.objects = to_load
+
+        loaded_names = {obj.name for obj in data_to.objects if obj}
+        missing = want - loaded_names
         if missing:
             print(f"ASSET_MANAGER WARNING: These source objects were not found in blend: {missing}")
 
@@ -183,24 +203,45 @@ class SylvanEnsembleManager:
     # RENORMALIZATION
     # ------------------------------------------------------------------
 
-    def sanitize_shards(self):
+    def sanitize_shards(self, use_evaluated=False):
         """Removes outlier vertices that distort height calculations."""
-        print("ASSET_MANAGER: Sanitizing mesh shards...")
+        print(f"ASSET_MANAGER: Sanitizing mesh shards (evaluated={use_evaluated})...")
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
 
-        for obj in coll.objects:
+        dg = bpy.context.evaluated_depsgraph_get() if use_evaluated else None
+
+        for obj in list(coll.objects):
             if obj.type == 'MESH':
                 # Skip linked data that is read-only
                 if obj.data.is_library_indirect:
                     continue
 
                 mesh = obj.data
+                eval_obj = obj.evaluated_get(dg) if dg else obj
+
                 count = 0
-                for v in mesh.vertices:
-                    if v.co.length > 50.0:
+                threshold = 10.0 # Tighter threshold for character assets
+
+                # Ensure vertex indices match
+                safe_eval = False
+                if use_evaluated and eval_obj and eval_obj.data:
+                     safe_eval = len(mesh.vertices) == len(eval_obj.data.vertices)
+
+                for i, v in enumerate(mesh.vertices):
+                    is_shard = v.co.length > threshold
+
+                    if not is_shard and safe_eval:
+                        eval_v = eval_obj.data.vertices[i]
+                        w_co = eval_obj.matrix_world @ eval_v.co
+                        # Catch extreme world-space shards (e.g. 1062m)
+                        if w_co.length > 50.0 or abs(w_co.z) > 50.0:
+                            is_shard = True
+
+                    if is_shard:
                         v.co = (0, 0, 0)
                         count += 1
+
                 if count > 0:
                     print(f"  Removed {count} shards from {obj.name}")
 
@@ -211,8 +252,11 @@ class SylvanEnsembleManager:
         """
         print("ASSET_MANAGER: Rewriting Scoped Asset Hierarchy...")
 
-        # 0. Sanitize Shards first to ensure clean bounds
-        self.sanitize_shards()
+        # 0. Sanitize Shards (Rest Pose)
+        self.sanitize_shards(use_evaluated=False)
+        update_view_layer()
+        # 1. Sanitize Shards (Evaluated Pose)
+        self.sanitize_shards(use_evaluated=True)
 
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
@@ -298,6 +342,14 @@ class SylvanEnsembleManager:
             # Special case for skeleton-based assets where the mesh IS the rig (e.g. Root_Guardian)
             if not rig and mesh.type == 'ARMATURE':
                 rig = mesh
+                # If this mesh/rig is shared (e.g. 'skeleton' used as mesh for Root_Guardian
+                # but as rig for Phoenix), we must duplicate it.
+                if (".Rig" in rig.name or ".Body" in rig.name) and rig.name != t_mesh_name:
+                     print(f"ASSET_MANAGER: Duplicating shared skeleton {rig.name} for {art_name}")
+                     new_mesh = rig.copy()
+                     if rig.data: new_mesh.data = rig.data.copy()
+                     coll.objects.link(new_mesh)
+                     mesh = rig = new_mesh
 
             # Perform Renaming (Careful with shared rigs)
             if rig:
