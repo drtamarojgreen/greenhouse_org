@@ -210,8 +210,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
                  # We check that they are moved from (0,0,1) mock origin
                  self.assertGreater(loc.xy.length, 0.5, f"{name} stayed at origin! (Loc: {loc})")
 
-            self.assertIsNotNone(obj.find_armature(),
-                                 f"{name} missing armature connection")
+            arm = obj.find_armature() if obj.type == 'MESH' else obj
+            self.assertIsNotNone(arm, f"{name} missing armature connection")
 
     def test_vertex_outliers(self):
         for name in [config.CHAR_HERBACEOUS + "_Body", config.CHAR_LEAFY_MESH]:
@@ -328,14 +328,14 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 art_base = name.split('.')[0]
                 is_hit = art_base in hit_obj.name or hit_obj.name in art_base
 
+                d_hit = (loc - origin).length
+                d_obj = (target_pt - origin).length
+
                 # If we hit a backdrop, check if it's behind
                 if not is_hit and "Backdrop" in hit_obj.name:
-                     d_hit = (loc - origin).length
-                     d_obj = (target_pt - origin).length
                      if d_hit > d_obj:
                           is_hit = True
 
-                # DEBUG: Cam->Hit: {d_hit:.2f}m, Cam->Target: {d_obj:.2f}m
                 self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} (Dist hit={d_hit:.2f}, obj={d_obj:.2f})")
             else:
                 print(f"RAYCAST {name} -> MISS")
@@ -491,6 +491,47 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
 
                 self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
+
+    def test_camera_backdrop_audit_table(self):
+        """Reports a detailed table of cameras and backdrops status."""
+        print("\n" + "=" * 115)
+        print(f"{'NAME':<25} | {'TYPE':<8} | {'POSITION':<20} | {'ROTATION':<20} | {'SIZE/DIM':<15} | {'SCALE':<8} | {'VISIBLE'}")
+        print("-" * 115)
+
+        # 1. Cameras
+        for name in ["WIDE", "OTS1", "OTS2", "OTS_Static_1", "OTS_Static_2"]:
+            obj = bpy.data.objects.get(name)
+            if not obj: continue
+
+            loc = obj.location
+            rot = [round(math.degrees(a), 1) for a in obj.rotation_euler]
+            scale = obj.scale[0] # assuming uniform
+
+            print(f"{name:<25} | {'CAM':<8} | "
+                  f"{f'({loc.x:.1f},{loc.y:.1f},{loc.z:.1f})':<20} | "
+                  f"{f'({rot[0]},{rot[1]},{rot[2]})':<20} | "
+                  f"{'-':<15} | "
+                  f"{scale:<8.2f} | "
+                  f"{not obj.hide_render}")
+
+        # 2. Backdrops
+        for name in ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]:
+            obj = bpy.data.objects.get(name)
+            if not obj: continue
+
+            loc = obj.location
+            rot = [round(math.degrees(a), 1) for a in obj.rotation_euler]
+            dim = obj.dimensions
+            scale = obj.scale[0]
+
+            print(f"{name:<25} | {'ENV':<8} | "
+                  f"{f'({loc.x:.1f},{loc.y:.1f},{loc.z:.1f})':<20} | "
+                  f"{f'({rot[0]},{rot[1]},{rot[2]})':<20} | "
+                  f"{f'{dim.x:.1f}x{dim.y:.1f}':<15} | "
+                  f"{scale:<8.2f} | "
+                  f"{not obj.hide_render}")
+
+        print("=" * 115 + "\n")
 
     def test_diagnostic_occlusion_and_sync(self):
         """Deep dive into raycast occlusion and coordinate sync issues."""

@@ -34,10 +34,10 @@ def force_majestic_height(rig, target_h):
 
     if head and foot:
         bpy.context.view_layer.update()
-        # Find the Mesh child
-        mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
+        # Find the Mesh sibling
+        mesh = next((o for o in bpy.data.objects if rig.name.replace(".Rig", ".Body") == o.name), None)
 
-        # Calculate Current Height in World Space
+        # Calculate Current Height in World Space using Bone Heads/Tails (Robust to shards)
         h_pos  = (rig.matrix_world @ head.head).z
         f_pos  = (rig.matrix_world @ foot.tail).z
         curr_h = abs(h_pos - f_pos)
