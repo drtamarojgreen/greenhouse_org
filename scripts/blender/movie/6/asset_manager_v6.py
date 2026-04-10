@@ -195,12 +195,16 @@ class SylvanEnsembleManager:
         for art in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR):
              targets.append((f"{art}_Body", art, "_"))
 
+        # Pre-process Root_Guardian to ensure it's handled as a spirit
+        if "Root_Guardian" not in [t[1] for t in targets]:
+             targets.append(("skeleton", "Root_Guardian", "."))
+
         for src_mesh_name, art_name, sep in targets:
             t_mesh_name = f"{art_name}{sep}Body"
             t_rig_name  = f"{art_name}{sep}Rig"
 
             # 1a. Resolve the Rig FIRST
-            src_rig_name = self.rig_map.get(art_name)
+            src_rig_name = self.rig_map.get(art_name) or (src_mesh_name if art_name == "Root_Guardian" else None)
             rig = bpy.data.objects.get(t_rig_name)
             if not rig and src_rig_name:
                 source_rig = (bpy.data.objects.get(src_rig_name) or
@@ -230,18 +234,18 @@ class SylvanEnsembleManager:
                     else:
                          mesh = source_mesh
 
-            # Special case: If mesh and rig are same object, DUPLICATE to allow Sync
-            if mesh == rig and mesh is not None:
-                rig = mesh
-                mesh = rig.copy()
-                if rig.data: mesh.data = rig.data.copy()
-                coll.objects.link(mesh)
-
             if not mesh: continue
 
             # Final fallback for rig if not yet found
             if not rig:
                 rig = mesh.find_armature() or (mesh if mesh.type == 'ARMATURE' else None)
+
+            # Special case: If mesh and rig are same object, DUPLICATE to allow Sync
+            if mesh == rig and mesh is not None:
+                # Rig stays as the original (renamed later), mesh becomes a copy
+                mesh = rig.copy()
+                if rig.data: mesh.data = rig.data.copy()
+                coll.objects.link(mesh)
 
             mesh.name = t_mesh_name
 
