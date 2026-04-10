@@ -56,6 +56,8 @@ def force_majestic_height(rig, target_h):
         # Apply to Mesh instead of Rig to avoid conflict with Director's rig animation
         if mesh and mesh != rig:
              mesh.scale = tuple(s * factor for s in mesh.scale)
+             # Sibling sync: scale rig simultaneously
+             rig.scale = tuple(s * factor for s in rig.scale)
              print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
              mesh["normalized_height"] = True
         else:
@@ -174,6 +176,9 @@ def generate_full_scene_v6():
 
         # 4. Height normalization (apply scale before keyframing or adjust)
         standardize_ensemble_heights()
+
+        # Final view layer update to sync all transforms
+        bpy.context.view_layer.update()
 
         print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")
 
