@@ -122,28 +122,28 @@ class SylvanEnsembleManager:
                 rig_name  = f"{name}_Rig"
 
                 # Create Mock Rig
-                if rig_name not in bpy.data.objects:
+                rig_obj = bpy.data.objects.get(rig_name)
+                if not rig_obj:
                     arm_data = bpy.data.armatures.new(rig_name)
                     rig_obj = bpy.data.objects.new(rig_name, arm_data)
                     coll.objects.link(rig_obj)
-                else:
-                    rig_obj = bpy.data.objects[rig_name]
 
                 # Create Mock Mesh
-                if mesh_name not in bpy.data.objects:
+                mesh_obj = bpy.data.objects.get(mesh_name)
+                if not mesh_obj:
                     bpy.ops.mesh.primitive_cube_add(size=2, location=(0,0,1))
                     mesh_obj = bpy.context.active_object
                     mesh_obj.name = mesh_name
-                else:
-                    mesh_obj = bpy.data.objects[mesh_name]
+                    if mesh_name not in coll.objects:
+                         coll.objects.link(mesh_obj)
 
-                if mesh_obj.name not in coll.objects:
-                    try:
-                        coll.objects.link(mesh_obj)
-                    except: pass
-
-                # Parent for identification in tests
+                # Enforce Parent-Child for mocks
                 mesh_obj.parent = rig_obj
+                # Restore Armature modifier for mocks
+                arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
+                if not arm_mod:
+                    arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
+                arm_mod.object = rig_obj
 
     def import_fbx_ensemble(self):
         """Imports the Sylvan Ensemble from standalone FBX assets (Phase B workflow)."""
@@ -172,53 +172,55 @@ class SylvanEnsembleManager:
 
     def renormalize_objects(self):
         """
-        Robust 5.0 Renormalization.
-        Scopes changes ONLY to ensemble members to avoid distorting background or environment.
+        Final 5.0 Renormalization rewrite.
+        Scopes changes ONLY to items in the asset collection to protect environment.
         """
-        print("ASSET_MANAGER: Scoped Production Renormalization...")
+        print("ASSET_MANAGER: Rewriting Scoped Asset Hierarchy...")
 
-        ensemble_objects = []
+        coll = bpy.data.collections.get(self.collection_name)
+        if not coll: return
 
-        # 1. Scope Identification
+        # 1. Process Assets explicitly from ensemble definitions
         for src_mesh, art_name in self.ensemble.items():
-            is_protagonist = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
-            sep = "_" if is_protagonist else "."
-            t_mesh = f"{art_name}{sep}Body"
-            t_rig  = f"{art_name}{sep}Rig"
+            is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
+            sep = "_" if is_p else "."
+            t_mesh_name = f"{art_name}{sep}Body"
+            t_rig_name  = f"{art_name}{sep}Rig"
 
-            mesh = bpy.data.objects.get(t_mesh) or bpy.data.objects.get(src_mesh)
+            mesh = bpy.data.objects.get(t_mesh_name) or bpy.data.objects.get(src_mesh)
             if not mesh: continue
 
-            mesh.name = t_mesh
+            mesh.name = t_mesh_name
 
             src_rig = self.rig_map.get(art_name)
-            rig = (bpy.data.objects.get(t_rig) or
+            rig = (bpy.data.objects.get(t_rig_name) or
                    (bpy.data.objects.get(src_rig) if src_rig else None) or
                    mesh.find_armature())
 
             if rig:
-                rig.name = t_rig
-                ensemble_objects.extend([mesh, rig])
+                rig.name = t_rig_name
+                # Enforce clean hierarchy: Mesh as child of Rig with identity transforms
+                # This prevents the "distorting everything" double-transform bug
+                if mesh.parent != rig:
+                    mesh.parent = rig
+                    # Sync local origin to rig origin
+                    mesh.location = (0, 0, 0)
+                    mesh.rotation_euler = (0, 0, 0)
+                    mesh.scale = (1, 1, 1)
 
-                # Enforce Standard Production Hierarchy
-                # Rig is top-level; Mesh is child with identity transforms to avoid distortion
-                mesh.parent = rig
-                mesh.location = (0, 0, 0)
-                mesh.rotation_euler = (0, 0, 0)
-                mesh.scale = (1, 1, 1)
-
-                # Clear all constraints/modifiers and restore only Armature
+                # Restore Armature modifier correctly
                 mesh.constraints.clear()
-                mesh.modifiers.clear()
-                arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
+                arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
+                if not arm_mod:
+                    arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
                 arm_mod.object = rig
 
-            # Visibility: Scope unhide ONLY to these objects
-            mesh.hide_render = mesh.hide_viewport = False
-            if rig: rig.hide_render = rig.hide_viewport = False
+                rig.hide_render = rig.hide_viewport = False
 
-        # 2. Targeted cleanup of known technical helpers
-        for obj in bpy.data.objects:
+            mesh.hide_render = mesh.hide_viewport = False
+
+        # 2. Targeted cleanup: root guardian is always hidden
+        for obj in coll.objects:
             if "Root_Guardian" in obj.name:
                 obj.hide_render = obj.hide_viewport = True
 

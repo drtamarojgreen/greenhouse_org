@@ -22,24 +22,33 @@ def force_majestic_height(rig, target_h):
     head = get_bone(rig, "Head") or get_bone(rig, "Neck")
     foot = (get_bone(rig, "Foot.L")
             or get_bone(rig, "Foot.R")
-            or get_bone(rig, "LeftFoot"))
+            or get_bone(rig, "LeftFoot")
+            or get_bone(rig, "Hips"))
 
     if head and foot:
         bpy.context.view_layer.update()
+        # Find the Mesh child
+        mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
+
+        # Calculate Current Height in World Space
         h_pos  = (rig.matrix_world @ head.head).z
         f_pos  = (rig.matrix_world @ foot.tail).z
         curr_h = abs(h_pos - f_pos)
+
         if curr_h > 0.01:
             factor = target_h / curr_h
 
+            # If factor is near 1.0, we're already normalized
+            if 0.99 < factor < 1.01:
+                 return
+
             # Apply to Mesh instead of Rig to avoid conflict with Director's rig animation
-            mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name in o.name and ".Body" in o.name), None)
             if mesh:
                  mesh.scale = tuple(s * factor for s in mesh.scale)
-                 print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f}")
+                 print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
             else:
                  rig.scale = tuple(s * factor for s in rig.scale)
-                 print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f}")
+                 print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
 
             bpy.context.view_layer.update()
 
