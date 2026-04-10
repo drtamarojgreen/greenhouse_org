@@ -56,15 +56,20 @@ def force_majestic_height(rig, target_h):
 def standardize_ensemble_heights():
     """Ensures Sylvan spirits meet the 'Double Majesty' scale requirements."""
     print("ASSET_MANAGER: Normalizing Ensemble Heights...")
-    coll = bpy.data.collections.get("6a.ASSETS")
-    if not coll:
-        print("ASSET_MANAGER WARNING: No 6a.ASSETS collection found for normalization.")
-        return
 
-    for obj in coll.objects:
-        # Include characters with .Rig suffix OR characters that ARE armatures (Root_Guardian)
-        is_spirit_rig = ".Rig" in obj.name or (obj.type == 'ARMATURE' and "Body" in obj.name)
-        if not is_spirit_rig:
+    # Strictly iterate over the whitelist to prevent distorting environmental assets
+    for art_name in config.RENORM_WHITELIST:
+        is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
+        if is_p: continue # Protagonists have their own height standards
+
+        sep = "_" if is_p else "."
+        t_rig_name = f"{art_name}{sep}Rig"
+        t_body_name = f"{art_name}{sep}Body"
+
+        # Identify the object to scale (Rig or skeleton-only Body)
+        obj = bpy.data.objects.get(t_rig_name) or bpy.data.objects.get(t_body_name)
+
+        if not obj or obj.type != 'ARMATURE':
             continue
 
         # Prevent double-scaling if normalization was already applied
@@ -76,6 +81,7 @@ def standardize_ensemble_heights():
             target = config.SPRITE_HEIGHT
         if "Phoenix" in obj.name:
             target = config.PHEONIX_HEIGHT
+
         force_majestic_height(obj, target)
         obj["normalized_height"] = True
 

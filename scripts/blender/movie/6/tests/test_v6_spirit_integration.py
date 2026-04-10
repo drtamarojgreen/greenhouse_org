@@ -366,6 +366,36 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 bpy.data.objects.get(name), f"Backdrop '{name}' missing (naming regression)"
             )
 
+    def test_backdrop_integrity(self):
+        """Verifies loading, visibility, position, and placement of backdrops."""
+        print("\nVerifying Backdrop Integrity...")
+        targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
+
+        env_coll = bpy.data.collections.get("6b.ENVIRONMENT") or bpy.data.collections.get("ENV.CHROMA.6b")
+        self.assertIsNotNone(env_coll, "Environment collection (6b) missing")
+
+        for name in targets:
+            obj = bpy.data.objects.get(name)
+            self.assertIsNotNone(obj, f"Backdrop {name} MISSING")
+
+            # Visibility checks
+            self.assertFalse(obj.hide_render, f"Backdrop {name} HIDDEN from render")
+            self.assertFalse(obj.hide_viewport, f"Backdrop {name} HIDDEN from viewport")
+            self.assertIn(obj.name, [o.name for o in env_coll.objects], f"Backdrop {name} not in 6b collection")
+
+            # Material / Emission check
+            self.assertGreater(len(obj.data.materials), 0, f"Backdrop {name} has NO material")
+            mat = obj.data.materials[0]
+            self.assertTrue(mat.use_nodes, f"Backdrop {name} material not using nodes")
+
+            has_emission = any(n.type == 'EMISSION' for n in mat.node_tree.nodes)
+            self.assertTrue(has_emission, f"Backdrop {name} material missing Emission shader")
+
+            # Placement audit
+            loc = obj.matrix_world.to_translation()
+            print(f"BACKDROP {name}: Loc={loc}, Scale={obj.scale[:]}")
+            self.assertGreater(obj.scale.x, 10, f"Backdrop {name} likely too small (distorted scale)")
+
     def test_rendering_setup(self):
         """Verifies camera and backdrop are present for Scene 6."""
         self.assertIsNotNone(
@@ -374,6 +404,23 @@ class TestV6SpiritIntegration(unittest.TestCase):
         self.assertIsNotNone(
             bpy.data.objects.get(config.BACKDROP_NAME), "Backdrop missing"
         )
+
+    def test_camera_trajectory_audit(self):
+        """Outputs a diagnostic table of primary camera coordinates."""
+        print("\n" + "=" * 60)
+        print(f"{'FRAME':<8} | {'PRIMARY CAMERA':<20} | {'LOCATION'}")
+        print("-" * 60)
+
+        cam = bpy.context.scene.camera
+        if not cam:
+            print("ERROR: No active camera for trajectory audit")
+            return
+
+        for f in range(1, config.TOTAL_FRAMES + 1, 1000):
+            bpy.context.scene.frame_set(f)
+            loc = cam.matrix_world.to_translation()
+            print(f"{f:<8} | {cam.name:<20} | {loc}")
+        print("=" * 60 + "\n")
 
     def test_background_visibility(self):
         """Check why backgrounds might not be displaying."""

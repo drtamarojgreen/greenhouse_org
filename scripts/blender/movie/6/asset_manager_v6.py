@@ -83,10 +83,14 @@ class SylvanEnsembleManager:
             print(f"ASSET_MANAGER WARNING: These source objects were not found in blend: {missing}")
 
         # Link only the newly loaded objects into the asset collection
-        # This prevents environmental objects (cameras, backdrops) from being swept into 6a.ASSETS
-        for obj in bpy.data.objects:
-            if (obj.name in want or any(obj.name.startswith(w) for w in want)) and obj.name not in coll.objects:
+        # This prevents existing environmental objects (cameras, backdrops) from being swept into 6a.ASSETS
+        for obj in data_to.objects:
+            if obj and obj.name not in coll.objects:
                 try:
+                    # Idempotency: Unlink from other collections if necessary
+                    for other_coll in obj.users_collection:
+                         if other_coll != coll:
+                              other_coll.objects.unlink(obj)
                     coll.objects.link(obj)
                 except RuntimeError:
                     pass
@@ -110,9 +114,13 @@ class SylvanEnsembleManager:
                 available = set(data_from.objects)
                 data_to.objects = [n for n in want if n in available]
 
-            for obj in bpy.data.objects:
-                if obj.name in want and obj.name not in coll.objects:
+            for obj in data_to.objects:
+                if obj and obj.name not in coll.objects:
                     try:
+                        # Idempotency: Unlink from other collections if necessary
+                        for other_coll in obj.users_collection:
+                             if other_coll != coll:
+                                  other_coll.objects.unlink(obj)
                         coll.objects.link(obj)
                     except RuntimeError:
                         pass
@@ -185,12 +193,34 @@ class SylvanEnsembleManager:
         # Pre-pass: Capture original names and reset all rigs in the asset collection
         # We use a map to handle renaming collisions (e.g. 'skeleton' used by multiple chars)
         src_map = {obj.name: obj for obj in coll.objects}
+
+        # Whitelist names for transformation reset
+        # This prevents environmental armatures from being reset to identity
+        valid_targets = []
+        for art_name in config.RENORM_WHITELIST:
+             is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
+             sep = "_" if is_p else "."
+             valid_targets.append(f"{art_name}{sep}Rig")
+             valid_targets.append(f"{art_name}{sep}Body")
+             # Add source names too
+             src_name = next((k for k, v in self.ensemble.items() if v == art_name), art_name)
+             valid_targets.append(src_name)
+             src_rig = self.rig_map.get(art_name)
+             if src_rig: valid_targets.append(src_rig)
+
+        # Strictly scope pre-pass resets to the collection to protect environment
         for obj in coll.objects:
             if obj.type == 'ARMATURE':
+                # Isolation: Ensure character rigs are unparented from non-asset containers
+                mw = obj.matrix_world.copy()
                 obj.parent = None
-                obj.scale = (1, 1, 1)
-                obj.location = (0, 0, 0)
-                obj.rotation_euler = (0, 0, 0)
+                obj.matrix_world = mw
+
+                # ONLY reset scale/loc/rot for WHITELISTED characters
+                if obj.name in valid_targets or any(v in obj.name for v in valid_targets):
+                    obj.scale = (1, 1, 1)
+                    obj.location = (0, 0, 0)
+                    obj.rotation_euler = (0, 0, 0)
 
         # 1. Process Assets explicitly from the whitelist
         # This includes spirits (dots) and protagonists (underscores)
@@ -241,7 +271,10 @@ class SylvanEnsembleManager:
                     # Isolation: Unparent rogue children (cameras, empties) from the rig
                     for child in list(rig.children):
                         if child != mesh:
+                            # Preserve world position for rogue children when unparenting
+                            mw_child = child.matrix_world.copy()
                             child.parent = None
+                            child.matrix_world = mw_child
 
                     mesh.parent = rig
                     mesh.location = (0, 0, 0)
