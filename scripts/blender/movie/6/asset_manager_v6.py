@@ -50,6 +50,11 @@ class SylvanEnsembleManager:
         """Appends all ensemble mesh + armature objects from the production blend."""
         print(f"ASSET_MANAGER: Linking Sylvan Ensemble from {config.SPIRITS_ASSET_BLEND}...")
 
+        # 1. Check if already linked to prevent duplicates
+        if any(f"{art_name}" in obj.name for obj in bpy.data.objects for art_name in self.ensemble.values()):
+             print("ASSET_MANAGER: Ensemble already linked — skipping.")
+             return
+
         # Ensure the SET.SPIRITS collection exists and is in the scene graph
         coll = bpy.data.collections.get(self.collection_name)
         if not coll:
@@ -176,12 +181,16 @@ class SylvanEnsembleManager:
                 rig_obj.name  = f"{art_name}{sep}Rig"
                 rig_obj.parent = None
 
-                # Enforce Parent-Child Relationship for Sync
-                mesh_obj.parent = rig_obj
-                # Reset local transforms to ensure mesh is centered on rig
-                mesh_obj.location = (0, 0, 0)
-                mesh_obj.rotation_euler = (0, 0, 0)
-                mesh_obj.scale = (1, 1, 1)
+                # SIBLING HIERARCHY (Phase A Requirement)
+                # We use a Copy Transforms constraint instead of object parenting
+                # to satisfy the "true siblings" requirement while maintaining sync.
+                mesh_obj.parent = None
+
+                con = mesh_obj.constraints.get("SyncToRig")
+                if not con:
+                    con = mesh_obj.constraints.new(type='COPY_TRANSFORMS')
+                    con.name = "SyncToRig"
+                con.target = rig_obj
 
                 # Ensure Armature modifier is present and targeting the rig
                 arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
