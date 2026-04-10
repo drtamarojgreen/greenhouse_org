@@ -12,7 +12,6 @@ if V6_DIR    not in sys.path: sys.path.append(V6_DIR)
 
 from animation_library_v6 import get_bone
 from dialogue_scene_v6 import DialogueSceneV6
-from style_utilities.fcurves_operations import get_action_curves
 import config
 
 print(f"DIAGNOSTIC: Config loaded from {getattr(config, '__file__', 'unknown')}")
@@ -445,69 +444,52 @@ class TestV6SpiritIntegration(unittest.TestCase):
                         obj.name in config.RIG_MAP_SRC.values())
             self.assertTrue(is_valid, f"Scoping Violation: Non-asset object {obj.name} found in 6a.ASSETS")
 
-    def test_camera_curve_animation(self):
-        """Verify Blender 5 camera curve animation logic."""
-        print("\nVerifying Camera Curve Animation...")
+    def test_camera_trajectory_audit(self):
+        """Blender 5 Camera Audit: Table showing location every 100 frames."""
+        print("\n" + "=" * 60)
+        print(f"{'FRAME':<10} | {'CAMERA LOCATION (X, Y, Z)':<40}")
+        print("-" * 60)
+
+        cam = bpy.context.scene.camera
+        if not cam:
+            print("ERROR: No active camera for audit")
+            return
+
+        # Ensure we check the full range from frame 1 to config.TOTAL_FRAMES
+        frames = range(1, config.TOTAL_FRAMES + 1, 100)
+        for f in frames:
+            bpy.context.scene.frame_set(f)
+            # Update view layer to ensure we get evaluated coordinates
+            bpy.context.view_layer.update()
+            loc = cam.matrix_world.to_translation()
+            loc_str = f"({loc.x:7.2f}, {loc.y:7.2f}, {loc.z:7.2f})"
+            print(f"{f:<10} | {loc_str:<40}")
+        print("=" * 60 + "\n")
+
+    def test_camera_motion_verification(self):
+        """Verify Blender 5 camera motion without using deprecated fcurves."""
+        print("\nVerifying Camera Motion...")
 
         cam = bpy.context.scene.camera
         self.assertIsNotNone(cam, "ERROR: No active camera in scene.")
 
-        # Check for Follow Path constraint
+        # 1. Verify Follow Path constraint
         follow_path = next((c for c in cam.constraints if c.type == 'FOLLOW_PATH'), None)
+        self.assertIsNotNone(follow_path, f"ERROR: Camera {cam.name} is not following a path.")
+        self.assertIsNotNone(follow_path.target, "ERROR: Follow Path constraint has no target.")
 
-        self.assertIsNotNone(follow_path, f"ERROR: Camera {cam.name} is not following a path (Curve).")
-        self.assertIsNotNone(follow_path.target, "ERROR: Follow Path constraint has no target object.")
-        self.assertEqual(follow_path.target.type, 'CURVE', "ERROR: Follow Path target is not a Curve.")
+        # 2. Verify coordinate change over time (proves animation exists)
+        bpy.context.scene.frame_set(1)
+        bpy.context.view_layer.update()
+        loc_start = cam.matrix_world.to_translation().copy()
 
-        # Check for animation data on the constraint (fixed path vs animated path)
-        has_anim = (cam.animation_data and cam.animation_data.action) or \
-                   (follow_path.target.animation_data and follow_path.target.animation_data.action)
+        bpy.context.scene.frame_set(config.TOTAL_FRAMES)
+        bpy.context.view_layer.update()
+        loc_end = cam.matrix_world.to_translation().copy()
 
-        print(f"DEBUG: Camera Path: {follow_path.target.name if follow_path.target else 'None'}")
-        self.assertTrue(has_anim, "ERROR: No animation data found for camera or its path.")
-
-        # Targeted Diagnostic: Check evaluation of offset
-        if follow_path and follow_path.use_fixed_location:
-            print(f"DEBUG: Fixed Position: {follow_path.offset_factor}")
-
-            # Check for keyframes on offset_factor
-            has_offset_keys = False
-            if cam.animation_data and cam.animation_data.action:
-                fcurves = get_action_curves(cam.animation_data.action, obj=cam)
-                fcurves = cam.animation_data.action.fcurves
-                has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
-                action = cam.animation_data.action
-
-                # Case 1: Legacy / Simple Actions
-                if hasattr(action, "fcurves"):
-                     has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in action.fcurves)
-
-                # Case 2: Blender 5 Slotted Actions (Utilizing style utility patterns)
-                if not has_offset_keys:
-                    try:
-                        # Check slots
-                        if hasattr(action, "slots"):
-                            from bpy_extras import anim_utils
-                            for slot in action.slots:
-                                # Use anim_utils to get channel bag
-                                try:
-                                    bag = anim_utils.action_get_channelbag_for_slot(action, slot)
-                                    if bag and hasattr(bag, "fcurves"):
-                                        if any(fc.data_path.endswith("offset_factor") for fc in bag.fcurves):
-                                            has_offset_keys = True
-                                            break
-                                except:
-                                    # Some slots might not have bags
-                                    continue
-                    except Exception as e:
-                        print(f"DEBUG: Slotted Action check failed: {e}")
-
-                # Case 3: If still not found, check the object's own fcurves if possible
-                if not has_offset_keys and hasattr(cam.animation_data, "action"):
-                     # Sometimes action.fcurves is what we want
-                     pass
-
-                self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
+        dist = (loc_end - loc_start).length
+        print(f"DEBUG: Camera traveled {dist:.2f}m over {config.TOTAL_FRAMES} frames.")
+        self.assertGreater(dist, 1.0, f"ERROR: Camera {cam.name} appears static (dist={dist:.2f}m)")
 
     def test_diagnostic_occlusion_and_sync(self):
         """Deep dive into raycast occlusion and coordinate sync issues."""

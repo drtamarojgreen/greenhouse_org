@@ -88,6 +88,7 @@ class SylvanEnsembleManager:
             if (obj.name in want or any(obj.name.startswith(w) for w in want)) and obj.name not in coll.objects:
                 try:
                     coll.objects.link(obj)
+                    obj["source_name"] = obj.name
                 except RuntimeError:
                     pass
 
@@ -114,6 +115,7 @@ class SylvanEnsembleManager:
                 if obj.name in want and obj.name not in coll.objects:
                     try:
                         coll.objects.link(obj)
+                        obj["source_name"] = obj.name
                     except RuntimeError:
                         pass
         else:
@@ -129,6 +131,7 @@ class SylvanEnsembleManager:
                     arm_data = bpy.data.armatures.new(rig_name)
                     rig_obj = bpy.data.objects.new(rig_name, arm_data)
                     coll.objects.link(rig_obj)
+                    rig_obj["source_name"] = rig_name
 
                 # Create Mock Mesh
                 mesh_obj = bpy.data.objects.get(mesh_name)
@@ -136,6 +139,7 @@ class SylvanEnsembleManager:
                     bpy.ops.mesh.primitive_cube_add(size=2, location=(0,0,1))
                     mesh_obj = bpy.context.active_object
                     mesh_obj.name = mesh_name
+                    mesh_obj["source_name"] = mesh_name
                     if mesh_name not in coll.objects:
                          coll.objects.link(mesh_obj)
 
@@ -183,41 +187,74 @@ class SylvanEnsembleManager:
         if not coll: return
 
         # 1. Process Assets explicitly from ensemble definitions
-        for src_mesh, art_name in self.ensemble.items():
+        for src_mesh_name, art_name in self.ensemble.items():
             is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
             sep = "_" if is_p else "."
             t_mesh_name = f"{art_name}{sep}Body"
             t_rig_name  = f"{art_name}{sep}Rig"
 
-            mesh = bpy.data.objects.get(t_mesh_name) or bpy.data.objects.get(src_mesh)
-            if not mesh: continue
+            # Handle shared source objects (e.g. "skeleton" used by multiple spirits)
+            mesh = bpy.data.objects.get(t_mesh_name)
+            if not mesh:
+                # Find by original name or source_name property
+                source_mesh = (bpy.data.objects.get(src_mesh_name) or
+                               next((o for o in coll.objects if o.get("source_name") == src_mesh_name), None))
 
+                if source_mesh:
+                    # If it's already been renamed, it's already 'claimed' by another spirit.
+                    # Duplicate it so this spirit gets its own mesh.
+                    if source_mesh.name != src_mesh_name:
+                         mesh = source_mesh.copy()
+                         if source_mesh.data: mesh.data = source_mesh.data.copy()
+                         coll.objects.link(mesh)
+                    else:
+                         mesh = source_mesh
+
+            if not mesh: continue
             mesh.name = t_mesh_name
 
-            src_rig = self.rig_map.get(art_name)
-            rig = (bpy.data.objects.get(t_rig_name) or
-                   (bpy.data.objects.get(src_rig) if src_rig else None) or
-                   mesh.find_armature())
+            # Resolve the Rig
+            src_rig_name = self.rig_map.get(art_name)
+            rig = bpy.data.objects.get(t_rig_name)
+            if not rig and src_rig_name:
+                source_rig = (bpy.data.objects.get(src_rig_name) or
+                              next((o for o in coll.objects if o.get("source_name") == src_rig_name), None))
+
+                if source_rig:
+                    if source_rig.name != src_rig_name:
+                        rig = source_rig.copy()
+                        if source_rig.data: rig.data = source_rig.data.copy()
+                        coll.objects.link(rig)
+                    else:
+                        rig = source_rig
+
+            if not rig:
+                rig = mesh.find_armature()
 
             if rig:
                 rig.name = t_rig_name
-                # Enforce clean hierarchy: Mesh as child of Rig with identity transforms
-                # This prevents the "distorting everything" double-transform bug
+                # Reset Rig transforms to prevent 'exploding' locations/scales
+                rig.location = (0, 0, 0)
+                rig.rotation_euler = (0, 0, 0)
+                rig.scale = (1, 1, 1)
+
                 if mesh != rig:
                     # Isolation: Unparent rogue children (cameras, empties) from the rig
                     for child in list(rig.children):
                         if child != mesh:
                             child.parent = None
 
-                    if mesh.parent != rig:
-                        mesh.parent = rig
-                        # Sync local origin to rig origin
-                        mesh.location = (0, 0, 0)
-                        mesh.rotation_euler = (0, 0, 0)
-                        mesh.scale = (1, 1, 1)
+                    mesh.parent = rig
+                    # Force local identity transforms for mesh to match rig space
+                    mesh.location = (0, 0, 0)
+                    mesh.rotation_euler = (0, 0, 0)
+                    mesh.scale = (1, 1, 1)
                 else:
-                    # If mesh is rig (Root_Guardian), ensure it has no parent
+                    # Root_Guardian case: Mesh IS the Rig
                     mesh.parent = None
+                    mesh.location = (0, 0, 0)
+                    mesh.rotation_euler = (0, 0, 0)
+                    mesh.scale = (1, 1, 1)
 
                 # Restore Armature modifier correctly
                 mesh.constraints.clear()
