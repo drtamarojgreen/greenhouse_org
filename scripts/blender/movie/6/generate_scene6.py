@@ -24,6 +24,10 @@ def force_majestic_height(rig, target_h):
     # Find the Mesh child
     mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
 
+    # Pre-reset scale if it is extreme to ensure stable height calculation
+    if rig.scale.x > 100 or rig.scale.x < 0.01:
+        rig.scale = (1, 1, 1)
+
     bpy.context.view_layer.update()
 
     if mesh and mesh.type == 'MESH':
@@ -44,8 +48,8 @@ def force_majestic_height(rig, target_h):
             z_vals = []
             for v in eval_mesh.vertices:
                 w_co_z = (eval_obj.matrix_world @ v.co).z
-                # Ignore vertices more than 20m from median (filters floating shards)
-                if abs(w_co_z - med_z) > 20.0:
+                # Ignore vertices more than 10m from median (filters floating shards)
+                if abs(w_co_z - med_z) > 10.0:
                     continue
 
                 if v.groups:

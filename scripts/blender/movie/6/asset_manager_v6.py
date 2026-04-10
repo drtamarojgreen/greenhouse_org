@@ -266,6 +266,10 @@ class SylvanEnsembleManager:
 
                 # Enforce Parent-Child Relationship (Rig is Parent)
                 if mesh != rig:
+                    # Clear legacy animation on Mesh to prevent spatial offset from Rig
+                    if mesh.animation_data:
+                        mesh.animation_data_clear()
+
                     # Isolation: Unparent rogue children from rig/mesh while keeping world transforms
                     # to avoid distortion if the parent was scaled.
                     for child in list(rig.children):
@@ -279,11 +283,11 @@ class SylvanEnsembleManager:
                         child.parent = None
                         child.matrix_world = mw
 
-                    if mesh.parent != rig:
-                        mesh.parent = rig
-                        mesh.location = (0, 0, 0)
-                        mesh.rotation_euler = (0, 0, 0)
-                        mesh.scale = (1, 1, 1)
+                    # Force Mesh to be at Rig's origin
+                    mesh.parent = rig
+                    mesh.location = (0, 0, 0)
+                    mesh.rotation_euler = (0, 0, 0)
+                    mesh.scale = (1, 1, 1)
 
                 # Reset Rig transforms ONLY if not yet normalized to identity at origin.
                 if not rig.get("normalized_height"):
