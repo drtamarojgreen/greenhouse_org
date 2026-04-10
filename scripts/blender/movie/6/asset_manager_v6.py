@@ -63,9 +63,6 @@ class SylvanEnsembleManager:
             bpy.context.scene.collection.children.link(coll)
 
         # Build the list of source object names we want:
-        #   - source mesh names (keys of SPIRIT_ENSEMBLE)
-        #   - source armature names (values of RIG_MAP_SRC)
-        #   - protagonist meshes and rigs
         src_mesh_names = list(self.ensemble.keys())
         src_rig_names  = list(self.rig_map.values())
         want = set(src_mesh_names + src_rig_names)
@@ -78,14 +75,10 @@ class SylvanEnsembleManager:
             available = set(data_from.objects)
             data_to.objects = [n for n in want if n in available]
 
-        missing = want - set(data_from.objects if hasattr(data_from, 'objects') else [])
-        if missing:
-            print(f"ASSET_MANAGER WARNING: These source objects were not found in blend: {missing}")
-
         # Link only the newly loaded objects into the asset collection
         # This prevents environmental objects (cameras, backdrops) from being swept into 6a.ASSETS
-        for obj in bpy.data.objects:
-            if (obj.name in want or any(obj.name.startswith(w) for w in want)) and obj.name not in coll.objects:
+        for obj in data_to.objects:
+            if obj and obj.name not in coll.objects:
                 try:
                     coll.objects.link(obj)
                 except RuntimeError:
@@ -110,8 +103,8 @@ class SylvanEnsembleManager:
                 available = set(data_from.objects)
                 data_to.objects = [n for n in want if n in available]
 
-            for obj in bpy.data.objects:
-                if obj.name in want and obj.name not in coll.objects:
+            for obj in data_to.objects:
+                if obj and obj.name not in coll.objects:
                     try:
                         coll.objects.link(obj)
                     except RuntimeError:
@@ -195,27 +188,18 @@ class SylvanEnsembleManager:
             if r_src in src_map: rename_map[src_map[r_src]] = r_src
 
         # 2. Map Ensemble
+        # Separate Mesh and Rig mapping to prioritize Mesh names (especially .Body)
         for src_mesh_name, art_name in self.ensemble.items():
-            sep = "."
-            t_mesh_name = f"{art_name}{sep}Body"
-            t_rig_name  = f"{art_name}{sep}Rig"
-
-            # Find Mesh
+            t_mesh_name = f"{art_name}.Body"
             mesh = src_map.get(t_mesh_name) or src_map.get(src_mesh_name)
             if mesh:
-                # Priority: Mesh name is art_name.Body
                 rename_map[mesh] = t_mesh_name
 
-                # Find Rig
-                src_rig_name = self.rig_map.get(art_name)
-                rig = (src_map.get(t_rig_name) or
-                       (src_map.get(src_rig_name) if src_rig_name else None) or
-                       mesh.find_armature())
-
-                if rig and rig != mesh:
-                    # Shared rigs: only rename if not already mapped to something else
-                    if rig not in rename_map:
-                        rename_map[rig] = t_rig_name
+        for art_name, src_rig_name in self.rig_map.items():
+            t_rig_name = f"{art_name}.Rig"
+            rig = src_map.get(t_rig_name) or src_map.get(src_rig_name)
+            if rig and rig not in rename_map:
+                rename_map[rig] = t_rig_name
 
         # Execute Renames (with temporary names to avoid collisions)
         for obj in rename_map.keys():
@@ -223,8 +207,10 @@ class SylvanEnsembleManager:
         for obj, final_name in rename_map.items():
             obj.name = final_name
 
-        # 3. Apply Sibling Protocol and Transform Sync
-        for _, art_name in self.ensemble.items():
+        # 3. Apply Sibling Protocol and Transform Sync to ALL assets (Ensemble + Protagonists)
+        all_art_names = list(self.ensemble.values()) + [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]
+
+        for art_name in all_art_names:
             is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
             sep = "_" if is_p else "."
             mesh = bpy.data.objects.get(f"{art_name}{sep}Body")
@@ -245,14 +231,34 @@ class SylvanEnsembleManager:
             if not mesh: continue
 
             if rig:
-                # Reset Rig scale to baseline and unparent
+                # 1. Isolation: Store world matrices and unparent EVERYTHING
+                # This prevents children (cameras, etc.) from being distorted by character normalization
+                # and ensures character siblings keep their current world position during unparenting.
+                r_wm = rig.matrix_world.copy()
+                m_wm = mesh.matrix_world.copy() if mesh != rig else r_wm
+
+                for child in list(rig.children):
+                    c_wm = child.matrix_world.copy()
+                    child.parent = None
+                    child.matrix_world = c_wm
+
+                if mesh and mesh != rig:
+                    for child in list(mesh.children):
+                        c_wm = child.matrix_world.copy()
+                        child.parent = None
+                        child.matrix_world = c_wm
+
+                # 2. Reset transforms to identity (baseline)
                 rig.parent = None
+                rig.matrix_world = r_wm # Keep rig where it was
+
+                # We reset rig local transforms to baseline but preserve its world position if it was already moved.
+                # Actually, for normalization, we want them at origin (0,0,0) before director moves them.
                 rig.location = (0, 0, 0)
                 rig.rotation_euler = (0, 0, 0)
                 rig.scale = (1, 1, 1)
 
                 if mesh != rig and mesh.type == 'MESH':
-                    # Sync Mesh to origin and unparent
                     mesh.parent = None
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)

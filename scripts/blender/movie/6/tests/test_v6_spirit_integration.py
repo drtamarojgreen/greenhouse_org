@@ -361,11 +361,24 @@ class TestV6SpiritIntegration(unittest.TestCase):
     def test_rendering_setup(self):
         """Verifies camera and backdrop are present for Scene 6."""
         self.assertIsNotNone(
-            bpy.data.cameras.get(config.CAMERA_NAME), "Camera missing"
+            bpy.data.cameras.get(config.CAMERA_NAME), f"Camera '{config.CAMERA_NAME}' missing"
         )
         self.assertIsNotNone(
-            bpy.data.objects.get(config.BACKDROP_NAME), "Backdrop missing"
+            bpy.data.objects.get(config.BACKDROP_NAME), f"Backdrop '{config.BACKDROP_NAME}' missing"
         )
+
+        # Deep audit of backdrops
+        for name in ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]:
+            obj = bpy.data.objects.get(name)
+            self.assertIsNotNone(obj, f"Backdrop {name} missing")
+            self.assertFalse(obj.hide_render, f"Backdrop {name} hidden in render")
+            self.assertGreater(obj.dimensions.x, 50, f"Backdrop {name} suspiciously small")
+
+            # Distance check: backdrops should be far from origin but reachable
+            dist = obj.location.length
+            print(f"BACKDROP AUDIT {name}: Loc={obj.location}, Dist={dist:.2f}m")
+            self.assertGreater(dist, 10, f"Backdrop {name} too close to characters")
+            self.assertLess(dist, 200, f"Backdrop {name} too far away")
 
     def test_background_visibility(self):
         """Check why backgrounds might not be displaying."""
