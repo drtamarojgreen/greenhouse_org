@@ -417,7 +417,11 @@ class TestV6SpiritIntegration(unittest.TestCase):
             print(f"DEBUG: Fixed Position: {follow_path.offset_factor}")
             # Check for keyframes on offset_factor
             if cam.animation_data and cam.animation_data.action:
+<<<<<<< HEAD
                 fcurves = get_action_curves(cam.animation_data.action, obj=cam)
+=======
+                fcurves = cam.animation_data.action.fcurves
+>>>>>>> db98ab9 (Updates to movie)
                 has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
                 self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
 
