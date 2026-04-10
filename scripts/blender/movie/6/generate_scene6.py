@@ -53,18 +53,16 @@ def force_majestic_height(rig, target_h):
         if 0.98 < factor < 1.02:
              return
 
-        # Apply to Mesh instead of Rig to avoid conflict with Director's rig animation
+        # Normalize Rig Scale. The Mesh sibling will correctly follow via its
+        # Armature modifier. Scaling both leads to double-scaling distortion.
+        rig.scale = tuple(s * factor for s in rig.scale)
+        rig["normalized_height"] = True
+
         if mesh and mesh != rig:
-             mesh.scale = tuple(s * factor for s in mesh.scale)
-             # Sibling sync: scale rig simultaneously
-             rig.scale = tuple(s * factor for s in rig.scale)
-             print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
              mesh["normalized_height"] = True
-             rig["normalized_height"] = True
+             print(f"ASSET_MANAGER: Normalized {rig.name} (factor {factor:.2f}, height {curr_h:.2f}m)")
         else:
-             rig.scale = tuple(s * factor for s in rig.scale)
              print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
-             rig["normalized_height"] = True
 
         bpy.context.view_layer.update()
 

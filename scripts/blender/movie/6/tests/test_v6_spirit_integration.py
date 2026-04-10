@@ -349,17 +349,36 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 bpy.data.objects.get(name), f"Camera '{name}' missing (naming regression)"
             )
 
-    def test_backdrop_naming_parity(self):
-        """Verifies that all v5 backdrop names are preserved."""
-        for name in ("ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"):
-            self.assertIsNotNone(
-                bpy.data.objects.get(name), f"Backdrop '{name}' missing (naming regression)"
-            )
+    def test_backdrop_integration(self):
+        """Verifies loading, visibility, and collection assignment of backdrops."""
+        print("\nVerifying Backdrop Integration...")
+        targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
+        coll_6b = bpy.data.collections.get("ENV.CHROMA.6b")
+        self.assertIsNotNone(coll_6b, "Collection 'ENV.CHROMA.6b' missing")
+
+        for name in targets:
+            obj = bpy.data.objects.get(name)
+            self.assertIsNotNone(obj, f"Backdrop '{name}' is MISSING")
+            self.assertIn(obj.name, coll_6b.objects, f"Backdrop '{name}' not in ENV.CHROMA.6b")
+            self.assertFalse(obj.hide_viewport, f"Backdrop '{name}' hidden in viewport")
+            self.assertFalse(obj.hide_render,   f"Backdrop '{name}' hidden in render")
+            print(f"BACKDROP OK: {name}")
+
+    def test_backdrop_spatial_placement(self):
+        """Ensures backdrops are correctly positioned relative to cameras."""
+        print("\nVerifying Backdrop Spatial Placement...")
+        # Backdrop should be far enough away not to clip with characters
+        wide_bg = bpy.data.objects.get("ChromaBackdrop_Wide")
+        if wide_bg:
+            loc = wide_bg.location
+            print(f"WIDE BACKDROP LOC: {loc}")
+            self.assertGreater(loc.y, 20, "Wide Backdrop too close to center (y < 20)")
+            self.assertLess(loc.y, 100, "Wide Backdrop too far away (y > 100)")
 
     def test_rendering_setup(self):
         """Verifies camera and backdrop are present for Scene 6."""
         self.assertIsNotNone(
-            bpy.data.cameras.get(config.CAMERA_NAME), "Camera missing"
+            bpy.data.objects.get(config.CAMERA_NAME), "Camera missing"
         )
         self.assertIsNotNone(
             bpy.data.objects.get(config.BACKDROP_NAME), "Backdrop missing"
@@ -382,7 +401,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
             self.assertGreaterEqual(clip_end, 1000, "WARNING: Camera clip_end might be too short to see backgrounds.")
 
         # 3. Check Object Render Visibility
-        bg_keywords = ["bg", "background", "environment", "sky"]
+        bg_keywords = ["bg", "background", "environment", "sky", "backdrop"]
         bg_found = False
         for obj in bpy.data.objects:
             if any(k in obj.name.lower() for k in bg_keywords):
