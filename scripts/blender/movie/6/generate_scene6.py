@@ -37,14 +37,26 @@ def force_majestic_height(rig, target_h):
 
 def standardize_ensemble_heights():
     """Ensures Sylvan spirits meet the 'Double Majesty' scale requirements."""
+    # Build list of valid art names from ensemble and protagonists
+    valid_names = set(config.SPIRIT_ENSEMBLE.values()) | set(config.PROTAGONIST_SOURCE.keys())
+
     for obj in bpy.data.objects:
-        if ".Rig" not in obj.name:
+        # Only process ARMATURE objects that match our ensemble naming pattern
+        if obj.type != 'ARMATURE' or (".Rig" not in obj.name and "_Rig" not in obj.name):
             continue
+
+        # Extract the base character name (e.g., "Sylvan_Majesty" from "Sylvan_Majesty.Rig")
+        base_name = obj.name.split('.')[0].split('_Rig')[0]
+        if base_name not in valid_names and obj.name.replace(".Rig", "").replace("_Rig", "") not in valid_names:
+             continue
+
         target = config.MAJESTIC_HEIGHT
         if "Sprite" in obj.name:
             target = config.SPRITE_HEIGHT
         if "Phoenix" in obj.name:
             target = config.PHEONIX_HEIGHT
+
+        print(f"ASSET_MANAGER: Normalizing height for {obj.name} to {target}m")
         force_majestic_height(obj, target)
 
 

@@ -102,11 +102,6 @@ class SylvanEnsembleManager:
         for art_name, p_data in config.PROTAGONIST_SOURCE.items():
             self._renormalize_single_character(p_data["mesh"], art_name, p_data["rig"])
 
-        # Restore full visibility (hidden objects cause render-safety confusion later)
-        for obj in bpy.data.objects:
-            obj.hide_render   = False
-            obj.hide_viewport = False
-
         # Root_Guardian is a technical helper — keep it invisible
         for obj in bpy.data.objects:
             if "Root_Guardian" in obj.name:
@@ -135,6 +130,11 @@ class SylvanEnsembleManager:
         if rig_obj:
             rig_obj.name  = f"{art_name}{sep}Rig"
             rig_obj.parent = None  # enforce sibling relationship
+
+            # Unparent children of the rig to avoid scaling issues
+            for child in list(rig_obj.children):
+                if child != mesh_obj:
+                    child.parent = None
 
             # Restore Armature modifier to ensure mesh follows rig
             if mesh_obj.type == 'MESH':
