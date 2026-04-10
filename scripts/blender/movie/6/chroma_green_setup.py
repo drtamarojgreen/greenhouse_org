@@ -50,7 +50,7 @@ def setup_chroma_green_backdrop():
     bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 50, 5))
     bw = bpy.context.active_object
     bw.name = "ChromaBackdrop_Wide"
-    cam_wide_loc = mathutils.Vector((0.0, -8.0, 2.0))
+    cam_wide_loc = mathutils.Vector((0.0, -18.0, 5.5))
     vec_wide = cam_wide_loc - mathutils.Vector((0, 50, 5))
     bw.rotation_euler = vec_wide.to_track_quat('Z', 'Y').to_euler()
     planes.append(bw)
@@ -59,7 +59,7 @@ def setup_chroma_green_backdrop():
     bpy.ops.mesh.primitive_plane_add(size=200, location=(-50, -20, 5))
     bo1 = bpy.context.active_object
     bo1.name = "ChromaBackdrop_OTS1"
-    cam_ots1_loc = mathutils.Vector((4.0, 3.0, 2.8))
+    cam_ots1_loc = mathutils.Vector((13.5, 11.0, 6.0))
     vec_o1 = cam_ots1_loc - mathutils.Vector((-50, -20, 5))
     bo1.rotation_euler = vec_o1.to_track_quat('Z', 'Y').to_euler()
     planes.append(bo1)
@@ -68,7 +68,7 @@ def setup_chroma_green_backdrop():
     bpy.ops.mesh.primitive_plane_add(size=200, location=(50, 20, 5))
     bo2 = bpy.context.active_object
     bo2.name = "ChromaBackdrop_OTS2"
-    cam_ots2_loc = mathutils.Vector((-4.0, -3.0, 2.8))
+    cam_ots2_loc = mathutils.Vector((-13.5, -11.0, 6.0))
     vec_o2 = cam_ots2_loc - mathutils.Vector((50, 20, 5))
     bo2.rotation_euler = vec_o2.to_track_quat('Z', 'Y').to_euler()
     planes.append(bo2)

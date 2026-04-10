@@ -202,7 +202,7 @@ class SylvanEnsembleManager:
                 rig.name = t_rig_name
                 # Enforce clean hierarchy: Mesh as child of Rig with identity transforms
                 # This prevents the "distorting everything" double-transform bug
-                if mesh.parent != rig:
+                if mesh != rig and mesh.parent != rig:
                     mesh.parent = rig
                     # Sync local origin to rig origin
                     mesh.location = (0, 0, 0)
@@ -220,43 +220,9 @@ class SylvanEnsembleManager:
 
             mesh.hide_render = mesh.hide_viewport = False
 
-        # 2. Targeted cleanup: root guardian is always hidden
+        # 2. Targeted cleanup: ensure all assets are visible (no-hidden guardian)
         for obj in coll.objects:
-            if "Root_Guardian" in obj.name:
-                obj.hide_render   = True
-                obj.hide_viewport = True
-        
-
-    def _renormalize_single_character(self, src_mesh, art_name, src_rig):
-        mesh_obj = bpy.data.objects.get(src_mesh)
-        if not mesh_obj:
-            print(f"ASSET_MANAGER WARNING: Source mesh '{src_mesh}' not found for '{art_name}'")
-            return
-
-        # Protagonists use underscore separator; spirits use dot
-        is_protagonist = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
-        sep = "_" if is_protagonist else "."
-        mesh_obj.name = f"{art_name}{sep}Body"
-
-        # Strip object-level parenting so mesh and rig are true siblings
-        mesh_obj.parent = None
-        if mesh_obj.type == 'MESH':
-            mesh_obj.modifiers.clear()
-
-        # Rename the corresponding rig (fall back to find_armature for legacy cases)
-        rig_obj = bpy.data.objects.get(src_rig) if src_rig else mesh_obj.find_armature()
-
-        if rig_obj:
-            rig_obj.name  = f"{art_name}{sep}Rig"
-            rig_obj.parent = None  # enforce sibling relationship
-
-            # Restore Armature modifier to ensure mesh follows rig
-            if mesh_obj.type == 'MESH':
-                arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = rig_obj
-        else:
-            print(f"ASSET_MANAGER INFO: No rig found for '{art_name}' — skipping rig rename")
-                obj.hide_render = obj.hide_viewport = True
+            obj.hide_render = obj.hide_viewport = False
 
     # ------------------------------------------------------------------
     # MATERIAL REPAIR

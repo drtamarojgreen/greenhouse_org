@@ -102,8 +102,9 @@ class SylvanDirector:
 
     def compose_ensemble(self):
         """Algorithmically positions ensemble members in a cinematic fan."""
+        # Include characters with .Rig suffix OR characters that ARE armatures (Root_Guardian)
         spirits = sorted(
-            [o for o in bpy.data.objects if ".Rig" in o.name],
+            [o for o in bpy.data.objects if ".Rig" in o.name or (o.type == 'ARMATURE' and "Body" in o.name)],
             key=lambda o: o.name,
         )
         num = len(spirits)
