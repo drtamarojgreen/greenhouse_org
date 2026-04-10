@@ -251,7 +251,7 @@ class SylvanEnsembleManager:
                 rig.rotation_euler = (0, 0, 0)
                 rig.scale = (1, 1, 1)
 
-                if mesh != rig:
+                if mesh != rig and mesh.type == 'MESH':
                     # Sync Mesh to origin and unparent
                     mesh.parent = None
                     mesh.location = (0, 0, 0)
@@ -262,7 +262,9 @@ class SylvanEnsembleManager:
                     arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
                     if not arm_mod:
                         arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
-                    arm_mod.object = rig
+
+                    if arm_mod:
+                        arm_mod.object = rig
 
                 rig.hide_render = rig.hide_viewport = False
 
