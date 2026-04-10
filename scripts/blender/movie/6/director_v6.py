@@ -102,9 +102,15 @@ class SylvanDirector:
 
     def compose_ensemble(self):
         """Algorithmically positions ensemble members in a cinematic fan."""
+        coll = bpy.data.collections.get("6a.ASSETS")
+        if not coll:
+            print("DIRECTOR: No 6a.ASSETS collection found — skipping ensemble composition.")
+            return
+
         # Include characters with .Rig suffix OR characters that ARE armatures (Root_Guardian)
+        # Strictly scope to the asset collection to protect environment (cameras/backdrops)
         spirits = sorted(
-            [o for o in bpy.data.objects if ".Rig" in o.name or (o.type == 'ARMATURE' and "Body" in o.name)],
+            [o for o in coll.objects if ".Rig" in o.name or (o.type == 'ARMATURE' and "Body" in o.name)],
             key=lambda o: o.name,
         )
         num = len(spirits)

@@ -428,6 +428,23 @@ class TestV6SpiritIntegration(unittest.TestCase):
         # If either is missing, it suggests the pipeline hasn't been merged into the master scene
         self.assertTrue(has_6a or has_6b, "ERROR: Neither 6/a nor 6/b pipeline markers found in collections.")
 
+    def test_scoping_integrity(self):
+        """Verifies that 6a.ASSETS contains only character assets, not cameras/backdrops."""
+        coll = bpy.data.collections.get("6a.ASSETS")
+        self.assertIsNotNone(coll, "6a.ASSETS collection missing")
+
+        for obj in coll.objects:
+            # Ensure no cameras or backdrops are in the character asset collection
+            self.assertFalse(obj.type == 'CAMERA', f"Scoping Violation: Camera {obj.name} found in asset collection.")
+            self.assertFalse("Backdrop" in obj.name, f"Scoping Violation: Backdrop {obj.name} found in asset collection.")
+
+            # Ensure it's a character mesh, rig, or protagonist
+            is_valid = (".Body" in obj.name or ".Rig" in obj.name or
+                        "Herbaceous" in obj.name or "Arbor" in obj.name or
+                        obj.name in config.SPIRIT_ENSEMBLE.keys() or
+                        obj.name in config.RIG_MAP_SRC.values())
+            self.assertTrue(is_valid, f"Scoping Violation: Non-asset object {obj.name} found in 6a.ASSETS")
+
     def test_camera_curve_animation(self):
         """Verify Blender 5 camera curve animation logic."""
         print("\nVerifying Camera Curve Animation...")
