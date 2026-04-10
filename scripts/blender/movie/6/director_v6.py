@@ -148,20 +148,7 @@ class SylvanDirector:
                 obj.location.z = 1.5
                 obj.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
 
-                # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
-                # Scale keyframes are relative to the normalized base scale
-                # Movie 6: ONLY scale the Rig to prevent double-transform distortion on Mesh
-                if obj == rig:
-                    base_s = obj.scale.copy()
-
-                    obj.scale = base_s
-                    obj.keyframe_insert(data_path="scale", frame=1)
-
-                    obj.scale = base_s * 1.05
-                    obj.keyframe_insert(data_path="scale", frame=2)
-
-                    obj.scale = base_s * 1.02
-                    obj.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
+                # Growth dynamics DISABLED: characters stay at imported/baseline scale.
 
     # ------------------------------------------------------------------
     # PROTAGONIST PLACEMENT

@@ -167,8 +167,8 @@ def generate_full_scene_v6():
         scene_logic = DialogueSceneV6(characters, [])
         scene_logic.setup_scene(use_fbx=use_fbx)
 
-        # 3. Height normalization (apply scale before cinematic keyframing)
-        standardize_ensemble_heights()
+        # 3. Height normalization (DISABLED by user request)
+        # standardize_ensemble_heights()
 
         # 4. Cinematic direction
         director.position_protagonists()

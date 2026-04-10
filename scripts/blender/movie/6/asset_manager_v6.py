@@ -259,15 +259,16 @@ class SylvanEnsembleManager:
                     mesh.matrix_world = m_wm
 
                 # 2. Reset transforms to baseline identity at origin
+                # NOTE: Scale reset is DISABLED to preserve imported asset scales as requested.
                 rig.parent = None
                 rig.location = (0, 0, 0)
                 rig.rotation_euler = (0, 0, 0)
-                rig.scale = (1, 1, 1)
+                # rig.scale = (1, 1, 1)
 
                 if mesh and mesh != rig and mesh.type == 'MESH':
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                    # mesh.scale = (1, 1, 1)
 
                     # Restore Armature modifier
                     arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)

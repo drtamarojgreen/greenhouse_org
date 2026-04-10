@@ -321,7 +321,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
                   f"{height:<8.2f} | {parent:<15} | {up_vec.z:.2f}")
         print("=" * 95 + "\n")
 
-    def test_feet_to_head_height(self):
+    def test_character_uprightness(self):
+        """Verifies that characters are upright (normalization disabled)."""
         spirits = []
         for name in config.SPIRIT_ENSEMBLE.values():
              obj = bpy.data.objects.get(name + ".Body") or bpy.data.objects.get(name + ".Rig")
@@ -332,15 +333,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
             if not obj:
                 continue
 
-            bbox   = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-            z_vals = [b.z for b in bbox]
-            height = max(z_vals) - min(z_vals)
-
-            target_h = 6.0 if ("Leafy" in name or "Joy" in name) else 5.5
-            self.assertGreater(height, target_h * 0.9, f"{name} too short ({height:.2f}m)")
-            self.assertLess(height,    target_h * 1.1, f"{name} too tall ({height:.2f}m)")
-
             up_vec = obj.matrix_world.to_quaternion() @ mathutils.Vector((0, 0, 1))
+            print(f"UPRIGHT AUDIT {name}: Up.z={up_vec.z:.2f}")
             self.assertGreater(up_vec.z, 0.9, f"{name} not upright (Up.z={up_vec.z:.2f})")
 
     def test_raycast_visibility(self):
@@ -431,7 +425,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
             obj = bpy.data.objects.get(name)
             self.assertIsNotNone(obj, f"Backdrop {name} missing")
             self.assertFalse(obj.hide_render, f"Backdrop {name} hidden in render")
-            self.assertGreater(obj.dimensions.x, 50, f"Backdrop {name} suspiciously small")
+            # Backdrop size increased to 1000
+            self.assertGreater(obj.dimensions.x, 500, f"Backdrop {name} suspiciously small")
 
             # Distance check: backdrops should be far from origin but reachable
             dist = obj.location.length
@@ -579,9 +574,13 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def test_camera_backdrop_audit_table(self):
         """Reports a detailed table of cameras and backdrops status."""
-        print("\n" + "=" * 115)
-        print(f"{'NAME':<25} | {'TYPE':<8} | {'POSITION':<20} | {'ROTATION':<20} | {'SIZE/DIM':<15} | {'SCALE':<8} | {'VISIBLE'}")
-        print("-" * 115)
+        print("\n" + "=" * 135)
+        print(f"{'NAME':<25} | {'TYPE':<8} | {'POSITION':<20} | {'ROTATION':<20} | {'SIZE/DIM':<15} | {'SCALE':<8} | {'CAM DIFF VECTOR':<25} | {'VISIBLE'}")
+        print("-" * 135)
+
+        # 0. Active Camera Loc
+        cam_active = bpy.context.scene.camera
+        ca_loc = cam_active.location if cam_active else mathutils.Vector((0,0,0))
 
         # 1. Cameras
         for name in ["WIDE", "OTS1", "OTS2", "OTS_Static_1", "OTS_Static_2"]:
@@ -592,11 +591,13 @@ class TestV6SpiritIntegration(unittest.TestCase):
             rot = [round(math.degrees(a), 1) for a in obj.rotation_euler]
             scale = obj.scale[0] # assuming uniform
 
+            diff = loc - ca_loc
             print(f"{name:<25} | {'CAM':<8} | "
                   f"{f'({loc.x:.1f},{loc.y:.1f},{loc.z:.1f})':<20} | "
                   f"{f'({rot[0]},{rot[1]},{rot[2]})':<20} | "
                   f"{'-':<15} | "
                   f"{scale:<8.2f} | "
+                  f"{f'({diff.x:.1f},{diff.y:.1f},{diff.z:.1f})':<25} | "
                   f"{not obj.hide_render}")
 
         # 2. Backdrops
@@ -609,14 +610,16 @@ class TestV6SpiritIntegration(unittest.TestCase):
             dim = obj.dimensions
             scale = obj.scale[0]
 
+            diff = loc - ca_loc
             print(f"{name:<25} | {'ENV':<8} | "
                   f"{f'({loc.x:.1f},{loc.y:.1f},{loc.z:.1f})':<20} | "
                   f"{f'({rot[0]},{rot[1]},{rot[2]})':<20} | "
                   f"{f'{dim.x:.1f}x{dim.y:.1f}':<15} | "
                   f"{scale:<8.2f} | "
+                  f"{f'({diff.x:.1f},{diff.y:.1f},{diff.z:.1f})':<25} | "
                   f"{not obj.hide_render}")
 
-        print("=" * 115 + "\n")
+        print("=" * 135 + "\n")
 
     def test_diagnostic_occlusion_and_sync(self):
         """Deep dive into raycast occlusion and coordinate sync issues."""
