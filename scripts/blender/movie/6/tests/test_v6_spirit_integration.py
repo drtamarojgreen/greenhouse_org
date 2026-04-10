@@ -206,13 +206,16 @@ class TestV6SpiritIntegration(unittest.TestCase):
             loc = obj.matrix_world.to_translation()
             print(f"VISIBILITY {name}: Loc={loc}, Hidden={obj.hide_render}")
 
+            rig = obj.find_armature() or (obj if obj.type == 'ARMATURE' else None)
+            self.assertIsNotNone(rig, f"{name} missing armature connection")
+
             # Protagonists should be at their set positions, not origin
             if any(p in name for p in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]):
                  # We check that they are moved from (0,0,1) mock origin
                  self.assertGreater(loc.xy.length, 0.5, f"{name} stayed at origin! (Loc: {loc})")
-
-            rig = obj.find_armature() or (obj if obj.type == 'ARMATURE' else None)
-            self.assertIsNotNone(rig, f"{name} missing armature connection")
+                 # Ensure rig moved too
+                 rig_loc = rig.matrix_world.to_translation()
+                 self.assertGreater(rig_loc.xy.length, 0.5, f"Rig for {name} stayed at origin! (Loc: {rig_loc})")
 
     def test_vertex_outliers(self):
         for name in [config.CHAR_HERBACEOUS + "_Body", config.CHAR_LEAFY_MESH]:
@@ -244,28 +247,32 @@ class TestV6SpiritIntegration(unittest.TestCase):
         targets  = [config.CHAR_HERBACEOUS + "_Body", config.CHAR_ARBOR + "_Body"]
         targets += [name + ".Body" for name in config.SPIRIT_ENSEMBLE.values()]
 
-        print("\n" + "=" * 95)
-        print(f"{'OBJECT':<25} | {'RIG':<15} | {'LOC (Y)':<8} | {'HEIGHT':<8} | {'PARENT':<15} | {'UP.Z'}")
-        print("-" * 95)
+        # Include Root_Guardian explicitly
+        if "Root_Guardian.Body" not in targets: targets.append("Root_Guardian.Body")
+
+        print("\n" + "=" * 115)
+        print(f"{'OBJECT':<25} | {'RIG':<15} | {'LOC (Y)':<8} | {'RIG LOC (Y)':<12} | {'HEIGHT':<8} | {'PARENT':<15} | {'UP.Z'}")
+        print("-" * 115)
 
         for name in targets:
             obj = bpy.data.objects.get(name)
             if not obj:
                 continue
 
-            rig      = obj.find_armature()
+            rig      = obj.find_armature() or (obj if obj.type == 'ARMATURE' else None)
             rig_name = rig.name if rig else "NONE"
             parent   = obj.parent.name if obj.parent else "NONE"
             loc      = obj.matrix_world.to_translation()
+            rig_loc_y = rig.matrix_world.to_translation().y if rig else 0.0
 
             bbox    = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
             z_vals  = [b.z for b in bbox]
             height  = max(z_vals) - min(z_vals)
 
             up_vec = obj.matrix_world.to_quaternion() @ mathutils.Vector((0, 0, 1))
-            print(f"{name:<25} | {rig_name:<15} | {loc.y:<8.2f} | "
+            print(f"{name:<25} | {rig_name:<15} | {loc.y:<8.2f} | {rig_loc_y:<12.2f} | "
                   f"{height:<8.2f} | {parent:<15} | {up_vec.z:.2f}")
-        print("=" * 95 + "\n")
+        print("=" * 115 + "\n")
 
     def test_feet_to_head_height(self):
         spirits = [name + ".Body" for name in config.SPIRIT_ENSEMBLE.values()]
