@@ -26,10 +26,30 @@ def force_majestic_height(rig, target_h):
     bpy.context.view_layer.update()
 
     if mesh and mesh.type == 'MESH':
-        # Use Mesh bounding box for more accurate height calculation
-        bbox = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
-        z_vals = [v.z for v in bbox]
-        curr_h = max(z_vals) - min(z_vals)
+        # Use evaluated mesh with shard filtering for accurate height
+        dg = bpy.context.evaluated_depsgraph_get()
+        eval_obj = mesh.evaluated_get(dg)
+        eval_mesh = eval_obj.data
+
+        # Filter vertices by weight to exclude low-influence "shards"
+        # We consider vertices with a total weight > 0.1 as part of the core mesh
+        z_vals = []
+        for v in eval_mesh.vertices:
+            if not v.groups:
+                 z_vals.append((eval_obj.matrix_world @ v.co).z)
+                 continue
+
+            total_w = sum(g.weight for g in v.groups)
+            if total_w > 0.1:
+                z_vals.append((eval_obj.matrix_world @ v.co).z)
+
+        if z_vals:
+            curr_h = max(z_vals) - min(z_vals)
+        else:
+            # Fallback to bound box if all vertices filtered
+            bbox = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
+            z_vals_bbox = [v.z for v in bbox]
+            curr_h = max(z_vals_bbox) - min(z_vals_bbox)
     else:
         # Fallback to bone-based height if no mesh found or if mesh is same as rig
         head = get_bone(rig, "Head") or get_bone(rig, "Neck") or get_bone(rig, "top")
@@ -168,13 +188,13 @@ def generate_full_scene_v6():
         scene_logic = DialogueSceneV6(characters, [])
         scene_logic.setup_scene(use_fbx=use_fbx)
 
-        # 3. Cinematic direction
+        # 3. Height normalization (apply scale BEFORE keyframing in compose_ensemble)
+        standardize_ensemble_heights()
+
+        # 4. Cinematic direction
         director.position_protagonists()
         director.compose_ensemble()
         director.setup_cinematics()
-
-        # 4. Height normalization (apply scale before keyframing or adjust)
-        standardize_ensemble_heights()
 
         # Final view layer update to sync all transforms
         bpy.context.view_layer.update()

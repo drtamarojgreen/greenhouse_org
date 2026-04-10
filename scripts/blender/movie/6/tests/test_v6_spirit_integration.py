@@ -192,6 +192,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
         targets  = [config.CHAR_HERBACEOUS + "_Body", config.CHAR_ARBOR + "_Body"]
         targets += [name + ".Body" for name in config.SPIRIT_ENSEMBLE.values()]
 
+        # Add Root_Guardian explicitly as it might have a dot or underscore depending on previous runs
+        if "Root_Guardian.Body" not in targets: targets.append("Root_Guardian.Body")
+
         # Ensure we are at a frame where characters have been positioned
         bpy.context.scene.frame_set(1)
 
@@ -297,6 +300,10 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
         # Added protagonists to targets
         targets = [config.CHAR_LEAFY_MESH, config.CHAR_JOY_MESH, config.CHAR_LEAFCHAR_MESH]
+
+        # Ensure we are on a frame where they are positioned in front of backdrops
+        scene.frame_set(1)
+        bpy.context.view_layer.update()
 
         for name in targets:
             obj = bpy.data.objects.get(name)
