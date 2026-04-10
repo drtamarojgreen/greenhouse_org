@@ -22,7 +22,7 @@
                 56: (ctx, w, h) => {
                     const x1 = w * 0.4, y1 = h * 0.3, x2 = w * 0.5, y2 = h * 0.5, color = '#4da6ff';
                     utils().drawArrowLine(ctx, x1, y1, x2, y2, color, t('cog_label_topdown_reg'));
-                    ctx.fillStyle = '#ff4d4d';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.beginPath(); ctx.arc(x2, y2, 20, 0, Math.PI * 2); ctx.fill();
                     const time = Date.now() * 0.005;
                     ctx.strokeStyle = color;
@@ -32,9 +32,9 @@
                     ctx.fillStyle = '#fff';
                     ctx.fillText('Regulated State', x2 - 40, y2 + 40);
                 },
-                57: (ctx, w, h) => utils().drawPulse(ctx, w * 0.5, h * 0.45, '#00ffcc', t('cog_label_acc_awareness'), 30, 0.5),
+                57: (ctx, w, h) => utils().drawPulse(ctx, w * 0.5, h * 0.45, '#D0D0D0', t('cog_label_acc_awareness'), 30, 0.5),
                 58: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.4, color = '#ffff00';
+                    const x = w * 0.5, y = h * 0.4, color = '#FFFFFF';
                     ctx.strokeStyle = 'rgba(255,255,255,0.2)';
                     ctx.beginPath(); ctx.ellipse(x, y + 20, 60, 80, 0, 0, Math.PI * 2); ctx.stroke();
                     ctx.strokeStyle = '#fff';
@@ -50,7 +50,7 @@
                     ctx.fillText(t('cog_label_dbs_stimulation'), x + 15, y);
                 },
                 59: (ctx, w, h) => {
-                    const x = w * 0.4, y = h * 0.35, color = '#39ff14';
+                    const x = w * 0.4, y = h * 0.35, color = '#FFFFFF';
                     ctx.strokeStyle = color; ctx.lineWidth = 3;
                     ctx.beginPath(); ctx.arc(x - 20, y, 25, 0, Math.PI * 2); ctx.stroke();
                     ctx.beginPath(); ctx.arc(x + 20, y, 25, 0, Math.PI * 2); ctx.stroke();
@@ -62,7 +62,7 @@
                     ctx.fillText(t('cog_label_tms_modulation'), x - 50, y + 80);
                 },
                 60: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.5, color = '#ff4d4d';
+                    const x = w * 0.5, y = h * 0.5, color = '#E0E0E0';
                     const time = Date.now() * 0.001;
                     const amp = 40 * Math.exp(-time % 5);
                     ctx.strokeStyle = color;
@@ -76,18 +76,18 @@
                 },
                 61: (ctx, w, h) => utils().drawWaves(ctx, w * 0.5, h * 0.5, '#4da6ff', t('cog_label_eeg_states')),
                 62: (ctx, w, h) => {
-                    ctx.strokeStyle = '#ffff00'; ctx.strokeRect(w * 0.35 - 20, h * 0.35 - 20, 40, 40);
-                    ctx.fillStyle = '#ffff00'; ctx.fillText(t('cog_label_exec_stimulation'), w * 0.35 - 50, h * 0.35 + 40);
+                    ctx.strokeStyle = '#FFFFFF'; ctx.strokeRect(w * 0.35 - 20, h * 0.35 - 20, 40, 40);
+                    ctx.fillStyle = '#FFFFFF'; ctx.fillText(t('cog_label_exec_stimulation'), w * 0.35 - 50, h * 0.35 + 40);
                 },
                 63: (ctx, w, h) => {
                     const time = Date.now() * 0.005;
                     const bx = w * 0.5 + Math.sin(time) * 100;
-                    ctx.fillStyle = '#ff9900';
+                    ctx.fillStyle = '#D0D0D0';
                     ctx.beginPath(); ctx.arc(bx, h * 0.5, 10, 0, Math.PI * 2); ctx.fill();
                     ctx.fillText(t('cog_label_bilateral_stim'), w * 0.5 - 50, h * 0.5 + 40);
                 },
                 64: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.6, color = '#00ff00';
+                    const x = w * 0.5, y = h * 0.6, color = '#E0E0E0';
                     const time = Date.now() * 0.002;
                     ctx.fillStyle = color;
                     for (let i = 0; i < 8; i++) {
@@ -108,9 +108,9 @@
                     ctx.globalAlpha = 1.0; ctx.fillStyle = color;
                     ctx.fillText(t('cog_label_glymphatic_clearance'), x - 70, y + 70);
                 },
-                66: (ctx, w, h) => utils().drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', t('cog_label_mirror_social'), 30, 0.5),
+                66: (ctx, w, h) => utils().drawPulse(ctx, w * 0.6, h * 0.5, '#FFFFFF', t('cog_label_mirror_social'), 30, 0.5),
                 67: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.5, color = '#4fd1c5';
+                    const x = w * 0.5, y = h * 0.5, color = '#A0AEC0';
                     ctx.strokeStyle = color; ctx.beginPath();
                     for (let i = 0; i < 6; i++) {
                         const angle = (i / 6) * Math.PI * 2;
@@ -120,14 +120,14 @@
                     ctx.fillText(t('cog_label_flexibility_hub'), x - 60, y + 70);
                 },
                 68: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.5, color = '#ff9900';
+                    const x = w * 0.5, y = h * 0.5, color = '#D0D0D0';
                     ctx.strokeStyle = color; ctx.beginPath();
                     ctx.moveTo(x - 50, y + 20); ctx.lineTo(x + 50, y - 20);
                     ctx.stroke(); ctx.fillStyle = color;
                     ctx.fillText(t('cog_label_dialectics'), x - 60, y + 50);
                 },
                 69: (ctx, w, h) => {
-                    const colors = ['#ff4d4d', '#4fd1c5', '#ffff00', '#ff00ff'];
+                    const colors = ['#E0E0E0', '#A0AEC0', '#FFFFFF', '#FFFFFF'];
                     colors.forEach((c, i) => {
                         ctx.fillStyle = c; ctx.globalAlpha = 0.5; ctx.beginPath();
                         ctx.arc(w * 0.5 - 30 + i * 20, h * 0.5 + Math.sin(Date.now() * 0.01 + i) * 20, 15, 0, Math.PI * 2);
@@ -136,13 +136,13 @@
                     ctx.globalAlpha = 1.0; ctx.fillStyle = '#fff';
                     ctx.fillText(t('cog_label_art_expression'), w * 0.5 - 80, h * 0.5 + 60);
                 },
-                70: (ctx, w, h) => utils().drawSoundWaves(ctx, w * 0.5, h * 0.5, '#ff00ff', t('cog_label_multi_resonance')),
+                70: (ctx, w, h) => utils().drawSoundWaves(ctx, w * 0.5, h * 0.5, '#FFFFFF', t('cog_label_multi_resonance')),
                 71: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.5, color = '#ffff00';
+                    const x = w * 0.5, y = h * 0.5, color = '#FFFFFF';
                     const th = Math.sin(Date.now() * 0.01) * 20 + 40;
                     const bh = Math.sin(Date.now() * 0.015) * 10 + 20;
-                    ctx.fillStyle = '#ff4d4d'; ctx.fillRect(x - 40, y - th, 30, th);
-                    ctx.fillStyle = '#4fd1c5'; ctx.fillRect(x + 10, y - bh, 30, bh);
+                    ctx.fillStyle = '#E0E0E0'; ctx.fillRect(x - 40, y - th, 30, th);
+                    ctx.fillStyle = '#A0AEC0'; ctx.fillRect(x + 10, y - bh, 30, bh);
                     ctx.fillStyle = '#fff'; ctx.font = '10px Arial';
                     ctx.fillText('Theta', x - 40, y + 15); ctx.fillText('Beta', x + 10, y + 15);
                     ctx.fillStyle = color; ctx.font = '12px Arial';
@@ -155,16 +155,16 @@
                     for (let i = 0; i < 10; i++) {
                         ctx.beginPath(); ctx.moveTo(x - 120 + i * 24, y - 70); ctx.lineTo(x - 120 + i * 24, y + 70); ctx.stroke();
                     }
-                    ctx.fillStyle = '#ff4d4d'; ctx.font = 'bold 12px Courier New';
+                    ctx.fillStyle = '#E0E0E0'; ctx.font = 'bold 12px Courier New';
                     ctx.fillText(t('cog_label_vr_phobia'), x - 100, y - 40);
                     ctx.fillStyle = '#4da6ff'; ctx.fillText(t('cog_label_vr_amygdala'), x - 100, y + 40);
-                    ctx.strokeStyle = '#39ff14'; ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI * 2); ctx.stroke();
+                    ctx.strokeStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI * 2); ctx.stroke();
                 },
                 73: (ctx, w, h) => {
                     const x = w * 0.5, y = h * 0.7;
                     const time = Date.now() * 0.001;
                     const scale = 1 + Math.sin(time) * 0.2;
-                    ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2; ctx.beginPath();
+                    ctx.strokeStyle = '#D0D0D0'; ctx.lineWidth = 2; ctx.beginPath();
                     ctx.moveTo(x, y); ctx.bezierCurveTo(x - 50, y - 100, x + 50, y - 200, x, y - 300); ctx.stroke();
                     ctx.fillStyle = '#fff'; ctx.fillText(scale > 1 ? t('cog_label_vagus_inhale') : t('cog_label_vagus_exhale'), x + 20, y - 150);
                 },
@@ -174,12 +174,12 @@
                     ctx.fillStyle = color; ctx.font = 'italic 10px Arial';
                     ctx.fillText('OLD SCHEMA', x + 5, y + 20);
                     ctx.beginPath(); ctx.moveTo(x + 5, y + 25); ctx.lineTo(x + 75, y + 25); ctx.stroke();
-                    ctx.fillStyle = '#4fd1c5'; ctx.font = 'bold 11px Arial';
+                    ctx.fillStyle = '#A0AEC0'; ctx.font = 'bold 11px Arial';
                     ctx.fillText('NEW NARRATIVE', x + 5, y + 60);
                     ctx.fillText(t('cog_label_reauthoring_schema'), x - 40, y + 120);
                 },
                 75: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.8, color = '#00ffff';
+                    const x = w * 0.5, y = h * 0.8, color = '#D0D0D0';
                     ctx.strokeStyle = color; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 150); ctx.stroke();
                     const time = Date.now() * 0.02;
                     const py = y - (time % 150);
@@ -203,7 +203,7 @@
                 },
                 78: (ctx, w, h) => {
                     const x = w * 0.35, y = h * 0.35;
-                    ctx.fillStyle = '#4fd1c5'; ctx.font = 'italic 12px Arial';
+                    ctx.fillStyle = '#A0AEC0'; ctx.font = 'italic 12px Arial';
                     ctx.fillText('"I want to change..."', x, y);
                     ctx.font = '12px Arial'; ctx.fillText(t('cog_label_change_talk'), x - 50, y + 30);
                 },
@@ -216,7 +216,7 @@
                 },
                 80: (ctx, w, h) => {
                     const x = w * 0.5, y = h * 0.6;
-                    ctx.fillStyle = '#ffff00';
+                    ctx.fillStyle = '#FFFFFF';
                     const time = Date.now() * 0.01;
                     ctx.beginPath(); ctx.arc(x + Math.cos(time) * 30, y + Math.sin(time) * 30, 10, 0, Math.PI * 2); ctx.fill();
                     ctx.fillText(t('cog_label_play_reward'), x - 90, y + 60);

@@ -21,14 +21,14 @@
                 enableZoom: true,
                 enableRotate: true,
                 autoRotate: true,
-                autoRotateSpeed: 0.0002,
+                autoRotateSpeed: 0.001, // Standardized for accessibility
                 panSpeed: 0.002,
                 zoomSpeed: 0.1,
                 rotateSpeed: 0.005,
                 inertia: true,
                 inertiaDamping: 0.95,
-                minZoom: -50,
-                maxZoom: -2000
+                minZoom: -150,
+                maxZoom: -1200 // Tightened to prevent model from moving off-screen
             }
         },
 
@@ -43,6 +43,24 @@
 
         // Lighting Configuration
         lighting: {
+            preset: 'clinical', // 'clinical', 'lab', 'presentation'
+            presets: {
+                clinical: {
+                    ambient: { intensity: 0.2, color: { r: 255, g: 255, b: 255 } },
+                    directional: { intensity: 1.0, direction: { x: 0.5, y: -0.5, z: 1 }, color: { r: 255, g: 255, b: 255 } },
+                    exposure: 1.0
+                },
+                lab: {
+                    ambient: { intensity: 0.1, color: { r: 200, g: 220, b: 255 } },
+                    directional: { intensity: 1.5, direction: { x: -0.5, y: -1, z: 0.5 }, color: { r: 255, g: 245, b: 230 } },
+                    exposure: 1.2
+                },
+                presentation: {
+                    ambient: { intensity: 0.4, color: { r: 255, g: 255, b: 255 } },
+                    directional: { intensity: 0.8, direction: { x: 0, y: 0, z: 1 }, color: { r: 255, g: 255, b: 255 } },
+                    exposure: 1.1
+                }
+            },
             ambient: {
                 enabled: true,
                 intensity: 0.3,
@@ -70,7 +88,7 @@
         // Material Configuration
         materials: {
             brain: {
-                baseColor: { r: 100, g: 100, b: 100 },
+                baseColor: { r: 160, g: 174, b: 192 },
                 alpha: 0.1,
                 metallic: 0.2,
                 roughness: 0.6,
@@ -78,7 +96,7 @@
                 sssIntensity: 0.3
             },
             neuron: {
-                baseColors: ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE'],
+                baseColors: ['#E0E0E0', '#D0D0D0', '#A0AEC0', '#C0C0C0', '#B0B0B0'],
                 alpha: 0.9,
                 metallic: 0.4,
                 roughness: 0.3,
@@ -86,7 +104,7 @@
                 emissiveIntensity: 0.2
             },
             synapse: {
-                baseColor: { r: 255, g: 100, b: 150 },
+                baseColor: { r: 224, g: 224, b: 224 },
                 alpha: 0.7,
                 metallic: 0.3,
                 roughness: 0.4,
@@ -94,7 +112,7 @@
                 glowIntensity: 0.3
             },
             connection: {
-                baseColor: { r: 100, g: 200, b: 255 },
+                baseColor: { r: 160, g: 174, b: 192 },
                 alpha: 0.6,
                 metallic: 0.1,
                 roughness: 0.5
@@ -113,6 +131,26 @@
 
         // Visual Effects Configuration
         effects: {
+            ssao: {
+                enabled: true,
+                intensity: 0.4,
+                radius: 10
+            },
+            shadows: {
+                enabled: true,
+                quality: 'medium', // 'low', 'medium', 'high'
+                opacity: 0.3
+            },
+            taa: {
+                enabled: true,
+                jitterScale: 0.5
+            },
+            dof: {
+                enabled: false,
+                focusDepth: 0.5,
+                aperture: 0.1,
+                maxBlur: 3
+            },
             depthFog: {
                 enabled: true,
                 start: 0.7,
@@ -124,15 +162,6 @@
                 threshold: 0.8,
                 intensity: 0.5,
                 radius: 2
-            },
-            motionBlur: {
-                enabled: false,
-                samples: 5,
-                intensity: 0.3
-            },
-            antialiasing: {
-                enabled: true,
-                samples: 4
             }
         },
 
@@ -143,7 +172,7 @@
             height: 250,
             padding: 20,
             position: 'bottom-right', // 'top-left', 'top-right', 'bottom-left', 'bottom-right'
-            borderColor: '#4ca1af',
+            borderColor: '#A0AEC0',
             borderWidth: 2,
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
             animationDuration: 300, // ms
@@ -154,36 +183,36 @@
             }
         },
 
-        // Brain Regions Configuration
+        // Brain Regions Configuration - Anatomically correct monochromatic hierarchy
         regions: {
             pfc: {
                 name: 'Prefrontal Cortex',
-                color: 'rgba(100, 150, 255, 0.6)',
+                color: 'rgba(224, 224, 224, 0.6)', // Lightest (Frontal/Executive)
                 position: { x: 0, y: -100, z: 150 }
             },
             parietalLobe: {
                 name: 'Parietal Lobe',
-                color: 'rgba(150, 100, 255, 0.6)',
+                color: 'rgba(200, 200, 200, 0.5)', // Neutral Mid
                 position: { x: 0, y: -50, z: 0 }
             },
             occipitalLobe: {
                 name: 'Occipital Lobe',
-                color: 'rgba(255, 100, 150, 0.6)',
+                color: 'rgba(140, 140, 140, 0.6)', // Darker (Posterior/Sensory)
                 position: { x: 0, y: 0, z: -150 }
             },
             temporalLobe: {
                 name: 'Temporal Lobe',
-                color: 'rgba(100, 255, 150, 0.6)',
+                color: 'rgba(180, 180, 180, 0.5)', // Mid-Gray
                 position: { x: 100, y: 50, z: 0 }
             },
             cerebellum: {
                 name: 'Cerebellum',
-                color: 'rgba(255, 150, 100, 0.6)',
+                color: 'rgba(120, 120, 120, 0.7)', // Distinct Dark (Complex Folds)
                 position: { x: 0, y: 150, z: -100 }
             },
             brainstem: {
                 name: 'Brainstem',
-                color: 'rgba(150, 255, 100, 0.6)',
+                color: 'rgba(100, 100, 100, 0.8)', // Darkest (Deep/Vital)
                 position: { x: 0, y: 200, z: 0 }
             }
         },
@@ -198,7 +227,14 @@
             labelFont: '10px Arial',
             labelColor: 'rgba(255, 255, 255, 0.3)',
             controlsPosition: 'top-right',
-            theme: 'dark' // 'dark' or 'light'
+            theme: 'dark', // 'dark' or 'light'
+            background: 'neutral', // 'neutral', 'dark', 'white', 'grid'
+            backgrounds: {
+                neutral: { top: '#1a1a1a', bottom: '#0d0d0d' },
+                dark: { top: '#050505', bottom: '#000000' },
+                white: { top: '#ffffff', bottom: '#f0f0f0' },
+                grid: { top: '#111', bottom: '#111', showGrid: true }
+            }
         },
 
         // Performance Configuration

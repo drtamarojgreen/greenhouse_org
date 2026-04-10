@@ -217,7 +217,7 @@
             glassToggle.onclick = () => {
                 this.options.glassBrain = !this.options.glassBrain;
                 glassToggle.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? t('cog_ui_on') : t('cog_ui_off')}`;
-                glassToggle.style.borderColor = this.options.glassBrain ? '#4fd1c5' : '#4a5568';
+                glassToggle.style.borderColor = this.options.glassBrain ? '#A0AEC0' : '#4a5568';
             };
 
             const resetCamera = document.createElement('button');
@@ -240,7 +240,7 @@
             langBtn.id = 'cognition-lang-toggle';
             langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
             langBtn.style.cssText = `
-                background: #4fd1c5; color: white; border: none; padding: 5px 12px;
+                background: #A0AEC0; color: white; border: none; padding: 5px 12px;
                 border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
                 width: auto !important; max-width: fit-content;
             `;
@@ -260,7 +260,7 @@
                 overflow-x: auto;
                 padding-bottom: 8px;
                 scrollbar-width: thin;
-                scrollbar-color: #4fd1c5 #1a202c;
+                scrollbar-color: #A0AEC0 #1a202c;
             `;
 
             const renderList = () => {
@@ -287,7 +287,7 @@
                         padding: 6px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap;
                         font-size: 12px; transition: all 0.2s;
                     `;
-                    if (this.activeEnhancement === enh) btn.style.borderColor = '#4fd1c5';
+                    if (this.activeEnhancement === enh) btn.style.borderColor = '#A0AEC0';
                     btn.onmouseover = () => { btn.style.background = '#2d3748'; };
                     btn.onmouseout = () => { btn.style.background = '#1a202c'; };
                     btn.onclick = () => {
@@ -296,7 +296,7 @@
                         this.updateInfoPanel();
                         this.zoomToRegion(enh.region);
                         Array.from(listContainer.children).forEach(b => b.style.borderColor = '#4a5568');
-                        btn.style.borderColor = '#4fd1c5';
+                        btn.style.borderColor = '#A0AEC0';
                     };
                     listContainer.appendChild(btn);
                 });
@@ -330,11 +330,11 @@
             const region = this.config.regions[this.activeRegion] || {};
             this.infoPanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <h3 style="color: #4fd1c5; margin-top: 0;">${t(enh.name)}</h3>
+                    <h3 style="color: #A0AEC0; margin-top: 0;">${t(enh.name)}</h3>
                     <span style="font-size: 10px; background: #2d3748; padding: 2px 6px; border-radius: 10px; color: #ccc;">${t(enh.category)}</span>
                 </div>
                 <p style="margin: 5px 0 15px 0; color: #ddd;">${t(enh.description)}</p>
-                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px; border-left: 3px solid ${region.color || '#4fd1c5'}">
+                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px; border-left: 3px solid ${region.color || '#A0AEC0'}">
                     <strong style="color: ${region.color || '#fff'}">${t(region.name) || 'Region'}:</strong> ${t(region.description) || ''}
                 </div>
             `;
@@ -413,7 +413,7 @@
 
             Array.from(listContainer.children).forEach(btn => {
                 if (btn.textContent === t(this.activeEnhancement?.name)) {
-                    btn.style.borderColor = '#4fd1c5';
+                    btn.style.borderColor = '#A0AEC0';
                     btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 } else {
                     btn.style.borderColor = '#4a5568';
@@ -425,7 +425,7 @@
             const region = this.config.regions[regionId];
             if (!region) return;
             this.infoPanel.innerHTML = `
-                <h3 style="color: ${region.color || '#4fd1c5'}; margin-top: 0;">${t(region.name)}</h3>
+                <h3 style="color: ${region.color || '#A0AEC0'}; margin-top: 0;">${t(region.name)}</h3>
                 <p>${t(region.description)}</p>
                 <p style="font-size: 11px; color: #888;">${t('cog_ui_no_enhancement')}</p>
             `;

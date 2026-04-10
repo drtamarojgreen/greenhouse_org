@@ -750,7 +750,7 @@
             ctx.fillStyle = '#fff'; ctx.font = 'bold 24px Quicksand, sans-serif'; // Increased size (Enhancement #97)
             ctx.fillText('NEUROINFLAMMATION ENGINE', l.title.x, l.title.y);
 
-            ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 14px Quicksand, sans-serif'; // Increased size
+            ctx.fillStyle = '#A0AEC0'; ctx.font = 'bold 14px Quicksand, sans-serif'; // Increased size
             const modes = ['btn_mode_macro', 'btn_mode_micro', 'btn_mode_molecular', 'PATHWAY'];
             const modeName = state.factors.viewMode === 3 ? 'PATHWAY' : t(modes[state.factors.viewMode || 0]);
             ctx.fillText(`${modeName} LEVEL: IMMUNE RESPONSE`, l.subtitle.x, l.subtitle.y);
@@ -760,12 +760,12 @@
             const m = state.metrics;
             const allMetrics = [
                 { id: 'tnfAlpha', l: 'TNF-α TONE', v: (m.tnfAlpha * 100).toFixed(1) + '%', rv: m.tnfAlpha.toFixed(3), c: '#ff5533' },
-                { id: 'il10', l: 'IL-10 RESERVE', v: (m.il10 * 100).toFixed(1) + '%', rv: m.il10.toFixed(3), c: '#00ff99' },
+                { id: 'il10', l: 'IL-10 RESERVE', v: (m.il10 * 100).toFixed(1) + '%', rv: m.il10.toFixed(3), c: '#D0D0D0' },
                 { id: 'neuroprotection', l: 'NEUROPROTECTION', v: (m.neuroprotection * 100).toFixed(1) + '%', rv: m.neuroprotection.toFixed(3), c: '#ffff66' },
-                { id: 'stressBurden', l: 'STRESS BURDEN', v: (m.stressBurden * 100).toFixed(1) + '%', rv: m.stressBurden.toFixed(3), c: '#ff9900' },
-                { id: 'bbbIntegrity', l: 'BBB INTEGRITY', v: (m.bbbIntegrity * 100).toFixed(1) + '%', rv: m.bbbIntegrity.toFixed(3), c: '#64d2ff' },
+                { id: 'stressBurden', l: 'STRESS BURDEN', v: (m.stressBurden * 100).toFixed(1) + '%', rv: m.stressBurden.toFixed(3), c: '#D0D0D0' },
+                { id: 'bbbIntegrity', l: 'BBB INTEGRITY', v: (m.bbbIntegrity * 100).toFixed(1) + '%', rv: m.bbbIntegrity.toFixed(3), c: '#D0D0D0' },
                 { id: 'microgliaActivation', l: 'GLIA ACTIVATION', v: (m.microgliaActivation * 100).toFixed(1) + '%', rv: m.microgliaActivation.toFixed(3), c: '#ff4444' },
-                { id: 'nfkbActivation', l: 'NF-κB STATE', v: (m.nfkbActivation * 100).toFixed(1) + '%', rv: m.nfkbActivation.toFixed(3), c: '#ffcc00' },
+                { id: 'nfkbActivation', l: 'NF-κB STATE', v: (m.nfkbActivation * 100).toFixed(1) + '%', rv: m.nfkbActivation.toFixed(3), c: '#E0E0E0' },
                 { id: 'nlrp3State', l: 'NLRP3 INFLAM.', v: (m.nlrp3State * 100).toFixed(1) + '%', rv: m.nlrp3State.toFixed(3), c: '#ff3300' }
             ];
 
@@ -788,7 +788,7 @@
                 // Trend Arrow (Item 22)
                 const vel = this.ui.metricVelocity[ml.id] || 0;
                 if (Math.abs(vel) > 0.0001) {
-                    ctx.fillStyle = vel > 0 ? '#ff5533' : '#00ff99';
+                    ctx.fillStyle = vel > 0 ? '#ff5533' : '#D0D0D0';
                     ctx.beginPath();
                     if (vel > 0) { ctx.moveTo(bx + 90, by + 10); ctx.lineTo(bx + 95, by + 15); ctx.lineTo(bx + 85, by + 15); }
                     else { ctx.moveTo(bx + 90, by + 15); ctx.lineTo(bx + 95, by + 10); ctx.lineTo(bx + 85, by + 10); }
@@ -839,7 +839,7 @@
                     ctx.save();
                     ctx.fillStyle = 'rgba(5, 5, 15, 0.95)';
                     ctx.fillRect(openCat.x, openCat.y + 25, panelW, panelH);
-                    ctx.strokeStyle = '#4ca1af';
+                    ctx.strokeStyle = '#A0AEC0';
                     ctx.lineWidth = 2;
                     ctx.strokeRect(openCat.x, openCat.y + 25, panelW, panelH);
                     ctx.restore();
@@ -904,7 +904,7 @@
             ctx.save();
             ctx.fillStyle = cb.impact > 0 ? 'rgba(255, 50, 50, 0.2)' : 'rgba(50, 255, 150, 0.2)';
             ctx.fillRect(this.canvas.width / 2 - 100, this.canvas.height - 150, 200, 30);
-            ctx.strokeStyle = cb.impact > 0 ? '#ff3300' : '#00ff99';
+            ctx.strokeStyle = cb.impact > 0 ? '#ff3300' : '#D0D0D0';
             ctx.strokeRect(this.canvas.width / 2 - 100, this.canvas.height - 150, 200, 30);
 
             ctx.fillStyle = '#fff';
@@ -935,7 +935,7 @@
         drawFooterPagination(ctx, x, y, total) {
             const pages = Math.ceil(total / this.ui.metricsPerPage);
             for (let i = 0; i < pages; i++) {
-                ctx.fillStyle = this.ui.footerPage === i ? '#4ca1af' : 'rgba(255,255,255,0.2)';
+                ctx.fillStyle = this.ui.footerPage === i ? '#A0AEC0' : 'rgba(255,255,255,0.2)';
                 ctx.beginPath();
                 ctx.arc(x + i * 15, y, 4, 0, Math.PI * 2);
                 ctx.fill();
@@ -958,7 +958,7 @@
             ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)';
             ctx.strokeRect(w - 250, 100, 230, 80);
 
-            ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 10px Quicksand';
+            ctx.fillStyle = '#A0AEC0'; ctx.font = 'bold 10px Quicksand';
             ctx.fillText('CLINICAL STATUS STRIP', w - 240, 115);
 
             // Item 33: Stress Load
@@ -966,7 +966,7 @@
             if (stressSync !== null) {
                 ctx.fillText(`STRESS LOAD (SYNC): ${stressSync.toFixed(2)}`, w - 240, 132);
             } else {
-                ctx.fillStyle = '#ff9900';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.fillText('STRESS BRIDGE: UNAVAILABLE (DEF: 0.20)', w - 240, 132); // Item 34
             }
 
@@ -1005,7 +1005,7 @@
 
             // Item 29: Warning Badge
             if (state.metrics.tnfAlpha > 0.6 && state.metrics.bbbIntegrity < 0.6) {
-                ctx.fillStyle = '#ff0000';
+                ctx.fillStyle = '#E0E0E0';
                 this.roundRect(ctx, x, y - 30, bw, 25, 5, true);
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Quicksand';
                 ctx.textAlign = 'center';
@@ -1027,7 +1027,7 @@
             ctx.save();
             ctx.fillStyle = 'rgba(0, 0, 10, 0.95)';
             ctx.fillRect(100, 100, 400, 150);
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.strokeRect(100, 100, 400, 150);
 
             ctx.fillStyle = '#fff'; ctx.font = 'bold 10px monospace';

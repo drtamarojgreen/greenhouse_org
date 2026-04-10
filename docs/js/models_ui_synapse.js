@@ -69,7 +69,7 @@
                 // Determine Y based on channel type or id if needed, but here we place them on the membrane
                 const y = preSynapticY;
 
-                ctx.fillStyle = channel.state === 'open' ? '#4CAF50' : '#F44336';
+                ctx.fillStyle = channel.state === 'open' ? '#E0E0E0' : '#A0AEC0';
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 1;
 
@@ -100,7 +100,7 @@
                  const cx = w / 2 + k.x;
                  const cy = postSynapticY + k.y; // Relative to post-synaptic area start
 
-                 ctx.fillStyle = k.active ? '#FFeb3b' : '#9c27b0';
+                 ctx.fillStyle = k.active ? '#FFFFFF' : '#A0AEC0';
                  ctx.beginPath();
                  // Pac-man shape
                  ctx.arc(cx, cy, 5, 0.2 * Math.PI, 1.8 * Math.PI);
@@ -127,7 +127,7 @@
             const postSynapticY = h / 2 + 80;
 
             ctx.save();
-            ctx.strokeStyle = this.state.darkMode ? '#00bcd4' : '#0097a7';
+            ctx.strokeStyle = this.state.darkMode ? '#A0AEC0' : '#0097a7';
             ctx.lineWidth = 2;
 
             rnaList.forEach(rna => {
@@ -274,7 +274,7 @@
                         receptor.boundUntil = Date.now() + 200;
                     }
                 } else {
-                    ctx.fillStyle = `rgba(0, 123, 255, ${p.opacity})`;
+                    ctx.fillStyle = `rgba(224, 224, 224, ${p.opacity})`;
 
                     // Enhancement #7: Neurotransmitter Shapes
                     // Render distinct shapes to mimic different molecular structures

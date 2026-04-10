@@ -1,19 +1,13 @@
-/**
- * Unit Tests for Genetic Page
- */
+(function() {
+    const { assert } = window;
+    const TestFramework = window.TestFramework;
 
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+    TestFramework.describe('Genetic Page', () => {
 
-// --- Test Suites ---
+        TestFramework.it('should define GreenhouseGenetic and core objects', () => {
+            assert.isDefined(window.GreenhouseGenetic);
+            assert.isDefined(window.GreenhouseGeneticUI3D);
+        });
 
-TestFramework.describe('Genetic Page', () => {
-
-    TestFramework.it('should load genetic.js and report resources', () => {
-        assert.isTrue(true);
     });
-
-});
-
-// Run the tests
-TestFramework.run();
+})();

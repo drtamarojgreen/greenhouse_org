@@ -112,7 +112,7 @@
 
                 // Show current scenario on right side
                 const scenario = G.lastInteraction && G.lastInteraction.type === 'parameter' ? G.lastInteraction.name : 'Active Scenario';
-                ctx.fillStyle = '#ff4d4d';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.font = '10px Arial';
                 ctx.fillText(scenario, (w / 4) * 3, 45);
 
@@ -172,7 +172,7 @@
 
             // Comparison View Data (Category 10, #97)
             if (G.comparisonMode) {
-                ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
+                ctx.fillStyle = 'rgba(224, 224, 224, 0.1)';
                 ctx.fillRect(0, 0, w/2, h);
                 ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
                 ctx.fillRect(w/2, 0, w/2, h);
@@ -193,7 +193,7 @@
                         const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
                         const p = project(l.x, l.y, l.z, cam, { width: w, height: h, near: 10, far: 5000 });
                         if (p.scale > 0) {
-                            ctx.fillStyle = '#00ffcc';
+                            ctx.fillStyle = '#D0D0D0';
                             ctx.fillRect(p.x - 10, p.y - 10, 20, 20);
                         }
                     }
@@ -213,7 +213,7 @@
             ctx.fillRect(startX - 5, startY - 60, graphW + 10, 110);
 
             // Cleft Concentration Graph
-            ctx.strokeStyle = '#00ffcc';
+            ctx.strokeStyle = '#D0D0D0';
             ctx.lineWidth = 2;
             ctx.beginPath();
             this.history.cleftConcentration.forEach((val, i) => {
@@ -229,7 +229,7 @@
 
             // Occupancy Graph
             const occY = startY + 40;
-            ctx.strokeStyle = '#ff9900';
+            ctx.strokeStyle = '#E0E0E0';
             ctx.beginPath();
             this.history.receptorOccupancy.forEach((val, i) => {
                 const x = startX + (i / this.maxHistory) * graphW;
@@ -245,7 +245,7 @@
             const drY = startY - 100;
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fillRect(drX - 5, drY - graphH - 10, graphW + 10, graphH + 20);
-            ctx.strokeStyle = '#ff00ff';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.beginPath();
             const sortedData = [...this.history.ec50Data].sort((a,b) => a.conc - b.conc);
             sortedData.forEach((d, i) => {

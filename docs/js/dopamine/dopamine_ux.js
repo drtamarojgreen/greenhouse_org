@@ -48,8 +48,8 @@
         }
 
         modal.innerHTML = `
-            <div style="background: #1a202c; border: 2px solid #4fd1c5; border-radius: 15px; padding: 30px; max-width: 600px; color: #fff; box-shadow: 0 0 30px rgba(79, 209, 197, 0.3); font-family: sans-serif;">
-                <h2 style="color: #4fd1c5; margin-top: 0; text-align: center;">Welcome to the Dopamine Signaling Complex</h2>
+            <div style="background: #1a202c; border: 2px solid #A0AEC0; border-radius: 15px; padding: 30px; max-width: 600px; color: #fff; box-shadow: 0 0 30px rgba(79, 209, 197, 0.3); font-family: sans-serif;">
+                <h2 style="color: #A0AEC0; margin-top: 0; text-align: center;">Welcome to the Dopamine Signaling Complex</h2>
                 <p style="font-size: 14px; line-height: 1.6; color: #cbd5e0;">
                     You are exploring a high-fidelity simulation of dopamine signaling in the striatum, featuring <b>100 scientific enhancements</b> covering molecular pathways, synaptic dynamics, and circuit-level interactions.
                 </p>
@@ -57,17 +57,17 @@
                 <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 20px 0;">
                     <h3 style="font-size: 16px; margin-top: 0; color: #fff;">Quick Visual Guide:</h3>
                     <ul style="font-size: 13px; color: #a0aec0; padding-left: 20px;">
-                        <li><b style="color: #ff4d4d;">Red/Blue Spheres:</b> D1 and D2 Receptors with dynamic IL3/C-tail modeling.</li>
-                        <li><b style="color: #8B4513;">Brown Neurons:</b> Striosome compartments (Patch neurons).</li>
-                        <li><b style="color: #00ffff;">Cyan Lattice:</b> Striatal Matrix environment.</li>
-                        <li><b style="color: #00ff00;">Green Glow:</b> Extracellular Dopamine flux (Volume Transmission).</li>
+                        <li><b style="color: #E0E0E0;">Red/Blue Spheres:</b> D1 and D2 Receptors with dynamic IL3/C-tail modeling.</li>
+                        <li><b style="color: #A0AEC0;">Brown Neurons:</b> Striosome compartments (Patch neurons).</li>
+                        <li><b style="color: #D0D0D0;">Cyan Lattice:</b> Striatal Matrix environment.</li>
+                        <li><b style="color: #E0E0E0;">Green Glow:</b> Extracellular Dopamine flux (Volume Transmission).</li>
                     </ul>
                 </div>
                 <p style="font-size: 13px; color: #718096; font-style: italic;">
                     Use the <b>Scientific Report</b> button to track all 100 enhancements and view real-time analytic charts.
                 </p>
                 <div style="display: flex; justify-content: center; margin-top: 20px;">
-                    <button id="close-welcome" style="background: #4fd1c5; color: #1a202c; border: none; padding: 10px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: transform 0.2s;">ENTER SIMULATION</button>
+                    <button id="close-welcome" style="background: #A0AEC0; color: #1a202c; border: none; padding: 10px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: transform 0.2s;">ENTER SIMULATION</button>
                 </div>
             </div>
         `;

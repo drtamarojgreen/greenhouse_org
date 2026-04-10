@@ -19,42 +19,42 @@
 
         setupMappings() {
             this.theoryMappings = {
-                7: (ctx, w, h) => utils().drawPulse(ctx, w * 0.35, h * 0.35, '#4fd1c5', t('cog_label_exec_control')),
+                7: (ctx, w, h) => utils().drawPulse(ctx, w * 0.35, h * 0.35, '#A0AEC0', t('cog_label_exec_control')),
                 8: (ctx, w, h) => utils().drawReciprocalLoop(ctx, w * 0.4, h * 0.4, w * 0.6, h * 0.4, '#4da6ff', t('cog_label_pfc_parietal')),
-                9: (ctx, w, h) => utils().drawRewardCircuit(ctx, w * 0.5, h * 0.5, '#ffff00', t('cog_label_mesolimbic')),
+                9: (ctx, w, h) => utils().drawRewardCircuit(ctx, w * 0.5, h * 0.5, '#FFFFFF', t('cog_label_mesolimbic')),
                 10: (ctx, w, h) => {
-                    utils().drawActivationWave(ctx, w * 0.6, h * 0.5, '#ff00ff');
-                    ctx.fillStyle = '#ff00ff';
+                    utils().drawActivationWave(ctx, w * 0.6, h * 0.5, '#FFFFFF');
+                    ctx.fillStyle = '#FFFFFF';
                     ctx.fillText(t('cog_label_social_inference'), 20, 110);
                 },
-                11: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#ff9900', t('cog_label_salience')),
-                12: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#ff4d4d', t('cog_label_dmn_active')),
+                11: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#D0D0D0', t('cog_label_salience')),
+                12: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#E0E0E0', t('cog_label_dmn_active')),
                 13: (ctx, w, h) => {
-                    utils().drawActivationWave(ctx, w * 0.4, h * 0.3, '#39ff14');
-                    ctx.fillStyle = '#39ff14';
+                    utils().drawActivationWave(ctx, w * 0.4, h * 0.3, '#FFFFFF');
+                    ctx.fillStyle = '#FFFFFF';
                     ctx.fillText(t('cog_label_premotor'), 20, 110);
                 },
-                14: (ctx, w, h) => utils().drawPulse(ctx, w * 0.45, h * 0.4, '#ff0000', t('cog_label_ern')),
+                14: (ctx, w, h) => utils().drawPulse(ctx, w * 0.45, h * 0.4, '#E0E0E0', t('cog_label_ern')),
                 15: (ctx, w, h) => utils().drawReciprocalLoop(ctx, w * 0.35, h * 0.45, w * 0.5, h * 0.6, '#ffffff', t('cog_label_vmpfc_amygdala')),
                 16: (ctx, w, h) => {
-                    ctx.strokeStyle = '#ff0000';
-                    utils().drawArrowLine(ctx, w * 0.5, h * 0.5, w * 0.6, h * 0.6, '#ff0000', t('cog_label_threat_path'));
+                    ctx.strokeStyle = '#E0E0E0';
+                    utils().drawArrowLine(ctx, w * 0.5, h * 0.5, w * 0.6, h * 0.6, '#E0E0E0', t('cog_label_threat_path'));
                 },
                 17: (ctx, w, h) => utils().drawPulse(ctx, w * 0.35, h * 0.45, '#4da6ff', t('cog_label_broca')),
                 18: (ctx, w, h) => utils().drawPulse(ctx, w * 0.6, h * 0.55, '#4da6ff', t('cog_label_wernicke')),
                 19: (ctx, w, h) => {
-                    utils().drawArrowLine(ctx, w * 0.7, h * 0.5, w * 0.6, h * 0.3, '#ff00ff'); // Dorsal
-                    ctx.fillStyle = '#ff00ff';
+                    utils().drawArrowLine(ctx, w * 0.7, h * 0.5, w * 0.6, h * 0.3, '#FFFFFF'); // Dorsal
+                    ctx.fillStyle = '#FFFFFF';
                     ctx.fillText(t('cog_label_dorsal'), w * 0.72, h * 0.45);
-                    utils().drawArrowLine(ctx, w * 0.7, h * 0.5, w * 0.6, h * 0.7, '#00ffff'); // Ventral
-                    ctx.fillStyle = '#00ffff';
+                    utils().drawArrowLine(ctx, w * 0.7, h * 0.5, w * 0.6, h * 0.7, '#D0D0D0'); // Ventral
+                    ctx.fillStyle = '#D0D0D0';
                     ctx.fillText(t('cog_label_ventral'), w * 0.72, h * 0.55);
                 },
-                20: (ctx, w, h) => utils().drawGridOverlay(ctx, w * 0.65, h * 0.65, '#4fd1c5', t('cog_label_ffa')),
-                21: (ctx, w, h) => utils().drawPulse(ctx, w * 0.5, h * 0.6, '#4fd1c5', t('cog_label_hippocampal')),
-                22: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#00ffff', t('cog_label_basal_cerebellum')),
+                20: (ctx, w, h) => utils().drawGridOverlay(ctx, w * 0.65, h * 0.65, '#A0AEC0', t('cog_label_ffa')),
+                21: (ctx, w, h) => utils().drawPulse(ctx, w * 0.5, h * 0.6, '#A0AEC0', t('cog_label_hippocampal')),
+                22: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#D0D0D0', t('cog_label_basal_cerebellum')),
                 23: (ctx, w, h) => {
-                    ctx.strokeStyle = '#ffff00';
+                    ctx.strokeStyle = '#FFFFFF';
                     ctx.beginPath();
                     ctx.moveTo(w * 0.5 - 40, h * 0.4 - 20);
                     ctx.lineTo(w * 0.5 + 40, h * 0.4 - 20);
@@ -65,7 +65,7 @@
                     ctx.lineTo(w * 0.5 + 40, h * 0.4 + 20);
                     ctx.stroke();
                     ctx.setLineDash([]);
-                    ctx.fillStyle = '#ffff00';
+                    ctx.fillStyle = '#FFFFFF';
                     ctx.fillText(t('cog_label_trn_filter'), w * 0.5 - 70, h * 0.4 + 50);
                 },
                 24: (ctx, w, h) => {
@@ -79,7 +79,7 @@
                     ctx.fillStyle = '#4da6ff';
                     ctx.fillText(t('cog_label_parietal_spatial'), w * 0.6 - 60, h * 0.4 + 50);
                 },
-                25: (ctx, w, h) => utils().drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', t('cog_label_ips_numerical')),
+                25: (ctx, w, h) => utils().drawGridOverlay(ctx, w * 0.6, h * 0.3, '#FFFFFF', t('cog_label_ips_numerical')),
                 26: (ctx, w, h) => {
                     ctx.strokeStyle = '#4da6ff';
                     for (let i = 0; i < 3; i++) {
@@ -92,7 +92,7 @@
                 },
                 27: (ctx, w, h) => {
                     const x1 = w * 0.45, y1 = h * 0.7, x2 = w * 0.55, y2 = h * 0.6;
-                    ctx.strokeStyle = '#00ff00';
+                    ctx.strokeStyle = '#E0E0E0';
                     ctx.lineWidth = 3;
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
@@ -103,36 +103,36 @@
                     ctx.beginPath();
                     ctx.arc(x1 + (x2-x1)*progress, y1 + (y2-y1)*progress, 4, 0, Math.PI*2);
                     ctx.fill();
-                    ctx.fillStyle = '#00ff00';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.fillText(t('cog_label_olfactory_link'), x1 - 50, y1 + 30);
                 },
                 28: (ctx, w, h) => {
                     const x = w * 0.35, y = h * 0.5;
-                    ctx.strokeStyle = '#ff9900';
+                    ctx.strokeStyle = '#D0D0D0';
                     ctx.beginPath();
                     ctx.moveTo(x, y); ctx.lineTo(x + 30, y - 30);
                     ctx.moveTo(x, y); ctx.lineTo(x + 30, y + 30);
                     ctx.stroke();
-                    ctx.fillStyle = '#ff9900';
+                    ctx.fillStyle = '#D0D0D0';
                     ctx.fillText(t('cog_label_valuation_ofc'), x - 60, y + 60);
                 },
                 29: (ctx, w, h) => {
                     const x = w * 0.4, y = h * 0.4;
-                    ctx.strokeStyle = '#ff4d4d';
+                    ctx.strokeStyle = '#E0E0E0';
                     ctx.lineWidth = 4;
                     ctx.beginPath();
                     ctx.moveTo(x - 15, y - 15); ctx.lineTo(x + 15, y + 15);
                     ctx.moveTo(x + 15, y - 15); ctx.lineTo(x - 15, y + 15);
                     ctx.stroke();
-                    ctx.fillStyle = '#ff4d4d';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.fillText(t('cog_label_inhibitory_rifg'), x - 60, y + 40);
                 },
                 30: (ctx, w, h) => {
                     const x = w * 0.35, y = h * 0.35;
-                    ctx.strokeStyle = '#ff9900';
+                    ctx.strokeStyle = '#D0D0D0';
                     ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI, false); ctx.stroke();
                     ctx.beginPath(); ctx.arc(x, y + 10, 15, Math.PI, 0, false); ctx.stroke();
-                    ctx.fillStyle = '#ff9900';
+                    ctx.fillStyle = '#D0D0D0';
                     ctx.fillText(t('cog_label_task_switching'), x + 25, y + 5);
                 }
             };
@@ -150,7 +150,7 @@
                     ctx.fillText(`${t('cog_ui_journal')}: Nature Neuroscience`, 50, 140);
                     ctx.fillText(`${t('cog_ui_title')}: "Neural correlates of executive control"`, 50, 155);
                     ctx.fillText(`${t('cog_ui_doi')}: 10.1038/nn.2024.15`, 50, 170);
-                    ctx.fillStyle = '#4fd1c5';
+                    ctx.fillStyle = '#A0AEC0';
                     ctx.fillText(t('cog_ui_download_cit'), 50, 200);
                 },
                 127: (ctx, w, h) => {
@@ -159,7 +159,7 @@
                     for (let i = 0; i < 3; i++) {
                         ctx.beginPath();
                         ctx.arc(60, 135 + i * 30, 8, 0, Math.PI * 2);
-                        ctx.fillStyle = '#4fd1c5';
+                        ctx.fillStyle = '#A0AEC0';
                         ctx.fill();
                         ctx.fillStyle = '#fff';
                         ctx.fillText(t('cog_ui_phd_verified'), 75, 140 + i * 30);
@@ -168,7 +168,7 @@
                 130: (ctx, w, h) => {
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                     ctx.fillRect(w / 2 - 100, 100, 200, 100);
-                    ctx.strokeStyle = '#4fd1c5';
+                    ctx.strokeStyle = '#A0AEC0';
                     ctx.strokeRect(w / 2 - 100, 100, 200, 100);
                     ctx.fillStyle = '#000';
                     ctx.font = 'bold 12px Arial';
@@ -184,7 +184,7 @@
                     ctx.stroke();
                     ctx.fillStyle = '#4da6ff';
                     ctx.fillText('Baddeley Model', w * 0.15, 120);
-                    ctx.fillStyle = '#ff9900';
+                    ctx.fillStyle = '#D0D0D0';
                     ctx.fillText('Cowan Model', w * 0.65, 120);
                 },
                 132: (ctx, w, h) => {
@@ -192,12 +192,12 @@
                     ctx.fillText('LATEST FINDINGS (2024)', 50, 110);
                     ctx.beginPath();
                     ctx.moveTo(50, 125); ctx.lineTo(w - 50, 125); ctx.stroke();
-                    ctx.fillStyle = '#4fd1c5';
+                    ctx.fillStyle = '#A0AEC0';
                     ctx.fillText('Oct: New PFC sub-region mapped', 55, 145);
                     ctx.fillText('Sep: Thalamic gating refined', 55, 165);
                 },
                 135: (ctx, w, h) => {
-                    ctx.fillStyle = '#ff4d4d';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.font = 'bold 12px Arial';
                     ctx.fillText(t('cog_ui_limitations'), 50, 110);
                     ctx.fillStyle = '#fff';

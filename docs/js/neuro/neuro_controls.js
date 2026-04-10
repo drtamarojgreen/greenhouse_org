@@ -18,8 +18,8 @@
             ctx.textBaseline = 'middle';
 
             if (isActive) {
-                ctx.fillStyle = 'rgba(76, 161, 175, 0.4)';
-                ctx.strokeStyle = '#4ca1af';
+                ctx.fillStyle = 'rgba(160, 174, 192, 0.4)';
+                ctx.strokeStyle = '#A0AEC0';
             } else {
                 ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
                 ctx.strokeStyle = 'rgba(255,255,255,0.1)';
@@ -44,7 +44,7 @@
 
             // Checkbox Box
             ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
-            ctx.strokeStyle = isActive ? '#4ca1af' : 'rgba(255,255,255,0.3)';
+            ctx.strokeStyle = isActive ? '#A0AEC0' : 'rgba(255,255,255,0.3)';
             ctx.lineWidth = 1.5;
 
             const boxSize = 14;
@@ -73,7 +73,7 @@
             ctx.restore();
         },
 
-        drawSlider(ctx, app, s, value) {
+        drawSlider(ctx, app, s, value, label) {
             const isHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === s.id;
 
             ctx.save();
@@ -83,16 +83,24 @@
 
             // Progress
             const progress = (value - s.min) / (s.max - s.min);
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             if (app.roundRect) app.roundRect(ctx, s.x, s.y + s.h/2 - 2, s.w * progress, 4, 2, true);
 
             // Handle
             const hx = s.x + s.w * progress;
             const hy = s.y + s.h / 2;
-            ctx.fillStyle = isHovered ? '#fff' : '#4ca1af';
+            ctx.fillStyle = isHovered ? '#fff' : '#A0AEC0';
             ctx.beginPath();
-            ctx.arc(hx, hy, 8, 0, Math.PI * 2); // Slightly larger handle
+            ctx.arc(hx, hy, 8, 0, Math.PI * 2);
             ctx.fill();
+
+            if (label) {
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.font = '8px Quicksand, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(label.toUpperCase(), s.x - 10, s.y + s.h/2);
+            }
+
             if (isHovered) {
                 ctx.strokeStyle = 'rgba(255,255,255,0.5)';
                 ctx.lineWidth = 2;
@@ -115,7 +123,7 @@
             if (title) {
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'top';
-                ctx.fillStyle = '#4ca1af';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.font = '800 10px Quicksand, sans-serif';
                 ctx.fillText(title.toUpperCase(), x + 20, y + 15);
             }

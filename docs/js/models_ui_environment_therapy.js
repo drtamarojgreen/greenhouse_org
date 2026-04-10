@@ -73,7 +73,7 @@
             region.path = path; // Update path for potential hover module use
 
             ctx.fillStyle = 'rgba(150, 220, 150, 0.95)';
-            ctx.strokeStyle = isExpanded ? '#FFD700' : 'rgba(0, 100, 0, 1.0)';
+            ctx.strokeStyle = isExpanded ? '#E0E0E0' : 'rgba(0, 100, 0, 1.0)';
             ctx.lineWidth = isExpanded ? 3 : 2;
             ctx.fill(path);
             ctx.stroke(path);
@@ -87,7 +87,7 @@
             const person1 = { x: x - 10, y: y };
             const person2 = { x: x + 10, y: y };
 
-            ctx.strokeStyle = isExpanded ? '#FFD700' : 'rgba(0, 50, 0, 1.0)'; // Darker green for the figures, or expanded color
+            ctx.strokeStyle = isExpanded ? '#E0E0E0' : 'rgba(0, 50, 0, 1.0)'; // Darker green for the figures, or expanded color
             ctx.lineWidth = isExpanded ? 3 : 2; // Keep line width consistent visually
 
             // Person 1
@@ -166,7 +166,7 @@
             ctx.beginPath();
             ctx.moveTo(x - radius, y);
             ctx.lineTo(panelX + panelWidth, y);
-            ctx.strokeStyle = '#FFD700';
+            ctx.strokeStyle = '#E0E0E0';
             ctx.lineWidth = 2;
             ctx.stroke();
 

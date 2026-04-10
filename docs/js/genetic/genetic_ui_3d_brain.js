@@ -1,178 +1,141 @@
+// docs/js/genetic/genetic_ui_3d_brain.js
+// Enhanced 3D Brain Rendering Engine for Genetic Model (adapted from neuro_ui_3d_brain.js)
+
 (function () {
     'use strict';
 
     const GreenhouseGeneticBrain = {
+        _vertexPool: [],
+        _facePool: [],
+        _precomputedBoundaries: null,
+
         drawTargetView(ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell, drawPiPFrameCallback, cameraState) {
-            // Log every call
-            if (!this._drawTargetCallCount) this._drawTargetCallCount = 0;
-            this._drawTargetCallCount++;
+            if (drawPiPFrameCallback) drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
+            if (!brainShell || !cameraState || !cameraState.camera) return;
 
-            if (this._drawTargetCallCount % 60 === 0) {
-                console.log('[drawTargetView] Called:', {
-                    activeGene: JSON.stringify(activeGene, null, 2),
-                    call: this._drawTargetCallCount,
-                    x, y, w, h,
-                    hasBrainShell: !!brainShell,
-                    hasCamera: !!(cameraState && cameraState.camera),
-                    cameraRotY: cameraState?.camera?.rotationY?.toFixed(3) || cameraState?.rotationY?.toFixed(3)
-                });
-            }
-
-            if (drawPiPFrameCallback) {
-                drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
-            }
-
-            // Use the same brain rendering as neuro page
-            if (!brainShell) {
-                // Draw placeholder
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.fillStyle = '#FF0000';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText("No Brain Shell", w / 2, h / 2);
-                ctx.restore();
-                return;
-            }
-
-            // Use the specific camera for this view - no fallback
-            if (!cameraState || !cameraState.camera) {
-                console.error('[drawTargetView] No camera provided!');
-                return;
-            }
             const targetCamera = cameraState.camera;
-
             const projection = { width: w, height: h, near: 10, far: 5000 };
 
-            // Use the new self-contained rendering function
             ctx.save();
             ctx.translate(x, y);
             ctx.beginPath();
             ctx.rect(0, 0, w, h);
             ctx.clip();
 
-            if (window.GreenhouseModels3DMath) {
+            if (window.GreenhouseModels3DMath && window.GreenhouseGeneticLighting) {
                 this.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h, activeGene);
             }
-
             ctx.restore();
         },
 
         drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null) {
-            if (!brainShell || !window.GreenhouseModels3DMath) return;
             const targetRegion = activeGene ? activeGene.region : null;
-            const regions = brainShell.regions;
-            const lightDir = { x: 0.5, y: -0.5, z: 1 };
-            const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
-            lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
+            if (!brainShell) return;
 
-            const projectedVertices = brainShell.vertices.map(v =>
-                GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
-            );
+            const projectedVertices = [];
+            for (let i = 0; i < brainShell.vertices.length; i++) {
+                const v = brainShell.vertices[i];
+                const p = GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
+                projectedVertices.push(p);
+            }
 
             const facesToDraw = [];
+            for (let i = 0; i < brainShell.faces.length; i++) {
+                const face = brainShell.faces[i];
+                const indices = face.indices || face;
+                const p1 = projectedVertices[indices[0]], p2 = projectedVertices[indices[1]], p3 = projectedVertices[indices[2]];
+                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                    const cross = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+                    if (cross < 0) {
+                        const v1 = brainShell.vertices[indices[0]], v2 = brainShell.vertices[indices[1]], v3 = brainShell.vertices[indices[2]];
+                        const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
+                        facesToDraw.push({ indices, p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: face.region || v1.region });
+                    }
+                }
+            });
+
+            facesToDraw.sort((a, b) => b.depth - a.depth);
+
             brainShell.faces.forEach(f => {
                 const p1 = projectedVertices[f.indices[0]], p2 = projectedVertices[f.indices[1]], p3 = projectedVertices[f.indices[2]];
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     const isFront = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) < 0;
                     const v1 = brainShell.vertices[f.indices[0]], v2 = brainShell.vertices[f.indices[1]], v3 = brainShell.vertices[f.indices[2]];
                     const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
-                    facesToDraw.push({ p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: f.region, isFront });
+                    facesToDraw.push({ p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: f.region, isFront, indices: f.indices });
                 }
             });
 
             facesToDraw.sort((a, b) => b.depth - a.depth);
 
             facesToDraw.forEach(f => {
-                let nx = f.normal.x, ny = f.normal.y, nz = f.normal.z;
-                if (!f.isFront) { nx = -nx; ny = -ny; nz = -nz; }
-                const diffuse = Math.max(0, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
-                let r = 100, g = 100, b = 100, a = 0.1;
-                if (f.region && regions[f.region]) {
-                    const match = regions[f.region].color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-                    if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); a = parseFloat(match[4] || 1); }
-                }
-                const isTarget = (targetRegion && (f.region === targetRegion || (targetRegion === 'pfc' && f.region === 'prefrontalCortex')));
+                const material = { baseColor: { r: 160, g: 174, b: 192 }, roughness: 0.5, metalness: 0.1, sss: true, alpha: 0.15 };
+                const center = {
+                    x: (brainShell.vertices[f.indices[0]].x + brainShell.vertices[f.indices[1]].x + brainShell.vertices[f.indices[2]].x) / 3,
+                    y: (brainShell.vertices[f.indices[0]].y + brainShell.vertices[f.indices[1]].y + brainShell.vertices[f.indices[2]].y) / 3,
+                    z: (brainShell.vertices[f.indices[0]].z + brainShell.vertices[f.indices[1]].z + brainShell.vertices[f.indices[2]].z) / 3
+                };
+
+                const v0 = brainShell.vertices[f.indices[0]];
+                const ao = 1.0 - (v0.curvature || 0) * 2.0;
+
+                const color = GreenhouseGeneticLighting.calculateLighting(f.normal, center, camera, material);
+                color.r *= ao; color.g *= ao; color.b *= ao;
+
+                const isTarget = targetRegion && (f.region === targetRegion);
+                const fog = GreenhouseModels3DMath.applyDepthFog(isTarget ? 0.9 : color.a, f.depth);
+
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${fog})`;
+                ctx.beginPath();
+                ctx.moveTo(f.p1.x, f.p1.y);
+                ctx.lineTo(f.p2.x, f.p2.y);
+                ctx.lineTo(f.p3.x, f.p3.y);
+                ctx.fill();
+
                 if (isTarget) {
-                    ctx.fillStyle = `rgba(57, 255, 20, ${GreenhouseModels3DMath.applyDepthFog(0.9, f.depth)})`;
-                } else {
-                    const intensity = 0.3 + diffuse * 0.7;
-                    ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
                 }
-                ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.fill();
             });
 
-            // NEW: Topological Projection - Smooth Surface Overlay
-            this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
-            this.drawTopologicalBoundaries(ctx, projectedVertices, brainShell.vertices, brainShell.faces, brainShell, camera, projection);
+            this.drawSurfaceGrid(ctx, projectedVertices);
+            this.drawOrientationWidget(ctx, camera, width, height);
         },
 
-        drawSurfaceGrid(ctx, projectedVertices, brainShell) {
+        drawSurfaceGrid(ctx, projectedVertices) {
             ctx.save();
-            // HUD-style subtle grid
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
-            ctx.lineWidth = 0.3;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 0.5;
             ctx.beginPath();
-            const bands = 40;
-
-            for (let lat = 0; lat <= bands; lat += 5) {
-                for (let lon = 0; lon <= bands; lon++) {
-                    const i = lat * (bands + 1) + lon;
-                    const p = projectedVertices[i];
-                    if (p && p.scale > 0) {
-                        if (lon === 0) ctx.moveTo(p.x, p.y);
-                        else ctx.lineTo(p.x, p.y);
-                    }
+            for (let i = 0; i < projectedVertices.length; i += 10) {
+                const p = projectedVertices[i];
+                if (p && p.scale > 0) {
+                    ctx.moveTo(p.x, p.y);
+                    ctx.arc(p.x, p.y, 0.5, 0, Math.PI * 2);
                 }
             }
             ctx.stroke();
             ctx.restore();
         },
 
-        drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
-            if (!brainShell.regionalPlanes) return;
+        drawOrientationWidget(ctx, camera, width, height) {
+            const size = 60;
+            const ox = width - size - 20;
+            const oy = size + 20;
             ctx.save();
-            ctx.setLineDash([8, 4]);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 1;
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)';
-            const radius = 200;
-
-            brainShell.regionalPlanes.forEach(plane => {
-                const axis = plane.axis;
-                const threshold = plane.value * radius;
-                faces.forEach(face => {
-                    const idx = face.indices || face;
-                    const v1 = vertices[idx[0]], v2 = vertices[idx[1]], v3 = vertices[idx[2]];
-                    const s1 = v1[axis] > threshold, s2 = v2[axis] > threshold, s3 = v3[axis] > threshold;
-
-                    if ((s1 !== s2) || (s1 !== s3) || (s2 !== s3)) {
-                        const points = [];
-                        const checkEdge = (va, vb) => {
-                            if ((va[axis] > threshold) !== (vb[axis] > threshold)) {
-                                const t = (threshold - va[axis]) / (vb[axis] - va[axis]);
-                                const inter = {
-                                    x: va.x + t * (vb.x - va.x),
-                                    y: va.y + t * (vb.y - va.y),
-                                    z: va.z + t * (vb.z - va.z)
-                                };
-                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
-                                if (proj.scale > 0 && proj.depth < 0.8) points.push(proj);
-                            }
-                        };
-                        checkEdge(v1, v2); checkEdge(v2, v3); checkEdge(v3, v1);
-                        if (points.length === 2) {
-                            ctx.beginPath();
-                            ctx.moveTo(points[0].x, points[0].y);
-                            ctx.lineTo(points[1].x, points[1].y);
-                            // Sharper depth clipping to keep lines internal
-                            const opacity = GreenhouseModels3DMath.applyDepthFog(1, points[0].depth, 0.2, 0.7);
-                            ctx.globalAlpha = 0.5 * opacity;
-                            ctx.stroke();
-                        }
-                    }
-                });
+            ctx.translate(ox, oy);
+            const axes = [
+                { x: 1, y: 0, z: 0, label: 'L', color: '#ff4444' },
+                { x: 0, y: 1, z: 0, label: 'S', color: '#44ff44' },
+                { x: 0, y: 0, z: 1, label: 'P', color: '#4444ff' }
+            ];
+            axes.forEach(axis => {
+                const p = GreenhouseModels3DMath.project3DTo2D(axis.x * 30, axis.y * 30, axis.z * 30,
+                    { x: 0, y: 0, z: -100, rotationX: camera.rotationX, rotationY: camera.rotationY, rotationZ: camera.rotationZ, fov: 200 },
+                    { width: 0, height: 0, near: 1, far: 1000 });
+                ctx.beginPath(); ctx.strokeStyle = axis.color; ctx.moveTo(0, 0); ctx.lineTo(p.x, p.y); ctx.stroke();
+                ctx.fillStyle = axis.color; ctx.font = '10px Arial'; ctx.fillText(axis.label, p.x, p.y);
             });
             ctx.restore();
         },
@@ -364,7 +327,7 @@
                 ctx.closePath();
 
                 // Determine color based on neuron's state (e.g., active, inactive)
-                let baseColor = p.baseColor || '#00FFFF'; // Default to cyan
+                let baseColor = p.baseColor || '#A0AEC0';
                 if (p.isFocused) {
                     baseColor = this.adjustColor(baseColor, 50); // Brighten if focused
                 }
@@ -394,38 +357,77 @@
         },
 
         generatePyramidalMesh() {
+            // Anatomically Correct Pyramidal Neuron
             const r = 6;
-            const h = 12;
+            const h = 10;
             const vertices = [
-                { x: 0, y: -h, z: 0 },
-                { x: r, y: r, z: r },
-                { x: -r, y: r, z: r },
-                { x: 0, y: r, z: -r }
+                { x: 0, y: -h, z: 0 },    // 0: Soma Apex
+                { x: r, y: h/2, z: r },   // 1: Soma Base R
+                { x: -r, y: h/2, z: r },  // 2: Soma Base L
+                { x: 0, y: h/2, z: -r },  // 3: Soma Base B
+                { x: 0, y: -h * 2.5, z: 0 }, // 4: Apical Dendrite Tip
+                { x: r * 1.5, y: h, z: r * 1.5 },   // 5: Basal 1
+                { x: -r * 1.5, y: h, z: r * 1.5 },  // 6: Basal 2
+                { x: 0, y: h, z: -r * 1.8 }         // 7: Basal 3
             ];
             const faces = [
-                [0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]
+                [0, 1, 2], [0, 2, 3], [0, 3, 1],
+                [4, 0, 1], [4, 1, 3], [4, 3, 0],
+                [1, 5, 2], [2, 6, 3], [3, 7, 1]
             ];
+
+            // Add Synaptic Pegs
+            this._addSynapticPegs(vertices, faces, [
+                { x: 0, y: -h * 1.8, z: 0 },
+                { x: r * 0.8, y: h * 0.8, z: r * 0.8 }
+            ]);
+
             return { vertices, faces };
         },
 
         generateStellateMesh() {
-            const s = 4;
-            const p = 8;
+            // Anatomically Correct Stellate Neuron
+            const s = 5;
             const vertices = [
-                { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
-                { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s },
-                { x: 0, y: 0, z: -s - p }, { x: 0, y: 0, z: s + p },
-                { x: 0, y: -s - p, z: 0 }, { x: s + p, y: 0, z: 0 },
-                { x: -s - p, y: 0, z: 0 }, { x: s + p, y: 0, z: 0 }
+                { x: s, y: 0, z: 0 }, { x: -s, y: 0, z: 0 },
+                { x: 0, y: s, z: 0 }, { x: 0, y: -s, z: 0 },
+                { x: 0, y: 0, z: s }, { x: 0, y: 0, z: -s },
+                { x: s * 2, y: s, z: s }, { x: -s * 2, y: -s, z: s },
+                { x: s, y: s * 2, z: -s }, { x: -s, y: -s * 2, z: -s }
             ];
-            const faces = [];
-            faces.push([10, 0, 1], [10, 1, 5], [10, 5, 4], [10, 4, 0]);
-            faces.push([11, 3, 2], [11, 2, 6], [11, 6, 7], [11, 7, 3]);
-            faces.push([9, 4, 5], [9, 5, 6], [9, 6, 7], [9, 7, 4]);
-            faces.push([8, 1, 0], [8, 0, 3], [8, 3, 2], [8, 2, 1]);
-            faces.push([12, 0, 4], [12, 4, 7], [12, 7, 3], [12, 3, 0]);
-            faces.push([13, 5, 1], [13, 1, 2], [13, 2, 6], [13, 6, 5]);
+            const faces = [
+                [2, 0, 4], [2, 4, 1], [2, 1, 5], [2, 5, 0],
+                [3, 4, 0], [3, 1, 4], [3, 5, 1], [3, 0, 5],
+                [0, 6, 2], [1, 7, 3], [2, 8, 5], [3, 9, 4]
+            ];
+
+            // Add Synaptic Pegs
+            this._addSynapticPegs(vertices, faces, [
+                { x: s * 1.5, y: s * 0.8, z: s * 0.8 }
+            ]);
+
             return { vertices, faces };
+        },
+
+        _addSynapticPegs(vertices, faces, positions) {
+            positions.forEach(pos => {
+                const idx = vertices.length;
+                const size = 1.2;
+                vertices.push(
+                    { x: pos.x + size, y: pos.y, z: pos.z },
+                    { x: pos.x - size, y: pos.y, z: pos.z },
+                    { x: pos.x, y: pos.y + size, z: pos.z },
+                    { x: pos.x, y: pos.y - size, z: pos.z },
+                    { x: pos.x, y: pos.y, z: pos.z + size },
+                    { x: pos.x, y: pos.y, z: pos.z - size }
+                );
+                faces.push(
+                    [idx + 2, idx, idx + 4], [idx + 2, idx + 4, idx + 1],
+                    [idx + 2, idx + 1, idx + 5], [idx + 2, idx + 5, idx],
+                    [idx + 3, idx + 4, idx], [idx + 3, idx + 1, idx + 4],
+                    [idx + 3, idx + 5, idx + 1], [idx + 3, idx, idx + 5]
+                );
+            });
         },
 
         adjustColor(hex, amount) {

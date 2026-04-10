@@ -397,12 +397,12 @@
 
         const state = G.state;
 
-        // 24. Render VMAT2 Proton Gradient (Visualized as purple glow inside terminal)
+        // 24. Render VMAT2 Proton Gradient (Visualized as glow inside terminal)
         const pTerminal = project(0, -225, 0, cam, { width: w, height: h, near: 10, far: 5000 });
         if (pTerminal.scale > 0) {
             const vmatGrad = ctx.createRadialGradient(pTerminal.x, pTerminal.y, 0, pTerminal.x, pTerminal.y, 150 * pTerminal.scale);
-            vmatGrad.addColorStop(0, `rgba(150, 0, 255, ${0.1 * sState.vmat2.phGradient / 2.0})`);
-            vmatGrad.addColorStop(1, 'rgba(150, 0, 255, 0)');
+            vmatGrad.addColorStop(0, `rgba(160, 174, 192, ${0.1 * sState.vmat2.phGradient / 2.0})`);
+            vmatGrad.addColorStop(1, 'rgba(160, 174, 192, 0)');
             ctx.fillStyle = vmatGrad;
             ctx.beginPath();
             ctx.arc(pTerminal.x, pTerminal.y, 150 * pTerminal.scale, 0, Math.PI * 2);
@@ -411,8 +411,8 @@
 
         // 35. Render Axon Terminal Geometry (3D-like bulb)
         const t = sState.terminalGeometry;
-        ctx.strokeStyle = 'rgba(100, 100, 200, 0.4)';
-        ctx.fillStyle = 'rgba(100, 100, 255, 0.05)';
+        ctx.strokeStyle = 'rgba(160, 174, 192, 0.4)';
+        ctx.fillStyle = 'rgba(160, 174, 192, 0.05)';
 
         const pCenter = project(0, -225, 0, cam, { width: w, height: h, near: 10, far: 5000 });
         if (pCenter.scale > 0) {
@@ -428,7 +428,7 @@
         sState.synthesis.fluxVisuals.forEach(f => {
             const p = project(f.x, f.y, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = f.type === 'ldopa' ? '#ffaa00' : '#00ff00';
+                ctx.fillStyle = f.type === 'ldopa' ? '#A0AEC0' : '#E0E0E0';
                 ctx.font = `${8 * p.scale}px Arial`;
                 ctx.fillText(f.type.toUpperCase(), p.x, p.y);
             }
@@ -438,13 +438,13 @@
         sState.astrocytes.forEach(ast => {
             const p = project(ast.x, ast.y, ast.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.strokeStyle = '#004444';
+                ctx.strokeStyle = '#A0AEC0';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, ast.radius * p.scale, 0, Math.PI * 2);
                 ctx.stroke();
                 // Star shape indicator for astrocyte
-                ctx.fillStyle = '#002222';
+                ctx.fillStyle = '#1a2a2a';
                 ctx.globalAlpha = 0.3;
                 ctx.fill();
                 ctx.globalAlpha = 1.0;
@@ -455,7 +455,7 @@
         sState.metabolites.visual.forEach(m => {
             const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff5500';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.globalAlpha = m.life / 120;
                 ctx.font = `${7 * p.scale}px Arial`;
                 ctx.fillText(m.type.toUpperCase(), p.x, p.y);
@@ -467,7 +467,7 @@
         [...sState.vesicles.reserve, ...sState.vesicles.rrp].forEach(v => {
             const p = project(v.x, v.y, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = v.filled > 0.9 ? '#88ff88' : '#666';
+                ctx.fillStyle = v.filled > 0.9 ? '#E0E0E0' : '#666';
                 ctx.strokeStyle = v.snareState === 'Primed' ? '#fff' : '#444';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.beginPath();
@@ -475,28 +475,28 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // 27. Render SNARE Proteins (small colored ticks/lines around vesicle)
+                // 27. Render SNARE Proteins (Monochromatic ticks around vesicle)
                 if (v.snareProteins) {
                     const radius = 9 * p.scale;
-                    // Syntaxin (Red)
+                    // Syntaxin (Premium Off-White)
                     if (v.snareProteins.syntaxin > 0.5) {
-                        ctx.strokeStyle = '#f00';
+                        ctx.strokeStyle = '#E0E0E0';
                         ctx.beginPath();
                         ctx.moveTo(p.x + radius, p.y);
                         ctx.lineTo(p.x + radius + 3*p.scale, p.y);
                         ctx.stroke();
                     }
-                    // SNAP-25 (Blue)
+                    // SNAP-25 (Silver)
                     if (v.snareProteins.snap25 > 0.5) {
-                        ctx.strokeStyle = '#00f';
+                        ctx.strokeStyle = '#D0D0D0';
                         ctx.beginPath();
                         ctx.moveTo(p.x, p.y + radius);
                         ctx.lineTo(p.x, p.y + radius + 3*p.scale);
                         ctx.stroke();
                     }
-                    // Synaptobrevin (Yellow)
+                    // Synaptobrevin (Neutral Gray)
                     if (v.snareProteins.synaptobrevin > 0.5) {
-                        ctx.strokeStyle = '#ff0';
+                        ctx.strokeStyle = '#A0AEC0';
                         ctx.beginPath();
                         ctx.moveTo(p.x - radius, p.y);
                         ctx.lineTo(p.x - radius - 3*p.scale, p.y);
@@ -511,13 +511,13 @@
             const gradientY = -160;
             const pG = project(0, gradientY, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (pG.scale > 0) {
-                // Create a multi-stop heatmap gradient
+                // Create a multi-stop heatmap gradient - Standardized Monochromatic
                 const grad = ctx.createRadialGradient(pG.x, pG.y, 0, pG.x, pG.y, 150 * pG.scale);
                 const intensity = Math.min(1.0, sState.cleftDA.length / 400);
-                grad.addColorStop(0, `rgba(255, 255, 200, ${intensity * 0.6})`); // Core (White-Yellow)
-                grad.addColorStop(0.2, `rgba(0, 255, 0, ${intensity * 0.4})`);  // Mid (Green)
-                grad.addColorStop(0.5, `rgba(0, 100, 0, ${intensity * 0.2})`);  // Outer (Dark Green)
-                grad.addColorStop(1, 'rgba(0, 255, 0, 0)');
+                grad.addColorStop(0, `rgba(255, 255, 255, ${intensity * 0.6})`); // Core (White)
+                grad.addColorStop(0.2, `rgba(160, 174, 192, ${intensity * 0.4})`);  // Mid (Silver)
+                grad.addColorStop(0.5, `rgba(80, 80, 80, ${intensity * 0.2})`);  // Outer (Dark Gray)
+                grad.addColorStop(1, 'rgba(160, 174, 192, 0)');
                 ctx.fillStyle = grad;
                 ctx.beginPath();
                 ctx.arc(pG.x, pG.y, 150 * pG.scale, 0, Math.PI * 2);
@@ -525,11 +525,11 @@
             }
         }
 
-        // Render DA molecules
+        // Render DA molecules (Monochromatic)
         sState.cleftDA.forEach(da => {
             const p = project(da.x, da.y, da.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#00ff00';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.globalAlpha = Math.max(0, da.life / 200);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);

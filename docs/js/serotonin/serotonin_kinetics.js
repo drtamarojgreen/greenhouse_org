@@ -11,16 +11,16 @@
 
     G.Kinetics = {
         ligandTypes: {
-            'Serotonin': { affinity: 0.8, intrinsicActivity: 1.0, residenceTime: 100, color: '#00ffcc' },
-            'Fluoxetine': { type: 'SSRI', target: 'SERT', affinity: 0.95, residenceTime: 500, color: '#ffffff' },
-            'Venlafaxine': { type: 'SNRI', target: ['SERT', 'NET'], affinity: 0.85, residenceTime: 400, color: '#e0e0e0' },
-            'LSD': { type: 'Psychedelic', target: '5-HT2A', affinity: 0.99, intrinsicActivity: 0.7, residenceTime: 1000, color: '#ff00ff', biased: true },
-            'Psilocin': { type: 'Psychedelic', target: '5-HT2A', affinity: 0.95, intrinsicActivity: 0.8, residenceTime: 600, color: '#cc00ff' },
-            'Buspirone': { type: 'Partial Agonist', target: '5-HT1A', affinity: 0.7, intrinsicActivity: 0.4, residenceTime: 150, color: '#ffff00' },
-            'Sumatriptan': { type: 'Triptan', target: '5-HT1B/D', affinity: 0.9, intrinsicActivity: 0.8, residenceTime: 200, color: '#00ffff' },
-            'Clozapine': { type: 'Antipsychotic', target: ['5-HT2A', '5-HT1A'], affinity: 0.9, intrinsicActivity: 0.1, residenceTime: 300, color: '#ff6600' },
-            'Quetiapine': { type: 'Antipsychotic', target: '5-HT2A', affinity: 0.8, intrinsicActivity: 0.0, residenceTime: 200, color: '#ffcc66' },
-            'Ondansetron': { type: 'Antiemetic', target: '5-HT3', affinity: 0.85, intrinsicActivity: 0.0, residenceTime: 250, color: '#00ff00' }
+            'Serotonin': { affinity: 0.8, intrinsicActivity: 1.0, residenceTime: 100, color: '#E0E0E0' },
+            'Fluoxetine': { type: 'SSRI', target: 'SERT', affinity: 0.95, residenceTime: 500, color: '#A0AEC0' },
+            'Venlafaxine': { type: 'SNRI', target: ['SERT', 'NET'], affinity: 0.85, residenceTime: 400, color: '#A0AEC0' },
+            'LSD': { type: 'Psychedelic', target: '5-HT2A', affinity: 0.99, intrinsicActivity: 0.7, residenceTime: 1000, color: '#D0D0D0', biased: true },
+            'Psilocin': { type: 'Psychedelic', target: '5-HT2A', affinity: 0.95, intrinsicActivity: 0.8, residenceTime: 600, color: '#D0D0D0' },
+            'Buspirone': { type: 'Partial Agonist', target: '5-HT1A', affinity: 0.7, intrinsicActivity: 0.4, residenceTime: 150, color: '#A0AEC0' },
+            'Sumatriptan': { type: 'Triptan', target: '5-HT1B/D', affinity: 0.9, intrinsicActivity: 0.8, residenceTime: 200, color: '#D0D0D0' },
+            'Clozapine': { type: 'Antipsychotic', target: ['5-HT2A', '5-HT1A'], affinity: 0.9, intrinsicActivity: 0.1, residenceTime: 300, color: '#A0AEC0' },
+            'Quetiapine': { type: 'Antipsychotic', target: '5-HT2A', affinity: 0.8, intrinsicActivity: 0.0, residenceTime: 200, color: '#A0AEC0' },
+            'Ondansetron': { type: 'Antiemetic', target: '5-HT3', affinity: 0.85, intrinsicActivity: 0.0, residenceTime: 250, color: '#E0E0E0' }
         },
 
         activeLigands: [],
@@ -126,15 +126,15 @@
             // Volume Transmission Cloud Visualization (#42)
             if (this.cloudOpacity > 0.05) {
                 const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
-                grad.addColorStop(0, `rgba(0, 255, 200, ${this.cloudOpacity})`);
-                grad.addColorStop(1, 'rgba(0, 255, 200, 0)');
+                grad.addColorStop(0, `rgba(224, 224, 224, ${this.cloudOpacity})`);
+                grad.addColorStop(1, 'rgba(224, 224, 224, 0)');
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, w, h);
             }
 
             // Visual Ligand Docking sequence (Category 7, #70)
             if (this.dockingMode) {
-                ctx.fillStyle = 'rgba(0, 255, 200, 0.2)';
+                ctx.fillStyle = 'rgba(208, 208, 208, 0.2)';
                 ctx.fillRect(w / 2 - 50, h / 2 - 50, 100, 100);
                 ctx.fillStyle = '#fff';
                 ctx.fillText('DOCKING SCAN...', w / 2, h / 2 - 60);
@@ -224,7 +224,7 @@
             });
             ctx.setLineDash([]);
 
-            ctx.fillStyle = '#00ffcc';
+            ctx.fillStyle = '#E0E0E0';
             ctx.font = 'bold 12px Arial';
             ctx.fillText("LIGAND BOUND: " + boundLigand.name, 0, -100);
             ctx.restore();

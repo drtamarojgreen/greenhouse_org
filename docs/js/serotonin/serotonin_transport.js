@@ -211,7 +211,7 @@
             if (this.glutamateCoRelease) {
                 const vglutPos = project(-50, -180, 0, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (vglutPos.scale > 0) {
-                    ctx.fillStyle = '#ffcc00';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.beginPath();
                     ctx.arc(vglutPos.x, vglutPos.y, 15 * vglutPos.scale, 0, Math.PI * 2);
                     ctx.fill();

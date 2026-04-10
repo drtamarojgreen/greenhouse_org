@@ -14,7 +14,7 @@
 
         drawSNARE(ctx, x, y, progress) {
             ctx.save();
-            ctx.strokeStyle = '#ff9900';
+            ctx.strokeStyle = '#D0D0D0';
             ctx.lineWidth = 2;
             ctx.setLineDash([2, 2]);
             ctx.beginPath();
@@ -155,7 +155,7 @@
             ctx.arc(x, y, 15, 0, Math.PI * 2);
             ctx.stroke();
 
-            ctx.fillStyle = '#FFFF00';
+            ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 8px Arial';
             ctx.fillText('P', x + 10, y - 10);
             ctx.restore();
@@ -214,7 +214,7 @@
             ctx.save();
             const glow = atp / 100;
             ctx.shadowBlur = 10 * glow;
-            ctx.shadowColor = '#FFD700';
+            ctx.shadowColor = '#E0E0E0';
             ctx.fillStyle = `rgba(100, 20, 20, 0.8)`;
             ctx.beginPath();
             ctx.ellipse(x, y, 20, 35, 0, 0, Math.PI * 2);
@@ -256,14 +256,14 @@
                     }
                 }
                 this.isoforms.forEach(f => {
-                    ctx.fillStyle = f.type === 'PSD-95α' ? '#00F2FF' : '#FF1493';
+                    ctx.fillStyle = f.type === 'PSD-95α' ? '#D0D0D0' : '#FF1493';
                     ctx.beginPath();
                     ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
                     ctx.fill();
                 });
             }
 
-            ctx.fillStyle = '#FFD700';
+            ctx.fillStyle = '#E0E0E0';
             ctx.font = 'bold 9px Arial';
             ctx.fillText('POST-SYNAPTIC DENSITY (PSD-95)', w * 0.5 - 70, surfaceY + 15);
             ctx.restore();
@@ -347,11 +347,19 @@
                     ctx.fillStyle = chem.color;
                     ctx.globalAlpha = s.life;
                     ctx.beginPath();
-                    ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+
+                // Structural Retrograde Signal (Diamond)
+                ctx.moveTo(s.x, s.y - 5);
+                ctx.lineTo(s.x + 5, s.y);
+                ctx.lineTo(s.x, s.y + 5);
+                ctx.lineTo(s.x - 5, s.y);
+                ctx.closePath();
                     ctx.fill();
 
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = chem.color;
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 0.5;
                     ctx.stroke();
                 }
             }

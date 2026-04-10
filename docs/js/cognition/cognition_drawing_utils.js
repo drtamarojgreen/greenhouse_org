@@ -18,20 +18,20 @@
             const category = activeEnhancement.category;
             const regionName = t(app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region;
 
-            // Color based on category
+            // Color based on category - Monochromatic Palette
             const categoryColors = {
-                'Theory': '#4fd1c5',
-                'Development': '#4fd1c5',
-                'Intervention': '#4fd1c5',
-                'Medication': '#ff9900',
-                'Analytical': '#4da6ff',
-                'Visualization': '#00ffff',
-                'Accuracy': '#f6e05e',
-                'Research': '#4fd1c5',
-                'Educational': '#f6e05e'
+                'Theory': '#E0E0E0',
+                'Development': '#D0D0D0',
+                'Intervention': '#A0AEC0',
+                'Medication': '#E0E0E0',
+                'Analytical': '#D0D0D0',
+                'Visualization': '#FFFFFF',
+                'Accuracy': '#E0E0E0',
+                'Research': '#A0AEC0',
+                'Educational': '#D0D0D0'
             };
 
-            const headerColor = categoryColors[category] || '#4fd1c5';
+            const headerColor = categoryColors[category] || '#E0E0E0';
 
             ctx.save();
             ctx.fillStyle = headerColor;
@@ -51,7 +51,7 @@
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
             ctx.strokeRect(20, h - 60, w - 40, 40);
 
-            ctx.fillStyle = '#4fd1c5';
+            ctx.fillStyle = '#E0E0E0';
             ctx.font = 'bold 12px Arial';
             ctx.fillText(t('cog_cat_' + category.toLowerCase()), 30, h - 45);
 
@@ -290,19 +290,19 @@
                 const isWeak = i % 3 !== 0;
                 const opacity = isWeak ? Math.max(0.1, 0.5 - (time % 2)) : 0.8;
 
-                ctx.strokeStyle = isWeak ? `rgba(255, 77, 77, ${opacity})` : `rgba(79, 209, 197, 0.8)`;
+                ctx.strokeStyle = isWeak ? `rgba(160, 174, 192, ${opacity})` : `rgba(255, 255, 255, 0.8)`;
                 ctx.beginPath();
                 ctx.moveTo(x, y);
                 ctx.lineTo(x + Math.cos(angle) * 40, y + Math.sin(angle) * 40);
                 ctx.stroke();
 
                 if (isWeak && opacity < 0.2) {
-                    ctx.fillStyle = '#ff4d4d';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.fillText('✕', x + Math.cos(angle) * 45 - 4, y + Math.sin(angle) * 45 + 4);
                 }
             }
             if (label) {
-                ctx.fillStyle = '#ff4d4d';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.fillText(label, x - 80, y + 80);
             }
             ctx.restore();
@@ -359,7 +359,7 @@
                 ctx.fillStyle = isFormed ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.2)';
                 ctx.fillRect(mx, y - 5, 25, 10);
                 if (isFormed) {
-                    ctx.strokeStyle = '#4fd1c5';
+                    ctx.strokeStyle = '#E0E0E0';
                     ctx.strokeRect(mx, y - 5, 25, 10);
                 }
             }

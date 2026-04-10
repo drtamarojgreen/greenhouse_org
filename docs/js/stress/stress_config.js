@@ -217,11 +217,11 @@
         visual: {
             maxHistory: 200,
             colors: {
-                biologic: '#ff4d4d',
-                pharma: '#64d2ff',
-                psych: '#ffcc00',
-                philo: '#a18cd1',
-                reserve: '#4ca1af'
+                biologic: '#E0E0E0',
+                pharma: '#A0AEC0',
+                psych: '#D0D0D0',
+                philo: '#D0D0D0',
+                reserve: '#A0AEC0'
             }
         }
     };

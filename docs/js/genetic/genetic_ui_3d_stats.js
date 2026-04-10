@@ -27,7 +27,7 @@
                 if (age > 3000) return; // Hide after 3s
 
                 const alpha = Math.max(0, 1 - age / 3000);
-                ctx.fillStyle = `rgba(168, 218, 220, ${alpha})`; // Soft Blue text
+                ctx.fillStyle = `rgba(160, 174, 192, ${alpha})`; // Neutral Gray text
                 ctx.fillText(`> ${log.message}`, x, y);
                 y -= 20;
             });
@@ -55,8 +55,8 @@
             const prevX = w / 2 - btnW - gap / 2;
             const prevY = h - 50;
 
-            ctx.fillStyle = 'rgba(0, 255, 204, 0.2)';
-            ctx.strokeStyle = '#00ffcc';
+            ctx.fillStyle = 'rgba(160, 174, 192, 0.2)';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 1;
             ctx.fillRect(prevX, prevY, btnW, btnH);
             ctx.strokeRect(prevX, prevY, btnW, btnH);
@@ -70,8 +70,8 @@
             const nextX = w / 2 + gap / 2;
             const nextY = h - 50;
 
-            ctx.fillStyle = 'rgba(0, 255, 204, 0.2)';
-            ctx.strokeStyle = '#00ffcc';
+            ctx.fillStyle = 'rgba(160, 174, 192, 0.2)';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.fillRect(nextX, nextY, btnW, btnH);
             ctx.strokeRect(nextX, nextY, btnW, btnH);
 

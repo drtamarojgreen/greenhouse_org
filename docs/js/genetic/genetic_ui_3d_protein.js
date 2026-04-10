@@ -10,6 +10,9 @@
         },
 
         drawProteinView(ctx, x, y, w, h, activeGene, proteinCache, drawPiPFrameCallback, cameraState) {
+            const config = window.GreenhouseGeneticConfig || {};
+            const mat = config.materials?.protein || {};
+
             if (drawPiPFrameCallback) {
                 const title = this.isGPCR(activeGene?.label) ? t("gpcr_title") : t("Protein Structure");
                 drawPiPFrameCallback(ctx, x, y, w, h, title);
@@ -73,17 +76,17 @@
                         const avgDepth = (p1.depth + p2.depth) / 2;
                         const alpha = Math.min(1, Math.max(0.2, 1 - avgDepth / 1000));
 
-                        // Color based on Secondary Structure
+                        // Color based on Secondary Structure (Monochromatic hierarchy)
                         const structureType = p1.type || 'coil';
-                        let r, g, b, baseWidth = 8;
+                        let color, baseWidth = 8;
                         if (structureType === 'helix') {
-                            r = 255; g = 0; b = 255; // Helix: Magenta
+                            color = '#E0E0E0'; // Premium Off-White
                             baseWidth = 12; // Helices are thicker ribbons
                         } else if (structureType === 'sheet') {
-                            r = 255; g = 215; b = 0; // Sheet: Yellow
+                            color = '#D0D0D0'; // Silver
                             baseWidth = 10;
                         } else {
-                            r = 240; g = 240; b = 240; // Coil: White
+                            color = '#A0AEC0'; // Muted Gray
                             baseWidth = 6;
                         }
 
@@ -93,15 +96,16 @@
                         ctx.moveTo(p1.x, p1.y);
                         ctx.lineTo(p2.x, p2.y);
 
-                        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
-                        ctx.lineWidth = width;
+                        ctx.strokeStyle = color;
+                        ctx.globalAlpha = alpha;
                         ctx.stroke();
 
                         // Draw joint for smoothness
-                        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+                        ctx.fillStyle = color;
                         ctx.beginPath();
                         ctx.arc(p2.x, p2.y, width / 2, 0, Math.PI * 2);
                         ctx.fill();
+                        ctx.globalAlpha = 1.0;
                     }
                 }
             } else if (mode === 'ball-and-stick') {
@@ -135,24 +139,26 @@
                         const alpha = Math.min(1, Math.max(0.2, 1 - p.depth / 1000));
                         const size = 6 * p.scale;
 
-                        // CPK Coloring (Simulated by index position in residue)
-                        // N (Blue), C (Grey), O (Red), S (Yellow)
+                        // CPK Coloring (Monochromatic Atoms)
                         const atomType = p.index % 3; // 0: N, 1: C, 2: O (Simplified)
-                        let r, g, b;
-                        if (atomType === 0) { r = 50; g = 50; b = 255; } // N
-                        else if (atomType === 1) { r = 100; g = 100; b = 100; } // C
-                        else { r = 255; g = 50; b = 50; } // O
+                        let color;
+                        if (atomType === 0) { color = '#E0E0E0'; } // N
+                        else if (atomType === 1) { color = '#A0AEC0'; } // C
+                        else { color = '#D0D0D0'; } // O
 
-                        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+                        ctx.fillStyle = color;
+                        ctx.globalAlpha = alpha;
                         ctx.beginPath();
                         ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
                         ctx.fill();
 
                         // Highlight
-                        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.globalAlpha = alpha * 0.5;
                         ctx.beginPath();
                         ctx.arc(p.x - size * 0.3, p.y - size * 0.3, size * 0.3, 0, Math.PI * 2);
                         ctx.fill();
+                        ctx.globalAlpha = 1.0;
                     }
                 });
 
@@ -166,23 +172,26 @@
                         const alpha = Math.min(1, Math.max(0.2, 1 - p.depth / 1000));
                         const size = 12 * p.scale; // Larger size
 
-                        // CPK Coloring
+                        // CPK Coloring (Monochromatic)
                         const atomType = p.index % 3; // 0: N, 1: C, 2: O
-                        let r, g, b;
-                        if (atomType === 0) { r = 50; g = 50; b = 255; } // N
-                        else if (atomType === 1) { r = 100; g = 100; b = 100; } // C
-                        else { r = 255; g = 50; b = 50; } // O
+                        let color;
+                        if (atomType === 0) { color = '#E0E0E0'; } // N
+                        else if (atomType === 1) { color = '#A0AEC0'; } // C
+                        else { color = '#D0D0D0'; } // O
 
-                        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+                        ctx.fillStyle = color;
+                        ctx.globalAlpha = alpha;
                         ctx.beginPath();
                         ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
                         ctx.fill();
 
                         // Highlight
-                        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.globalAlpha = alpha * 0.5;
                         ctx.beginPath();
                         ctx.arc(p.x - size * 0.3, p.y - size * 0.3, size * 0.3, 0, Math.PI * 2);
                         ctx.fill();
+                        ctx.globalAlpha = 1.0;
                     }
                 });
             }
@@ -200,13 +209,17 @@
             const geo = window.GreenhouseGeneticGeometry;
             if (!geo) return;
 
+            const config = window.GreenhouseGeneticConfig || {};
+            const mat = config.materials?.protein || {};
+
             ctx.save();
             ctx.translate(x, y);
 
             const projectionParams = { width: w, height: h, near: 10, far: 1000 };
 
             // 1. Draw Cell Membrane (Conceptual)
-            ctx.strokeStyle = 'rgba(100, 100, 150, 0.3)';
+            ctx.strokeStyle = '#A0AEC0'; // Muted Gray
+            ctx.globalAlpha = 0.3;
             ctx.lineWidth = 2;
             const memY = 0; // Relative Y in 3D
             const memP1 = GreenhouseModels3DMath.project3DTo2D(-100, memY, 0, camera, projectionParams);
@@ -217,6 +230,7 @@
                 ctx.lineTo(memP2.x, memP2.y);
                 ctx.stroke();
             }
+            ctx.globalAlpha = 1.0;
 
             // 2. Draw 7-Transmembrane Helices
             const helices = [];
@@ -233,7 +247,8 @@
                 const p2 = GreenhouseModels3DMath.project3DTo2D(hPos.x, hPos.targetY, hPos.z, camera, projectionParams);
 
                 if (p1.scale > 0 && p2.scale > 0) {
-                    ctx.strokeStyle = `hsl(${(i * 50) % 360}, 70%, 60%)`;
+                    // Use alternating monochromatic values for structural clarity
+                    ctx.strokeStyle = i % 2 === 0 ? '#E0E0E0' : '#D0D0D0';
                     ctx.lineWidth = 6 * ((p1.scale + p2.scale) / 2);
                     ctx.beginPath();
                     ctx.moveTo(p1.x, p1.y);
@@ -245,7 +260,7 @@
             // Label 7-TM
             const tmLabelP = GreenhouseModels3DMath.project3DTo2D(0, -50, 0, camera, projectionParams);
             if (tmLabelP.scale > 0) {
-                ctx.fillStyle = '#00ffff';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.font = '8px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText(t("gpcr_7tm"), tmLabelP.x, tmLabelP.y);
@@ -269,9 +284,9 @@
                 }
             };
 
-            drawSubunit(gAlphaPos, '#ff4444', 'Gα');
-            drawSubunit(gBetaPos, '#44ff44', 'Gβ');
-            drawSubunit(gGammaPos, '#4444ff', 'Gγ');
+            drawSubunit(gAlphaPos, '#E0E0E0', 'Gα');
+            drawSubunit(gBetaPos, '#A0AEC0', 'Gβγ');
+            drawSubunit(gGammaPos, '#D0D0D0', 'Gγ');
 
             const gLabelP = GreenhouseModels3DMath.project3DTo2D(40, 80, 0, camera, projectionParams);
             if (gLabelP.scale > 0) {
@@ -279,13 +294,13 @@
                 ctx.fillText(t("gpcr_gprotein"), gLabelP.x, gLabelP.y);
             }
 
-            // 4. Beta-Arrestin
+            // 4. Beta-Arrestin (Transitioned to Silver for accessibility)
             const arrestinPos = { x: -40, y: 50 + Math.cos(time) * 5, z: 0 };
             const arrestinP = GreenhouseModels3DMath.project3DTo2D(arrestinPos.x, arrestinPos.y, arrestinPos.z, camera, projectionParams);
             if (arrestinP.scale > 0) {
-                ctx.fillStyle = '#ff00ff';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.fillRect(arrestinP.x - 10 * arrestinP.scale, arrestinP.y - 5 * arrestinP.scale, 20 * arrestinP.scale, 10 * arrestinP.scale);
-                ctx.fillStyle = '#fff';
+                ctx.fillStyle = '#050510'; // Dark text for contrast on light block
                 ctx.font = '7px Arial';
                 ctx.fillText(t("gpcr_arrestin"), arrestinP.x, arrestinP.y + 12 * arrestinP.scale);
             }
@@ -294,14 +309,14 @@
             const acPos = { x: 80, y: 10, z: 0 };
             const acP = GreenhouseModels3DMath.project3DTo2D(acPos.x, acPos.y, acPos.z, camera, projectionParams);
             if (acP.scale > 0) {
-                ctx.fillStyle = '#ffd700';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.beginPath();
                 ctx.rect(acP.x - 15 * acP.scale, acP.y - 15 * acP.scale, 30 * acP.scale, 20 * acP.scale);
                 ctx.fill();
-                ctx.fillStyle = '#000';
+                ctx.fillStyle = '#fff';
                 ctx.font = 'bold 6px Arial';
                 ctx.fillText("AC", acP.x, acP.y - 2);
-                ctx.fillStyle = '#ffd700';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.fillText(t("gpcr_adenyl_cyclase"), acP.x, acP.y + 15 * acP.scale);
             }
 
@@ -311,7 +326,7 @@
 
             const kinaseP = GreenhouseModels3DMath.project3DTo2D(kinasePos.x, kinasePos.y, kinasePos.z, camera, projectionParams);
             if (kinaseP.scale > 0) {
-                ctx.fillStyle = '#9c27b0';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.beginPath();
                 ctx.arc(kinaseP.x, kinaseP.y, 6 * kinaseP.scale, 0, Math.PI * 2);
                 ctx.fill();
@@ -322,12 +337,14 @@
             const tfP = GreenhouseModels3DMath.project3DTo2D(tfPos.x, tfPos.y, tfPos.z, camera, projectionParams);
             if (tfP.scale > 0) {
                 // Nucleus Boundary
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.strokeStyle = '#E0E0E0';
+                ctx.globalAlpha = 0.2;
                 ctx.beginPath();
                 ctx.arc(tfP.x, tfP.y, 40 * tfP.scale, 0, Math.PI * 2);
                 ctx.stroke();
+                ctx.globalAlpha = 1.0;
 
-                ctx.fillStyle = '#ff5722';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.beginPath();
                 ctx.arc(tfP.x, tfP.y, 8 * tfP.scale, 0, Math.PI * 2);
                 ctx.fill();
@@ -338,7 +355,7 @@
                 ctx.font = 'italic 7px Arial';
                 ctx.fillText(t("gpcr_transactivation"), tfP.x - 30 * tfP.scale, tfP.y - 20 * tfP.scale);
                 ctx.fillText(t("gpcr_transcriptional_control"), tfP.x + 30 * tfP.scale, tfP.y - 20 * tfP.scale);
-                ctx.fillStyle = '#4caf50';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.font = 'bold 8px Arial';
                 ctx.fillText(t("gpcr_gene_expression"), tfP.x, tfP.y + 30 * tfP.scale);
             }

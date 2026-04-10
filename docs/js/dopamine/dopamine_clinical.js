@@ -131,9 +131,9 @@
             cState.alphaSynuclein.aggregates.forEach(agg => {
                 const p = project(agg.x, agg.y, agg.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    ctx.fillStyle = '#ff0000';
+                    ctx.fillStyle = '#A0AEC0';
                     ctx.shadowBlur = 10;
-                    ctx.shadowColor = '#ff0000';
+                    ctx.shadowColor = '#A0AEC0';
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, agg.size * p.scale, 0, Math.PI * 2);
                     ctx.fill();
@@ -153,7 +153,7 @@
         if (cState.oxidativeStress > 0.7) {
             ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
             ctx.fillRect(0, 0, w, h);
-            ctx.fillStyle = '#f00';
+            ctx.fillStyle = '#E0E0E0';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('CRITICAL OXIDATIVE STRESS: PROTEIN DAMAGE', w / 2, h / 2);

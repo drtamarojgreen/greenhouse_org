@@ -80,6 +80,7 @@
             await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_3d_postprocess.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic/genetic_config.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic/genetic_camera_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic/genetic_lighting.js', baseUrl);

@@ -256,7 +256,7 @@
                 const size = baseSize * projP.scale;
 
                 // Color based on Group
-                const groupColors = ['#ff4d4d', '#ffcc00', '#a18cd1', '#64d2ff', '#00ff99', '#ffffff'];
+                const groupColors = ['#E0E0E0', '#E0E0E0', '#a18cd1', '#D0D0D0', '#D0D0D0', '#ffffff'];
                 const color = groupColors[(node.group || 0) % groupColors.length];
 
                 ctx.fillStyle = color;

@@ -25,6 +25,51 @@
 
         drawConnections(ctx, connections, neurons, camera, projection, width, height) {
             const now = Date.now();
+            const drawStructuralConnectionCue = (from, to, weight, alpha) => {
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const ux = dx / dist;
+                const uy = dy / dist;
+                const nx = -uy;
+                const ny = ux;
+
+                const tipX = to.x - ux * Math.min(8, dist * 0.25);
+                const tipY = to.y - uy * Math.min(8, dist * 0.25);
+
+                ctx.fillStyle = `rgba(255,255,255,${Math.min(0.9, alpha + 0.15)})`;
+                ctx.beginPath();
+                ctx.moveTo(to.x, to.y);
+                ctx.lineTo(tipX + nx * 3.5, tipY + ny * 3.5);
+                ctx.lineTo(tipX - nx * 3.5, tipY - ny * 3.5);
+                ctx.closePath();
+                ctx.fill();
+
+                if (Math.abs(weight) > 0.7) {
+                    ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.7, alpha + 0.1)})`;
+                    ctx.lineWidth = 1.25;
+                    for (let i = 1; i <= 3; i++) {
+                        const t = i / 4;
+                        const cx = from.x + dx * t;
+                        const cy = from.y + dy * t;
+                        const seg = 4;
+                        ctx.beginPath();
+                        ctx.moveTo(cx - ux * seg + nx * 1.4, cy - uy * seg + ny * 1.4);
+                        ctx.lineTo(cx + ux * seg + nx * 1.4, cy + uy * seg + ny * 1.4);
+                        ctx.stroke();
+                    }
+                } else if (Math.abs(weight) < 0.3) {
+                    ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.5, alpha)})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.setLineDash([2, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            };
+
             const lightDir = { x: 0.5, y: -0.5, z: 1 };
             const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
@@ -60,6 +105,7 @@
                     if (!batches[key]) batches[key] = new Path2D();
                     batches[key].moveTo(p1.x, p1.y);
                     batches[key].lineTo(p2.x, p2.y);
+                    drawStructuralConnectionCue(p1, p2, conn.weight, alpha);
                     continue;
                 }
 
@@ -126,7 +172,7 @@
                             intensity += diffuse * 0.5;
                         }
 
-                        const baseColor = conn.weight > 0 ? { r: 255, g: 215, b: 0 } : { r: 176, g: 196, b: 222 };
+                        const baseColor = conn.weight > 0 ? { r: 224, g: 224, b: 224 } : { r: 160, g: 174, b: 192 };
                         const litR = Math.min(255, baseColor.r * intensity);
                         const litG = Math.min(255, baseColor.g * intensity);
                         const litB = Math.min(255, baseColor.b * intensity);
@@ -143,11 +189,15 @@
                 const seed = (conn.from.id + conn.to.id) * 0.1;
                 const cycle = (now * 0.001 + seed) % 2.0;
 
-                if (cycle < 1.0) {
-                    const t = cycle;
-                    const mt = 1 - t;
+                // --- Activity Signatures: Dynamic Particle Flow ---
+                const activityLevel = Math.abs(conn.weight);
+                const sparkCount = Math.floor(activityLevel * 2) + 1; // Fewer particles
+                const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
 
-                    const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+                for (let s = 0; s < sparkCount; s++) {
+                    const sparkOffset = s / sparkCount;
+                    const t = (cycle * 0.5 + sparkOffset) % 1.0; // Slower travel
+                    const mt = 1 - t;
 
                     const sparkP = {
                         x: mt * mt * conn.from.x + 2 * mt * t * conn.controlPoint.x + t * t * conn.to.x,
@@ -158,7 +208,8 @@
                     const sparkProj = GreenhouseModels3DMath.project3DTo2D(sparkP.x, sparkP.y, sparkP.z, camera, projection);
 
                     if (sparkProj.scale > 0) {
-                        const size = 4 * sparkProj.scale;
+                        // Vary size and speed by weight (activityLevel)
+                        const size = (2 + activityLevel * 4) * sparkProj.scale;
                         const alpha = GreenhouseModels3DMath.applyDepthFog(1, sparkProj.depth);
 
                         ctx.save();
@@ -166,32 +217,34 @@
 
                         ctx.fillStyle = '#FFF';
                         ctx.beginPath();
-                        ctx.arc(sparkProj.x, sparkProj.y, size * 0.5, 0, Math.PI * 2);
+                        ctx.arc(sparkProj.x, sparkProj.y, size * 0.3, 0, Math.PI * 2);
                         ctx.fill();
 
-                        const grad = ctx.createRadialGradient(sparkProj.x, sparkProj.y, size * 0.5, sparkProj.x, sparkProj.y, size * 2);
+                        const grad = ctx.createRadialGradient(sparkProj.x, sparkProj.y, size * 0.3, sparkProj.x, sparkProj.y, size * 1.5);
 
-                        let glowColor = '255, 255, 100';
+                        let glowColor = conn.weight > 0 ? '255, 255, 255' : '200, 200, 200';
                         if (adhdActive.has(16) && conn.weight < 0) {
-                            glowColor = '255, 50, 50';
+                            glowColor = '255, 255, 255';
                         }
 
                         grad.addColorStop(0, `rgba(${glowColor}, 0.8)`);
                         grad.addColorStop(1, `rgba(${glowColor}, 0)`);
                         ctx.fillStyle = grad;
                         ctx.beginPath();
-                        ctx.arc(sparkProj.x, sparkProj.y, size * 2, 0, Math.PI * 2);
+                        ctx.arc(sparkProj.x, sparkProj.y, size * 1.5, 0, Math.PI * 2);
                         ctx.fill();
 
                         ctx.restore();
                     }
                 }
+
+                drawStructuralConnectionCue(p1, p2, conn.weight, alpha);
             }
 
             ctx.lineWidth = 1;
             for (const key in batches) {
                 const [colorType, alpha] = key.split('_');
-                const color = colorType === 'gold' ? `rgba(255, 215, 0, ${alpha})` : `rgba(176, 196, 222, ${alpha})`;
+                const color = colorType === 'gold' ? `rgba(255, 255, 255, ${alpha})` : `rgba(160, 174, 192, ${alpha})`;
                 ctx.strokeStyle = color;
                 ctx.stroke(batches[key]);
             }
@@ -218,14 +271,14 @@
             if (!isMainView) {
                 ctx.save();
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.strokeStyle = '#4ca1af';
+                ctx.strokeStyle = '#A0AEC0';
                 ctx.lineWidth = 2;
                 ctx.fillRect(x, y, w, h);
                 ctx.strokeRect(x, y, w, h);
                 ctx.beginPath();
                 ctx.rect(x, y, w, h);
                 ctx.clip();
-                ctx.fillStyle = '#4ca1af';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.font = '800 10px Quicksand, sans-serif';
                 ctx.textBaseline = 'top';
                 ctx.fillText(t('synapse_view_title').toUpperCase(), x + 15, y + 15);
@@ -323,8 +376,8 @@
                 }
             };
 
-            let connectionColor = connection.weight > 0 ? '#FFD700' : '#E0E0E0';
-            const postColor = '#C0C0C0';
+            let connectionColor = connection.weight > 0 ? '#E0E0E0' : '#A0AEC0';
+            const postColor = '#D0D0D0';
 
             // ADHD: Nutritional Deficiency (81) / Lead Toxicity (79) / Hypoxia (86)
             if (adhdActive.has(79)) connectionColor = '#777';
@@ -401,11 +454,13 @@
             };
 
             connection.synapseDetails.vesicles.forEach(v => {
-                // ADHD: Hyperactive Firing (3) / Procrastination (22) / Amphetamine (28) / LC Instability (74)
-                let vSpeed = 0.5;
-                if (adhdActive.has(3)) vSpeed = 1.2;
-                if (adhdActive.has(28)) vSpeed = 1.5;
-                if (adhdActive.has(22)) vSpeed = 0.1;
+                // --- Activity Signature for Vesicles ---
+                let vSpeed = 0.5 * (1 + Math.abs(connection.weight));
+
+                // ADHD Modifiers
+                if (adhdActive.has(3)) vSpeed *= 1.5;
+                if (adhdActive.has(28)) vSpeed *= 2.0;
+                if (adhdActive.has(22)) vSpeed *= 0.2;
                 if (adhdActive.has(74)) vSpeed *= (0.5 + Math.random());
 
                 // ADHD: Epigenetic Methylation (84) - Locked vesicles
@@ -489,14 +544,14 @@
                     }
 
                     const alpha = p.life;
-                    let particleColor = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
+                    let particleColor = p.hasBound ? `rgba(224, 224, 224, ${alpha})` : `rgba(160, 174, 192, ${alpha})`;
 
-                    // ADHD: Amygdala (73) / Imbalance (55)
-                    if (p.hasBound && adhdActive.has(73)) particleColor = `rgba(255, 0, 0, ${alpha})`;
-                    if (p.hasBound && adhdActive.has(55)) particleColor = `rgba(255, 0, 255, ${alpha})`;
+                    // ADHD: Amygdala (73) / Imbalance (55) - Monochromatic intensity
+                    if (p.hasBound && adhdActive.has(73)) particleColor = `rgba(255, 255, 255, ${alpha})`;
+                    if (p.hasBound && adhdActive.has(55)) particleColor = `rgba(200, 200, 200, ${alpha})`;
 
-                    if (adhdActive.has(11) && !p.hasBound) { // Emotional (11)
-                        particleColor = `hsla(${(Date.now() * 0.1) % 360}, 100%, 70%, ${alpha})`;
+                    if (adhdActive.has(11) && !p.hasBound) { // Emotional (11) - High contrast monochrome
+                        particleColor = `rgba(255, 255, 255, ${alpha})`;
                     }
                     if (p.isNoise) particleColor = `rgba(200, 200, 200, ${alpha})`;
 
@@ -529,10 +584,10 @@
             // 1. Pre-Synaptic Terminal (Top)
             const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (preLabelPos.scale > 0) {
-                ctx.fillStyle = '#FFD700';
+                ctx.fillStyle = '#E0E0E0';
                 // ADHD: EF Gating (10)
                 if (adhdActive.has(10) && Math.random() < 0.1) {
-                    ctx.fillStyle = 'red';
+                    ctx.fillStyle = '#FFFFFF';
                     ctx.fillText(t('gating_failure').toUpperCase(), preLabelPos.x + x, preLabelPos.y + y - 20);
                 }
                 ctx.fillText(t('pre_synaptic_terminal').toUpperCase(), preLabelPos.x + x, preLabelPos.y + y);
@@ -541,14 +596,14 @@
             // 2. Synaptic Cleft (Middle)
             const cleftLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (cleftLabelPos.scale > 0) {
-                ctx.fillStyle = 'rgba(0, 136, 255, 0.9)';
+                ctx.fillStyle = 'rgba(160, 174, 192, 0.9)';
                 ctx.fillText(t('synaptic_cleft').toUpperCase(), cleftLabelPos.x + x, cleftLabelPos.y + y);
             }
 
             // 3. Post-Synaptic Density (Bottom)
             const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (postLabelPos.scale > 0) {
-                ctx.fillStyle = '#C0C0C0';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.fillText(t('post_synaptic_density').toUpperCase(), postLabelPos.x + x, postLabelPos.y + y);
             }
 
@@ -580,12 +635,12 @@
         drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {
             const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
 
-            // ADHD: Alpha-2 (31)
+            // ADHD: Alpha-2 (31) - Monochromatic Highlight
             if (adhdActive.has(31)) {
                 const gatePos = GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 if (gatePos.scale > 0) {
                     ctx.save();
-                    ctx.strokeStyle = 'cyan';
+                    ctx.strokeStyle = '#FFFFFF';
                     ctx.lineWidth = 4 * gatePos.scale;
                     ctx.beginPath();
                     ctx.arc(gatePos.x + x, gatePos.y + y, 80 * gatePos.scale, 0, Math.PI * 2);
@@ -595,10 +650,10 @@
             }
 
             // ADHD: Vigilance (13)
-            let cleftAlpha = 0.4;
+            let cleftAlpha = 0.3;
             if (adhdActive.has(13)) cleftAlpha *= (0.5 + 0.5 * Math.sin(Date.now() * 0.002));
 
-            const cleftWidth = 160, cleftHeight = 300, cleftDepth = 160;
+            const cleftWidth = 180, cleftHeight = 60, cleftDepth = 180; // Flattened for anatomical accuracy
             const halfW = cleftWidth / 2, halfH = cleftHeight / 2, halfD = cleftDepth / 2;
 
             const vertices = [
@@ -623,7 +678,8 @@
                     const v0 = projected[tri[0]], v1 = projected[tri[1]], v2 = projected[tri[2]];
                     if (v0.proj.scale > 0 && v1.proj.scale > 0 && v2.proj.scale > 0) {
                         if ((v1.proj.x - v0.proj.x) * (v2.proj.y - v0.proj.y) - (v1.proj.y - v0.proj.y) * (v2.proj.x - v0.proj.x) > 0) {
-                            ctx.fillStyle = `rgba(0, 136, 255, ${cleftAlpha})`;
+                            // Standardized Scientific Gray for Cleft
+                            ctx.fillStyle = `rgba(160, 174, 192, ${cleftAlpha})`;
                             ctx.beginPath();
                             ctx.moveTo(v0.proj.x + x, v0.proj.y + y);
                             ctx.lineTo(v1.proj.x + x, v1.proj.y + y);
@@ -633,6 +689,15 @@
                     }
                 });
             });
+
+            // Post-Synaptic Density (PSD) Detailed Mesh
+            const psdPos = GreenhouseModels3DMath.project3DTo2D(0, 30, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            if (psdPos.scale > 0) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.beginPath();
+                ctx.ellipse(psdPos.x + x, psdPos.y + y, 60 * psdPos.scale, 10 * psdPos.scale, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
         },
 
         checkSynapseHover(x, y, w, h, synapseCamera, adhdActive) {

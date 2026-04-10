@@ -100,20 +100,20 @@
             };
 
             this.colors = {
-                A: '#FF6B6B',
-                U: '#4ECDC4',
-                G: '#FFE66D',
-                C: '#1A535C',
-                PSI: '#818CF8', // Enhancement 7
-                BACKBONE: '#A3BFFA',
-                ENZYME: 'rgba(255, 255, 255, 0.2)',
-                METHYL: '#FF0000',
-                GLOW: '#667EEA',
-                METAL: '#A5F3FC',
-                PROTEIN: '#F472B6',
-                RIBOSOME: '#9333EA',
-                ATP: '#FBDF11',
-                DECAY: '#EF4444'
+                A: '#E0E0E0', // Premium Off-White
+                U: '#E0E0E0',
+                G: '#D0D0D0', // Silver
+                C: '#D0D0D0',
+                PSI: '#A0AEC0',
+                BACKBONE: '#A0AEC0',
+                ENZYME: 'rgba(160, 174, 192, 0.2)',
+                METHYL: '#E0E0E0',
+                GLOW: '#E0E0E0',
+                METAL: '#A0AEC0',
+                PROTEIN: '#A0AEC0',
+                RIBOSOME: '#D0D0D0',
+                ATP: '#A0AEC0',
+                DECAY: '#E0E0E0'
             };
 
             // Display state
@@ -678,10 +678,10 @@
                     this.ctx.save();
                     this.ctx.beginPath();
                     this.ctx.arc(base.x, base.y, 16, 0, Math.PI * 2);
-                    this.ctx.strokeStyle = '#FFD700';
+                    this.ctx.strokeStyle = '#E0E0E0';
                     this.ctx.lineWidth = 3;
                     this.ctx.shadowBlur = 15;
-                    this.ctx.shadowColor = '#FFD700';
+                    this.ctx.shadowColor = '#E0E0E0';
                     this.ctx.setLineDash([4, 4]);
                     this.ctx.stroke();
                     this.ctx.restore();
@@ -704,7 +704,15 @@
                 this.ctx.shadowBlur = 15;
                 this.ctx.shadowColor = this.colors[base.type];
                 this.ctx.beginPath();
-                this.ctx.arc(base.x, base.y, 9, 0, Math.PI * 2);
+                if (base.type === 'A') { // Adenine: Triangle Up
+                    this.ctx.moveTo(base.x, base.y - 14); this.ctx.lineTo(base.x + 12, base.y + 10); this.ctx.lineTo(base.x - 12, base.y + 10); this.ctx.closePath();
+                } else if (base.type === 'G') { // Guanine: Hexagon
+                    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; this.ctx.lineTo(base.x + Math.cos(a) * 13, base.y + Math.sin(a) * 13); } this.ctx.closePath();
+                } else if (base.type === 'C') { // Cytosine: Diamond
+                    this.ctx.moveTo(base.x, base.y - 14); this.ctx.lineTo(base.x + 12, base.y); this.ctx.lineTo(base.x, base.y + 14); this.ctx.lineTo(base.x - 12, base.y); this.ctx.closePath();
+                } else { // Uracil: Triangle Down (Standardized geometric coding)
+                    this.ctx.moveTo(base.x, base.y + 14); this.ctx.lineTo(base.x + 12, base.y - 10); this.ctx.lineTo(base.x - 12, base.y - 10); this.ctx.closePath();
+                }
                 this.ctx.fillStyle = this.colors[base.type];
                 this.ctx.fill();
 
@@ -937,7 +945,7 @@
         langBtn.textContent = t('btn_language');
         langBtn.style.cssText = `
             position: absolute; top: 10px; right: 10px; z-index: 100;
-            background: #732751; color: white; border: none; padding: 5px 10px;
+            background: #A0AEC0; color: white; border: none; padding: 5px 10px;
             border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Quicksand', sans-serif;
             width: auto !important; max-width: fit-content;
         `;

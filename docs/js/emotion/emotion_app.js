@@ -88,7 +88,7 @@
             langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
             langBtn.style.cssText = `
                 position: absolute; top: 10px; right: 10px; z-index: 100;
-                background: #ff4d4d; color: white; border: none; padding: 5px 12px;
+                background: #E0E0E0; color: white; border: none; padding: 5px 12px;
                 border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
                 width: auto !important; max-width: fit-content;
             `;
@@ -219,7 +219,7 @@
                 `;
 
                 const updateStyle = () => {
-                    btn.style.borderColor = (this.currentCategory === cat.id) ? '#ff4d4d' : '#4a5568';
+                    btn.style.borderColor = (this.currentCategory === cat.id) ? '#E0E0E0' : '#4a5568';
                     btn.style.background = (this.currentCategory === cat.id) ? '#2d3748' : '#1a202c';
                 };
 
@@ -278,7 +278,7 @@
                     white-space: nowrap;
                     transition: all 0.2s;
                 `;
-                btn.onmouseover = () => { btn.style.borderColor = '#ff4d4d'; };
+                btn.onmouseover = () => { btn.style.borderColor = '#E0E0E0'; };
                 btn.onmouseout = () => { if (this.activeTheory !== item) btn.style.borderColor = '#4a5568'; };
                 btn.onclick = () => {
                     this.activeTheory = item;
@@ -302,7 +302,7 @@
 
                     // Reset all button styles in this container
                     Array.from(selectorDiv.children).forEach(b => b.style.borderColor = '#4a5568');
-                    btn.style.borderColor = '#ff4d4d';
+                    btn.style.borderColor = '#E0E0E0';
                 };
                 selectorDiv.appendChild(btn);
             });
@@ -325,7 +325,7 @@
             this.infoPanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                     <div>
-                        <h3 style="margin: 0; color: #ff4d4d;">${t('emotion_app_title')}</h3>
+                        <h3 style="margin: 0; color: #E0E0E0;">${t('emotion_app_title')}</h3>
                         <p style="margin: 5px 0 0 0; opacity: 0.8;">${t('emotion_app_desc')}</p>
                     </div>
                     <div style="font-size: 11px; text-align: right; opacity: 0.6;">
@@ -470,17 +470,17 @@
             if (Array.isArray(this.activeRegion)) {
                 regionInfo = this.activeRegion.map(r => {
                     const reg = this.config.regions[r] || { name: r };
-                    const color = reg.color || '#ff4d4d';
+                    const color = reg.color || '#E0E0E0';
                     return `<button onclick="window.GreenhouseEmotionApp.selectRegion('${r}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0; margin-right: 5px;">${t(reg.name)}</button>`;
                 }).join(', ');
             } else if (this.activeRegion) {
                 const reg = this.config.regions[this.activeRegion] || {};
-                const color = reg.color || '#ff4d4d';
+                const color = reg.color || '#E0E0E0';
                 regionInfo = `<button onclick="window.GreenhouseEmotionApp.selectRegion('${this.activeRegion}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0;">${t(reg.name) || this.activeRegion}</button>: ${t(reg.description) || ''}`;
             }
 
             const wellnessInfo = this.activeTheory.wellnessFocus ? `
-                <div style="margin-top: 10px; padding: 10px; background: rgba(0,255,100,0.1); border-radius: 4px; border-left: 3px solid #00ff64;">
+                <div style="margin-top: 10px; padding: 10px; background: rgba(0,255,100,0.1); border-radius: 4px; border-left: 3px solid #D0D0D0;">
                     <strong>${t('wellness_focus')}:</strong> ${t(this.activeTheory.wellnessFocus)}
                 </div>
             ` : '';
@@ -494,7 +494,7 @@
             this.infoPanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px;">
-                        <h3 style="color: #ff4d4d; margin: 0;">${t(this.activeTheory.name)}</h3>
+                        <h3 style="color: #E0E0E0; margin: 0;">${t(this.activeTheory.name)}</h3>
                         <p style="margin: 10px 0;">${t(this.activeTheory.description)}</p>
                         <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;">
                             <strong>${t('involved_regions')}:</strong> ${regionInfo}
@@ -547,7 +547,7 @@
                 <div style="margin-bottom: 15px;">
                     <h5 style="color: #aaa; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">${t('emotion_ui_primary_nts')}</h5>
                     <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                        ${reg.primaryNTs.map(nt => `<span style="border: 1px solid rgba(255,77,77,0.3); color: #ff4d4d; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${nt}</span>`).join('')}
+                        ${reg.primaryNTs.map(nt => `<span style="border: 1px solid rgba(255,77,77,0.3); color: #E0E0E0; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${nt}</span>`).join('')}
                     </div>
                 </div>
             ` : '';
@@ -570,7 +570,7 @@
 
             this.deepDivePanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h4 style="color: ${reg.color || '#ff4d4d'}; margin: 0;">${t(reg.name)}</h4>
+                    <h4 style="color: ${reg.color || '#E0E0E0'}; margin: 0;">${t(reg.name)}</h4>
                     <button onclick="window.GreenhouseEmotionApp.selectRegion(null)" style="background: none; border: none; color: #888; cursor: pointer; font-size: 20px;">&times;</button>
                 </div>
                 <p style="font-size: 14px; line-height: 1.5; color: #ccc; margin-bottom: 20px;">${t(reg.description) || ''}</p>
@@ -705,7 +705,7 @@
             ctx.fillText(`${t('emotion_app_title').toUpperCase()}: ${t('limbic_system').toUpperCase()}`, 20, 30);
 
             if (this.activeTheory) {
-                ctx.fillStyle = '#ff4d4d';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.fillText(`${t('active_theory').toUpperCase()}: ${t(this.activeTheory.name).toUpperCase()}`, 20, 55);
             }
 

@@ -590,7 +590,7 @@
 
         drawUI(ctx, w, h, state) {
             ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Quicksand, sans-serif'; ctx.fillText(t('stress_ui_engine_title'), 40, 40);
-            ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 12px Quicksand, sans-serif';
+            ctx.fillStyle = '#A0AEC0'; ctx.font = 'bold 12px Quicksand, sans-serif';
             const modes = ['btn_mode_macro', 'btn_mode_pathway', 'btn_mode_systemic'];
             const modeName = t(modes[state.factors.viewMode || 0]);
             ctx.fillText(`${modeName} LEVEL: ${t('stress_ui_biological_response')}`, 40, 60);
@@ -600,8 +600,8 @@
             const mLabels = [
                 { l: t('stress_ui_allostatic_load'), v: (m.allostaticLoad * 100).toFixed(1) + '%', c: '#ff5533' },
                 { l: t('stress_ui_autonomic'), v: m.autonomicBalance > 0.8 ? t('stress_ui_sympathetic') : (m.autonomicBalance < 0.3 ? t('stress_ui_para') : t('stress_ui_balanced')), c: '#ffff66' },
-                { l: t('stress_ui_resilience'), v: (m.resilienceReserve * 100).toFixed(0) + '%', c: '#00ff99' },
-                { l: t('stress_ui_hpa_feedback'), v: (m.hpaSensitivity * 100).toFixed(0) + '%', c: '#ff9900' }
+                { l: t('stress_ui_resilience'), v: (m.resilienceReserve * 100).toFixed(0) + '%', c: '#D0D0D0' },
+                { l: t('stress_ui_hpa_feedback'), v: (m.hpaSensitivity * 100).toFixed(0) + '%', c: '#D0D0D0' }
             ];
             mLabels.forEach((ml, i) => {
                 const bx = 40 + i * 110;

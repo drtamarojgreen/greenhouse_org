@@ -465,7 +465,7 @@
             const Controls = window.GreenhouseNeuroControls;
             if (!Controls) return;
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = '800 10px Quicksand';
             ctx.fillText(t('simulation_stats').toUpperCase(), 40 + offsetX, 80);
 
@@ -474,12 +474,12 @@
             const statsText = this.ga ? `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome?.fitness || 0)}` : t('initializing');
             ctx.fillText(statsText, 40 + offsetX, 100);
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.fillText(t('simulation_mode').toUpperCase(), 40 + offsetX, 130);
             this.ui.buttons.forEach(b => Controls.drawButton(ctx, this, b, this.state.viewMode === b.val));
 
             if (this.ui.sliders && this.ui.sliders[0]) {
-                ctx.fillStyle = '#4ca1af';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.fillText(t('dosage_control').toUpperCase(), 40 + offsetX, 470);
                 Controls.drawSlider(ctx, this, this.ui.sliders[0], this.state.dosage);
 
@@ -503,7 +503,7 @@
             // Search Input
             Controls.drawSearchBox(ctx, this, this.ui.searchInput, this.state.searchQuery);
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = '800 10px Quicksand';
             const categoryTitle = t(`cat_${this.state.adhdCategory}`).toUpperCase();
             ctx.fillText(`${categoryTitle} (${this.getFilteredCheckboxes().length})`, 40 + offsetX, 160);
@@ -542,7 +542,7 @@
             if (totalHeight > scrollAreaH) {
                 ctx.fillStyle = 'rgba(255,255,255,0.2)';
                 ctx.fillRect(scrollAreaX + scrollAreaW - 10, scrollAreaY, 8, scrollAreaH);
-                ctx.fillStyle = '#4ca1af';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.fillRect(scrollAreaX + scrollAreaW - 10, scrollbarY, 8, scrollbarHeight);
             }
         },
@@ -560,7 +560,7 @@
             }
 
             const conn = this.ui3d.selectedConnection;
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = '800 10px Quicksand';
             ctx.fillText(t('synapse_info').toUpperCase(), 40 + offsetX, 80);
 
@@ -591,7 +591,7 @@
             ctx.fillStyle = 'rgba(0,0,0,0.9)';
             ctx.fillRect(0, 0, w, h);
 
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 24px Quicksand, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(t('welcome_title'), w / 2, h / 2 - 100);

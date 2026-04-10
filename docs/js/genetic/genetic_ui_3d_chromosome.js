@@ -89,11 +89,11 @@
                     };
                 }).sort((a, b) => b.z - a.z);
 
-                // Draw Faces with enhanced lighting
+                // Draw Faces with enhanced lighting (Premium Monochromatic)
                 sortedFaces.forEach(f => {
                     if (f.p1.scale > 0 && f.p2.scale > 0 && f.p3.scale > 0) {
-                        // Base chromosome color (purple/blue)
-                        const baseColor = { r: 150, g: 100, b: 200 };
+                        // Base chromosome color - Neural Gray
+                        const baseColor = { r: 160, g: 174, b: 192 };
 
                         let finalColor;
                         if (lighting && config) {
@@ -112,7 +112,7 @@
                             // Fallback: simple depth-based shading
                             const depthAlpha = Math.min(1, Math.max(0.2, 1 - f.z / 1000));
                             const shade = Math.floor(100 + depthAlpha * 100);
-                            finalColor = `rgba(${shade}, ${shade}, ${shade + 50}, ${depthAlpha})`;
+                            finalColor = `rgba(${shade}, ${shade}, ${shade}, ${depthAlpha})`;
                         }
 
                         // Draw face

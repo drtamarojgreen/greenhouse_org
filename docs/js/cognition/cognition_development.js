@@ -19,14 +19,14 @@
 
         setupMappings() {
             this.mappings = {
-                31: (ctx, w, h) => utils().drawSynapticGrowth(ctx, w * 0.4, h * 0.4, '#00ff00', t('cog_label_synaptic_bloom')),
-                32: (ctx, w, h) => utils().drawPruning(ctx, w * 0.4, h * 0.4, '#ff4d4d', t('cog_label_pruning')),
+                31: (ctx, w, h) => utils().drawSynapticGrowth(ctx, w * 0.4, h * 0.4, '#E0E0E0', t('cog_label_synaptic_bloom')),
+                32: (ctx, w, h) => utils().drawPruning(ctx, w * 0.4, h * 0.4, '#E0E0E0', t('cog_label_pruning')),
                 33: (ctx, w, h) => utils().drawMyelination(ctx, w * 0.5, h * 0.6, '#ffffff', t('cog_label_myelination')),
                 34: (ctx, w, h) => {
                     const time = Date.now() * 0.001;
                     const opacity = 0.2 + Math.abs(Math.sin(time)) * 0.5;
                     ctx.save();
-                    ctx.fillStyle = '#4fd1c5';
+                    ctx.fillStyle = '#A0AEC0';
                     ctx.globalAlpha = opacity;
                     ctx.beginPath();
                     ctx.arc(w * 0.35, h * 0.35, 30, 0, Math.PI * 2);
@@ -39,7 +39,7 @@
                     const stages = ['Sensorimotor', 'Preoperational', 'Concrete', 'Formal'];
                     ctx.font = '10px Arial';
                     stages.forEach((s, i) => {
-                        ctx.fillStyle = (i === 3) ? '#4fd1c5' : '#666';
+                        ctx.fillStyle = (i === 3) ? '#A0AEC0' : '#666';
                         ctx.fillText(s, w * 0.5 - 150 + i * 80, h * 0.5 + 100);
                         ctx.fillRect(w * 0.5 - 150 + i * 80, h * 0.5 + 110, 60, 5);
                     });
@@ -47,7 +47,7 @@
                     ctx.fillText(t('cog_label_piaget_path'), w * 0.5 - 50, h * 0.5 + 135);
                 },
                 36: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.4, color = '#ff9900';
+                    const x = w * 0.5, y = h * 0.4, color = '#D0D0D0';
                     ctx.strokeStyle = color;
                     ctx.beginPath();
                     ctx.moveTo(x - 100, y + 50);
@@ -66,7 +66,7 @@
                     ctx.fillText(t('cog_label_self_emergence'), x - 50, y + 60);
                 },
                 38: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.5, color = '#ffff00';
+                    const x = w * 0.5, y = h * 0.5, color = '#FFFFFF';
                     const rh = 20 + Math.abs(Math.sin(Date.now() * 0.01)) * 40;
                     ctx.fillStyle = color;
                     ctx.fillRect(x - 10, y - rh, 20, rh);
@@ -92,16 +92,16 @@
                     ctx.fillText(t('cog_label_child_plasticity'), x - 150, y - 50);
                     this.drawBranching(ctx, x - 100, y, '#4da6ff', '');
 
-                    ctx.fillStyle = '#ff9900';
+                    ctx.fillStyle = '#D0D0D0';
                     ctx.fillText(t('cog_label_adult_efficiency'), x + 50, y - 50);
-                    ctx.strokeStyle = '#ff9900';
+                    ctx.strokeStyle = '#D0D0D0';
                     ctx.beginPath();
                     ctx.moveTo(x + 100, y + 40);
                     ctx.lineTo(x + 100, y - 10);
                     ctx.stroke();
                 },
                 41: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.4, color = '#00ffff';
+                    const x = w * 0.5, y = h * 0.4, color = '#D0D0D0';
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 1;
                     for (let i = 0; i < 5; i++) {
@@ -123,12 +123,12 @@
                     ctx.setLineDash([]);
                     ctx.fillStyle = '#4da6ff';
                     ctx.fillText(t('cog_label_left_brain'), x - 100, y);
-                    ctx.fillStyle = '#ff4d4d';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.fillText(t('cog_label_right_brain'), x + 20, y);
                 },
-                43: (ctx, w, h) => this.drawBranching(ctx, w * 0.5, h * 0.5, '#00ff00', t('cog_label_dendritic_complexity')),
+                43: (ctx, w, h) => this.drawBranching(ctx, w * 0.5, h * 0.5, '#E0E0E0', t('cog_label_dendritic_complexity')),
                 44: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.6, color = '#ff4d4d';
+                    const x = w * 0.5, y = h * 0.6, color = '#E0E0E0';
                     ctx.strokeStyle = color;
                     ctx.beginPath();
                     ctx.moveTo(x - 50, y); ctx.lineTo(x + 50, y);
@@ -142,10 +142,10 @@
                     }
                     ctx.fillText(t('cog_label_hpa_sensitivity'), x - 100, y + 40);
                 },
-                45: (ctx, w, h) => utils().drawPulse(ctx, w * 0.35, h * 0.35, '#4fd1c5', t('cog_label_inhibitory_emergence')),
-                46: (ctx, w, h) => utils().drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', t('cog_label_tpj_maturation')),
+                45: (ctx, w, h) => utils().drawPulse(ctx, w * 0.35, h * 0.35, '#A0AEC0', t('cog_label_inhibitory_emergence')),
+                46: (ctx, w, h) => utils().drawPulse(ctx, w * 0.6, h * 0.5, '#FFFFFF', t('cog_label_tpj_maturation')),
                 47: (ctx, w, h) => utils().drawPulse(ctx, w * 0.6, h * 0.6, '#4da6ff', t('cog_label_vwfa_spec')),
-                48: (ctx, w, h) => utils().drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', t('cog_label_ips_spec')),
+                48: (ctx, w, h) => utils().drawGridOverlay(ctx, w * 0.6, h * 0.3, '#FFFFFF', t('cog_label_ips_spec')),
                 49: (ctx, w, h) => {
                     const x1 = w * 0.4, y1 = h * 0.4, x2 = w * 0.6, y2 = h * 0.4, color = '#4da6ff';
                     const thickness = 2 + Math.sin(Date.now() * 0.01) * 5 + 5;
@@ -161,7 +161,7 @@
                     ctx.restore();
                 },
                 50: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.5, color = '#4fd1c5';
+                    const x = w * 0.5, y = h * 0.5, color = '#A0AEC0';
                     ctx.save();
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 10;
@@ -174,7 +174,7 @@
                     ctx.restore();
                 },
                 51: (ctx, w, h) => {
-                    const x = w * 0.5, y = h * 0.6, color = '#4fd1c5';
+                    const x = w * 0.5, y = h * 0.6, color = '#A0AEC0';
                     const time = Date.now() * 0.005;
                     ctx.fillStyle = color;
                     for (let i = 0; i < 5; i++) {
@@ -187,7 +187,7 @@
                     ctx.fillText(t('cog_label_neurogenesis'), x - 50, y + 40);
                 },
                 52: (ctx, w, h) => {
-                    const x = w * 0.7, y = h * 0.5, color = '#ff9900';
+                    const x = w * 0.7, y = h * 0.5, color = '#D0D0D0';
                     ctx.strokeStyle = color;
                     ctx.beginPath();
                     ctx.moveTo(x - 100, y + 50);
@@ -198,7 +198,7 @@
                 },
                 53: (ctx, w, h) => utils().drawTrajectory(ctx, '#4da6ff', t('cog_label_fluid_peak')),
                 54: (ctx, w, h) => {
-                    const color = '#00ff00', label = t('cog_label_cryst_accum');
+                    const color = '#E0E0E0', label = t('cog_label_cryst_accum');
                     const sw = 200, sh = 100, sx = 400, sy = 250;
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 2;
@@ -208,7 +208,7 @@
                     ctx.fillStyle = color;
                     ctx.fillText(label, sx, sy - 20);
                 },
-                55: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#ff00ff', t('cog_label_social_circuit'))
+                55: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#FFFFFF', t('cog_label_social_circuit'))
             };
         },
 

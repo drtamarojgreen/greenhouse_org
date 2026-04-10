@@ -59,6 +59,9 @@
         const state = G.state;
         const mState = G.molecularState;
 
+        // Internal Rotations
+        mState.localRot = (mState.localRot || 0) + 0.05;
+
         // 2. G-Protein Cycle & 3. GTP/GDP Exchange Rates
         // Constants (simplified but based on ~0.1 - 1.0 s^-1 rates)
         const kGtpBinding = 0.5;
@@ -419,14 +422,14 @@
         // 18. Render Endoplasmic Reticulum (ER)
         const pER = project(mState.er.x, mState.er.y, mState.er.z, cam, { width: w, height: h, near: 10, far: 5000 });
         if (pER.scale > 0) {
-            ctx.strokeStyle = 'rgba(255, 100, 255, 0.4)';
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.4)';
             ctx.lineWidth = 4 * pER.scale;
             ctx.setLineDash([10, 5]);
             ctx.beginPath();
             ctx.ellipse(pER.x, pER.y, (mState.er.width / 2) * pER.scale, (mState.er.height / 2) * pER.scale, 0, 0, Math.PI * 2);
             ctx.stroke();
             ctx.setLineDash([]);
-            ctx.fillStyle = 'rgba(255, 100, 255, 0.1)';
+            ctx.fillStyle = 'rgba(160, 174, 192, 0.1)';
             ctx.fill();
 
             ctx.fillStyle = '#fff';
@@ -439,22 +442,22 @@
         mState.clathrinPits.forEach(pit => {
             const p = project(pit.x, pit.y, pit.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.strokeStyle = '#ffff00';
+                ctx.strokeStyle = '#A0AEC0';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 20 * pit.progress * p.scale, 0, Math.PI);
                 ctx.stroke();
-                ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
+                ctx.fillStyle = 'rgba(160, 174, 192, 0.2)';
                 ctx.fill();
             }
         });
 
-        // 8. GRK Phosphorylation visual (pulsing orange on receptors)
+        // 8. GRK Phosphorylation visual (pulsing halo on receptors)
         if (mState.grkPhosphorylation > 0.5) {
              G.state.receptors.forEach(r => {
                  const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                  if (p.scale > 0) {
-                     ctx.strokeStyle = '#ff9900';
+                     ctx.strokeStyle = '#E0E0E0';
                      ctx.globalAlpha = (Math.sin(G.state.timer * 0.1) * 0.5 + 0.5) * mState.grkPhosphorylation;
                      ctx.lineWidth = 15 * p.scale;
                      ctx.beginPath();
@@ -470,7 +473,7 @@
             G.state.receptors.forEach(r => {
                 const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    ctx.strokeStyle = '#ffff00';
+                    ctx.strokeStyle = '#FFFFFF';
                     ctx.globalAlpha = mState.camkii.active * 0.5;
                     ctx.lineWidth = 10 * p.scale;
                     ctx.beginPath();
@@ -485,7 +488,7 @@
         mState.rgsProteins.visual.forEach(rgs => {
             const p = project(rgs.x, rgs.y, rgs.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff00ff';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.globalAlpha = rgs.life / 60;
                 ctx.fillRect(p.x - 3*p.scale, p.y - 3*p.scale, 6*p.scale, 6*p.scale);
                 ctx.globalAlpha = 1.0;
@@ -496,19 +499,31 @@
         mState.gProteins.forEach(gp => {
             const p = project(gp.x, gp.y, gp.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                if (gp.type === 'Gs') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#ff0000' : '#ff9999') : '#ffcccc';
-                else if (gp.type === 'Gq') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#00ff00' : '#99ff99') : '#ccffcc';
-                else ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#0000ff' : '#9999ff') : '#ccccff';
+                ctx.fillStyle = '#A0AEC0';
+                if (gp.subunit === 'alpha' && gp.gtpBound) ctx.fillStyle = gp.type === 'Gs' ? '#E0E0E0' : '#D0D0D0';
 
                 ctx.globalAlpha = Math.min(1, gp.life / 100);
                 const size = gp.subunit === 'alpha' ? 4 : 3;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(mState.localRot * (gp.subunit === 'alpha' ? 1 : -0.5));
+
                 ctx.beginPath();
                 if (gp.subunit === 'alpha') {
-                    ctx.arc(p.x, p.y, size * p.scale, 0, Math.PI * 2);
+                    // Structural Alpha Identification (Rotating Triangle)
+                    ctx.moveTo(0, -size * p.scale);
+                    ctx.lineTo(size * p.scale, size * p.scale);
+                    ctx.lineTo(-size * p.scale, size * p.scale);
+                    ctx.closePath();
+
                     // 3. GDP/GTP Visual indicator (Glow if bound)
                     if (gp.gtpBound) {
                         ctx.shadowBlur = 5 * p.scale;
                         ctx.shadowColor = ctx.fillStyle;
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
                     }
                     ctx.fill();
                     ctx.shadowBlur = 0;
@@ -525,10 +540,11 @@
                         ctx.globalAlpha = 1.0;
                     }
                 } else {
-                    // 2. Gβγ dissociation
-                    ctx.ellipse(p.x, p.y, size * p.scale, (size / 1.5) * p.scale, 0, 0, Math.PI * 2);
+                    // 2. Gβγ dissociation (Rotating Ellipse)
+                    ctx.ellipse(0, 0, size * p.scale, (size / 1.5) * p.scale, 0, 0, Math.PI * 2);
                 }
                 ctx.fill();
+                ctx.restore();
                 ctx.globalAlpha = 1.0;
             }
         });
@@ -537,7 +553,7 @@
         mState.plcPathway.ip3Particles.forEach(ip3 => {
             const p = project(ip3.x, ip3.y, ip3.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#00ffff';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.globalAlpha = Math.min(1, ip3.life / 50);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
@@ -546,7 +562,7 @@
             }
         });
 
-        // 19. Render DAG (Membrane-bound yellow dots)
+        // 19. Render DAG (Membrane-bound dots)
         if (mState.plcPathway.dag > 0.2) {
             for (let i = 0; i < 20; i++) {
                 const angle = (i / 20) * Math.PI * 2 + G.state.timer * 0.01;
@@ -555,7 +571,7 @@
                 const dz = Math.sin(angle) * r;
                 const p = project(dx, 0, dz, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    ctx.fillStyle = '#ffff00';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.globalAlpha = mState.plcPathway.dag * 0.5;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
@@ -582,7 +598,7 @@
         mState.campMicrodomains.forEach(m => {
             const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.strokeStyle = '#ffff99';
+                ctx.strokeStyle = '#A0AEC0';
                 ctx.lineWidth = 2 * p.scale;
                 ctx.globalAlpha = m.life / 50;
                 ctx.beginPath();
@@ -596,7 +612,7 @@
         mState.pka.subunits.forEach(s => {
             const p = project(s.x, s.y, s.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff3300';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.globalAlpha = Math.min(1, s.life / 50);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 3 * p.scale, 0, Math.PI * 2);
@@ -609,7 +625,7 @@
         mState.erkPathway.visual.forEach(v => {
             const p = project(v.x, v.y, v.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                ctx.fillStyle = '#ff00ff';
+                ctx.fillStyle = '#A0AEC0';
                 ctx.globalAlpha = v.life / 90;
                 ctx.font = `${8 * p.scale}px Arial`;
                 ctx.fillText("ERK", p.x, p.y);

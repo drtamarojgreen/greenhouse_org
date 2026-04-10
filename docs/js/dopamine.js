@@ -9,6 +9,11 @@
 
     G.state = G.state || {
         camera: { x: 0, y: 0, z: -400, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
+        cameraControls: {
+            autoRotateSpeed: 0.001,
+            minZoom: -150,
+            maxZoom: -1200
+        },
         cinematicCamera: true,
         receptors: [],
         particles: [],
@@ -184,11 +189,11 @@
             .dopamine-controls { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 10; width: calc(100% - 20px); justify-content: center; pointer-events: none; }
             .dopamine-controls > * { pointer-events: auto; }
             .dopamine-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: all 0.2s; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-            .dopamine-btn:hover { background: #2d3748; border-color: #4fd1c5; box-shadow: 0 0 10px rgba(79, 209, 197, 0.4); }
+            .dopamine-btn:hover { background: #2d3748; border-color: #A0AEC0; box-shadow: 0 0 10px rgba(79, 209, 197, 0.4); }
             @media (max-width: 1024px) {
                 .dopamine-btn { font-size: 16px; padding: 10px 20px; }
             }
-            .dopamine-info { color: #4fd1c5; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4fd1c5; margin-bottom: 10px; font-size: 11px; }
+            .dopamine-info { color: #A0AEC0; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #A0AEC0; margin-bottom: 10px; font-size: 11px; }
 
             .dopamine-side-panel {
                 position: absolute;
@@ -206,7 +211,7 @@
                 z-index: 5;
                 overflow-y: auto;
                 scrollbar-width: thin;
-                scrollbar-color: #4fd1c5 #1a202c;
+                scrollbar-color: #A0AEC0 #1a202c;
                 transition: transform 0.3s ease;
             }
             .dopamine-side-panel.left { left: 10px; border-radius: 10px; }
@@ -220,7 +225,7 @@
             .dopamine-panel-header {
                 font-size: 10px;
                 font-weight: bold;
-                color: #4fd1c5;
+                color: #A0AEC0;
                 text-transform: uppercase;
                 letter-spacing: 1px;
                 margin-bottom: 8px;
@@ -240,23 +245,23 @@
 
             .dopamine-legend-compact { font-size: 10px; }
             .dopamine-legend-item { display: flex; align-items: center; margin-bottom: 4px; transition: color 0.2s; cursor: help; }
-            .dopamine-legend-item:hover { color: #4fd1c5; }
+            .dopamine-legend-item:hover { color: #A0AEC0; }
             .dopamine-legend-swatch { width: 8px; height: 8px; margin-right: 8px; flex-shrink: 0; border-radius: 50%; }
 
             .dopamine-side-panel::-webkit-scrollbar { width: 4px; }
             .dopamine-side-panel::-webkit-scrollbar-track { background: #1a202c; }
-            .dopamine-side-panel::-webkit-scrollbar-thumb { background: #4fd1c5; border-radius: 10px; }
+            .dopamine-side-panel::-webkit-scrollbar-thumb { background: #A0AEC0; border-radius: 10px; }
         `;
         document.head.appendChild(style);
     };
 
     G.setupReceptors = function () {
         G.state.receptors = [
-            { type: 'D1', x: -200, y: 0, z: 0, color: '#ff4d4d', il3Size: 20, tailLength: 60, helixRadius: 15 },
-            { type: 'D2', x: -100, y: 0, z: 0, color: '#4d79ff', il3Size: 50, tailLength: 15, helixRadius: 18 },
-            { type: 'D3', x: 0, y: 0, z: 0, color: '#4dff4d', il3Size: 45, tailLength: 15, helixRadius: 16 },
-            { type: 'D4', x: 100, y: 0, z: 0, color: '#ffff4d', il3Size: 40, tailLength: 20, helixRadius: 14 },
-            { type: 'D5', x: 200, y: 0, z: 0, color: '#ff4dff', il3Size: 22, tailLength: 55, helixRadius: 15 }
+            { type: 'D1', x: -200, y: 0, z: 0, color: '#E0E0E0', il3Size: 20, tailLength: 60, helixRadius: 15 },
+            { type: 'D2', x: -100, y: 0, z: 0, color: '#A0AEC0', il3Size: 50, tailLength: 15, helixRadius: 18 },
+            { type: 'D3', x: 0, y: 0, z: 0, color: '#D0D0D0', il3Size: 45, tailLength: 15, helixRadius: 16 },
+            { type: 'D4', x: 100, y: 0, z: 0, color: '#A0AEC0', il3Size: 40, tailLength: 20, helixRadius: 14 },
+            { type: 'D5', x: 200, y: 0, z: 0, color: '#E0E0E0', il3Size: 22, tailLength: 55, helixRadius: 15 }
         ];
     };
 
@@ -287,11 +292,12 @@
     G.update = function () {
         G.state.timer++;
         if (!G.isDragging) {
-            G.state.camera.rotationY += 0.005;
-            // 100. Cinematic Camera: subtle zoom/pan
+            const speed = G.state.cameraControls?.autoRotateSpeed || 0.001;
+            G.state.camera.rotationY += speed;
+            // 100. Cinematic Camera: constrained subtle zoom/pan for accessibility
             if (G.state.cinematicCamera) {
-                G.state.camera.zoom = 1.0 + Math.sin(G.state.timer * 0.005) * 0.1;
-                G.state.camera.rotationX = Math.sin(G.state.timer * 0.003) * 0.1;
+                G.state.camera.zoom = 1.0 + Math.sin(G.state.timer * 0.003) * 0.05;
+                G.state.camera.rotationX = Math.sin(G.state.timer * 0.002) * 0.05;
             }
         }
 
@@ -347,10 +353,14 @@
                         ctx.lineWidth = 8 * top.scale;
                         ctx.lineCap = 'round';
                         ctx.globalAlpha = 0.7;
-                        ctx.beginPath();
-                        ctx.moveTo(top.x, top.y);
-                        ctx.lineTo(bottom.x, bottom.y);
-                        ctx.stroke();
+                        // Structural signature for receptor helices - High contrast for grayscale distinguishability
+                        if (r.type === 'D1') ctx.setLineDash([15, 5]);
+                        else if (r.type === 'D2') ctx.setLineDash([2, 4]);
+                        else if (r.type === 'D3') ctx.setLineDash([8, 2, 2, 2]);
+                        else if (r.type === 'D4') ctx.setLineDash([4, 4]);
+                        else if (r.type === 'D5') ctx.setLineDash([20, 10]);
+                        ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(bottom.x, bottom.y); ctx.stroke();
+                        ctx.setLineDash([]);
                         ctx.globalAlpha = 1.0;
                     }
                 }

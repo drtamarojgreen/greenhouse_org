@@ -82,7 +82,7 @@
 
             ctx.fillStyle = 'rgba(200, 200, 255, 0.95)';
             ctx.fill(path);
-            ctx.strokeStyle = isExpanded ? '#FFD700' : 'rgba(0, 0, 100, 1.0)';
+            ctx.strokeStyle = isExpanded ? '#E0E0E0' : 'rgba(0, 0, 100, 1.0)';
             ctx.lineWidth = isExpanded ? 3 : 2;
             ctx.stroke(path);
 
@@ -155,7 +155,7 @@
             ctx.beginPath();
             ctx.moveTo(x + width, y + height / 2);
             ctx.lineTo(panelX, y + height / 2);
-            ctx.strokeStyle = '#FFD700';
+            ctx.strokeStyle = '#E0E0E0';
             ctx.lineWidth = 2;
             ctx.stroke();
 

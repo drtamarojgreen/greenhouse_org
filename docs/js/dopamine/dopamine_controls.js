@@ -13,7 +13,7 @@
         if (!G.state.receptors) return;
 
         const schemes = {
-            default: ['#ff4d4d', '#4d79ff', '#4dff4d', '#ffff4d', '#ff4dff'],
+            default: ['#E0E0E0', '#D0D0D0', '#A0AEC0', '#E0E0E0', '#D0D0D0'],
             deuteranopia: ['#e69f00', '#56b4e9', '#009e73', '#f0e442', '#0072b2'],
             protanopia: ['#882255', '#4477aa', '#117733', '#ddcc77', '#cc6677'],
             tritanopia: ['#000000', '#e69f00', '#56b4e9', '#009e73', '#f0e442']
@@ -243,7 +243,7 @@
             const scientificBtn = document.createElement('button');
             scientificBtn.className = 'dopamine-btn';
             scientificBtn.innerText = 'Scientific Report';
-            scientificBtn.style.borderColor = '#4fd1c5';
+            scientificBtn.style.borderColor = '#A0AEC0';
             scientificBtn.onclick = () => G.showScientificDashboard();
             controls.appendChild(scientificBtn);
         }
@@ -251,7 +251,7 @@
         const resetBtn = document.createElement('button');
         resetBtn.className = 'dopamine-btn';
         resetBtn.innerText = 'Reset (R)';
-        resetBtn.style.borderColor = '#f56565';
+        resetBtn.style.borderColor = '#D0D0D0';
         resetBtn.onclick = () => G.resetToDefault();
         controls.appendChild(resetBtn);
 

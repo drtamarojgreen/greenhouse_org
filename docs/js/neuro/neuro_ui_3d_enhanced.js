@@ -93,7 +93,7 @@
                 background: rgba(0, 0, 0, 0.85);
                 color: white;
                 padding: 10px;
-                border: 1px solid #4ca1af;
+                border: 1px solid #A0AEC0;
                 border-radius: 4px;
                 pointer-events: none;
                 font-family: 'Quicksand', sans-serif;
@@ -200,8 +200,8 @@
                     • Space: Toggle auto-rotate
                 </div>
                 <div style="margin-top: 10px;">
-                    <button id="neuro-reset-camera" style="padding: 5px 10px; cursor: pointer; background: #4ca1af; color: white; border: none; border-radius: 4px; margin-right: 5px;">Reset Camera</button>
-                    <button id="neuro-toggle-autorotate" style="padding: 5px 10px; cursor: pointer; background: #2ecc71; color: white; border: none; border-radius: 4px;">Auto-Rotate: ON</button>
+                    <button id="neuro-reset-camera" style="padding: 5px 10px; cursor: pointer; background: #A0AEC0; color: white; border: none; border-radius: 4px; margin-right: 5px;">Reset Camera</button>
+                    <button id="neuro-toggle-autorotate" style="padding: 5px 10px; cursor: pointer; background: #E0E0E0; color: white; border: none; border-radius: 4px;">Auto-Rotate: ON</button>
                 </div>
             `;
 
@@ -220,7 +220,7 @@
                     this.cameraControls.toggleAutoRotate();
                     const isOn = this.config.get('camera.controls.autoRotate');
                     autoRotateBtn.textContent = `Auto-Rotate: ${isOn ? 'ON' : 'OFF'}`;
-                    autoRotateBtn.style.background = isOn ? '#2ecc71' : '#e74c3c';
+                    autoRotateBtn.style.background = isOn ? '#E0E0E0' : '#A0AEC0';
                 }
             });
         },
@@ -262,7 +262,7 @@
             btn.style.padding = '15px 30px';
             btn.style.fontSize = '18px';
             btn.style.cursor = 'pointer';
-            btn.style.background = '#2ecc71';
+            btn.style.background = '#E0E0E0';
             btn.style.color = 'white';
             btn.style.border = 'none';
             btn.style.borderRadius = '5px';
@@ -616,7 +616,7 @@
                 ctx.save();
                 ctx.translate(x + proj.x, y + proj.y);
                 const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 50 * proj.scale);
-                grad.addColorStop(0, 'rgba(255, 0, 0, 0.8)');
+                grad.addColorStop(0, 'rgba(224, 224, 224, 0.8)');
                 grad.addColorStop(1, 'rgba(255, 0, 0, 0)');
                 ctx.fillStyle = grad;
                 ctx.beginPath();
@@ -631,7 +631,7 @@
             ctx.translate(x, y);
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.fillRect(0, 0, w, h);
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.strokeRect(0, 0, w, h);
 
             ctx.beginPath();
@@ -668,13 +668,13 @@
             const proj = GreenhouseModels3DMath.project3DTo2D(target.x, target.y, target.z, this.camera, this.projection);
             if (proj.scale > 0) {
                 ctx.save();
-                ctx.strokeStyle = '#00e5ff';
+                ctx.strokeStyle = '#E0E0E0';
                 ctx.setLineDash([5, 5]);
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(proj.x, proj.y, 20 * proj.scale, 0, Math.PI * 2);
                 ctx.stroke();
-                ctx.fillStyle = '#00e5ff';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.font = '10px Arial';
                 ctx.fillText("TARGET FOCUS", proj.x + 25, proj.y);
                 ctx.restore();
@@ -686,7 +686,7 @@
             ctx.translate(x, y);
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.fillRect(0, 0, 150, 60);
-            ctx.strokeStyle = '#9c27b0';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.strokeRect(0, 0, 150, 60);
 
             ctx.fillStyle = '#fff';
@@ -694,14 +694,14 @@
             ctx.fillText("Hereditability Tree", 5, 12);
 
             // Draw a simple branch
-            ctx.strokeStyle = '#9c27b0';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(75, 55); ctx.lineTo(75, 35);
             ctx.lineTo(50, 20); ctx.moveTo(75, 35); ctx.lineTo(100, 20);
             ctx.stroke();
 
-            ctx.fillStyle = '#9c27b0';
+            ctx.fillStyle = '#A0AEC0';
             ctx.beginPath(); ctx.arc(75, 55, 3, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(50, 20, 3, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(100, 20, 3, 0, Math.PI*2); ctx.fill();
@@ -736,7 +736,7 @@
             ctx.translate(x, y);
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.fillRect(0, 0, 150, 40);
-            ctx.strokeStyle = '#e91e63';
+            ctx.strokeStyle = '#D0D0D0';
             ctx.strokeRect(0, 0, 150, 40);
 
             ctx.fillStyle = '#fff';
@@ -752,7 +752,7 @@
 
             ctx.fillStyle = '#444';
             ctx.fillRect(10, 20, 130, 10);
-            ctx.fillStyle = '#e91e63';
+            ctx.fillStyle = '#D0D0D0';
             ctx.fillRect(10, 20, 130 * ratio, 10);
             ctx.restore();
         },
@@ -964,9 +964,11 @@
                     neuron.y += (Math.random() - 0.5) * jitter;
                 }
 
+                const isHovered = this.hoveredElement && this.hoveredElement.type === 'neuron' && this.hoveredElement.data.id === neuron.id;
+
                 ctx.save();
                 ctx.globalAlpha *= alphaOverride;
-                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq);
+                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq, isHovered);
                 ctx.restore();
 
                 if (adhd?.activeEnhancements.has(53) && (neuron.region === 'striatum' || neuron.region === 'brainstem')) {
@@ -1016,7 +1018,7 @@
             const y = 400;
 
             const gridOpacity = scaffolding ? 0.2 : (this.config.get('ui.gridOpacity') || 0.05);
-            ctx.strokeStyle = scaffolding ? '#00bcd4' : `rgba(255, 255, 255, ${gridOpacity})`;
+            ctx.strokeStyle = scaffolding ? '#A0AEC0' : `rgba(255, 255, 255, ${gridOpacity})`;
             ctx.lineWidth = 1;
             ctx.fillStyle = this.config.get('ui.labelColor') || 'rgba(255, 255, 255, 0.3)';
             ctx.font = this.config.get('ui.labelFont') || '10px Arial';
@@ -1084,6 +1086,9 @@
         },
 
         hitTest(mouseX, mouseY) {
+            // Reset hover state
+            this.hoveredElement = null;
+
             const pipConfig = this.config.get('pip');
             const pipW = pipConfig.width;
             const pipH = pipConfig.height;
@@ -1104,6 +1109,31 @@
 
             const localMouseX = mouseX - pipX;
             const localMouseY = mouseY - pipY;
+
+            // Check Neurons first
+            let closestNeuron = null;
+            let minNeuronDist = 15;
+
+            this.neurons.forEach(n => {
+                const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                if (p.scale > 0) {
+                    const dx = localMouseX - p.x;
+                    const dy = localMouseY - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < minNeuronDist) {
+                        minNeuronDist = dist;
+                        closestNeuron = n;
+                    }
+                }
+            });
+
+            if (closestNeuron) {
+                this.hoveredElement = { type: 'neuron', data: closestNeuron };
+                // Restore projection
+                this.projection.width = origW;
+                this.projection.height = origH;
+                return this.hoveredElement;
+            }
 
             let closestConn = null;
             let minDist = 20;
@@ -1129,7 +1159,8 @@
             this.projection.height = origH;
 
             if (closestConn) {
-                return { type: 'connection', data: closestConn };
+                this.hoveredElement = { type: 'connection', data: closestConn };
+                return this.hoveredElement;
             }
             return null;
         },

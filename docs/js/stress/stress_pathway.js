@@ -145,7 +145,7 @@
 
             ctx.fillStyle = 'rgba(50, 50, 70, 0.8)';
             ctx.fillRect(x, y, w, h);
-            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.strokeRect(x, y, w, h);
 
             ctx.fillStyle = '#fff';
@@ -194,13 +194,13 @@
                 const by = b.y + (b.ty - b.y) * p;
 
                 if (b.type === 'neural') {
-                    ctx.fillStyle = '#00ffcc';
+                    ctx.fillStyle = '#D0D0D0';
                     ctx.beginPath(); ctx.arc(bx, by, 2, 0, Math.PI * 2); ctx.fill();
                     // "Ghost" tail
                     ctx.strokeStyle = 'rgba(0, 255, 200, 0.3)';
                     ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - (b.tx - b.x) * 0.1, by - (b.ty - b.y) * 0.1); ctx.stroke();
                 } else {
-                    ctx.fillStyle = '#ffcc00';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI * 2); ctx.fill();
                 }
             });
@@ -208,7 +208,7 @@
         },
 
         drawKeggNode(ctx, node) {
-            const color = node.type === 'gene' ? '#ffcc00' : (node.type === 'compound' ? '#64d2ff' : '#00ff99');
+            const color = node.type === 'gene' ? '#E0E0E0' : (node.type === 'compound' ? '#D0D0D0' : '#D0D0D0');
             ctx.fillStyle = color;
             ctx.shadowBlur = 5;
             ctx.shadowColor = color;
@@ -220,7 +220,7 @@
 
         drawGlandMesh(ctx, node, camera, projection) {
             const Math3D = window.GreenhouseModels3DMath;
-            const color = node.color || '#ffcc00';
+            const color = node.color || '#E0E0E0';
 
             ctx.save();
             ctx.translate(node.x, node.y);

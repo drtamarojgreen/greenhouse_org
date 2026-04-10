@@ -56,7 +56,7 @@
 
                 // Highlight focused gene
                 if (p.isFocused) {
-                    ctx.strokeStyle = '#00ffcc';
+                    ctx.strokeStyle = '#FFFFFF';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 15 * p.scale, 0, Math.PI * 2);
@@ -100,33 +100,33 @@
                     const midX = (p1.x + p2.x) / 2;
                     const midY = (p1.y + p2.y) / 2;
 
-                    // Get base pair colors from config
-                    const baseColors = config.get('materials.dna.baseColors');
                     const type = (i / 2) % 4;
-                    let color1, color2;
+                    const isPurineWide = type < 2;
+                    const rungThickness = thickness * (isPurineWide ? 1.15 : 0.9);
+                    const rungTwist = ((i / 2) * (Math.PI / 5)) % (Math.PI * 2);
+                    const tx = Math.cos(rungTwist);
+                    const ty = Math.sin(rungTwist);
+                    const edgeNx = (p2.y - p1.y);
+                    const edgeNy = -(p2.x - p1.x);
+                    const edgeLen = Math.sqrt(edgeNx * edgeNx + edgeNy * edgeNy) || 1;
+                    const nx = edgeNx / edgeLen;
+                    const ny = edgeNy / edgeLen;
+                    const rx = tx * 0.6 + nx * 0.4;
+                    const ry = ty * 0.6 + ny * 0.4;
 
-                    switch (type) {
-                        case 0: color1 = baseColors.A; color2 = baseColors.T; break;
-                        case 1: color1 = baseColors.T; color2 = baseColors.A; break;
-                        case 2: color1 = baseColors.C; color2 = baseColors.G; break;
-                        case 3: color1 = baseColors.G; color2 = baseColors.C; break;
-                    }
-
-                    // Enhanced cylinder drawing with lighting
-                    const drawEnhancedCylinder = (x1, y1, x2, y2, color, depth) => {
-                        // Calculate normal for lighting (perpendicular to line)
+                    // Enhanced structural rung drawing with lighting.
+                    const drawStructuralRung = (x1, y1, x2, y2, depth) => {
                         const dx = x2 - x1;
                         const dy = y2 - y1;
                         const len = Math.sqrt(dx * dx + dy * dy);
-                        const nx = -dy / len;
-                        const ny = dx / len;
+                        const nxLine = -dy / len;
+                        const nyLine = dx / len;
 
-                        // Apply lighting if available
-                        let litColor = color;
+                        let litColor = '#E0E0E0';
                         if (lighting) {
-                            const baseColor = lighting.parseColor(color);
+                            const baseColor = lighting.parseColor('#E0E0E0');
                             const material = config.get('materials.dna');
-                            const normal = { x: nx, y: ny, z: 0 };
+                            const normal = { x: nxLine, y: nyLine, z: 0 };
                             const position = { x: (x1 + x2) / 2, y: (y1 + y2) / 2, z: depth };
 
                             const lit = lighting.calculateLighting(normal, position, camera, {
@@ -141,37 +141,80 @@
                             litColor = lighting.toRGBA(lit);
                         }
 
-                        // Draw main cylinder with gradient for 3D effect
+                        // Draw as a flattened rectangular beam to encode base pair geometry.
                         const gradient = ctx.createLinearGradient(
-                            x1 - nx * thickness / 2, y1 - ny * thickness / 2,
-                            x1 + nx * thickness / 2, y1 + ny * thickness / 2
+                            x1 - rx * rungThickness / 2, y1 - ry * rungThickness / 2,
+                            x1 + rx * rungThickness / 2, y1 + ry * rungThickness / 2
                         );
-                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); // Darker Shadow edge
-                        gradient.addColorStop(0.3, litColor); // Main color
-                        gradient.addColorStop(0.7, litColor); // Main color
-                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.6)'); // Brighter Highlight edge
+                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.55)');
+                        gradient.addColorStop(0.3, litColor);
+                        gradient.addColorStop(0.7, litColor);
+                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.6)');
 
                         ctx.strokeStyle = gradient;
                         ctx.lineWidth = thickness;
                         ctx.lineCap = 'butt'; // Butt cap for clean join at middle
-                        ctx.beginPath();
-                        ctx.moveTo(x1, y1);
-                        ctx.lineTo(x2, y2);
-                        ctx.stroke();
 
-                        // Add specular highlight
+                        // Structural differentiation for base pair types (Geometric coding for nucleotides)
+                        ctx.save();
+                        if (type === 0) { // Adenine (Box cap)
+                            ctx.setLineDash([thickness * 0.4, thickness * 0.2]);
+                            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+                            ctx.fillStyle = litColor;
+                            ctx.fillRect(x2 - thickness*0.3, y2 - thickness*0.3, thickness*0.6, thickness*0.6);
+                        } else if (type === 1) { // Thymine (Triangle Up cap)
+                            ctx.setLineDash([thickness * 0.4, thickness * 0.2]);
+                            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+                            ctx.fillStyle = litColor;
+                            ctx.beginPath();
+                            ctx.moveTo(x2, y2 - thickness*0.5); ctx.lineTo(x2 + thickness*0.4, y2 + thickness*0.3); ctx.lineTo(x2 - thickness*0.4, y2 + thickness*0.3);
+                            ctx.fill();
+                        } else if (type === 2) { // Cytosine (Diamond cap)
+                            ctx.setLineDash([]);
+                            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+                            ctx.fillStyle = litColor;
+                            ctx.beginPath();
+                            ctx.moveTo(x2, y2 - thickness*0.5); ctx.lineTo(x2 + thickness*0.4, y2); ctx.lineTo(x2, y2 + thickness*0.5); ctx.lineTo(x2 - thickness*0.4, y2);
+                            ctx.closePath(); ctx.fill();
+                        } else { // Guanine (Hexagon cap)
+                            ctx.setLineDash([]);
+                            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+                            ctx.fillStyle = litColor;
+                            ctx.beginPath();
+                            for(let k=0; k<6; k++) {
+                                const ang = k * Math.PI / 3;
+                                ctx.lineTo(x2 + thickness*0.4 * Math.cos(ang), y2 + thickness*0.4 * Math.sin(ang));
+                            }
+                            ctx.closePath(); ctx.fill();
+                        }
+                        ctx.restore();
+
+                        // Structural hatch marks for grayscale distinguishability.
+                        const hatchCount = isPurineWide ? 3 : 2;
+                        ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+                        ctx.lineWidth = Math.max(1, rungThickness * 0.08);
+                        for (let h = 1; h <= hatchCount; h++) {
+                            const t = h / (hatchCount + 1);
+                            const hx = x1 + dx * t;
+                            const hy = y1 + dy * t;
+                            ctx.beginPath();
+                            ctx.moveTo(hx - nxLine * rungThickness * 0.32, hy - nyLine * rungThickness * 0.32);
+                            ctx.lineTo(hx + nxLine * rungThickness * 0.32, hy + nyLine * rungThickness * 0.32);
+                            ctx.stroke();
+                        }
+
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-                        ctx.lineWidth = thickness * 0.2;
+                        ctx.lineWidth = rungThickness * 0.16;
                         ctx.beginPath();
-                        ctx.moveTo(x1 + nx * thickness * 0.15, y1 + ny * thickness * 0.15);
-                        ctx.lineTo(x2 + nx * thickness * 0.15, y2 + ny * thickness * 0.15);
+                        ctx.moveTo(x1 + nxLine * rungThickness * 0.15, y1 + nyLine * rungThickness * 0.15);
+                        ctx.lineTo(x2 + nxLine * rungThickness * 0.15, y2 + nyLine * rungThickness * 0.15);
                         ctx.stroke();
                     };
 
-                    // Draw two halves with depth
+                    // Draw two halves with depth (still linked to A/T/C/G data, but geometry first).
                     const avgDepth = (p1.depth + p2.depth) / 2;
-                    drawEnhancedCylinder(p1.x, p1.y, midX, midY, color1, avgDepth);
-                    drawEnhancedCylinder(midX, midY, p2.x, p2.y, color2, avgDepth);
+                    drawStructuralRung(p1.x, p1.y, midX, midY, avgDepth);
+                    drawStructuralRung(midX, midY, p2.x, p2.y, avgDepth);
                 }
             }
 

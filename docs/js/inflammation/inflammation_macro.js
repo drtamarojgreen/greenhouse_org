@@ -18,7 +18,8 @@
 
             const Math3D = window.GreenhouseModels3DMath;
             const tone = state.metrics.inflammatoryTone || 0.02;
-            this.orbitalRotation -= 0.005;
+            // Transition from orbital revolution to local rotation
+            this.localRotation = (this.localRotation || 0) + 0.02;
 
             // 1. GHOST BRAIN (Blueprint Aesthetic)
             const regions = ui3d.brainShell.regions;
@@ -32,9 +33,10 @@
                 }
                 const isHyper = tone > 0.4 && (k.includes('thalamus') || k.includes('insula'));
                 if (isHyper) {
-                    regions[key].color = `rgba(255, 120, 0, ${0.1 + tone * 0.15})`;
+                    // Critical ROI - Monochromatic High Contrast
+                    regions[key].color = `rgba(255, 255, 255, ${0.1 + tone * 0.2})`;
                 } else {
-                    regions[key].color = 'rgba(100, 180, 220, 0.05)';
+                    regions[key].color = 'rgba(160, 174, 192, 0.05)';
                 }
             }
 
@@ -113,9 +115,9 @@
 
                 const proj = Math3D.project3DTo2D(x, -y, z, camera, projection);
                 if (proj.scale > 0 && p.progress <= 1.0) {
-                    ctx.fillStyle = p.color;
+                    ctx.fillStyle = '#A0AEC0'; // Muted Gray
                     ctx.shadowBlur = p.molId === 'QUIN' ? 8 : 0;
-                    ctx.shadowColor = 'red';
+                    ctx.shadowColor = '#E0E0E0';
                     ctx.beginPath();
                     ctx.arc(proj.x, proj.y, p.radius * proj.scale, 0, Math.PI * 2);
                     ctx.fill();
@@ -128,9 +130,16 @@
                     }
 
                     if (p.molId === 'QUIN' && p.progress > 0.9) {
-                        // Excitotoxic visualization
+                        // Excitotoxic visualization (Structural Spike)
                         ctx.strokeStyle = `rgba(255, 50, 0, ${(1.0 - p.progress) * 10})`;
-                        ctx.beginPath(); ctx.arc(proj.x, proj.y, 12 * proj.scale, 0, Math.PI * 2); ctx.stroke();
+                        ctx.beginPath();
+                        for (let i = 0; i < 8; i++) {
+                            const a = i * Math.PI / 4;
+                            const r1 = 10 * proj.scale, r2 = 15 * proj.scale;
+                            ctx.moveTo(proj.x + Math.cos(a) * r1, proj.y + Math.sin(a) * r1);
+                            ctx.lineTo(proj.x + Math.cos(a) * r2, proj.y + Math.sin(a) * r2);
+                        }
+                        ctx.stroke();
                     }
                 }
 
@@ -187,7 +196,7 @@
                         const mz = (f.renderBounds.z + t.renderBounds.z) / 2;
                         const p = Math3D.project3DTo2D(mx, -my, mz, camera, projection);
                         if (p.scale > 0) {
-                            ctx.fillStyle = '#4ca1af';
+                            ctx.fillStyle = '#A0AEC0';
                             ctx.font = 'italic 8px monospace';
                             ctx.fillText(lbl.text, p.x + 10, p.y);
                         }
@@ -204,12 +213,12 @@
 
             ctx.save();
             activeFactors.forEach((fid, idx) => {
-                const angle = (idx / activeFactors.length) * Math.PI * 2 + this.orbitalRotation;
-                const radius = 380;
-
-                const fx = Math.cos(angle) * radius;
-                const fz = Math.sin(angle) * radius;
-                const fy = Math.sin(angle * 1.5) * 150;
+                // Fixed Grid Positions (Fixed-Point matrix)
+                const row = Math.floor(idx / 4);
+                const col = idx % 4;
+                const fx = -450 + col * 300;
+                const fy = 200 + row * 150;
+                const fz = 0;
 
                 const p = Math3D.project3DTo2D(fx, -fy, fz, camera, projection);
                 if (p.scale > 0) {
@@ -221,8 +230,8 @@
                     // Infiltration Line
                     ctx.beginPath();
                     const grad = ctx.createLinearGradient(p.x, p.y, tp.x, tp.y);
-                    grad.addColorStop(0, fid.includes('patho') || fid.includes('stress') ? `rgba(255, 50, 0, ${alpha})` : `rgba(180, 240, 255, ${alpha})`);
-                    grad.addColorStop(1, `rgba(255, 50, 0, 0)`);
+                    grad.addColorStop(0, fid.includes('patho') || fid.includes('stress') ? `rgba(224, 224, 224, ${alpha})` : `rgba(208, 208, 208, ${alpha})`);
+                    grad.addColorStop(1, `rgba(224, 224, 224, 0)`);
                     ctx.strokeStyle = grad;
                     ctx.lineWidth = 1.2;
                     ctx.setLineDash([10, 5]);
@@ -231,14 +240,27 @@
                     ctx.stroke();
                     ctx.setLineDash([]);
 
-                    // Node
+                    // Node with Internal Rotation (Intrinsic motion)
                     const isTrigger = fid.includes('patho') || fid.includes('stress') || fid.includes('Sleep') || fid.includes('Gut');
-                    ctx.fillStyle = isTrigger ? '#ff4d4d' : '#00ffcc';
+                    ctx.fillStyle = '#A0AEC0';
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = ctx.fillStyle;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(this.localRotation * (isTrigger ? 1.5 : 1.0));
+
                     ctx.beginPath();
-                    ctx.rect(p.x - 5, p.y - 5, 10 * p.scale, 10 * p.scale);
+                    // Structural Trigger Signature
+                    if (fid.includes('patho') || fid.includes('stress')) {
+                        // Diamond (Rotating in place)
+                        ctx.moveTo(0, -6); ctx.lineTo(6, 0); ctx.lineTo(0, 6); ctx.lineTo(-6, 0); ctx.closePath();
+                    } else {
+                        // Square (Rotating in place)
+                        ctx.rect(-5 * p.scale, -5 * p.scale, 10 * p.scale, 10 * p.scale);
+                    }
                     ctx.fill();
+                    ctx.restore();
                     ctx.shadowBlur = 0;
 
                     // Label
@@ -288,11 +310,13 @@
                 const fresnel = Math.pow(1 - Math.abs(v1.normal.z), 4);
                 const fog = Math3D.applyDepthFog(1.0, f.depth, 0.1, 0.95);
 
-                let color = `rgba(80, 160, 255, ${0.06 + fresnel * 0.1})`;
+                // Standardized Neutral Gray (#A0AEC0) with Holographic Fresnel
+                let color = `rgba(160, 174, 192, ${0.06 + fresnel * 0.1})`;
                 if (isHovered) {
                     color = `rgba(255, 255, 255, ${0.15 + Math.sin(Date.now() * 0.01) * 0.05})`;
                 } else if (tone > 0.4 && (regionKey.includes('thalamus') || regionKey.includes('insula'))) {
-                    color = `rgba(255, 80, 0, ${0.08 + tone * 0.12})`;
+                    // Critical ROI - Monochromatic White Glow
+                    color = `rgba(255, 255, 255, ${0.1 + tone * 0.2})`;
                 }
 
                 ctx.fillStyle = color;
@@ -300,17 +324,36 @@
                 ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y);
                 ctx.fill();
 
+                // Intrinsic Structural Signatures (Accessibility)
                 if (f.depth < 0.4) {
-                    // Fine line sulci detail
-                    const sulci = Math.cos(v1.x * 0.04) * Math.sin(v1.z * 0.04) > 0.7;
-                    ctx.strokeStyle = sulci ? `rgba(255, 255, 255, ${0.12 * fog})` : `rgba(180, 230, 255, ${0.03 * fog})`;
-                    ctx.lineWidth = sulci ? 0.8 : 0.4;
-                    ctx.stroke();
+                    ctx.save();
+                    if (regionKey === 'thalamus' || regionKey === 'hypothalamus') {
+                        // Deep core - Dotted wireframe
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 * fog})`;
+                        ctx.setLineDash([1, 2]);
+                        ctx.stroke();
+                    } else if (regionKey === 'hippocampus') {
+                        // Hippocampus - Laminar Flow
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.35 * fog})`;
+                        ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.stroke();
+                    } else if (regionKey === 'pfc' || regionKey === 'prefrontalCortex') {
+                        // PFC - Grid Pattern
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 * fog})`;
+                        ctx.setLineDash([1, 2]);
+                        ctx.stroke();
+                    } else {
+                        // Fine line sulci detail
+                        const sulci = Math.cos(v1.x * 0.04) * Math.sin(v1.z * 0.04) > 0.7;
+                        ctx.strokeStyle = sulci ? `rgba(255, 255, 255, ${0.25 * fog})` : `rgba(255, 255, 255, ${0.05 * fog})`;
+                        ctx.lineWidth = sulci ? 1.0 : 0.5;
+                        ctx.stroke();
+                    }
+                    ctx.restore();
                 }
 
                 // BBB Breakdown Flicker
                 if (tone > 0.7 && Math.random() > 0.99) {
-                    ctx.fillStyle = 'rgba(255,0,0,0.5)'; ctx.fill();
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fill();
                 }
             });
         },
@@ -337,7 +380,7 @@
                         ctx.font = 'bold 9px monospace';
 
                         ctx.beginPath();
-                        ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.2})`;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(p.x + (p.x < projection.width / 2 ? -40 : 40), p.y - 40);
                         ctx.lineTo(p.x + (p.x < projection.width / 2 ? -80 : 80), p.y - 40);
@@ -389,10 +432,11 @@
             const tone = state.metrics.tnfAlpha || 0;
 
             if (tone > 0.5) {
-                // BBB Leakage (Enhancement #28)
+                // BBB Leakage (Enhancement #28) - Monochromatic Structural Overlay
                 ctx.save();
-                ctx.strokeStyle = `rgba(255, 0, 0, ${tone * 0.3})`;
+                ctx.strokeStyle = `rgba(255, 255, 255, ${tone * 0.5})`;
                 ctx.lineWidth = 2;
+                ctx.setLineDash([2, 2]); // Dashed rings for leakage
                 const regions = ['thalamus', 'insula', 'hippocampus'];
                 regions.forEach(r => {
                     const reg = ui3d.brainShell.regions[r];
@@ -402,7 +446,7 @@
                             ctx.beginPath();
                             ctx.arc(p.x, p.y, 30 * p.scale, 0, Math.PI * 2);
                             ctx.stroke();
-                            ctx.fillStyle = `rgba(255, 0, 0, ${tone * 0.1})`;
+                            ctx.fillStyle = `rgba(255, 255, 255, ${tone * 0.15})`;
                             ctx.fill();
                         }
                     }

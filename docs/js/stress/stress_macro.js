@@ -24,7 +24,8 @@
             const intensity = state.factors.stressorIntensity || 0;
             const load = state.metrics.allostaticLoad || 0;
 
-            this.orbitalRotation += 0.001;
+            // Local Rotations instead of orbital revolutions
+            this.localRotation = (this.localRotation || 0) + 0.01;
             this.helixRotation += 0.01;
 
             // 1. AURA METRICS (Systemic Noise/Static)
@@ -39,13 +40,12 @@
                 const isHovered = ui3d.app.ui.hoveredElement && ui3d.app.ui.hoveredElement.id === key;
 
                 if (isHovered) {
-                    regions[key].color = `rgba(255, 255, 255, 0.15)`;
+                    regions[key].color = `rgba(255, 255, 255, 0.2)`;
                 } else if (isAmy && intensity > 0.5) {
-                    regions[key].color = `rgba(255, 80, 0, ${0.1 + intensity * 0.15})`;
-                } else if (isPFC) {
-                    regions[key].color = `rgba(100, 200, 255, ${0.1 + (1 - intensity) * 0.1})`;
+                    // Amygdala - Active Monochromatic Glow
+                    regions[key].color = `rgba(255, 255, 255, ${0.1 + intensity * 0.2})`;
                 } else {
-                    regions[key].color = 'rgba(100, 150, 200, 0.05)';
+                    regions[key].color = 'rgba(160, 174, 192, 0.05)';
                 }
             }
 
@@ -75,15 +75,17 @@
             if (load < 0.2) return;
             ctx.save();
             const count = Math.round(load * 40);
-            ctx.fillStyle = `rgba(255, 100, 0, ${load * 0.2})`;
+            ctx.fillStyle = `rgba(224, 224, 224, ${load * 0.2})`;
             for (let i = 0; i < count; i++) {
                 const x = Math.random() * projection.width;
                 const y = Math.random() * projection.height;
                 const size = Math.random() * 2;
                 if (Math.random() > 0.95) {
-                    // "Static" glitch line
+                    // "Static" glitch line (Monochromatic)
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.fillRect(x, y, 20 * load, 0.5);
                 } else {
+                    ctx.fillStyle = '#A0AEC0';
                     ctx.fillRect(x, y, size, size);
                 }
             }
@@ -113,7 +115,7 @@
                     const p = Math3D.project3DTo2D(x, -y, z, camera, projection);
                     if (p.scale > 0) {
                         const alpha = Math3D.applyDepthFog(0.6, p.depth, 0.1, 0.9);
-                        ctx.fillStyle = hasVariant ? `rgba(255, 180, 0, ${alpha})` : `rgba(0, 255, 200, ${alpha})`;
+                        ctx.fillStyle = hasVariant ? `rgba(224, 224, 224, ${alpha})` : `rgba(160, 174, 192, ${alpha})`;
 
                         const glitch = (hasVariant && Math.random() > 0.98) ? (Math.random() - 0.5) * 10 : 0;
                         ctx.beginPath();
@@ -130,7 +132,7 @@
                                 // REPAIR PULSE: Dynamic Wow Effect
                                 if (hasVariant && Math.sin(this.helixRotation + i * 0.5) > 0.8) {
                                     ctx.fillStyle = '#fff';
-                                    ctx.shadowBlur = 15; ctx.shadowColor = '#00ffcc';
+                                    ctx.shadowBlur = 15; ctx.shadowColor = '#D0D0D0';
                                     ctx.beginPath();
                                     ctx.arc(p.x, p.y, 1.5 * p.scale, 0, Math.PI * 2);
                                     ctx.fill();
@@ -165,7 +167,7 @@
 
                 const proj = Math3D.project3DTo2D(p.x, p.y, p.z, camera, projection);
                 if (proj.scale > 0 && p.life > 0) {
-                    const color = p.type === 'cortisol' ? `rgba(255, 255, 150, ${p.life * 0.6})` : `rgba(150, 255, 200, ${p.life * 0.4})`;
+                    const color = p.type === 'cortisol' ? `rgba(224, 224, 224, ${p.life * 0.6})` : `rgba(160, 174, 192, ${p.life * 0.4})`;
                     ctx.fillStyle = color;
                     ctx.beginPath();
                     ctx.arc(proj.x, proj.y, 1.5 * proj.scale, 0, Math.PI * 2);
@@ -185,12 +187,12 @@
 
             ctx.save();
             activeFactors.forEach((fid, idx) => {
-                const angle = (idx / activeFactors.length) * Math.PI * 2 + this.orbitalRotation;
-                const radius = 250;
-
-                const fx = Math.cos(angle) * radius;
-                const fz = Math.sin(angle) * radius;
-                const fy = Math.sin(angle * 0.5) * 100;
+                // Fixed Layout Matrix
+                const row = Math.floor(idx / 5);
+                const col = idx % 5;
+                const fx = -500 + col * 250;
+                const fy = 300 + row * 150;
+                const fz = 0;
 
                 const p = Math3D.project3DTo2D(fx, -fy, fz, camera, projection);
                 if (p.scale > 0) {
@@ -206,8 +208,11 @@
                     const py = p.y + (tp.y - p.y) * pulse;
 
                     ctx.beginPath();
-                    ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.3})`;
-                    ctx.setLineDash([2, 4]);
+                    // Geometric factor signature
+                    if (fid.includes('sleep')) ctx.setLineDash([10, 10]);
+                    else if (fid.includes('noise')) ctx.setLineDash([2, 2]);
+                    else ctx.setLineDash([5, 5, 2, 2]);
+                    ctx.strokeStyle = `rgba(208, 208, 208, ${alpha * 0.3})`;
                     ctx.moveTo(p.x, p.y); ctx.lineTo(tp.x, tp.y);
                     ctx.stroke();
                     ctx.setLineDash([]);
@@ -216,9 +221,9 @@
                     ctx.beginPath(); ctx.arc(px, py, 4 * p.scale, 0, Math.PI * 2); ctx.fill();
 
                     const isHovered = ui3d.app.ui.hoveredElement && ui3d.app.ui.hoveredElement.id === fid;
-                    ctx.fillStyle = fid.includes('Mod') ? '#00ffaa' : (fid.includes('comt') ? '#ffaa00' : '#4ca1af');
+                    ctx.fillStyle = fid.includes('Mod') ? '#D0D0D0' : (fid.includes('comt') ? '#E0E0E0' : '#A0AEC0');
                     ctx.shadowBlur = isHovered ? 20 : 10;
-                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.shadowColor = '#fff';
                     ctx.beginPath(); ctx.arc(p.x, p.y, (isHovered ? 8 : 5) * p.scale, 0, Math.PI * 2); ctx.fill();
                     ctx.shadowBlur = 0;
 
@@ -287,15 +292,16 @@
                 const fog = Math3D.applyDepthFog(1.0, f.depth, 0.1, 0.9);
 
                 let baseAlpha = 0.06;
-                let color = `rgba(100, 180, 255, ${baseAlpha})`;
+                let color = `rgba(160, 174, 192, ${baseAlpha})`;
 
                 if (isHovered) {
-                    color = `rgba(255, 255, 255, ${0.15 + Math.sin(Date.now() * 0.01) * 0.05})`;
+                    color = `rgba(255, 255, 255, ${0.2 + Math.sin(Date.now() * 0.01) * 0.05})`;
                 } else if (regionKey === 'amygdala' && stressIntensity > 0.5) {
-                    color = `rgba(255, 80, 0, ${0.1 + stressIntensity * 0.1})`;
+                    // Active Amygdala - Bright White
+                    color = `rgba(255, 255, 255, ${0.15 + stressIntensity * 0.2})`;
                 } else if (regionKey === 'vagus_nerve') {
                     const vagalTone = ui3d.app.engine.state.metrics.vagalTone || 0.5;
-                    color = `rgba(0, 255, 150, ${0.2 + vagalTone * 0.3})`;
+                    color = `rgba(224, 224, 224, ${0.2 + vagalTone * 0.3})`;
                     if (Math.random() < vagalTone * 0.1) color = 'rgba(255, 255, 255, 0.8)'; // Nerve firing spark
                 }
 
@@ -315,7 +321,7 @@
 
             // HOLOGRAPHIC SCANLINES
             ctx.save();
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.03)';
+            ctx.strokeStyle = 'rgba(208, 208, 208, 0.03)';
             ctx.lineWidth = 1;
             const scanPos = (Date.now() * 0.05) % projection.height;
             ctx.beginPath();
@@ -324,7 +330,7 @@
 
             // Vertical scan (aberration)
             if (stressIntensity > 0.7 && Math.random() > 0.9) {
-                ctx.fillStyle = 'rgba(255, 50, 0, 0.1)';
+                ctx.fillStyle = 'rgba(224, 224, 224, 0.1)';
                 ctx.fillRect(0, scanPos, projection.width, 2);
             }
             ctx.restore();
@@ -384,7 +390,7 @@
             const intensity = state.factors.stressorIntensity || 0;
 
             ctx.save();
-            ctx.strokeStyle = `rgba(255, 50, 50, ${0.05 + autonomic * 0.1})`;
+            ctx.strokeStyle = `rgba(160, 174, 192, ${0.05 + autonomic * 0.1})`;
             ctx.lineWidth = 0.5;
 
             // Simulate major arteries (Circle of Willis simplified)
@@ -408,7 +414,7 @@
                     const pulse = (Date.now() * 0.002) % 1;
                     const px = p1.x + (p2.x - p1.x) * pulse;
                     const py = p1.y + (p2.y - p1.y) * pulse;
-                    ctx.fillStyle = `rgba(255, 100, 100, ${0.3 * (1 - pulse)})`;
+                    ctx.fillStyle = `rgba(224, 224, 224, ${0.3 * (1 - pulse)})`;
                     ctx.beginPath(); ctx.arc(px, py, 2 * p1.scale, 0, Math.PI * 2); ctx.fill();
                 }
             });
@@ -439,7 +445,7 @@
 
                         // Technical HUD Line
                         ctx.beginPath();
-                        ctx.strokeStyle = isVagus ? `rgba(0, 255, 150, ${alpha * 0.5})` : `rgba(100, 200, 255, ${alpha * 0.3})`;
+                        ctx.strokeStyle = isVagus ? `rgba(255, 255, 255, ${alpha * 0.6})` : `rgba(255, 255, 255, ${alpha * 0.4})`;
                         ctx.moveTo(p.x, p.y);
                         const offsetSide = p.x < projection.width / 2 ? -40 : 40;
                         ctx.lineTo(p.x + offsetSide, p.y - 40);
@@ -455,7 +461,7 @@
                         ctx.fillText(t(region.name).toUpperCase(), endX, p.y - 45);
 
                         if (isVagus) {
-                            ctx.fillStyle = '#00ff99';
+                            ctx.fillStyle = '#D0D0D0';
                             ctx.fillText("VAGAL TONE ACTIVE", endX, p.y - 30);
                         }
                     }
@@ -469,7 +475,7 @@
             this.waveOffsets[key] += 0.1 + intensity * 0.2;
 
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(0, 255, 200, ${alpha * 0.6})`;
+            ctx.strokeStyle = `rgba(160, 174, 192, ${alpha * 0.6})`;
             ctx.lineWidth = 1;
             for (let i = 0; i < width; i++) {
                 const val = Math.sin(i * 0.1 + this.waveOffsets[key]) * (5 + intensity * 15);
@@ -489,18 +495,18 @@
             ctx.save();
             // Premium Glass Panel
             const boxGrad = ctx.createLinearGradient(x, y, x + w, y + h);
-            boxGrad.addColorStop(0, 'rgba(10, 30, 50, 0.9)');
-            boxGrad.addColorStop(1, 'rgba(5, 10, 20, 0.95)');
+            boxGrad.addColorStop(0, 'rgba(20, 20, 20, 0.95)');
+            boxGrad.addColorStop(1, 'rgba(10, 10, 10, 0.98)');
             ctx.fillStyle = boxGrad;
-            ctx.strokeStyle = 'rgba(76, 161, 175, 0.6)';
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.6)';
             ctx.lineWidth = 1;
             if (ui3d.app.roundRect) ui3d.app.roundRect(ctx, x, y, w, h, 15, true, true);
 
             // Header
-            ctx.fillStyle = '#4ca1af';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 9px monospace';
             ctx.fillText("MICRO-MECHANISM ANALYSIS: " + hovered.id.toUpperCase(), x + 20, y + 25);
-            ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)';
+            ctx.strokeStyle = 'rgba(160, 174, 192, 0.3)';
             ctx.beginPath(); ctx.moveTo(x + 20, y + 35); ctx.lineTo(x + w - 20, y + 35); ctx.stroke();
 
             // High-Fidelity Receptor Binding Animation
@@ -510,7 +516,7 @@
 
             // Draw "Receptor" (G-Protein Coupled style)
             ctx.lineWidth = 2;
-            ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)';
+            ctx.strokeStyle = 'rgba(208, 208, 208, 0.3)';
             for (let i = 0; i < 7; i++) {
                 const hx = cx - 70 + i * 20;
                 const hHeight = 50 + Math.sin(time + i) * 8;
@@ -533,7 +539,7 @@
                     ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
                     ctx.shadowBlur = 0;
                 } else {
-                    ctx.fillStyle = '#ffaa00';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.beginPath(); ctx.arc(lx, ly, 2, 0, Math.PI * 2); ctx.fill();
                 }
             }

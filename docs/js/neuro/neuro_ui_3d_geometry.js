@@ -133,7 +133,7 @@
 
             // Central Soma
             const soma = this.generateSphere(10 * scale, 8);
-            vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff4444' })));
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#E0E0E0' : '#ff4444' })));
             faces.push(...soma.faces);
 
             // Processes (Dendrite-like branches)
@@ -150,10 +150,45 @@
 
                 const tube = this.generateTubeMesh(p1, p2, cp, 2 * scale, 6);
                 const offset = vertices.length;
-                vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff6666' })));
+                vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#E0E0E0' : '#ff6666' })));
                 tube.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
             }
             return { vertices, faces };
+        },
+
+        inferRegionFromUnitPosition(x, y, z) {
+            if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) return 'brainstem';
+            if (y < -0.3 && z < -0.4) return 'cerebellum';
+            if (z > 0.4 && y > -0.2) return 'pfc';
+            if (z < -0.5 && y > -0.2) return 'occipitalLobe';
+            if (y > 0.4 && z > -0.4 && z < 0.4) return 'parietalLobe';
+            if (Math.abs(x) > 0.4 && y < 0.1 && z > -0.4 && z < 0.4) return 'temporalLobe';
+            if (Math.abs(x) < 0.3 && Math.abs(y) < 0.3 && Math.abs(z) < 0.3) return 'amygdala';
+            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.5 && y < 0 && z > -0.2 && z < 0.2) return 'hippocampus';
+            return null;
+        },
+
+        getRegionalSurfaceNoise(region, x, y, z) {
+            switch (region) {
+                case 'pfc':
+                    return Math.sin(x * 18) * Math.cos(y * 18) * 0.02 + Math.sin(z * 26) * 0.012;
+                case 'temporalLobe':
+                    return Math.sin(z * 12) * Math.cos(x * 6) * 0.028 + Math.sin(y * 9) * 0.01;
+                case 'occipitalLobe':
+                    return Math.sin(y * 8) * Math.cos(z * 8) * 0.023;
+                case 'parietalLobe':
+                    return Math.sin(x * 14) * Math.cos(z * 14) * 0.022;
+                case 'cerebellum':
+                    return (Math.sin(z * 40) * 0.022) + (Math.sin(z * 20) * 0.018);
+                case 'brainstem':
+                    return Math.sin(y * 4) * 0.006;
+                case 'hippocampus':
+                    return Math.sin((x + z) * 16) * 0.016;
+                case 'amygdala':
+                    return Math.sin((x * x + y * y + z * z) * 10) * 0.012;
+                default:
+                    return Math.sin(x * 10) * Math.cos(y * 10) * Math.sin(z * 10) * 0.012;
+            }
         },
 
         initializeBrainShell(brainShell) {
@@ -229,9 +264,21 @@
                     }
 
                     // 5. Gyri/Sulci Noise (The brain surface 'wrinkles')
-                    // Using layered sine waves to remove the 'soccer ball' look
-                    const noise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.03 +
-                        (Math.sin(x * 25) * Math.cos(y * 25)) * 0.01;
+                    // Regional Morphological Variations
+                    let freq = 12;
+                    let amp = 0.03;
+
+                    // Approximate region check for noise variance
+                    if (y < -0.3 && z < -0.4) { // Cerebellum area
+                        freq = 40; amp = 0.015; // Denser, finer folds
+                    } else if (z > 0.4) { // PFC area
+                        freq = 15; amp = 0.04;  // Deeper, more pronounced
+                    } else if (Math.abs(x) > 0.6) { // Temporal
+                        freq = 8; amp = 0.025;  // Wider, smoother
+                    }
+
+                    const noise = (Math.sin(x * freq) * Math.cos(y * freq) * Math.sin(z * freq)) * amp +
+                        (Math.sin(x * freq * 2) * Math.cos(y * freq * 2)) * (amp * 0.3);
 
                     x = x * radius * (1 + noise);
                     y = y * radius * (1 + noise);
@@ -257,9 +304,10 @@
 
                     // Apply texture to geometry (displacement mapping)
                     if (texture > 0.6) {
-                        x += (x / len) * 2;
-                        y += (y / len) * 2;
-                        z += (z / len) * 2;
+                        const disp = (texture - 0.6) * 5;
+                        x += (x / len) * disp;
+                        y += (y / len) * disp;
+                        z += (z / len) * disp;
                     }
 
                     brainShell.vertices.push({ x, y, z });
@@ -281,35 +329,35 @@
             // Define Regions
             brainShell.regions = {
                 pfc: {
-                    color: 'rgba(100, 150, 255, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'pfc')
                 },
                 amygdala: {
-                    color: 'rgba(255, 100, 100, 0.6)',
+                    color: 'rgba(255, 159, 67, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'amygdala')
                 },
                 hippocampus: {
-                    color: 'rgba(100, 255, 150, 0.6)',
+                    color: 'rgba(79, 209, 197, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'hippocampus')
                 },
                 temporalLobe: {
-                    color: 'rgba(255, 165, 0, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'temporalLobe')
                 },
                 parietalLobe: {
-                    color: 'rgba(147, 112, 219, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'parietalLobe')
                 },
                 occipitalLobe: {
-                    color: 'rgba(255, 192, 203, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'occipitalLobe')
                 },
                 cerebellum: {
-                    color: 'rgba(64, 224, 208, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'cerebellum')
                 },
                 brainstem: {
-                    color: 'rgba(255, 215, 0, 0.6)',
+                    color: 'rgba(160, 174, 192, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'brainstem')
                 }
             };
@@ -328,6 +376,29 @@
 
             // Pre-calculate Regions and Boundaries
             this.computeRegionsAndBoundaries(brainShell);
+        },
+
+        updateMesh(geometry, time, state = {}) {
+            if (!geometry || !Array.isArray(geometry.vertices)) return geometry;
+            const load = Math.max(0, Math.min(1, state.cognitiveLoad ?? state.load ?? 0));
+            const tension = Math.max(0, Math.min(1, state.tension ?? 0));
+
+            geometry.vertices.forEach((v, idx) => {
+                if (v.baseX === undefined) {
+                    v.baseX = v.x;
+                    v.baseY = v.y;
+                    v.baseZ = v.z;
+                }
+                const regionNoise = this.getRegionalSurfaceNoise(v.region, v.baseX / 200, v.baseY / 200, v.baseZ / 200);
+                const osc = Math.sin(time * 0.0018 + idx * 0.13) * (0.8 + load);
+                const displacement = regionNoise * (3.2 + load * 4.5) + osc * tension * 0.9;
+                const len = Math.sqrt(v.baseX * v.baseX + v.baseY * v.baseY + v.baseZ * v.baseZ) || 1;
+                v.x = v.baseX + (v.baseX / len) * displacement;
+                v.y = v.baseY + (v.baseY / len) * displacement;
+                v.z = v.baseZ + (v.baseZ / len) * displacement;
+            });
+
+            return geometry;
         },
 
         getRegionVertices(brainShell, regionKey) {

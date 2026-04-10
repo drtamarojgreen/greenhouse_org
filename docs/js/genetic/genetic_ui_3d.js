@@ -1,5 +1,5 @@
-// docs/js/genetic_ui_3d.js
-// 3D Visualization for Genetic Algorithm
+// docs/js/genetic/genetic_ui_3d.js
+// Enhanced 3D Visualization for Genetic Algorithm
 
 (function () {
     'use strict';
@@ -15,207 +15,72 @@
         algo: null,
 
         cameras: [
-            // Main camera
             { x: 0, y: -100, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
-            // PiP cameras: helix, micro, protein, target
             { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
             { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 400 },
             { x: 0, y: 0, z: -100, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 400 },
             { x: 0, y: 0, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 600 }
         ],
-        projection: {
-            width: 800, height: 600,
-            near: 10, far: 2000
-        },
+        projection: { width: 800, height: 600, near: 10, far: 2000 },
 
         isActive: false,
-        rotationSpeed: 0.005, // Slower rotation
+        rotationSpeed: 0.001,
         neurons3D: [],
         connections3D: [],
-        particles: [],
-        brainShell: null, // Parametric shell data
-        neuronMeshes: null, // Cache for neuron 3D models
-
-        // Automatic PiP State
+        brainShell: null,
         activeGeneIndex: 0,
-        lastFocusChangeTime: 0,
-        focusDuration: 5000, // 5 seconds per gene
-
-        // Protein View State
-        proteinCache: null, // Cache for generated protein chains
-        // Dynamic Visualization State
-
-        lastGeneration: 0,
-        eliteParents: [], // Snapshot of previous best network for transition effect
-        transitionStartTime: 0,
-
         mainCameraController: null,
 
         init(container, algo, selector = null) {
-            // Support (container, selector) re-init signature where algo might be missing or passed differently
-            // But here the signature is tricky because `algo` is needed.
-            // The utility calls: appInstance[reinitFunctionName](container, selector)
-            // So if `init(container, selector)` is called, `algo` becomes the selector string.
-            // We need to store `algo` on the instance to survive re-init.
-
-            if (algo && typeof algo !== 'string') {
-                this.algo = algo;
-            }
-
-            if (typeof algo === 'string' && !selector) {
-                selector = algo;
-            }
-
+            if (algo && typeof algo !== 'string') this.algo = algo;
             this.container = container;
-            this.isEvolving = false; // Don't start until button pressed
-
-            // Set main camera to cameras[0]
             this.camera = this.cameras[0];
 
-            // Initialize PiP Controls with cameras array FIRST
-            if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig, this.cameras);
-            }
-
-            // Initialize Main Camera Controller
-            if (window.GreenhouseGeneticCameraController) {
-                this.mainCameraController = new window.GreenhouseGeneticCameraController(
-                    this.camera,
-                    window.GreenhouseGeneticConfig
-                );
-            }
+            if (window.GreenhouseGeneticPiPControls) window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig, this.cameras);
+            if (window.GreenhouseGeneticCameraController) this.mainCameraController = new window.GreenhouseGeneticCameraController(this.camera, window.GreenhouseGeneticConfig);
 
             this.setupDOM();
             this.resize();
             this.setupInteraction();
 
-            // Add Resize Listeners
-            window.addEventListener('resize', () => {
-                requestAnimationFrame(() => this.resize());
-            });
-
-            // Handle Language Change
-            window.addEventListener('greenhouseLanguageChanged', () => {
-                this.refreshUIText();
-            });
-
-            if (window.ResizeObserver) {
-                const ro = new ResizeObserver(() => {
-                    requestAnimationFrame(() => this.resize());
-                });
-                ro.observe(this.container);
-            }
+            window.addEventListener('resize', () => requestAnimationFrame(() => this.resize()));
+            window.addEventListener('greenhouseLanguageChanged', () => this.refreshUIText());
 
             this.startAnimation();
-
-            // Initial Data Map
             this.updateData();
-
-            // Resilience using shared GreenhouseUtils
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
-                window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
-            }
-        },
-
-        startAnimation() {
-            this.stopAnimation();
-            this.animate();
-        },
-
-        stopAnimation() {
-            if (this.animationFrame) {
-                cancelAnimationFrame(this.animationFrame);
-                this.animationFrame = null;
-            }
-        },
-
-        refreshUIText() {
-            const btn = document.getElementById('gen-pause-btn');
-            if (btn) {
-                btn.textContent = this.isEvolving ? t("Pause Evolution") : t("Resume Evolution");
-            }
-            const genLabel = document.getElementById('gen-label-container');
-            if (genLabel) {
-                genLabel.innerHTML = `${t('gen')}: <span id="gen-counter">${this.algo ? this.algo.generation : 0}</span> | ${t('fitness')}: <span id="fitness-display">${this.algo && this.algo.bestNetwork ? this.algo.bestNetwork.fitness.toFixed(2) : '0.00'}</span>`;
-            }
-
-            const startBtn = document.querySelector('#genetic-start-overlay button');
-            if (startBtn) {
-                startBtn.textContent = t('Start Simulation');
-            }
-
-            const explanation = document.getElementById('genetic-explanation');
-            if (explanation) {
-                explanation.innerHTML = `
-                    <h3 style="margin-top:0;">${t('genetic_explanation_title')}</h3>
-                    <p>${t('genetic_explanation_text')}</p>
-                `;
-            }
-
-            const langBtn = document.getElementById('genetic-lang-toggle');
-            if (langBtn) {
-                langBtn.textContent = t('btn_language');
-            }
         },
 
         setupDOM() {
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
-
-            if (isMobile) {
-                // Hide static HTML elements if they exist
-                const staticInfo = document.querySelector('.info-panel');
-                if (staticInfo) staticInfo.style.display = 'none';
-                const staticHeader = document.querySelector('.page-header');
-                if (staticHeader) staticHeader.style.display = 'none';
-            }
-
-            // Controls
             const controls = document.createElement('div');
             controls.className = 'greenhouse-controls-panel';
-            controls.style.marginBottom = '15px';
-            controls.style.padding = isMobile ? '10px' : '15px';
-
             controls.innerHTML = `
-                <div style="display: flex; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px; flex-wrap: wrap;">
-                    <button id="gen-pause-btn" class="greenhouse-btn greenhouse-btn-primary" style="font-size: ${isMobile ? '12px' : '14px'}">${t('Pause Evolution')}</button>
-                    <button id="genetic-lang-toggle" class="greenhouse-btn greenhouse-btn-secondary" style="font-size: ${isMobile ? '12px' : '14px'}; width: auto !important; max-width: fit-content;">${t('btn_language')}</button>
-                    <div id="gen-label-container" style="margin-left: ${isMobile ? '0' : 'auto'}; font-weight: bold; color: #2c3e50; font-size: ${isMobile ? '12px' : '14px'}">
+                <div style="display: flex; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px;">
+                    <button id="gen-pause-btn" class="greenhouse-btn greenhouse-btn-primary">${t('Pause Evolution')}</button>
+                    <div id="gen-label-container" style="margin-left: auto; font-weight: bold; color: #2c3e50;">
                         ${t('gen')}: <span id="gen-counter">0</span> | ${t('fitness')}: <span id="fitness-display">0.00</span>
                     </div>
                 </div>
             `;
             this.container.appendChild(controls);
 
-            // Bind Buttons
             const btn = controls.querySelector('#gen-pause-btn');
             btn.addEventListener('click', () => {
                 this.isEvolving = !this.isEvolving;
                 btn.textContent = this.isEvolving ? t("Pause Evolution") : t("Resume Evolution");
-                btn.style.background = this.isEvolving ? "" : "#e74c3c";
-                btn.style.color = this.isEvolving ? "" : "white";
             });
 
-            const langBtn = controls.querySelector('#genetic-lang-toggle');
-            if (langBtn) {
-                langBtn.addEventListener('click', () => {
-                    if (window.GreenhouseModelsUtil) {
-                        window.GreenhouseModelsUtil.toggleLanguage();
-                    }
-                });
-            }
-
-            // Canvas
             this.canvas = document.createElement('canvas');
-            this.canvas.id = 'main-canvas';
             this.canvas.style.width = '100%';
             this.canvas.style.height = '500px';
-            this.canvas.style.background = '#0f172a';
+            this.canvas.style.background = '#050510';
             this.canvas.style.borderRadius = '12px';
-            this.canvas.style.cursor = 'grab';
             this.container.appendChild(this.canvas);
-
             this.ctx = this.canvas.getContext('2d');
+
+            // Initialize Post-Processor
+            if (window.GreenhousePostProcessor) {
+                window.GreenhousePostProcessor.init(this.canvas);
+            }
 
             // Add Start Overlay
             this.addStartOverlay(this.container);
@@ -244,53 +109,13 @@
         },
 
         addStartOverlay(container) {
-            const util = window.GreenhouseModelsUtil;
             const overlay = document.createElement('div');
-            overlay.id = 'genetic-start-overlay';
-            overlay.style.position = 'absolute';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100%';
-            overlay.style.height = '500px'; // Match canvas height
-            overlay.style.display = 'flex'; // SHOW BY DEFAULT - user must click to start
-            overlay.style.justifyContent = 'center';
-            overlay.style.alignItems = 'center';
-            overlay.style.background = 'rgba(0,0,0,0.6)';
-            overlay.style.zIndex = '10';
-            overlay.style.borderRadius = '12px'; // Match canvas border radius
-
+            overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:500px;display:flex;justify-content:center;align-items:center;background:rgba(0,0,0,0.6);z-index:10;border-radius:12px;';
             const btn = document.createElement('button');
-            btn.textContent = util ? util.t('Start Simulation') : 'Start Simulation';
-            btn.style.padding = '15px 30px';
-            btn.style.fontSize = '18px';
-            btn.style.cursor = 'pointer';
-            btn.style.background = '#2ecc71';
-            btn.style.color = 'white';
-            btn.style.border = 'none';
-            btn.style.borderRadius = '5px';
-
-            btn.onclick = () => {
-                this.isEvolving = true;
-                overlay.style.display = 'none';
-
-                if (window.GreenhouseGenetic) {
-                    window.GreenhouseGenetic.startSimulation();
-                }
-
-                // Update pause button text if needed
-                const pauseBtn = container.querySelector('#gen-pause-btn');
-                if (pauseBtn) {
-                    pauseBtn.textContent = "Pause Evolution";
-                    pauseBtn.style.background = "";
-                    pauseBtn.style.color = "";
-                }
-
-                // Start animation loop
-                this.startAnimation();
-            };
-
+            btn.textContent = t('Start Simulation');
+            btn.style.cssText = 'padding:15px 30px;font-size:18px;cursor:pointer;background:#E0E0E0;border:none;border-radius:5px;font-weight:bold;';
+            btn.onclick = () => { this.isEvolving = true; overlay.style.display = 'none'; if (window.GreenhouseGenetic) window.GreenhouseGenetic.startSimulation(); };
             overlay.appendChild(btn);
-            // Append to container, but make sure container is relative
             container.style.position = 'relative';
             container.appendChild(overlay);
         },
@@ -305,313 +130,74 @@
 
         setupInteraction() {
             this.canvas.addEventListener('mousedown', e => {
-                // 1. Check PiP Controls first. If handled, stop processing.
-                if (window.GreenhouseGeneticPiPControls) {
-                    if (window.GreenhouseGeneticPiPControls.handleMouseDown(e, this.canvas)) {
-                        // Deactivate main controller while PiP is active
-                        if (this.mainCameraController) this.mainCameraController.isListening = false;
-                        return;
-                    }
-                }
-
-                // 2. Main Camera Controls
-                if (this.mainCameraController) {
-                    this.mainCameraController.isListening = true;
-                    this.mainCameraController.handleMouseDown(e);
-                    this.autoFollow = false; // Disable auto-follow on manual interaction
-                    this.canvas.style.cursor = 'grabbing';
-                }
+                if (window.GreenhouseGeneticPiPControls?.handleMouseDown(e, this.canvas)) return;
+                this.mainCameraController?.handleMouseDown(e);
             });
-
-            this.canvas.addEventListener('contextmenu', e => e.preventDefault());
-
             window.addEventListener('mouseup', () => {
-                // PiP Controls
-                if (window.GreenhouseGeneticPiPControls) {
-                    window.GreenhouseGeneticPiPControls.handleMouseUp();
-                }
-
-                // Main Camera Controls
-                if (this.mainCameraController) {
-                    this.mainCameraController.handleMouseUp();
-                    // Re-enable main controller listening on mouse up
-                    this.mainCameraController.isListening = true;
-                }
-
-                if (this.canvas) this.canvas.style.cursor = 'grab';
+                window.GreenhouseGeneticPiPControls?.handleMouseUp();
+                this.mainCameraController?.handleMouseUp();
             });
-
             window.addEventListener('mousemove', e => {
-                // Remove excessive mouse move logging
-
-                // PiP Controls
-                if (window.GreenhouseGeneticPiPControls) {
-                    // If the PiP controls handled the event, do not proceed.
-                    if (window.GreenhouseGeneticPiPControls.handleMouseMove(e)) {
-                        return;
-                    }
-                }
-
-                // Main Camera Controls
-                if (this.mainCameraController) {
-                    this.mainCameraController.handleMouseMove(e);
-                }
+                if (window.GreenhouseGeneticPiPControls?.handleMouseMove(e)) return;
+                this.mainCameraController?.handleMouseMove(e);
             });
-
             this.canvas.addEventListener('wheel', e => {
-                // PiP Controls
-                if (window.GreenhouseGeneticPiPControls) {
-                    // If the PiP controls handled the event, do not proceed.
-                    if (window.GreenhouseGeneticPiPControls.handleWheel(e, this.canvas)) {
-                        return;
-                    }
-                }
-
+                if (window.GreenhouseGeneticPiPControls?.handleWheel(e, this.canvas)) return;
                 e.preventDefault();
-
-                // Main Camera Controls
-                if (this.mainCameraController) {
-                    this.mainCameraController.handleWheel(e);
-                }
+                this.mainCameraController?.handleWheel(e);
             }, { passive: false });
-
-            // Handle Clicks
-            this.canvas.addEventListener('click', (e) => {
-                // Check PiP Reset Button - need to scale coordinates
-                if (window.GreenhouseGeneticPiPControls) {
-                    const rect = this.canvas.getBoundingClientRect();
-                    const scaleX = this.canvas.width / rect.width;
-                    const scaleY = this.canvas.height / rect.height;
-                    const mouseX = (e.clientX - rect.left) * scaleX;
-                    const mouseY = (e.clientY - rect.top) * scaleY;
-                    const resetPiP = window.GreenhouseGeneticPiPControls.checkResetButton(mouseX, mouseY, this.canvas.width, this.canvas.height);
-                    if (resetPiP) {
-                        window.GreenhouseGeneticPiPControls.resetPiP(resetPiP);
-                        return;
-                    }
-                }
-
-                // Only handle click if not dragging
-                if (this.mainCameraController && !this.mainCameraController.isDragging && !this.mainCameraController.isPanning) {
-                    this.handleMouseClick(e);
-                }
-            });
-
-            // Keyboard Controls (Optional, pass to main controller)
-            window.addEventListener('keydown', e => {
-                if (this.mainCameraController) this.mainCameraController.handleKeyDown(e);
-            });
-            window.addEventListener('keyup', e => {
-                if (this.mainCameraController) this.mainCameraController.handleKeyUp(e);
-            });
         },
 
         updateData() {
-            if (!this.algo || !this.algo.bestNetwork) return;
-
+            if (!this.algo?.bestNetwork) return;
             const net = this.algo.bestNetwork;
-
-            // Update UI Counters
-            const genCounter = document.getElementById('gen-counter');
-            const fitDisplay = document.getElementById('fitness-display');
-            if (genCounter) genCounter.textContent = this.algo.generation;
-            if (fitDisplay) fitDisplay.textContent = net.fitness.toFixed(2);
-
-            // Map Neurons to 3D Space (if not already mapped or if topology changes)
-            // For this demo, we re-map every time to be safe, though optimization would cache positions
-            // Generate Integrated Topology: Double Helix (Left) + Whole Brain (Right)
-
-            const helixOffset = -400; // Far Left
-            const brainOffset = 0;    // Center of World
-
-            // Initialize Brain Shell if not exists
             if (!this.brainShell) {
-                this.initializeBrainShell();
+                this.brainShell = { vertices: [], faces: [] };
+                window.GreenhouseGeneticGeometry?.initializeBrainShell(this.brainShell);
             }
-
-            // Use canonical region names that match the geometry data from neuro_ui_3d_geometry.js
-            const regionKeys = ['pfc', 'amygdala', 'hippocampus', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'cerebellum', 'brainstem'];
             this.neurons3D = net.nodes.map((node, i) => {
-                // Split nodes: First half = Genotype (Helix), Second half = Phenotype (Brain)
                 const isGenotype = i < net.nodes.length / 2;
-
-                // Determine the corresponding brain region for this gene/neuron pair.
-                // The gene at index `i` corresponds to the neuron at index `i + half`,
-                // so they share the same region logic.
-                const correspondingIndex = isGenotype ? i + (net.nodes.length / 2) : i;
-                const regionKey = regionKeys[correspondingIndex % regionKeys.length];
-
                 if (isGenotype) {
-                    if (window.GreenhouseGeneticGeometry) {
-                        const helixData = window.GreenhouseGeneticGeometry.generateHelixPoints(i, net.nodes.length, helixOffset);
-                        return {
-                            id: node.id,
-                            x: helixData.x,
-                            y: helixData.y,
-                            z: helixData.z,
-                            type: 'gene',
-                            region: regionKey, // Assign the target region to the gene
-                            strand: helixData.strandIndex,
-                            label: GENE_SYMBOLS[i % GENE_SYMBOLS.length],
-                            baseColor: helixData.strandIndex === 0 ? '#A8DADC' : '#F4A261'
-                        };
-                    }
-                    return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', region: regionKey, baseColor: '#fff' };
+                    const helixData = window.GreenhouseGeneticGeometry?.generateHelixPoints(i, net.nodes.length, -400);
+                    return { ...node, x: helixData.x, y: helixData.y, z: helixData.z, type: 'gene', strand: helixData.strandIndex, label: GENE_SYMBOLS[i % GENE_SYMBOLS.length], baseColor: '#E0E0E0' };
                 } else {
-                    // Volumetric Brain Topology (Inside Shell)
-                    // regionKey is already calculated above
-
-                    // Get random vertex from the region to place neuron
-                    const regionVerticesIndices = this.getRegionVertices(regionKey);
-                    let x = brainOffset, y = 0, z = 0;
-
-                    if (regionVerticesIndices.length > 0) {
-                        // NEW: Stable Positioning based on Node ID instead of Math.random()
-                        const idNum = typeof node.id === 'string' ? node.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : node.id;
-                        const rndIndex = regionVerticesIndices[idNum % regionVerticesIndices.length];
-                        const vertex = this.brainShell.vertices[rndIndex];
-
-                        // Add some internal volume jitter - also stable based on ID
-                        const jitterX = 0.7 + ((idNum * 13) % 100) / 333;
-                        const jitterY = 0.7 + ((idNum * 17) % 100) / 333;
-                        const jitterZ = 0.7 + ((idNum * 19) % 100) / 333;
-                        x = brainOffset + vertex.x * jitterX;
-                        y = vertex.y * jitterY;
-                        z = vertex.z * jitterZ;
-                    }
-
-                    // Color mapping
-                    // Color mapping - "Cool Science" Palette (Blues/Teals/Purples)
-                    const coolSciencePalette = ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE'];
-                    const baseColor = coolSciencePalette[Math.floor(Math.random() * coolSciencePalette.length)];
-
-                    return {
-                        id: node.id,
-                        x: x,
-                        y: y,
-                        z: z,
-                        type: 'neuron',
-                        region: regionKey,
-                        baseColor: baseColor
-                    };
+                    const regionKeys = ['pfc', 'amygdala', 'hippocampus', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'cerebellum', 'brainstem'];
+                    const regionKey = regionKeys[i % regionKeys.length];
+                    const vertices = window.GreenhouseGeneticGeometry?.getRegionVertices(this.brainShell, regionKey) || [];
+                    const v = this.brainShell.vertices[vertices[i % vertices.length]] || { x: 0, y: 0, z: 0 };
+                    return { ...node, x: v.x * 0.8, y: v.y * 0.8, z: v.z * 0.8, type: 'neuron', region: regionKey, baseColor: '#E0E0E0' };
                 }
             });
-
-            this.initializeConnections(net.connections);
-
-            // Detect Generation Change
-            if (this.algo.generation > this.lastGeneration) {
-                this.logEvent("Generation Complete");
-                this.logEvent("New Traits Evolved");
-
-                // Keep a snapshot of the previous "best" as "elite parents" for a brief transition
-                this.eliteParents = [...this.neurons3D];
-                this.transitionStartTime = Date.now();
-
-                this.lastGeneration = this.algo.generation;
-            }
-
-            // Generate Protein Cache for the active gene (or all genes if needed, but let's do active for now)
-            // Actually, we should cache it when activeGeneIndex changes or when data updates.
-            // For simplicity, let's just generate it here if it's null or if we want to update it.
-            // But wait, updateData is called on every evolution step.
-            // We should probably just ensure it's an object.
-            if (!this.proteinCache) {
-                this.proteinCache = {};
-            }
-            // We can populate it on demand in drawProteinView, or pre-populate here.
-            // Let's pre-populate for the current active gene to be safe.
-            const activeGene = this.neurons3D[this.activeGeneIndex];
-            if (activeGene && !this.proteinCache[activeGene.id]) {
-                this.proteinCache[activeGene.id] = this.generateProteinChain(activeGene.id); // Use ID as seed
-            }
         },
 
-        initializeConnections(connections) {
-            this.connections3D = connections.map(conn => {
-                const fromNeuron = this.neurons3D.find(n => n.id === conn.from);
-                const toNeuron = this.neurons3D.find(n => n.id === conn.to);
-
-                if (!fromNeuron || !toNeuron) return null;
-
-                // Calculate Control Point (Midpoint + Offset towards center)
-                const midX = (fromNeuron.x + toNeuron.x) / 2;
-                const midY = (fromNeuron.y + toNeuron.y) / 2;
-                const midZ = (fromNeuron.z + toNeuron.z) / 2;
-
-                const cp = {
-                    x: midX * 0.5, // Pull more aggressively towards center
-                    y: midY * 0.5,
-                    z: midZ * 0.5
-                };
-
-                // Generate Tube Mesh
-                const radius = Math.max(0.5, Math.abs(conn.weight) * 1.5);
-                const mesh = this.generateTubeMesh(fromNeuron, toNeuron, cp, radius, 8);
-
-                return {
-                    ...conn,
-                    from: fromNeuron,
-                    to: toNeuron,
-                    controlPoint: cp,
-                    mesh: mesh
-                };
-            }).filter(c => c !== null);
-        },
-
-        generateTubeMesh(p1, p2, cp, radius, segments) {
-            if (window.GreenhouseGeneticGeometry) {
-                return window.GreenhouseGeneticGeometry.generateTubeMesh(p1, p2, cp, radius, segments);
-            }
-            return { vertices: [], faces: [] };
-        },
-
-        logEvent(messageKey) {
-            if (window.GreenhouseGeneticStats) {
-                window.GreenhouseGeneticStats.logEvent(messageKey);
-            }
-        },
-
-        shouldEvolve() {
-            return this.isEvolving;
-        },
-
-        animate() {
-            // Update Main Camera BEFORE rendering
-            if (this.mainCameraController) {
-                this.mainCameraController.update();
-            }
-
-            // Fallback auto-rotate if no controller or if isEvolving
-            if (!this.mainCameraController && this.isEvolving) {
-                this.camera.rotationY += this.rotationSpeed;
-            }
-
-            // Update PiP Cameras
-            if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.update();
-            }
-
-            // Camera Follow Active Gene (Vertical Scrolling)
-            // Only if auto-follow is active (disabled by manual panning)
-            if (this.autoFollow !== false) {
-                const activeGene = this.neurons3D[this.activeGeneIndex];
-                if (activeGene) {
-                    const targetY = activeGene.y;
-                    this.camera.y += (targetY - this.camera.y) * 0.05;
-                }
-            }
-
-            // Render AFTER all camera updates
-            this.render();
-
-            this.animationFrame = requestAnimationFrame(() => this.animate());
+        startAnimation() {
+            const animate = () => {
+                this.mainCameraController?.update();
+                window.GreenhouseGeneticPiPControls?.update();
+                this.render();
+                requestAnimationFrame(animate);
+            };
+            animate();
         },
 
         render() {
             if (!this.ctx || !this.canvas) return;
             const ctx = this.ctx;
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            const config = window.GreenhouseGeneticConfig;
+            const post = window.GreenhousePostProcessor;
+
+            // 1. Prepare Frame (e.g. TAA Jitter)
+            let jitter = { x: 0, y: 0 };
+            if (post && config) {
+                jitter = post.prepareFrame(config.get('effects'));
+            }
+
+            // 2. Draw Background
+            if (post && config) {
+                post.drawBackground(config.get('ui.background'), config.get('ui'));
+            } else {
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
 
             const activeGene = this.neurons3D[this.activeGeneIndex];
 
@@ -629,6 +215,8 @@
 
             //this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
             this.drawConnections(ctx);
+            this.drawSynapticCues(ctx);
+
             // Helper to draw PiP Frame & Label
             const drawPiPFrame = (ctx, x, y, w, h, title) => {
                 ctx.save();
@@ -641,7 +229,7 @@
                 ctx.fillRect(x, y, w, 20);
 
                 // Title
-                ctx.fillStyle = '#00ffff';
+                ctx.fillStyle = '#D0D0D0';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
@@ -704,6 +292,11 @@
             // Draw Stats / Labels
             if (window.GreenhouseGeneticStats) {
                 window.GreenhouseGeneticStats.drawOverlayInfo(ctx, w, activeGene);
+            }
+
+            // --- Apply Advanced Post-Processing ---
+            if (post && config) {
+                post.applyEffects(config.get('effects'), this.camera);
             }
 
             // Draw Manual Controls
@@ -924,6 +517,38 @@
             }
         },
 
+        drawSynapticCues(ctx) {
+            if (!this.neurons3D) return;
+            const neurons = this.neurons3D.filter(n => n.type === 'neuron');
+
+            neurons.forEach(n => {
+                const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                if (p.scale > 0.4) {
+                    // Draw "Synaptic Spark" to represent activity at junctions
+                    const activation = n.activation ?? 0;
+                    if (activation > 0.5) {
+                        const pulse = (Math.sin(Date.now() * 0.01) + 1) / 2;
+                        ctx.save();
+                        ctx.globalAlpha = (activation - 0.5) * 2 * pulse * GreenhouseModels3DMath.applyDepthFog(1, p.depth);
+                        ctx.fillStyle = '#FFF';
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 4 * p.scale, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Halo
+                        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 10 * p.scale);
+                        grad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                }
+            });
+        },
+
         initializeBrainShell() {
             this.brainShell = { vertices: [], faces: [] };
             if (window.GreenhouseGeneticGeometry) {
@@ -1055,7 +680,7 @@
                 // Debug: Show message if no genes
                 ctx.save();
                 ctx.translate(x, y);
-                ctx.fillStyle = '#FF0000';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.font = '14px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText("No DNA genes found", w / 2, h / 2);
@@ -1140,7 +765,7 @@
                 // Draw label for the active gene
                 const currentActiveGene = this.neurons3D[this.activeGeneIndex];
                 if (currentActiveGene && currentActiveGene.type === 'gene' && currentActiveGene.label) {
-                    ctx.fillStyle = '#FFD700';
+                    ctx.fillStyle = '#E0E0E0';
                     ctx.font = 'bold 14px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -1206,8 +831,8 @@
                     const midX = (p1.x + p2.x) / 2;
                     const midY = (p1.y + p2.y) / 2;
 
-                    // Draw with gradient
-                    const drawSegment = (x1, y1, x2, y2, color) => {
+                    // Draw with gradient and geometric coding
+                    const drawSegment = (x1, y1, x2, y2, color, type, isStart) => {
                         const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
                         gradient.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
                         gradient.addColorStop(0.5, color);
@@ -1220,10 +845,37 @@
                         ctx.moveTo(x1, y1);
                         ctx.lineTo(x2, y2);
                         ctx.stroke();
+
+                        // Geometric Coding at junction
+                        if (!isStart) {
+                            ctx.fillStyle = color;
+                            ctx.save();
+                            ctx.translate(x1, y1);
+                            const size = thickness * 0.8;
+                            if (type === 0) { // Adenine (Box)
+                                ctx.fillRect(-size/2, -size/2, size, size);
+                            } else if (type === 1) { // Thymine (Triangle Up)
+                                ctx.beginPath();
+                                ctx.moveTo(0, -size/2); ctx.lineTo(size/2, size/2); ctx.lineTo(-size/2, size/2);
+                                ctx.fill();
+                            } else if (type === 2) { // Cytosine (Diamond)
+                                ctx.beginPath();
+                                ctx.moveTo(0, -size/2); ctx.lineTo(size/2, 0); ctx.lineTo(0, size/2); ctx.lineTo(-size/2, 0);
+                                ctx.closePath(); ctx.fill();
+                            } else { // Guanine (Hexagon)
+                                ctx.beginPath();
+                                for(let k=0; k<6; k++) {
+                                    const ang = k * Math.PI / 3;
+                                    ctx.lineTo(size/2 * Math.cos(ang), size/2 * Math.sin(ang));
+                                }
+                                ctx.closePath(); ctx.fill();
+                            }
+                            ctx.restore();
+                        }
                     };
 
-                    drawSegment(p1.x, p1.y, midX, midY, color1);
-                    drawSegment(midX, midY, p2.x, p2.y, color2);
+                    drawSegment(p1.x, p1.y, midX, midY, color1, type, true);
+                    drawSegment(midX, midY, p2.x, p2.y, color2, type, false);
                 }
             }
 
@@ -1234,7 +886,7 @@
 
                 const strandColor = config ?
                     (s === 0 ? config.get('materials.dna.strand1Color') : config.get('materials.dna.strand2Color')) :
-                    (s === 0 ? '#00D9FF' : '#FF6B9D');
+                    (s === 0 ? '#E0E0E0' : '#D0D0D0');
 
                 for (let i = 0; i < strandNodes.length - 1; i++) {
                     const n1 = strandNodes[i];
@@ -1329,7 +981,7 @@
                 [0, 4], [1, 5], [2, 6], [3, 7]  // Connecting edges
             ];
 
-            ctx.strokeStyle = '#FF00FF';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
 
             edges.forEach(([i, j]) => {
@@ -1352,12 +1004,12 @@
             ctx.fillRect(w / 2 - 30, h / 2 - 15, 60, 30);
 
             // Draw border
-            ctx.strokeStyle = '#FF00FF';
+            ctx.strokeStyle = '#A0AEC0';
             ctx.lineWidth = 2;
             ctx.strokeRect(w / 2 - 30, h / 2 - 15, 60, 30);
 
             // Draw rotation value as whole number
-            ctx.fillStyle = '#FF00FF';
+            ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1388,10 +1040,10 @@
                 if (conn.from.type === 'gene' || conn.to.type === 'gene') return;
                 const mesh = conn.mesh;
 
-                // Determine base color from weight
+                // Determine base color from weight (Monochromatic)
                 const weight = conn.weight;
-                const positiveColor = [0, 242, 255]; // Electric Cyan
-                const negativeColor = [255, 48, 48]; // Pulse Red
+                const positiveColor = [224, 224, 224]; // Silver
+                const negativeColor = [160, 174, 192]; // Muted Gray
                 const baseColor = weight > 0 ? positiveColor : negativeColor;
 
                 // Nerve Aesthetics: High transparency, glowing highlights
@@ -1401,8 +1053,8 @@
                     GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, this.camera, this.projection)
                 );
 
-                // Nerve Pulse Animation logic
-                const pulseT = (Date.now() * 0.001 + (conn.from.id % 10) * 0.1) % 1.0;
+                // Nerve Pulse Animation logic - Slower and more organic (0.0005 instead of 0.001)
+                const pulseT = (Date.now() * 0.0005 + (conn.from.id % 10) * 0.1) % 1.0;
 
                 mesh.faces.forEach((faceIndices, fIdx) => {
                     const p1 = projectedVertices[faceIndices[0]];
@@ -1428,7 +1080,8 @@
                         const g = Math.floor(baseColor[1] * brightness);
                         const b = Math.floor(baseColor[2] * brightness);
 
-                        ctx.fillStyle = isPulse ? `rgba(255, 255, 255, ${alpha * 2})` : `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                        // Pulse alpha reduced for subtler look
+                        ctx.fillStyle = isPulse ? `rgba(255, 255, 255, ${alpha * 1.5})` : `rgba(${r}, ${g}, ${b}, ${alpha})`;
                         ctx.strokeStyle = ctx.fillStyle;
                         ctx.lineWidth = 0.2;
 

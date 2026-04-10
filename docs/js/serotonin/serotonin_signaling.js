@@ -39,6 +39,9 @@
             let ht2aActive = false;
             let ht4Active = false;
 
+            // Intrinsic Motion: Local Rotation
+            this.localRot = (this.localRot || 0) + 0.03;
+
             if (G.state.receptors) {
                 G.state.receptors.forEach(r => {
                     const efficiency = r.couplingEfficiency || 1.0;
@@ -178,14 +181,14 @@
                 return p.life > 0;
             });
 
-            // GIRK Visual Flow (Category 3, #22)
+            // GIRK Visual Flow (Category 3, #22) - Monochromatic
             if (girkActivation > 0.5 && G.state.timer % 10 === 0) {
-                this.triggerPulse(200, 0, 150, 'rgba(0, 150, 255,'); // Flow near SK/BK channels area
+                this.triggerPulse(200, 0, 150, 'rgba(224, 224, 224,'); // Scientific Gray
             }
         },
 
         triggerPulse(x, y, z, color) {
-            this.pulses.push({ x, y, z, radius: 10, life: 1.0, color: color || 'rgba(0, 255, 200,' });
+            this.pulses.push({ x, y, z, radius: 10, life: 1.0, color: color || 'rgba(224, 224, 224,' });
         },
 
         renderSignaling(ctx, project, cam, w, h) {
@@ -193,15 +196,15 @@
             const glowIntensity = Math.min(0.3, (this.calcium + this.cAMP * 0.1) * 0.05);
             if (glowIntensity > 0) {
                 const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
-                grad.addColorStop(0, `rgba(0, 255, 255, ${glowIntensity})`);
+                grad.addColorStop(0, `rgba(224, 224, 224, ${glowIntensity})`); // Scientific Gray
                 grad.addColorStop(1, 'transparent');
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, w, h);
             }
 
-            // Dynamic Signaling Waves (Category 10, #94)
-            if (this.cAMP > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(255, 200, 0,');
-            if (this.calcium > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(0, 255, 255,');
+            // Dynamic Signaling Waves (Category 10, #94) - Monochromatic
+            if (this.cAMP > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(208, 208, 208,'); // Warning Gray
+            if (this.calcium > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(224, 224, 224,'); // Scientific Gray
 
             // Render pulses
             this.pulses.forEach(p => {
@@ -242,7 +245,7 @@
             ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 243);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
-                ctx.fillStyle = '#ffcc00';
+                ctx.fillStyle = '#E0E0E0';
                 ctx.fillText('Glutamate Co-transmission: ON', w - 200, 243);
             }
 
@@ -250,13 +253,13 @@
             ctx.fillStyle = '#444';
             ctx.fillRect(w - 200, 265, 180, 8);
             const vWidth = ((this.membranePotential + 90) / 60) * 180;
-            ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
+            ctx.fillStyle = this.membranePotential > -60 ? '#E0E0E0' : '#D0D0D0';
             ctx.fillRect(w - 200, 265, Math.max(0, Math.min(180, vWidth)), 8);
 
             // Draw Pathway Bias indicator for 5-HT2A if active
             const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;
             if (ht2a && ht2a.state === 'Active') {
-                ctx.fillStyle = ht2a.biasedLigand ? '#ff00ff' : '#ff4d4d';
+                ctx.fillStyle = ht2a.biasedLigand ? '#A0AEC0' : '#E0E0E0';
                 ctx.fillText(ht2a.biasedLigand ? 'Biased Agonism Active' : 'Balanced Agonism', w - 200, 150);
             }
         }

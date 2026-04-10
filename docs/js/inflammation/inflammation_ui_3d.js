@@ -31,6 +31,8 @@
                 if (this.brainShell.regions) {
                     for (const key in this.brainShell.regions) {
                         const region = this.brainShell.regions[key];
+                        // Shift to monochromatic premium palette
+                        region.color = 'rgba(160, 174, 192, 0.4)';
                         this.originalRegionColors[key] = region.color;
                         if (region.vertices && region.vertices.length > 0) {
                             let cx = 0, cy = 0, cz = 0;
@@ -149,7 +151,7 @@
                 const p2 = { x: -250 + i * 100, y: 150 - Math.random() * 100, z: (Math.random() - 0.5) * 200 };
                 const cp = { x: p1.x + (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 50, z: (Math.random() - 0.5) * 100 };
                 const mesh = window.GreenhouseInflammationGeometry.generateTubeMesh(p1, p2, cp, 4, 12);
-                this.neurons.push({ p1, p2, cp, mesh, baseColor: '#4ca1af' });
+                this.neurons.push({ p1, p2, cp, mesh, baseColor: '#A0AEC0' });
             }
             this.glia = [];
             for (let i = 0; i < 15; i++) {
@@ -282,7 +284,7 @@
             ctx.save();
             ctx.fillStyle = 'rgba(100, 255, 200, 0.1)';
             ctx.fillRect(40, 250, 150, 60);
-            ctx.strokeStyle = '#00ff99';
+            ctx.strokeStyle = '#D0D0D0';
             ctx.strokeRect(40, 250, 150, 60);
 
             ctx.fillStyle = '#fff'; ctx.font = 'bold 9px Quicksand';
@@ -363,13 +365,13 @@
                     const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
                     if (p.scale > 0 && p.depth < 0.6) {
                         const confidence = (state.metrics.regionConfidence || 0.85) * 100;
-                        ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
-                        ctx.font = '8px monospace';
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.font = 'bold 8px monospace';
                         ctx.fillText(`CONF: ${confidence.toFixed(0)}%`, p.x - 20, p.y + 15);
 
-                        // Hover Halo (Enhancement #11)
+                        // Hover Halo (Enhancement #11) - Monochromatic
                         if (this.app.ui.hoveredElement && this.app.ui.hoveredElement.label === region.name) {
-                            ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
                             ctx.beginPath();
                             ctx.arc(p.x, p.y, 40 * p.scale * (1 + Math.sin(Date.now() * 0.005) * 0.2), 0, Math.PI * 2);
                             ctx.stroke();

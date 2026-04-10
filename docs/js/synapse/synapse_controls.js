@@ -41,10 +41,10 @@
 
             let html = `
                 <div style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
-                    <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 15px; font-weight: 700;">Research Controls</h3>
+                    <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #A0AEC0; margin-bottom: 15px; font-weight: 700;">Research Controls</h3>
 
                     <div style="margin-bottom: 15px; display: flex; gap: 8px;">
-                        <button id="burst-btn" aria-label="Trigger Synaptic Vesicle Burst" style="flex: 1; background: #357438; color: #fff; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.3s;">Burst</button>
+                        <button id="burst-btn" aria-label="Trigger Synaptic Vesicle Burst" style="flex: 1; background: #A0AEC0; color: #fff; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.3s;">Burst</button>
                         <button id="baseline-btn" style="flex: 1; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600;">Set Baseline</button>
                     </div>
 
@@ -68,7 +68,7 @@
 
                     <div style="margin-bottom: 12px;">
                         <label for="az-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">Active Zone Density</label>
-                        <input type="range" id="az-range" min="0.01" max="0.15" step="0.01" value="${G.config.kinetics.activeZoneDensity}" style="width: 100%; accent-color: #357438;">
+                        <input type="range" id="az-range" min="0.01" max="0.15" step="0.01" value="${G.config.kinetics.activeZoneDensity}" style="width: 100%; accent-color: #A0AEC0;">
                     </div>
 
                     <div style="margin-bottom: 20px;">
@@ -90,7 +90,7 @@
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-                        <button id="export-btn" style="width: 100%; background: transparent; color: #00F2FF; border: 1px solid #00F2FF; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase;">Generate Research Figure</button>
+                        <button id="export-btn" style="width: 100%; background: transparent; color: #A0AEC0; border: 1px solid #A0AEC0; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase;">Generate Research Figure</button>
                     </div>
                 </div>
             `;
