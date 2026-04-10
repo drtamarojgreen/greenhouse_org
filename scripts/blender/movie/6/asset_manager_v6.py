@@ -229,14 +229,17 @@ class SylvanEnsembleManager:
                         rig = source_rig
 
             if not rig:
-                rig = mesh.find_armature()
+                rig = mesh.find_armature() or (mesh if mesh.type == 'ARMATURE' else None)
 
             if rig:
                 rig.name = t_rig_name
+
+                # Protect existing normalization by only resetting scale if NOT yet normalized.
                 # Reset Rig transforms to prevent 'exploding' locations/scales
-                rig.location = (0, 0, 0)
-                rig.rotation_euler = (0, 0, 0)
-                rig.scale = (1, 1, 1)
+                if not rig.get("normalized_height"):
+                    rig.location = (0, 0, 0)
+                    rig.rotation_euler = (0, 0, 0)
+                    rig.scale = (1, 1, 1)
 
                 if mesh != rig:
                     # Isolation: Unparent rogue children (cameras, empties) from the rig
@@ -248,13 +251,15 @@ class SylvanEnsembleManager:
                     # Force local identity transforms for mesh to match rig space
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                    if not mesh.get("normalized_height"):
+                        mesh.scale = (1, 1, 1)
                 else:
                     # Root_Guardian case: Mesh IS the Rig
                     mesh.parent = None
-                    mesh.location = (0, 0, 0)
-                    mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                    if not mesh.get("normalized_height"):
+                        mesh.location = (0, 0, 0)
+                        mesh.rotation_euler = (0, 0, 0)
+                        mesh.scale = (1, 1, 1)
 
                 # Restore Armature modifier correctly
                 mesh.constraints.clear()

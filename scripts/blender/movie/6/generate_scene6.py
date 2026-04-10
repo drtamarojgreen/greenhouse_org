@@ -16,41 +16,54 @@ from chroma_green_setup import setup_chroma_green_backdrop
 # ---------------------------------------------------------------------------
 
 def force_majestic_height(rig, target_h):
-    """World-space bone-based height normalization for a single rig."""
+    """World-space height normalization for a single rig/mesh ensemble."""
     from animation_library_v6 import get_bone
+    import mathutils
 
-    head = get_bone(rig, "Head") or get_bone(rig, "Neck")
-    foot = (get_bone(rig, "Foot.L")
-            or get_bone(rig, "Foot.R")
-            or get_bone(rig, "LeftFoot")
-            or get_bone(rig, "Hips"))
+    # Find the Mesh child
+    mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
 
-    if head and foot:
+    bpy.context.view_layer.update()
+
+    if mesh and mesh.type == 'MESH':
+        # Use Mesh bounding box for more accurate height calculation
+        bbox = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
+        z_vals = [v.z for v in bbox]
+        curr_h = max(z_vals) - min(z_vals)
+    else:
+        # Fallback to bone-based height if no mesh found or if mesh is same as rig
+        head = get_bone(rig, "Head") or get_bone(rig, "Neck") or get_bone(rig, "top")
+        foot = (get_bone(rig, "Foot.L")
+                or get_bone(rig, "Foot.R")
+                or get_bone(rig, "LeftFoot")
+                or get_bone(rig, "Hips")
+                or get_bone(rig, "bottom"))
+
+        if head and foot:
+            h_pos  = (rig.matrix_world @ head.head).z
+            f_pos  = (rig.matrix_world @ foot.tail).z
+            curr_h = abs(h_pos - f_pos)
+        else:
+            curr_h = 0
+
+    if curr_h > 0.01:
+        factor = target_h / curr_h
+
+        # If factor is near 1.0, we're already normalized
+        if 0.98 < factor < 1.02:
+             return
+
+        # Apply to Mesh instead of Rig to avoid conflict with Director's rig animation
+        if mesh and mesh != rig:
+             mesh.scale = tuple(s * factor for s in mesh.scale)
+             print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
+             mesh["normalized_height"] = True
+        else:
+             rig.scale = tuple(s * factor for s in rig.scale)
+             print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
+             rig["normalized_height"] = True
+
         bpy.context.view_layer.update()
-        # Find the Mesh child
-        mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
-
-        # Calculate Current Height in World Space
-        h_pos  = (rig.matrix_world @ head.head).z
-        f_pos  = (rig.matrix_world @ foot.tail).z
-        curr_h = abs(h_pos - f_pos)
-
-        if curr_h > 0.01:
-            factor = target_h / curr_h
-
-            # If factor is near 1.0, we're already normalized
-            if 0.99 < factor < 1.01:
-                 return
-
-            # Apply to Mesh instead of Rig to avoid conflict with Director's rig animation
-            if mesh:
-                 mesh.scale = tuple(s * factor for s in mesh.scale)
-                 print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
-            else:
-                 rig.scale = tuple(s * factor for s in rig.scale)
-                 print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
-
-            bpy.context.view_layer.update()
 
 
 def standardize_ensemble_heights():
@@ -77,6 +90,8 @@ def standardize_ensemble_heights():
         if "Phoenix" in obj.name:
             target = config.PHEONIX_HEIGHT
         force_majestic_height(obj, target)
+
+        # Tag rig to prevent re-normalization in this pass
         obj["normalized_height"] = True
 
 
