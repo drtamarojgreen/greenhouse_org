@@ -122,13 +122,14 @@ class SylvanDirector:
             )
 
             # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
+            # Scale keyframes are subtle (max 1.05) to avoid breaking Majestic height standards
             rig.scale = (1.0, 1.0, 1.0)
             rig.keyframe_insert(data_path="scale", frame=1)
 
             rig.scale = (1.05, 1.05, 1.05)
             rig.keyframe_insert(data_path="scale", frame=2)
 
-            rig.scale = (1.0, 1.0, 1.0)
+            rig.scale = (1.02, 1.02, 1.02)
             rig.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
 
             # Gentle ascent over the full scene
@@ -143,21 +144,12 @@ class SylvanDirector:
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at their production positions."""
-<<<<<<< HEAD
-        herb = (bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig") or
-                bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body") or
-                bpy.data.objects.get(config.CHAR_HERBACEOUS))
-        arbor = (bpy.data.objects.get(config.CHAR_ARBOR + "_Rig") or
-                 bpy.data.objects.get(config.CHAR_ARBOR + "_Body") or
-                 bpy.data.objects.get(config.CHAR_ARBOR))
-=======
         herb = (bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig")
                 or bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
                 or bpy.data.objects.get(config.CHAR_HERBACEOUS))
         arbor = (bpy.data.objects.get(config.CHAR_ARBOR + "_Rig")
                  or bpy.data.objects.get(config.CHAR_ARBOR + "_Body")
                  or bpy.data.objects.get(config.CHAR_ARBOR))
->>>>>>> 89a3d94 (Stabilize Movie 6 pipeline for Blender 5+ and resolve integration test failures)
 
         if herb:
             herb.location = config.CHAR_HERBACEOUS_POS
