@@ -89,17 +89,19 @@ def force_majestic_height(rig, target_h):
         if 0.98 < factor < 1.02:
              return
 
-        # Normalize Rig Scale. In the Parent-Child hierarchy, the child Mesh
-        # inherits the Rig's scale. Scaling the Mesh directly leads to
-        # double-scaling distortion or drift if not handled at the origin.
+        # Normalize Sibling Hierarchy: Rig and Mesh must be scaled simultaneously
+        # because the Mesh is no longer a child of the Rig.
         rig.scale = tuple(s * factor for s in rig.scale)
-        rig["normalized_height"] = True
-
         if mesh and mesh != rig:
-             print(f"ASSET_MANAGER: Normalized {rig.name} (factor {factor:.2f}, height {curr_h:.2f}m)")
+             mesh.scale = tuple(s * factor for s in mesh.scale)
+             print(f"ASSET_MANAGER: Normalized Sibling Ensemble {rig.name} (factor {factor:.2f}, height {curr_h:.2f}m)")
+             print(f"  > Rig Scale: {rig.scale}")
+             print(f"  > Mesh Scale: {mesh.scale}")
         else:
              print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
+             print(f"  > Rig Scale: {rig.scale}")
 
+        rig["normalized_height"] = True
         bpy.context.view_layer.update()
 
 

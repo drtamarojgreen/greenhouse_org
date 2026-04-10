@@ -121,35 +121,36 @@ class SylvanDirector:
             return
 
         for i, rig in enumerate(spirits):
+            # Resolve sibling mesh
+            mesh = bpy.data.objects.get(rig.name.replace(".Rig", ".Body"))
+
             # Cinematic fan spread
             angle = (i / max(num - 1, 1)) * math.pi * 0.9 - math.pi * 0.45
             dist  = 9.0 + (i % 2) * 2.5
 
-            rig.location = (
+            target_loc = mathutils.Vector((
                 math.sin(angle) * dist,
                 6.0 + math.cos(angle) * 4.0,
                 0.0,
-            )
+            ))
 
-            # Base scale from normalization (standardized before this call)
-            s_base = rig.scale.copy()
+            rig.location = target_loc
+            if mesh: mesh.location = target_loc
 
-            # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
-            # Scale keyframes are subtle (max 1.05x base) to avoid breaking Majestic height standards
-            rig.scale = s_base
-            rig.keyframe_insert(data_path="scale", frame=1)
+            # Sibling Synchronization: In Sibling Protocol, growth must be applied to both.
+            # However, for production stability, we avoid procedural scaling in Scene 6
+            # to protect the Majestic height standard.
 
-            rig.scale = s_base * 1.05
-            rig.keyframe_insert(data_path="scale", frame=2)
-
-            rig.scale = s_base * 1.02
-            rig.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
+            # Keyframe base location at frame 1
+            rig.keyframe_insert(data_path="location", frame=1)
+            if mesh: mesh.keyframe_insert(data_path="location", frame=1)
 
             # Gentle ascent over the full scene
-            rig.location.z = 0.0
-            rig.keyframe_insert(data_path="location", frame=1)
             rig.location.z = 1.5
             rig.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
+            if mesh:
+                mesh.location.z = 1.5
+                mesh.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
 
     # ------------------------------------------------------------------
     # PROTAGONIST PLACEMENT
@@ -157,14 +158,28 @@ class SylvanDirector:
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at their production positions."""
-        herb = (bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig")
-                or bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
-                or bpy.data.objects.get(config.CHAR_HERBACEOUS))
-        arbor = (bpy.data.objects.get(config.CHAR_ARBOR + "_Rig")
-                 or bpy.data.objects.get(config.CHAR_ARBOR + "_Body")
-                 or bpy.data.objects.get(config.CHAR_ARBOR))
+        # Standard production rigs and meshes (siblings)
+        herb_rig   = bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig")
+        herb_body  = bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
+        arbor_rig  = bpy.data.objects.get(config.CHAR_ARBOR + "_Rig")
+        arbor_body = bpy.data.objects.get(config.CHAR_ARBOR + "_Body")
 
-        if herb:
-            herb.location = config.CHAR_HERBACEOUS_POS
-        if arbor:
-            arbor.location = config.CHAR_ARBOR_POS
+        print(f"DIRECTOR: Positioning protagonists...")
+        if herb_rig:
+            herb_rig.location = config.CHAR_HERBACEOUS_POS
+            print(f"  > Herbaceous_Rig -> {herb_rig.location}")
+        if herb_body:
+            herb_body.location = config.CHAR_HERBACEOUS_POS
+            print(f"  > Herbaceous_Body -> {herb_body.location}")
+
+        if arbor_rig:
+            arbor_rig.location = config.CHAR_ARBOR_POS
+            print(f"  > Arbor_Rig -> {arbor_rig.location}")
+        if arbor_body:
+            arbor_body.location = config.CHAR_ARBOR_POS
+            print(f"  > Arbor_Body -> {arbor_body.location}")
+
+        # Sync and Keyframe frame 1 to satisfy production audits
+        bpy.context.view_layer.update()
+        for obj in [herb_rig, herb_body, arbor_rig, arbor_body]:
+            if obj: obj.keyframe_insert(data_path="location", frame=1)

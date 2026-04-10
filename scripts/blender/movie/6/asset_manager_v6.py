@@ -178,6 +178,31 @@ class SylvanEnsembleManager:
     # RENORMALIZATION
     # ------------------------------------------------------------------
 
+    def sanitize_shards(self, obj):
+        """Collapses rogue vertices (farther than 20m) to (0,0,0) to fix bounding boxes."""
+        if obj.type != 'MESH' or obj.library: return
+
+        # Guard against recursive modification of linked data
+        if getattr(obj.data, "is_library_indirect", False): return
+
+        print(f"ASSET_MANAGER: Sanitizing shards for {obj.name}...")
+        sanitized_count = 0
+        for v in obj.data.vertices:
+            # Check local space first (strict 20m threshold for character scale)
+            if v.co.length > 20.0:
+                v.co = (0, 0, 0)
+                sanitized_count += 1
+                continue
+
+            # Check world space (approximate)
+            w_co = obj.matrix_world @ v.co
+            if w_co.length > 100.0: # Keep 100m for world-space as a safety boundary
+                v.co = (0, 0, 0)
+                sanitized_count += 1
+
+        if sanitized_count > 0:
+            print(f"  > Sanitized {sanitized_count} rogue vertices.")
+
     def renormalize_objects(self):
         """
         Final 5.0 Renormalization rewrite.
@@ -202,6 +227,9 @@ class SylvanEnsembleManager:
 
         for art in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR):
              targets.append((f"{art}_Body", art, "_"))
+
+        # Snapshot of collection to find original sources even after renames
+        orig_map = {o.name: o for o in coll.objects}
 
         for src_mesh_name, art_name, sep in targets:
             t_mesh_name = f"{art_name}{sep}Body"
@@ -264,36 +292,38 @@ class SylvanEnsembleManager:
             if rig:
                 rig.name = t_rig_name
 
-                # Enforce Parent-Child Relationship (Rig is Parent)
+                # Sibling Protocol: Rig and Mesh both have parent = None
+                # This prevents double-transform distortion from scale inheritance.
                 if mesh != rig:
-                    # Clear legacy animation on Mesh to prevent spatial offset from Rig
+                    # Clear legacy animation on Mesh to prevent spatial offset
                     if mesh.animation_data:
                         mesh.animation_data_clear()
 
-                    # Isolation: Unparent rogue children from rig/mesh while keeping world transforms
-                    # to avoid distortion if the parent was scaled.
+                    # Isolation: Unparent ALL children while keeping world transforms
                     for child in list(rig.children):
-                        if child != mesh:
-                            mw = child.matrix_world.copy()
-                            child.parent = None
-                            child.matrix_world = mw
+                        mw = child.matrix_world.copy()
+                        child.parent = None
+                        child.matrix_world = mw
 
                     for child in list(mesh.children):
                         mw = child.matrix_world.copy()
                         child.parent = None
                         child.matrix_world = mw
 
-                    # Force Mesh to be at Rig's origin
-                    mesh.parent = rig
-                    mesh.location = (0, 0, 0)
-                    mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                    # Ensure mesh is sibling, not child
+                    if mesh.parent is not None:
+                        mw = mesh.matrix_world.copy()
+                        mesh.parent = None
+                        mesh.matrix_world = mw
 
                 # Reset Rig transforms ONLY if not yet normalized to identity at origin.
                 if not rig.get("normalized_height"):
                     rig.location = (0, 0, 0)
                     rig.rotation_euler = (0, 0, 0)
                     rig.scale = (1, 1, 1)
+
+                # Apply shard sanitization to fix bounding boxes for normalization
+                self.sanitize_shards(mesh)
 
                 # Restore Armature modifier correctly (only for MESH objects)
                 if mesh.type == 'MESH':
