@@ -182,42 +182,74 @@ class SylvanEnsembleManager:
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
 
-        # 1. Process Assets explicitly from ensemble definitions
-        for src_mesh, art_name in self.ensemble.items():
+        # Pre-pass: Capture original names and reset all rigs in the asset collection
+        # We use a map to handle renaming collisions (e.g. 'skeleton' used by multiple chars)
+        src_map = {obj.name: obj for obj in coll.objects}
+        for obj in coll.objects:
+            if obj.type == 'ARMATURE':
+                obj.parent = None
+                obj.scale = (1, 1, 1)
+                obj.location = (0, 0, 0)
+                obj.rotation_euler = (0, 0, 0)
+
+        # 1. Process Assets explicitly from the whitelist
+        # This includes spirits (dots) and protagonists (underscores)
+        for art_name in config.RENORM_WHITELIST:
             is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
             sep = "_" if is_p else "."
             t_mesh_name = f"{art_name}{sep}Body"
             t_rig_name  = f"{art_name}{sep}Rig"
 
-            mesh = bpy.data.objects.get(t_mesh_name) or bpy.data.objects.get(src_mesh)
-            if not mesh: continue
+            # Find source names from ensemble or use art_name as fallback
+            src_mesh_key = next((k for k, v in self.ensemble.items() if v == art_name), art_name)
 
-            mesh.name = t_mesh_name
+            # Find Mesh: Check original source first, then existing target name
+            mesh = src_map.get(src_mesh_key) or bpy.data.objects.get(t_mesh_name)
+            if not mesh and is_p:
+                # Fallback for protagonists which might just be named 'Herbaceous_V5_Body'
+                mesh = src_map.get(f"{art_name}_Body") or bpy.data.objects.get(f"{art_name}_Body")
 
-            src_rig = self.rig_map.get(art_name)
-            rig = (bpy.data.objects.get(t_rig_name) or
-                   (bpy.data.objects.get(src_rig) if src_rig else None) or
-                   mesh.find_armature())
+            if not mesh:
+                continue
 
+            # Find Rig: Check mapping, then original name, then mesh itself if it's an armature
+            src_rig_key = self.rig_map.get(art_name) or (f"{art_name}_Rig" if is_p else None)
+            rig = (src_map.get(src_rig_key) if src_rig_key else None) or \
+                  bpy.data.objects.get(t_rig_name) or \
+                  mesh.find_armature()
+
+            # Special case for skeleton-based assets where the mesh IS the rig (e.g. Root_Guardian)
+            if not rig and mesh.type == 'ARMATURE':
+                rig = mesh
+
+            # Perform Renaming (Careful with shared rigs)
             if rig:
-                rig.name = t_rig_name
+                # If mesh is rig (Root_Guardian), it MUST be named .Body
+                if mesh == rig:
+                    rig.name = t_mesh_name
+                else:
+                    # Mesh gets .Body, Rig gets .Rig
+                    mesh.name = t_mesh_name
+                    # Only rename the rig if it hasn't been processed yet or doesn't have a final name
+                    if ".Rig" not in rig.name and ".Body" not in rig.name:
+                        rig.name = t_rig_name
+
+                rig.scale = (1, 1, 1) # Force unit scale to prevent inherited distortion
+
                 # Enforce clean hierarchy: Mesh as child of Rig with identity transforms
-                # This prevents the "distorting everything" double-transform bug
                 if mesh != rig:
                     # Isolation: Unparent rogue children (cameras, empties) from the rig
                     for child in list(rig.children):
                         if child != mesh:
                             child.parent = None
 
-                    if mesh.parent != rig:
-                        mesh.parent = rig
-                        # Sync local origin to rig origin
-                        mesh.location = (0, 0, 0)
-                        mesh.rotation_euler = (0, 0, 0)
-                        mesh.scale = (1, 1, 1)
+                    mesh.parent = rig
+                    mesh.location = (0, 0, 0)
+                    mesh.rotation_euler = (0, 0, 0)
+                    mesh.scale = (1, 1, 1)
                 else:
                     # If mesh is rig (Root_Guardian), ensure it has no parent
-                    mesh.parent = None
+                    rig.parent = None
 
                 # Restore Armature modifier correctly
                 mesh.constraints.clear()
@@ -230,7 +262,7 @@ class SylvanEnsembleManager:
 
             mesh.hide_render = mesh.hide_viewport = False
 
-        # 2. Targeted cleanup: ensure all assets are visible (no-hidden guardian)
+        # 2. Targeted cleanup: ensure all assets are visible
         for obj in coll.objects:
             obj.hide_render = obj.hide_viewport = False
 

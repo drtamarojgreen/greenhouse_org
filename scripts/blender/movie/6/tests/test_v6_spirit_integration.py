@@ -89,23 +89,32 @@ class TestV6SpiritIntegration(unittest.TestCase):
             self.assertLess(h_leafy,    h_herb * 5.0, "Spirit excessively large")
 
     def test_absolute_positioning(self):
+        """Verifies that character meshes remain at local origin relative to their rigs."""
         self.scene_logic._link_spirit_assets()
 
-        leafy = bpy.data.objects.get(config.CHAR_LEAFY_MESH)
-        if leafy:
-            leafy.location = config.SPIRIT_LEAFY_POS
+        targets = [
+            (config.CHAR_LEAFY_RIG,    config.CHAR_LEAFY_MESH,    config.SPIRIT_LEAFY_POS),
+            (config.CHAR_JOY_RIG,      config.CHAR_JOY_MESH,      config.SPIRIT_JOY_POS),
+        ]
 
-        joy = bpy.data.objects.get(config.CHAR_JOY_MESH)
-        if joy:
-            joy.location = config.SPIRIT_JOY_POS
+        for rig_name, mesh_name, target_pos in targets:
+            rig  = bpy.data.objects.get(rig_name)
+            mesh = bpy.data.objects.get(mesh_name)
+            if not rig or not mesh:
+                continue
 
-        if leafy:
-            dist = (leafy.location - mathutils.Vector(config.SPIRIT_LEAFY_POS)).length
-            self.assertLess(dist, 0.01, f"Leafy Spirit position mismatch: {leafy.location}")
+            # Move the RIG to the target position
+            rig.location = target_pos
+            bpy.context.view_layer.update()
 
-        if joy:
-            dist = (joy.location - mathutils.Vector(config.SPIRIT_JOY_POS)).length
-            self.assertLess(dist, 0.01, f"Joy Spirit position mismatch: {joy.location}")
+            # The mesh should be at local (0,0,0) if properly parented/normalized
+            self.assertLess(mesh.location.length, 0.01,
+                            f"Mesh {mesh_name} is not at local origin of Rig {rig_name}")
+
+            # The world position should match
+            world_pos = mesh.matrix_world.to_translation()
+            dist = (world_pos - mathutils.Vector(target_pos)).length
+            self.assertLess(dist, 0.01, f"Character {mesh_name} world position mismatch")
 
     def test_texture_integrity(self):
         self.scene_logic._link_spirit_assets()
@@ -473,39 +482,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
             # Check for keyframes on offset_factor
             has_offset_keys = False
             if cam.animation_data and cam.animation_data.action:
+                # Blender 5.0+: Use the helper that abstracts Slotted Actions
                 fcurves = get_action_curves(cam.animation_data.action, obj=cam)
-                fcurves = cam.animation_data.action.fcurves
                 has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
-                action = cam.animation_data.action
-
-                # Case 1: Legacy / Simple Actions
-                if hasattr(action, "fcurves"):
-                     has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in action.fcurves)
-
-                # Case 2: Blender 5 Slotted Actions (Utilizing style utility patterns)
-                if not has_offset_keys:
-                    try:
-                        # Check slots
-                        if hasattr(action, "slots"):
-                            from bpy_extras import anim_utils
-                            for slot in action.slots:
-                                # Use anim_utils to get channel bag
-                                try:
-                                    bag = anim_utils.action_get_channelbag_for_slot(action, slot)
-                                    if bag and hasattr(bag, "fcurves"):
-                                        if any(fc.data_path.endswith("offset_factor") for fc in bag.fcurves):
-                                            has_offset_keys = True
-                                            break
-                                except:
-                                    # Some slots might not have bags
-                                    continue
-                    except Exception as e:
-                        print(f"DEBUG: Slotted Action check failed: {e}")
-
-                # Case 3: If still not found, check the object's own fcurves if possible
-                if not has_offset_keys and hasattr(cam.animation_data, "action"):
-                     # Sometimes action.fcurves is what we want
-                     pass
 
                 self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
 

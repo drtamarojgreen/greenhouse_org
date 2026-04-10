@@ -6,6 +6,12 @@ EQUIPMENT_DIR = "/home/tamarojgreen/Documents/Movie_Equipment/"
 SPIRITS_ASSET_BLEND = os.path.join(EQUIPMENT_DIR, "MHD2_animation133.blend")
 
 # 1. ENSEMBLE DEFINITIONS (Artistic Naming)
+RENORM_WHITELIST = [
+    "Herbaceous_V5", "Arbor_V5", "Sylvan_Majesty", "Radiant_Aura",
+    "Verdant_Sprite", "Shadow_Weaver", "Emerald_Sentinel",
+    "Phoenix_Herald", "Golden_Phoenix", "Root_Guardian"
+]
+
 SPIRIT_ENSEMBLE = {
     "Mesh1_Mesh1.044": "Sylvan_Majesty",
     "Mesh1_Mesh1.001": "Radiant_Aura",
