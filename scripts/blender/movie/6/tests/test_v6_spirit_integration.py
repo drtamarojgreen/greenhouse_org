@@ -429,6 +429,41 @@ class TestV6SpiritIntegration(unittest.TestCase):
                   f"{vec.x:<8.2f} | {vec.y:<8.2f} | {vec.z:.2f}")
         print("=" * 125 + "\n")
 
+    def test_backdrop_visual_debug_cylinders(self):
+        """Draws cylinders from origin to backdrop centers and reports spatial data."""
+        import math
+        print("\n" + "=" * 80)
+        print(f"{'BACKDROP':<25} | {'LENGTH':<10} | {'ORIENTATION (X,Y,Z)'}")
+        print("-" * 80)
+
+        origin = mathutils.Vector((0, 0, 0))
+        targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
+
+        for name in targets:
+            obj = bpy.data.objects.get(name)
+            if not obj: continue
+
+            target = obj.matrix_world.to_translation()
+            vec = target - origin
+            length = vec.length
+
+            # Create cylinder
+            bpy.ops.mesh.primitive_cylinder_add(
+                radius=0.1,
+                depth=length,
+                location=(origin + target) / 2
+            )
+            cyl = bpy.context.active_object
+            cyl.name = f"DEBUG.Line.{name}"
+
+            # Orient cylinder to point from origin to backdrop
+            rot_quat = mathutils.Vector((0, 0, 1)).rotation_difference(vec.normalized())
+            cyl.rotation_euler = rot_quat.to_euler()
+
+            rot_deg = [round(math.degrees(a), 1) for a in cyl.rotation_euler]
+            print(f"{name:<25} | {length:<10.2f} | {rot_deg}")
+        print("=" * 80 + "\n")
+
     def test_rendering_setup(self):
         """Verifies camera and backdrop are present for Scene 6."""
         self.assertIsNotNone(
@@ -472,7 +507,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
             self.assertGreaterEqual(clip_end, 1000, "WARNING: Camera clip_end might be too short to see backgrounds.")
 
         # 3. Check Object Render Visibility
-        bg_keywords = ["bg", "background", "environment", "sky"]
+        bg_keywords = ["bg", "background", "environment", "sky", "backdrop"]
         bg_found = False
         for obj in bpy.data.objects:
             if any(k in obj.name.lower() for k in bg_keywords):

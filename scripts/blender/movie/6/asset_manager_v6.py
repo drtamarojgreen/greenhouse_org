@@ -224,14 +224,24 @@ class SylvanEnsembleManager:
                      safe_eval = len(mesh.vertices) == len(eval_obj.data.vertices)
 
                 for i, v in enumerate(mesh.vertices):
-                    is_shard = v.co.length > threshold
+                    is_shard = False
 
+                    # 1. Local Check (Extreme outliers only)
+                    if v.co.length > 1000.0:
+                        is_shard = True
+
+                    # 2. World-Space Check (Only if vertex weights are negligible)
                     if not is_shard and safe_eval:
                         eval_v = eval_obj.data.vertices[i]
                         w_co = eval_obj.matrix_world @ eval_v.co
-                        # Catch extreme world-space shards (e.g. 240m shard reported in log)
-                        if w_co.length > 100.0 or abs(w_co.z) > 100.0:
-                            is_shard = True
+
+                        # Catch extreme world-space shards (e.g. 1062m reported in log)
+                        if w_co.length > 500.0 or abs(w_co.z) > 500.0:
+                            # Verify if this is a 'shard' by checking weight sum.
+                            # Real character vertices have significant bone weights.
+                            weight_sum = sum(g.weight for g in v.groups)
+                            if weight_sum < 0.1:
+                                 is_shard = True
 
                     if is_shard:
                         v.co = (0, 0, 0)
