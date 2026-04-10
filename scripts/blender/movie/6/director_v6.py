@@ -125,54 +125,28 @@ class SylvanDirector:
             angle = (i / max(num - 1, 1)) * math.pi * 0.9 - math.pi * 0.45
             dist  = 9.0 + (i % 2) * 2.5
 
-            loc = (
+            rig.location = (
                 math.sin(angle) * dist,
                 6.0 + math.cos(angle) * 4.0,
                 0.0,
             )
 
-            rig.location = loc
-            # Sibling Sync
-            mesh = bpy.data.objects.get(rig.name.replace(".Rig", ".Body").replace("_Rig", "_Body"))
-            if mesh: mesh.location = loc
-
-            # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
             # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
             # Scale keyframes are subtle (max 1.05) to avoid breaking Majestic height standards
-            s1 = (1.0, 1.0, 1.0)
-            s2 = (1.05, 1.05, 1.05)
-            s3 = (1.02, 1.02, 1.02)
-
-            rig.scale = s1
+            rig.scale = (1.0, 1.0, 1.0)
             rig.keyframe_insert(data_path="scale", frame=1)
-            if mesh:
-                 mesh.scale = s1
-                 mesh.keyframe_insert(data_path="scale", frame=1)
 
-            rig.scale = s2
+            rig.scale = (1.05, 1.05, 1.05)
             rig.keyframe_insert(data_path="scale", frame=2)
-            if mesh:
-                 mesh.scale = s2
-                 mesh.keyframe_insert(data_path="scale", frame=2)
 
-            rig.scale = s3
+            rig.scale = (1.02, 1.02, 1.02)
             rig.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
-            if mesh:
-                 mesh.scale = s3
-                 mesh.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
 
             # Gentle ascent over the full scene
             rig.location.z = 0.0
             rig.keyframe_insert(data_path="location", frame=1)
-            if mesh:
-                 mesh.location.z = 0.0
-                 mesh.keyframe_insert(data_path="location", frame=1)
-
             rig.location.z = 1.5
             rig.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
-            if mesh:
-                 mesh.location.z = 1.5
-                 mesh.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
 
     # ------------------------------------------------------------------
     # PROTAGONIST PLACEMENT
@@ -189,12 +163,5 @@ class SylvanDirector:
 
         if herb:
             herb.location = config.CHAR_HERBACEOUS_POS
-            # Sibling Sync
-            hm = bpy.data.objects.get(herb.name.replace(".Rig", ".Body").replace("_Rig", "_Body"))
-            if hm: hm.location = config.CHAR_HERBACEOUS_POS
-
         if arbor:
             arbor.location = config.CHAR_ARBOR_POS
-            # Sibling Sync
-            am = bpy.data.objects.get(arbor.name.replace(".Rig", ".Body").replace("_Rig", "_Body"))
-            if am: am.location = config.CHAR_ARBOR_POS

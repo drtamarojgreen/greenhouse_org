@@ -230,7 +230,7 @@ class SylvanEnsembleManager:
                     else:
                          mesh = source_mesh
 
-            # Special case: If mesh and rig are same object, DUPLICATE to allow Sibling sync
+            # Special case: If mesh and rig are same object, DUPLICATE to allow Sync
             if mesh == rig and mesh is not None:
                 rig = mesh
                 mesh = rig.copy()
@@ -248,33 +248,31 @@ class SylvanEnsembleManager:
             if rig:
                 rig.name = t_rig_name
 
-                # Enforce Sibling Relationship (Both parent = None)
-                rig.parent = None
-                mesh.parent = None
+                # Enforce Parent-Child Relationship (Rig is Parent)
+                # We revert to Parent-Child but ensure identity local transforms.
+                if mesh != rig:
+                    # Isolation: Unparent rogue children from rig/mesh while keeping world transforms
+                    for child in list(rig.children):
+                        if child != mesh:
+                            mw = child.matrix_world.copy()
+                            child.parent = None
+                            child.matrix_world = mw
 
-                # Isolation: Unparent rogue children from rig while keeping world transforms
-                # to avoid distortion if the parent was scaled.
-                for child in list(rig.children):
-                    if child != mesh:
+                    for child in list(mesh.children):
                         mw = child.matrix_world.copy()
                         child.parent = None
                         child.matrix_world = mw
 
-                for child in list(mesh.children):
-                    mw = child.matrix_world.copy()
-                    child.parent = None
-                    child.matrix_world = mw
+                    mesh.parent = rig
+                    mesh.location = (0, 0, 0)
+                    mesh.rotation_euler = (0, 0, 0)
+                    mesh.scale = (1, 1, 1)
 
-                # Sync transforms (identity at origin before director takes over)
+                # Reset Rig transforms (identity at origin before director takes over)
                 if not rig.get("normalized_height"):
                     rig.location = (0, 0, 0)
                     rig.rotation_euler = (0, 0, 0)
                     rig.scale = (1, 1, 1)
-
-                if not mesh.get("normalized_height"):
-                    mesh.location = (0, 0, 0)
-                    mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
 
                 # Restore Armature modifier correctly (only for MESH objects)
                 if mesh.type == 'MESH':
