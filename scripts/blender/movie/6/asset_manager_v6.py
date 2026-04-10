@@ -193,27 +193,7 @@ class SylvanEnsembleManager:
             t_mesh_name = f"{art_name}{sep}Body"
             t_rig_name  = f"{art_name}{sep}Rig"
 
-            # Handle shared source objects (e.g. "skeleton" used by multiple spirits)
-            mesh = bpy.data.objects.get(t_mesh_name)
-            if not mesh:
-                # Find by original name or source_name property
-                source_mesh = (bpy.data.objects.get(src_mesh_name) or
-                               next((o for o in coll.objects if o.get("source_name") == src_mesh_name), None))
-
-                if source_mesh:
-                    # If it's already been renamed, it's already 'claimed' by another spirit.
-                    # Duplicate it so this spirit gets its own mesh.
-                    if source_mesh.name != src_mesh_name:
-                         mesh = source_mesh.copy()
-                         if source_mesh.data: mesh.data = source_mesh.data.copy()
-                         coll.objects.link(mesh)
-                    else:
-                         mesh = source_mesh
-
-            if not mesh: continue
-            mesh.name = t_mesh_name
-
-            # Resolve the Rig
+            # 1a. Resolve the Rig FIRST
             src_rig_name = self.rig_map.get(art_name)
             rig = bpy.data.objects.get(t_rig_name)
             if not rig and src_rig_name:
@@ -221,6 +201,7 @@ class SylvanEnsembleManager:
                               next((o for o in coll.objects if o.get("source_name") == src_rig_name), None))
 
                 if source_rig:
+                    # If it's already been renamed, it's 'claimed'. Duplicate.
                     if source_rig.name != src_rig_name:
                         rig = source_rig.copy()
                         if source_rig.data: rig.data = source_rig.data.copy()
@@ -228,45 +209,74 @@ class SylvanEnsembleManager:
                     else:
                         rig = source_rig
 
+            # 1b. Resolve the Mesh
+            mesh = bpy.data.objects.get(t_mesh_name)
+            if not mesh:
+                source_mesh = (bpy.data.objects.get(src_mesh_name) or
+                               next((o for o in coll.objects if o.get("source_name") == src_mesh_name), None))
+
+                if source_mesh:
+                    # If it's already been renamed, it's 'claimed'. Duplicate.
+                    if source_mesh.name != src_mesh_name:
+                         mesh = source_mesh.copy()
+                         if source_mesh.data: mesh.data = source_mesh.data.copy()
+                         coll.objects.link(mesh)
+                    else:
+                         mesh = source_mesh
+
+            # Special case: If mesh and rig are same object, DUPLICATE to allow Sibling sync
+            if mesh == rig and mesh is not None:
+                rig = mesh
+                mesh = rig.copy()
+                if rig.data: mesh.data = rig.data.copy()
+                coll.objects.link(mesh)
+
+            if not mesh: continue
+
+            # Final fallback for rig if not yet found
             if not rig:
                 rig = mesh.find_armature() or (mesh if mesh.type == 'ARMATURE' else None)
+
+            mesh.name = t_mesh_name
 
             if rig:
                 rig.name = t_rig_name
 
-                # Protect existing normalization by only resetting scale if NOT yet normalized.
-                # Reset Rig transforms to prevent 'exploding' locations/scales
+                # Enforce Sibling Relationship (Both parent = None)
+                rig.parent = None
+                mesh.parent = None
+
+                # Isolation: Unparent rogue children from rig
+                for child in list(rig.children):
+                    if child != mesh:
+                        child.parent = None
+
+                # Sync transforms (identity at origin before director takes over)
                 if not rig.get("normalized_height"):
                     rig.location = (0, 0, 0)
                     rig.rotation_euler = (0, 0, 0)
                     rig.scale = (1, 1, 1)
 
-                if mesh != rig:
-                    # Isolation: Unparent rogue children (cameras, empties) from the rig
-                    for child in list(rig.children):
-                        if child != mesh:
-                            child.parent = None
-
-                    mesh.parent = rig
-                    # Force local identity transforms for mesh to match rig space
+                if not mesh.get("normalized_height"):
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
-                    if not mesh.get("normalized_height"):
-                        mesh.scale = (1, 1, 1)
-                else:
-                    # Root_Guardian case: Mesh IS the Rig
-                    mesh.parent = None
-                    if not mesh.get("normalized_height"):
-                        mesh.location = (0, 0, 0)
-                        mesh.rotation_euler = (0, 0, 0)
-                        mesh.scale = (1, 1, 1)
+                    mesh.scale = (1, 1, 1)
 
-                # Restore Armature modifier correctly
-                mesh.constraints.clear()
-                arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
-                if not arm_mod:
-                    arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = rig
+                # Restore Armature modifier correctly (only for MESH objects)
+                if mesh.type == 'MESH':
+                    mesh.constraints.clear()
+                    arm_mod = None
+                    for m in mesh.modifiers:
+                        if m.type == 'ARMATURE':
+                            arm_mod = m
+                            break
+                    if not arm_mod:
+                        try:
+                            arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
+                        except: pass
+
+                    if arm_mod:
+                        arm_mod.object = rig
 
                 rig.hide_render = rig.hide_viewport = False
 
