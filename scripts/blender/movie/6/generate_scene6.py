@@ -40,23 +40,24 @@ def force_majestic_height(rig, target_h):
             or get_bone(rig, "Hips")
             or get_bone(rig, "mixamorig:Hips"))
 
-    if head and foot:
-        update_view_layer()
-        # Find the Mesh child
-        mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
+    update_view_layer()
+    # Find the Mesh child
+    mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
 
+    curr_h = 0.0
+    if head and foot:
         # Calculate Current Height in World Space
         h_pos  = (rig.matrix_world @ head.head).z
         f_pos  = (rig.matrix_world @ foot.tail).z
         curr_h = abs(h_pos - f_pos)
 
-        # Robustness: fallback to bounding box if bones are coincident
-        if curr_h < 0.1 and mesh:
-             bbox   = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
-             z_vals = [v.z for v in bbox]
-             curr_h = max(z_vals) - min(z_vals)
+    # Robustness: fallback to bounding box if bones are coincident or missing (e.g. Root_Guardian)
+    if curr_h < 0.1 and mesh:
+         bbox   = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
+         z_vals = [v.z for v in bbox]
+         curr_h = max(z_vals) - min(z_vals)
 
-        if curr_h > 0.01:
+    if curr_h > 0.01:
             factor = target_h / curr_h
 
             # If factor is near 1.0, we're already normalized

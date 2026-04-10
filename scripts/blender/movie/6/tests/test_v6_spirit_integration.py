@@ -406,6 +406,26 @@ class TestV6SpiritIntegration(unittest.TestCase):
             print(f"BACKDROP {name}: Loc={loc}, Dim={dim[:]}")
             self.assertGreater(dim.x, 50, f"Backdrop {name} likely too small (distorted dimensions)")
 
+    def test_backdrop_audit_table(self):
+        """Diagnostic table of backdrop distances to the active camera."""
+        print("\n" + "=" * 80)
+        print(f"{'BACKDROP':<25} | {'LOCATION':<30} | {'DIST TO CAM'}")
+        print("-" * 80)
+
+        cam = bpy.context.scene.camera
+        cam_loc = cam.matrix_world.to_translation() if cam else mathutils.Vector((0,0,0))
+
+        targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
+        for name in targets:
+            obj = bpy.data.objects.get(name)
+            if not obj:
+                continue
+
+            loc = obj.matrix_world.to_translation()
+            dist = (loc - cam_loc).length
+            print(f"{name:<25} | {str(loc.to_tuple(2)):<30} | {dist:.2f}m")
+        print("=" * 80 + "\n")
+
     def test_rendering_setup(self):
         """Verifies camera and backdrop are present for Scene 6."""
         self.assertIsNotNone(

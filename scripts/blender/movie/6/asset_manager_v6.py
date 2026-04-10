@@ -221,7 +221,9 @@ class SylvanEnsembleManager:
                 eval_obj = obj.evaluated_get(dg) if dg else obj
 
                 count = 0
-                threshold = 10.0 # Tighter threshold for character assets
+                # Threshold must be loose enough to not delete character vertices.
+                # Shards are typically extremely far (>100m).
+                threshold = 100.0
 
                 # Ensure vertex indices match
                 safe_eval = False
@@ -234,8 +236,8 @@ class SylvanEnsembleManager:
                     if not is_shard and safe_eval:
                         eval_v = eval_obj.data.vertices[i]
                         w_co = eval_obj.matrix_world @ eval_v.co
-                        # Catch extreme world-space shards (e.g. 1062m)
-                        if w_co.length > 50.0 or abs(w_co.z) > 50.0:
+                        # Catch extreme world-space shards (e.g. 240m shard reported in log)
+                        if w_co.length > 100.0 or abs(w_co.z) > 100.0:
                             is_shard = True
 
                     if is_shard:
