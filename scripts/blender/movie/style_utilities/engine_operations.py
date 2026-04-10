@@ -45,3 +45,16 @@ def clear_scene_selective():
     for block in (bpy.data.meshes, bpy.data.materials, bpy.data.actions, bpy.data.curves, bpy.data.armatures, bpy.data.node_groups):
         for item in block:
             if item.users == 0: block.remove(item)
+
+def update_view_layer():
+    """Environment-agnostic view layer update helper."""
+    try:
+        if hasattr(bpy.context, "view_layer"):
+            bpy.context.view_layer.update()
+        elif hasattr(bpy.context, "scene"):
+            bpy.context.scene.update()
+        else:
+            for scene in bpy.data.scenes:
+                scene.update()
+    except Exception:
+        pass

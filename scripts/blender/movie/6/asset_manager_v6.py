@@ -3,14 +3,7 @@ import os
 import time
 import config
 
-try:
-    from style_utilities.engine_operations import update_view_layer
-except ImportError:
-    def update_view_layer():
-        try: bpy.context.view_layer.update()
-        except:
-            try: bpy.context.scene.update()
-            except: pass
+from style_utilities.engine_operations import update_view_layer
 
 
 class SylvanEnsembleManager:
@@ -380,10 +373,11 @@ class SylvanEnsembleManager:
                                 child.matrix_world = mw_child
 
                     if not mesh.is_library_indirect:
-                        # Preserve Mesh world matrix during parenting to keep scale/pos sync
-                        mw_mesh = mesh.matrix_world.copy()
                         mesh.parent = rig
-                        mesh.matrix_world = mw_mesh
+                        # Force alignment: characters should be upright (Z-up) relative to rig
+                        # We preserve the imported scale but reset local loc/rot to identity.
+                        mesh.location = (0, 0, 0)
+                        mesh.rotation_euler = (0, 0, 0)
                 else:
                     # If mesh is rig (Root_Guardian), ensure it has no parent
                     if not rig.is_library_indirect:

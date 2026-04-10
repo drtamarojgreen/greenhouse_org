@@ -345,10 +345,11 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 art_base = name.split('.')[0]
                 is_hit = art_base in hit_obj.name or hit_obj.name in art_base
 
+                d_hit = (loc - origin).length
+                d_obj = (target_pt - origin).length
+
                 # If we hit a backdrop, check if it's behind
                 if not is_hit and "Backdrop" in hit_obj.name:
-                     d_hit = (loc - origin).length
-                     d_obj = (target_pt - origin).length
                      if d_hit > d_obj:
                           is_hit = True
 
@@ -408,9 +409,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def test_backdrop_audit_table(self):
         """Diagnostic table of backdrop distances and vectors to the active camera."""
-        print("\n" + "=" * 115)
-        print(f"{'BACKDROP':<25} | {'LOCATION':<22} | {'DIST':<8} | {'CAM DIFF VECTOR (X,Y,Z)'}")
-        print("-" * 115)
+        print("\n" + "=" * 125)
+        print(f"{'BACKDROP':<25} | {'LOCATION':<22} | {'DIST':<8} | {'DIFF.X':<8} | {'DIFF.Y':<8} | {'DIFF.Z'}")
+        print("-" * 125)
 
         cam = bpy.context.scene.camera
         cam_loc = cam.matrix_world.to_translation() if cam else mathutils.Vector((0,0,0))
@@ -424,8 +425,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
             loc = obj.matrix_world.to_translation()
             vec = loc - cam_loc
             dist = vec.length
-            print(f"{name:<25} | {str(loc.to_tuple(1)):<22} | {dist:<8.2f}m | {str(vec.to_tuple(1))}")
-        print("=" * 115 + "\n")
+            print(f"{name:<25} | {str(loc.to_tuple(1)):<22} | {dist:<8.2f}m | "
+                  f"{vec.x:<8.2f} | {vec.y:<8.2f} | {vec.z:.2f}")
+        print("=" * 125 + "\n")
 
     def test_rendering_setup(self):
         """Verifies camera and backdrop are present for Scene 6."""
