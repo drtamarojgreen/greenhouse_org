@@ -60,6 +60,7 @@ def force_majestic_height(rig, target_h):
              rig.scale = tuple(s * factor for s in rig.scale)
              print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
              mesh["normalized_height"] = True
+             rig["normalized_height"] = True
         else:
              rig.scale = tuple(s * factor for s in rig.scale)
              print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
