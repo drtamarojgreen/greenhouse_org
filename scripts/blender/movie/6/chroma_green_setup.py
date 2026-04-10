@@ -77,6 +77,31 @@ def setup_chroma_green_backdrop():
     for plane in planes:
         coll_6b.objects.link(plane)
 
+    # 4. Additional Backdrop Volumes (Cubes behind planes)
+    volume_data = [
+        ("ChromaVolume_Wide", (0, 1, 0), mathutils.Vector((0, 550, 5))),  # Green
+        ("ChromaVolume_OTS1", (1, 1, 0), mathutils.Vector((-550, -20, 5))), # Yellow
+        ("ChromaVolume_OTS2", (1, 0, 0), mathutils.Vector((550, 20, 5))),  # Red
+    ]
+
+    for name, color_rgb, loc in volume_data:
+        bpy.ops.mesh.primitive_cube_add(size=1000, location=loc)
+        cube = bpy.context.active_object
+        cube.name = name
+        coll_6b.objects.link(cube)
+
+        # Apply Emission Material
+        mat = bpy.data.materials.new(name=f"Mat.Volume.{name}")
+        mat.use_nodes = True
+        nodes = mat.node_tree.nodes
+        nodes.clear()
+        emit = nodes.new(type='ShaderNodeEmission')
+        emit.inputs[0].default_value = (*color_rgb, 1.0)
+        emit.inputs[1].default_value = 5.0 # Boost for visibility
+        out = nodes.new(type='ShaderNodeOutputMaterial')
+        mat.node_tree.links.new(emit.outputs[0], out.inputs[0])
+        cube.data.materials.append(mat)
+
     # Disable light interaction on all backdrops (prevent green spill)
     for backdrop in planes:
         backdrop.visible_shadow      = False

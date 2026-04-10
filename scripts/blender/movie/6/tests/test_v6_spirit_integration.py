@@ -489,9 +489,14 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 direction = (midpoint - cam_origin).normalized()
                 hit, loc, norm, idx, hit_obj, mat = bpy.context.scene.ray_cast(dg, cam_origin, direction)
 
-                # We might hit a character or the cylinder itself
-                is_visible = hit and (hit_obj == cyl or "DEBUG" in hit_obj.name)
+                # We might hit a character, the cylinder, or the backdrops/volumes
+                # We expect to either hit the cylinder itself or nothing if it's perfectly aligned.
+                # But here we assert that we don't hit an environmental blocker.
+                is_blocked = hit and not (hit_obj == cyl or "DEBUG" in hit_obj.name or "Chroma" in hit_obj.name)
+                is_visible = not is_blocked
+
                 print(f"VISIBILITY CHECK: {cyl.name} -> {'VISIBLE' if is_visible else 'OCCLUDED by ' + (hit_obj.name if hit else 'NONE')}")
+                self.assertTrue(is_visible, f"Debug cylinder {cyl.name} is occluded by {hit_obj.name if hit else 'NONE'}")
 
             rot_deg = [round(math.degrees(a), 1) for a in cyl.rotation_euler]
             print(f"{name:<25} | {length:<10.2f} | {rot_deg}")

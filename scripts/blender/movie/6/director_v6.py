@@ -80,6 +80,8 @@ class SylvanDirector:
         # Reuse an existing camera data-block if we've already created it
         cam_data = bpy.data.cameras.get(name) or bpy.data.cameras.new(name)
         cam_data.lens = lens
+        # Increase clip_end to ensure massive volumes are visible
+        cam_data.clip_end = 2000.0
 
         obj = bpy.data.objects.get(name)
         if obj is None:
