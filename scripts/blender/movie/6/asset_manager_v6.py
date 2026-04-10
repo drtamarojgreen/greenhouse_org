@@ -63,12 +63,7 @@ class SylvanEnsembleManager:
         #   - protagonist meshes and rigs
         src_mesh_names = list(self.ensemble.keys())
         src_rig_names  = list(self.rig_map.values())
-
-        protagonist_names = []
-        for p_data in config.PROTAGONIST_SOURCE.values():
-            protagonist_names.extend([p_data["mesh"], p_data["rig"]])
-
-        want = set(src_mesh_names + src_rig_names + protagonist_names)
+        want = set(src_mesh_names + src_rig_names)
 
         if not os.path.exists(config.SPIRITS_ASSET_BLEND):
              print(f"ASSET_MANAGER ERROR: Source blend missing: {config.SPIRITS_ASSET_BLEND}")
@@ -118,7 +113,7 @@ class SylvanEnsembleManager:
     def renormalize_objects(self):
         """Standardizes naming and basic hierarchy for production ensemble and protagonists."""
         print("ASSET_MANAGER: Executing Production Asset Renormalization...")
-
+        
         # 1. Renormalize Ensemble Spirits
         for src_mesh, art_name in self.ensemble.items():
             self._renormalize_single_character(src_mesh, art_name, self.rig_map.get(art_name))
@@ -127,7 +122,7 @@ class SylvanEnsembleManager:
         for art_name, p_data in config.PROTAGONIST_SOURCE.items():
             self._renormalize_single_character(p_data["mesh"], art_name, p_data["rig"])
 
-            bpy.context.view_layer.update()
+            #bpy.context.view_layer.update()
 
         # Restore full visibility (hidden objects cause render-safety confusion later)
         for obj in bpy.data.objects:
@@ -139,6 +134,7 @@ class SylvanEnsembleManager:
             if "Root_Guardian" in obj.name:
                 obj.hide_render   = True
                 obj.hide_viewport = True
+        
 
     def _renormalize_single_character(self, src_mesh, art_name, src_rig):
         mesh_obj = bpy.data.objects.get(src_mesh)
