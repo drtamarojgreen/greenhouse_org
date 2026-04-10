@@ -114,6 +114,10 @@ def extract_assets():
 
         elif body and body.type == 'ARMATURE':
             # Character whose mesh object IS the armature (e.g. Root_Guardian)
+            # Ensure the object is named with the .Body suffix for the Phase B renormalize_objects
+            original_name = body.name
+            body.name = f"{art_name}.Body"
+
             bpy.ops.object.select_all(action='DESELECT')
             body.select_set(True)
             bpy.context.view_layer.objects.active = body

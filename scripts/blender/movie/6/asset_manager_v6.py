@@ -201,7 +201,7 @@ class SylvanEnsembleManager:
                 rig.name = t_rig_name
                 # Enforce clean hierarchy: Mesh as child of Rig with identity transforms
                 # This prevents the "distorting everything" double-transform bug
-                if mesh.parent != rig:
+                if mesh != rig and mesh.parent != rig:
                     mesh.parent = rig
                     # Sync local origin to rig origin
                     mesh.location = (0, 0, 0)
@@ -219,10 +219,9 @@ class SylvanEnsembleManager:
 
             mesh.hide_render = mesh.hide_viewport = False
 
-        # 2. Targeted cleanup: root guardian is always hidden
+        # 2. Targeted cleanup: ensure all assets are visible (no-hidden guardian)
         for obj in coll.objects:
-            if "Root_Guardian" in obj.name:
-                obj.hide_render = obj.hide_viewport = True
+            obj.hide_render = obj.hide_viewport = False
 
     # ------------------------------------------------------------------
     # MATERIAL REPAIR
