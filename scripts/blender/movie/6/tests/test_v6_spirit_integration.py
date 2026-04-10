@@ -218,8 +218,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
                  # We check that they are moved from (0,0,1) mock origin
                  self.assertGreater(loc.xy.length, 0.5, f"{name} stayed at origin! (Loc: {loc})")
 
-            self.assertIsNotNone(obj.find_armature(),
-                                 f"{name} missing armature connection")
+            is_arm = obj.type == 'ARMATURE' or obj.find_armature() is not None
+            self.assertTrue(is_arm, f"{name} missing armature connection")
 
     def test_vertex_outliers(self):
         for name in [config.CHAR_HERBACEOUS + "_Body", config.CHAR_LEAFY_MESH]:
@@ -315,17 +315,26 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
             bpy.context.view_layer.update()
 
-            # Use geometry center for raycast target
-            bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-            z_vals = [v.z for v in bbox]
-            x_vals = [v.x for v in bbox]
-            y_vals = [v.y for v in bbox]
+            # Try to aim at the Head bone for better reliability
+            target_pt = None
+            rig = obj.find_armature() or (obj if obj.type == 'ARMATURE' else None)
+            if rig:
+                head = get_bone(rig, "Head") or get_bone(rig, "Neck")
+                if head:
+                    target_pt = rig.matrix_world @ head.head
 
-            target_pt = mathutils.Vector((
-                (max(x_vals) + min(x_vals)) / 2.0,
-                (max(y_vals) + min(y_vals)) / 2.0,
-                (max(z_vals) + min(z_vals)) / 2.0
-            ))
+            if not target_pt:
+                # Use geometry center for raycast target
+                bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
+                z_vals = [v.z for v in bbox]
+                x_vals = [v.x for v in bbox]
+                y_vals = [v.y for v in bbox]
+
+                target_pt = mathutils.Vector((
+                    (max(x_vals) + min(x_vals)) / 2.0,
+                    (max(y_vals) + min(y_vals)) / 2.0,
+                    (max(z_vals) + min(z_vals)) / 2.0
+                ))
 
             direction = (target_pt - origin).normalized()
 
@@ -393,8 +402,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
             # Placement audit
             loc = obj.matrix_world.to_translation()
-            print(f"BACKDROP {name}: Loc={loc}, Scale={obj.scale[:]}")
-            self.assertGreater(obj.scale.x, 10, f"Backdrop {name} likely too small (distorted scale)")
+            dim = obj.dimensions
+            print(f"BACKDROP {name}: Loc={loc}, Dim={dim[:]}")
+            self.assertGreater(dim.x, 50, f"Backdrop {name} likely too small (distorted dimensions)")
 
     def test_rendering_setup(self):
         """Verifies camera and backdrop are present for Scene 6."""

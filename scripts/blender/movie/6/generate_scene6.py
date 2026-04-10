@@ -42,13 +42,10 @@ def force_majestic_height(rig, target_h):
             if 0.99 < factor < 1.01:
                  return
 
-            # Apply to Mesh instead of Rig to avoid conflict with Director's rig animation
-            if mesh:
-                 mesh.scale = tuple(s * factor for s in mesh.scale)
-                 print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
-            else:
-                 rig.scale = tuple(s * factor for s in rig.scale)
-                 print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
+            # Apply to Rig directly so Director's relative keyframes pick it up.
+            # If mesh is parented to Rig and Mesh has identity scale, this is perfect.
+            rig.scale = tuple(s * factor for s in rig.scale)
+            print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
 
             bpy.context.view_layer.update()
 
@@ -158,13 +155,13 @@ def generate_full_scene_v6():
         scene_logic = DialogueSceneV6(characters, [])
         scene_logic.setup_scene(use_fbx=use_fbx)
 
-        # 3. Cinematic direction
+        # 3. Height normalization (MUST happen BEFORE keyframing in compose_ensemble)
+        standardize_ensemble_heights()
+
+        # 4. Cinematic direction
         director.position_protagonists()
         director.compose_ensemble()
         director.setup_cinematics()
-
-        # 4. Height normalization (apply scale before keyframing or adjust)
-        standardize_ensemble_heights()
 
         print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")
 

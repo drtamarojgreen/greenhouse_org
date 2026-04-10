@@ -130,13 +130,16 @@ class SylvanDirector:
 
             # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
             # Scale keyframes are subtle (max 1.05) to avoid breaking Majestic height standards
-            rig.scale = (1.0, 1.0, 1.0)
+            # We use the current scale as base to respect normalization.
+            base_s = rig.scale.copy()
+
+            rig.scale = base_s
             rig.keyframe_insert(data_path="scale", frame=1)
 
-            rig.scale = (1.05, 1.05, 1.05)
+            rig.scale = tuple(s * 1.05 for s in base_s)
             rig.keyframe_insert(data_path="scale", frame=2)
 
-            rig.scale = (1.02, 1.02, 1.02)
+            rig.scale = tuple(s * 1.02 for s in base_s)
             rig.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
 
             # Gentle ascent over the full scene
@@ -160,5 +163,7 @@ class SylvanDirector:
 
         if herb:
             herb.location = config.CHAR_HERBACEOUS_POS
+            herb.keyframe_insert(data_path="location", frame=1)
         if arbor:
             arbor.location = config.CHAR_ARBOR_POS
+            arbor.keyframe_insert(data_path="location", frame=1)

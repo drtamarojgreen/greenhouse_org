@@ -51,7 +51,8 @@ class SylvanEnsembleManager:
         print(f"ASSET_MANAGER: Linking Sylvan Ensemble from {config.SPIRITS_ASSET_BLEND}...")
 
         # 1. Check if already linked to prevent duplicates
-        if any(f"{art_name}" in obj.name for obj in bpy.data.objects for art_name in self.ensemble.values()):
+        if any(f"{art_name}.Body" in obj.name or f"{art_name}.Rig" in obj.name
+               for obj in bpy.data.objects for art_name in self.ensemble.values()):
              print("ASSET_MANAGER: Ensemble already linked — skipping.")
              return
 
@@ -88,7 +89,8 @@ class SylvanEnsembleManager:
             if obj and obj.name not in coll.objects:
                 try:
                     # Idempotency: Unlink from other collections if necessary
-                    for other_coll in obj.users_collection:
+                    # Use list() to avoid mutation during iteration
+                    for other_coll in list(obj.users_collection):
                          if other_coll != coll:
                               other_coll.objects.unlink(obj)
                     coll.objects.link(obj)
@@ -118,7 +120,8 @@ class SylvanEnsembleManager:
                 if obj and obj.name not in coll.objects:
                     try:
                         # Idempotency: Unlink from other collections if necessary
-                        for other_coll in obj.users_collection:
+                        # Use list() to avoid mutation during iteration
+                        for other_coll in list(obj.users_collection):
                              if other_coll != coll:
                                   other_coll.objects.unlink(obj)
                         coll.objects.link(obj)
@@ -180,6 +183,27 @@ class SylvanEnsembleManager:
     # RENORMALIZATION
     # ------------------------------------------------------------------
 
+    def sanitize_shards(self):
+        """Removes outlier vertices that distort height calculations."""
+        print("ASSET_MANAGER: Sanitizing mesh shards...")
+        coll = bpy.data.collections.get(self.collection_name)
+        if not coll: return
+
+        for obj in coll.objects:
+            if obj.type == 'MESH':
+                # Skip linked data that is read-only
+                if obj.data.is_library_indirect:
+                    continue
+
+                mesh = obj.data
+                count = 0
+                for v in mesh.vertices:
+                    if v.co.length > 50.0:
+                        v.co = (0, 0, 0)
+                        count += 1
+                if count > 0:
+                    print(f"  Removed {count} shards from {obj.name}")
+
     def renormalize_objects(self):
         """
         Final 5.0 Renormalization rewrite.
@@ -187,12 +211,24 @@ class SylvanEnsembleManager:
         """
         print("ASSET_MANAGER: Rewriting Scoped Asset Hierarchy...")
 
+        # 0. Sanitize Shards first to ensure clean bounds
+        self.sanitize_shards()
+
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
 
         # Pre-pass: Capture original names and reset all rigs in the asset collection
-        # We use a map to handle renaming collisions (e.g. 'skeleton' used by multiple chars)
-        src_map = {obj.name: obj for obj in coll.objects}
+        # Use a non-mutating map of original names to objects for reliable discovery
+        orig_map = {obj.name: obj for obj in coll.objects}
+
+        def find_src_obj(name):
+            if not name: return None
+            # Try exact
+            if name in orig_map: return orig_map[name]
+            # Try with .00x suffix
+            for k, v in orig_map.items():
+                if k.startswith(name + "."): return v
+            return None
 
         # Whitelist names for transformation reset
         # This prevents environmental armatures from being reset to identity
@@ -212,9 +248,11 @@ class SylvanEnsembleManager:
         for obj in coll.objects:
             if obj.type == 'ARMATURE':
                 # Isolation: Ensure character rigs are unparented from non-asset containers
-                mw = obj.matrix_world.copy()
-                obj.parent = None
-                obj.matrix_world = mw
+                # Skip linked rigs as unparenting will fail without override
+                if not obj.is_library_indirect:
+                    mw = obj.matrix_world.copy()
+                    obj.parent = None
+                    obj.matrix_world = mw
 
                 # ONLY reset scale/loc/rot for WHITELISTED characters
                 if obj.name in valid_targets or any(v in obj.name for v in valid_targets):
@@ -234,19 +272,28 @@ class SylvanEnsembleManager:
             src_mesh_key = next((k for k, v in self.ensemble.items() if v == art_name), art_name)
 
             # Find Mesh: Check original source first, then existing target name
-            mesh = src_map.get(src_mesh_key) or bpy.data.objects.get(t_mesh_name)
+            mesh = find_src_obj(src_mesh_key) or bpy.data.objects.get(t_mesh_name)
             if not mesh and is_p:
                 # Fallback for protagonists which might just be named 'Herbaceous_V5_Body'
-                mesh = src_map.get(f"{art_name}_Body") or bpy.data.objects.get(f"{art_name}_Body")
+                mesh = find_src_obj(f"{art_name}_Body") or bpy.data.objects.get(f"{art_name}_Body")
 
             if not mesh:
                 continue
 
             # Find Rig: Check mapping, then original name, then mesh itself if it's an armature
             src_rig_key = self.rig_map.get(art_name) or (f"{art_name}_Rig" if is_p else None)
-            rig = (src_map.get(src_rig_key) if src_rig_key else None) or \
+            rig = (find_src_obj(src_rig_key) if src_rig_key else None) or \
                   bpy.data.objects.get(t_rig_name) or \
                   mesh.find_armature()
+
+            # Duplication logic for shared assets (e.g. Root_Guardian vs Phoenix Rig collision)
+            # If the found rig already has a production name but it's not the one we want, duplicate it.
+            if rig and (".Rig" in rig.name or ".Body" in rig.name) and rig.name != t_rig_name and rig.name != t_mesh_name:
+                 print(f"ASSET_MANAGER: Duplicating shared asset {rig.name} for {art_name}")
+                 new_rig = rig.copy()
+                 if rig.data: new_rig.data = rig.data.copy()
+                 coll.objects.link(new_rig)
+                 rig = new_rig
 
             # Special case for skeleton-based assets where the mesh IS the rig (e.g. Root_Guardian)
             if not rig and mesh.type == 'ARMATURE':
@@ -254,15 +301,17 @@ class SylvanEnsembleManager:
 
             # Perform Renaming (Careful with shared rigs)
             if rig:
-                # If mesh is rig (Root_Guardian), it MUST be named .Body
+                # Avoid renaming if already matches target to prevent redundant updates
                 if mesh == rig:
-                    rig.name = t_mesh_name
+                    if rig.name != t_mesh_name:
+                        rig.name = t_mesh_name
                 else:
-                    # Mesh gets .Body, Rig gets .Rig
-                    mesh.name = t_mesh_name
+                    if mesh.name != t_mesh_name:
+                        mesh.name = t_mesh_name
                     # Only rename the rig if it hasn't been processed yet or doesn't have a final name
-                    if ".Rig" not in rig.name and ".Body" not in rig.name:
-                        rig.name = t_rig_name
+                    if (".Rig" not in rig.name and ".Body" not in rig.name) or rig.name == t_mesh_name:
+                        if rig.name != t_rig_name:
+                            rig.name = t_rig_name
 
                 rig.scale = (1, 1, 1) # Force unit scale to prevent inherited distortion
 
@@ -271,18 +320,21 @@ class SylvanEnsembleManager:
                     # Isolation: Unparent rogue children (cameras, empties) from the rig
                     for child in list(rig.children):
                         if child != mesh:
-                            # Preserve world position for rogue children when unparenting
-                            mw_child = child.matrix_world.copy()
-                            child.parent = None
-                            child.matrix_world = mw_child
+                            if not child.is_library_indirect:
+                                # Preserve world position for rogue children when unparenting
+                                mw_child = child.matrix_world.copy()
+                                child.parent = None
+                                child.matrix_world = mw_child
 
-                    mesh.parent = rig
-                    mesh.location = (0, 0, 0)
-                    mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                    if not mesh.is_library_indirect:
+                        mesh.parent = rig
+                        mesh.location = (0, 0, 0)
+                        mesh.rotation_euler = (0, 0, 0)
+                        mesh.scale = (1, 1, 1)
                 else:
                     # If mesh is rig (Root_Guardian), ensure it has no parent
-                    rig.parent = None
+                    if not rig.is_library_indirect:
+                        rig.parent = None
 
                 # Restore Armature modifier correctly (only for MESH objects)
                 if mesh.type == 'MESH':
