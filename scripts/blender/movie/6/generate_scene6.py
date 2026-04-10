@@ -49,11 +49,17 @@ def force_majestic_height(rig, target_h):
             if 0.99 < factor < 1.01:
                  return
 
-            # Movie 6 Sibling Hierarchy: Scale ONLY the Rig.
-            # The Mesh (Body) sibling stays at scale 1.0 but is deformed by the Rig.
-            # Scaling both leads to double-transformation distortion.
+            # Movie 6 Sibling Hierarchy: Scale BOTH Rig and Mesh.
+            # In the Sibling Protocol, they are unparented, so the Mesh does not inherit
+            # the Rig's object-level scale. We must scale both to maintain sync and
+            # ensure world-space bounding box audits are accurate.
             rig.scale = tuple(s * factor for s in rig.scale)
-            print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
+            mesh_name = rig.name.replace(".Rig", ".Body")
+            mesh = bpy.data.objects.get(mesh_name)
+            if mesh and mesh != rig:
+                mesh.scale = tuple(s * factor for s in mesh.scale)
+
+            print(f"ASSET_MANAGER: Scaled Rig {rig.name} and Sibling Mesh by {factor:.2f} (Current: {curr_h:.2f}m)")
 
             bpy.context.view_layer.update()
 
