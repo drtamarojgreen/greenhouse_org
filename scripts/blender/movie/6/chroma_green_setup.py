@@ -47,7 +47,7 @@ def setup_chroma_green_backdrop():
     planes = []
 
     # 1. Wide-angle backdrop (Y = 50)
-    bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 50, 5))
+    bpy.ops.mesh.primitive_plane_add(size=1000, location=(0, 50, 5))
     bw = bpy.context.active_object
     bw.name = "ChromaBackdrop_Wide"
     cam_wide_loc = mathutils.Vector((0.0, -18.0, 5.5))
@@ -56,7 +56,7 @@ def setup_chroma_green_backdrop():
     planes.append(bw)
 
     # 2. OTS1 backdrop — behind Herbaceous
-    bpy.ops.mesh.primitive_plane_add(size=200, location=(-50, -20, 5))
+    bpy.ops.mesh.primitive_plane_add(size=1000, location=(-50, -20, 5))
     bo1 = bpy.context.active_object
     bo1.name = "ChromaBackdrop_OTS1"
     cam_ots1_loc = mathutils.Vector((13.5, 11.0, 6.0))
@@ -65,7 +65,7 @@ def setup_chroma_green_backdrop():
     planes.append(bo1)
 
     # 3. OTS2 backdrop — behind Arbor
-    bpy.ops.mesh.primitive_plane_add(size=200, location=(50, 20, 5))
+    bpy.ops.mesh.primitive_plane_add(size=1000, location=(50, 20, 5))
     bo2 = bpy.context.active_object
     bo2.name = "ChromaBackdrop_OTS2"
     cam_ots2_loc = mathutils.Vector((-13.5, -11.0, 6.0))

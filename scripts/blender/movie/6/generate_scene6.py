@@ -144,7 +144,7 @@ def setup_production_environment():
     if existing:
         bpy.data.objects.remove(existing, do_unlink=True)
 
-    bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 20, 0))
+    bpy.ops.mesh.primitive_plane_add(size=1000, location=(0, 20, 0))
     obj = bpy.context.active_object
     obj.name = config.BACKDROP_NAME
     obj.rotation_euler = (1.5708, 0, 0)
