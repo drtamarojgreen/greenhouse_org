@@ -439,6 +439,22 @@ class TestV6SpiritIntegration(unittest.TestCase):
         origin = mathutils.Vector((0, 0, 0))
         targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
 
+        # Create a solid black material for debug lines
+        black_mat = bpy.data.materials.get("Mat.Debug.Black")
+        if not black_mat:
+            black_mat = bpy.data.materials.new(name="Mat.Debug.Black")
+            black_mat.use_nodes = True
+            nodes = black_mat.node_tree.nodes
+            bsdf = nodes.get("Principled BSDF")
+            if bsdf:
+                # Blender 5.0+ uses "Base Color"
+                bsdf.inputs.get("Base Color").default_value = (0, 0, 0, 1)
+                if "Emission Color" in bsdf.inputs:
+                    bsdf.inputs["Emission Color"].default_value = (0, 0, 0, 1)
+
+        cam = bpy.context.scene.camera
+        dg = bpy.context.evaluated_depsgraph_get()
+
         for name in targets:
             obj = bpy.data.objects.get(name)
             if not obj: continue
@@ -446,19 +462,36 @@ class TestV6SpiritIntegration(unittest.TestCase):
             target = obj.matrix_world.to_translation()
             vec = target - origin
             length = vec.length
+            midpoint = (origin + target) / 2
 
             # Create cylinder
             bpy.ops.mesh.primitive_cylinder_add(
                 radius=0.1,
                 depth=length,
-                location=(origin + target) / 2
+                location=midpoint
             )
             cyl = bpy.context.active_object
             cyl.name = f"DEBUG.Line.{name}"
+            cyl.data.materials.append(black_mat)
 
             # Orient cylinder to point from origin to backdrop
             rot_quat = mathutils.Vector((0, 0, 1)).rotation_difference(vec.normalized())
             cyl.rotation_euler = rot_quat.to_euler()
+
+            # 1. Flag Visibility Checks
+            self.assertFalse(cyl.hide_render, f"Debug cylinder {cyl.name} is hidden from render")
+            self.assertFalse(cyl.hide_viewport, f"Debug cylinder {cyl.name} is hidden from viewport")
+            self.assertIn(cyl.name, bpy.context.scene.collection.objects, f"{cyl.name} not in scene collection")
+
+            # 2. Rendering Visibility (Raycast)
+            if cam:
+                cam_origin = cam.matrix_world.to_translation()
+                direction = (midpoint - cam_origin).normalized()
+                hit, loc, norm, idx, hit_obj, mat = bpy.context.scene.ray_cast(dg, cam_origin, direction)
+
+                # We might hit a character or the cylinder itself
+                is_visible = hit and (hit_obj == cyl or "DEBUG" in hit_obj.name)
+                print(f"VISIBILITY CHECK: {cyl.name} -> {'VISIBLE' if is_visible else 'OCCLUDED by ' + (hit_obj.name if hit else 'NONE')}")
 
             rot_deg = [round(math.degrees(a), 1) for a in cyl.rotation_euler]
             print(f"{name:<25} | {length:<10.2f} | {rot_deg}")
@@ -570,38 +603,37 @@ class TestV6SpiritIntegration(unittest.TestCase):
             self.assertTrue(is_valid, f"Scoping Violation: Non-asset object {obj.name} found in 6a.ASSETS")
 
     def test_camera_curve_animation(self):
-        """Verify Blender 5 camera curve animation logic."""
+        """Verify Blender 5 camera curve animation logic for all cameras."""
         print("\nVerifying Camera Curve Animation...")
 
-        cam = bpy.context.scene.camera
-        self.assertIsNotNone(cam, "ERROR: No active camera in scene.")
+        targets = ["WIDE", "OTS1", "OTS2", "OTS_Static_1", "OTS_Static_2"]
 
-        # Check for Follow Path constraint
-        follow_path = next((c for c in cam.constraints if c.type == 'FOLLOW_PATH'), None)
+        for name in targets:
+            cam = bpy.data.objects.get(name)
+            self.assertIsNotNone(cam, f"ERROR: Camera {name} missing")
 
-        self.assertIsNotNone(follow_path, f"ERROR: Camera {cam.name} is not following a path (Curve).")
-        self.assertIsNotNone(follow_path.target, "ERROR: Follow Path constraint has no target object.")
-        self.assertEqual(follow_path.target.type, 'CURVE', "ERROR: Follow Path target is not a Curve.")
+            # Check for Follow Path constraint
+            follow_path = next((c for c in cam.constraints if c.type == 'FOLLOW_PATH'), None)
 
-        # Check for animation data on the constraint (fixed path vs animated path)
-        has_anim = (cam.animation_data and cam.animation_data.action) or \
-                   (follow_path.target.animation_data and follow_path.target.animation_data.action)
+            self.assertIsNotNone(follow_path, f"ERROR: Camera {cam.name} is not following a path (Curve).")
+            self.assertIsNotNone(follow_path.target, f"ERROR: Follow Path constraint for {name} has no target object.")
+            self.assertEqual(follow_path.target.type, 'CURVE', f"ERROR: Follow Path target for {name} is not a Curve.")
 
-        print(f"DEBUG: Camera Path: {follow_path.target.name if follow_path.target else 'None'}")
-        self.assertTrue(has_anim, "ERROR: No animation data found for camera or its path.")
+            # Check for animation data
+            has_anim = (cam.animation_data and cam.animation_data.action) or \
+                       (follow_path.target.animation_data and follow_path.target.animation_data.action)
 
-        # Targeted Diagnostic: Check evaluation of offset
-        if follow_path and follow_path.use_fixed_location:
-            print(f"DEBUG: Fixed Position: {follow_path.offset_factor}")
+            print(f"DEBUG: Camera {name} Path: {follow_path.target.name if follow_path.target else 'None'}")
+            self.assertTrue(has_anim, f"ERROR: No animation data found for camera {name} or its path.")
 
             # Check for keyframes on offset_factor
-            has_offset_keys = False
-            if cam.animation_data and cam.animation_data.action:
-                # Blender 5.0+: Use the helper that abstracts Slotted Actions
-                fcurves = get_action_curves(cam.animation_data.action, obj=cam)
-                has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
+            if follow_path.use_fixed_location:
+                has_offset_keys = False
+                if cam.animation_data and cam.animation_data.action:
+                    fcurves = get_action_curves(cam.animation_data.action, obj=cam)
+                    has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
 
-                self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
+                self.assertTrue(has_offset_keys, f"DIAGNOSTIC: Camera {name} has no offset keyframes.")
 
     def test_diagnostic_occlusion_and_sync(self):
         """Deep dive into raycast occlusion and coordinate sync issues."""

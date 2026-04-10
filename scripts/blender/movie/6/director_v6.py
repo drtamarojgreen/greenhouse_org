@@ -34,11 +34,12 @@ class SylvanDirector:
         }
 
         for name, data in ots_targets.items():
-            self._create_camera(name, data["pos"], (0, 0, 0), coll, lens=50)
-            cam = bpy.data.objects.get(name)
+            cam = self._create_camera(name, data["pos"], (0, 0, 0), coll, lens=50)
             if cam:
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
                 cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
+                # Animate all cameras on curves as requested
+                self._setup_camera_curve(cam, coll)
 
     def _setup_camera_curve(self, cam_obj, coll):
         """Creates a curve and adds a FOLLOW_PATH constraint for the camera."""
