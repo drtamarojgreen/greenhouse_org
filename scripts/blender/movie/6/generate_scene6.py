@@ -19,6 +19,7 @@ def force_majestic_height(rig, target_h):
     """World-space height normalization for a single rig/mesh ensemble."""
     from animation_library_v6 import get_bone
     import mathutils
+    import statistics
 
     # Find the Mesh child
     mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
@@ -31,25 +32,36 @@ def force_majestic_height(rig, target_h):
         eval_obj = mesh.evaluated_get(dg)
         eval_mesh = eval_obj.data
 
-        # Filter vertices by weight to exclude low-influence "shards"
-        # We consider vertices with a total weight > 0.1 as part of the core mesh
-        z_vals = []
-        for v in eval_mesh.vertices:
-            if not v.groups:
-                 z_vals.append((eval_obj.matrix_world @ v.co).z)
-                 continue
-
-            total_w = sum(g.weight for g in v.groups)
-            if total_w > 0.1:
-                z_vals.append((eval_obj.matrix_world @ v.co).z)
-
-        if z_vals:
-            curr_h = max(z_vals) - min(z_vals)
+        # 1. Collect all world Z coordinates
+        all_z = [(eval_obj.matrix_world @ v.co).z for v in eval_mesh.vertices]
+        if not all_z:
+            curr_h = 0
         else:
-            # Fallback to bound box if all vertices filtered
-            bbox = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
-            z_vals_bbox = [v.z for v in bbox]
-            curr_h = max(z_vals_bbox) - min(z_vals_bbox)
+            # 2. Outlier Detection: Use median to find the "core" cluster
+            med_z = statistics.median(all_z)
+
+            # 3. Filter vertices by spatial proximity and weight
+            z_vals = []
+            for v in eval_mesh.vertices:
+                w_co_z = (eval_obj.matrix_world @ v.co).z
+                # Ignore vertices more than 20m from median (filters floating shards)
+                if abs(w_co_z - med_z) > 20.0:
+                    continue
+
+                if v.groups:
+                    total_w = sum(g.weight for g in v.groups)
+                    if total_w < 0.1:
+                        continue
+
+                z_vals.append(w_co_z)
+
+            if z_vals:
+                curr_h = max(z_vals) - min(z_vals)
+            else:
+                # Fallback to bound box
+                bbox = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
+                z_vals_bbox = [v.z for v in bbox]
+                curr_h = max(z_vals_bbox) - min(z_vals_bbox)
     else:
         # Fallback to bone-based height if no mesh found or if mesh is same as rig
         head = get_bone(rig, "Head") or get_bone(rig, "Neck") or get_bone(rig, "top")

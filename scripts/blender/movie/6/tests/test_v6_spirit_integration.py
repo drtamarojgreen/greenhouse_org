@@ -533,6 +533,28 @@ class TestV6SpiritIntegration(unittest.TestCase):
         print(f"DEBUG: Camera traveled {dist:.2f}m over {config.TOTAL_FRAMES} frames.")
         self.assertGreater(dist, 1.0, f"ERROR: Camera {cam.name} appears static (dist={dist:.2f}m)")
 
+    def test_camera_curve_animation(self):
+        """Verify Blender 5 camera curve animation logic using Slotted Action API."""
+        from style_utilities.fcurves_operations import get_action_curves
+
+        cam = bpy.data.objects.get(config.CAMERA_NAME)
+        self.assertIsNotNone(cam, f"{config.CAMERA_NAME} camera missing")
+
+        curve = bpy.data.objects.get(f"Curve.{config.CAMERA_NAME}")
+        self.assertIsNotNone(curve, "Camera curve missing")
+
+        con = next((c for c in cam.constraints if c.type == 'FOLLOW_PATH'), None)
+        self.assertIsNotNone(con, "Follow Path constraint missing on camera")
+
+        # Check for keyframes on the offset factor using Blender 5.0 Slotted Action API
+        self.assertIsNotNone(cam.animation_data, "Camera has no animation data")
+        self.assertIsNotNone(cam.animation_data.action, "Camera has no action")
+
+        fcurves = get_action_curves(cam.animation_data.action, obj=cam)
+        con_fcurve = next((f for f in fcurves if "offset_factor" in f.data_path), None)
+        self.assertIsNotNone(con_fcurve, "Animation missing for camera path offset")
+        self.assertGreaterEqual(len(con_fcurve.keyframe_points), 2)
+
     def test_diagnostic_occlusion_and_sync(self):
         """Deep dive into raycast occlusion and coordinate sync issues."""
         print("\nDIAGNOSTIC: Analyzing Occlusion and Sync...")

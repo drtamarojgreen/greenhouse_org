@@ -190,14 +190,18 @@ class SylvanEnsembleManager:
 
         # 1. Build list of characters to process (Ensemble + Protagonists)
         targets = []
+        seen_art_names = set()
         for src, art in self.ensemble.items():
              targets.append((src, art, "."))
+             seen_art_names.add(art)
+
+        # Pre-process Root_Guardian if not already in ensemble (fallback)
+        if "Root_Guardian" not in seen_art_names:
+             targets.append(("skeleton", "Root_Guardian", "."))
+             seen_art_names.add("Root_Guardian")
+
         for art in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR):
              targets.append((f"{art}_Body", art, "_"))
-
-        # Pre-process Root_Guardian to ensure it's handled as a spirit
-        if "Root_Guardian" not in [t[1] for t in targets]:
-             targets.append(("skeleton", "Root_Guardian", "."))
 
         for src_mesh_name, art_name, sep in targets:
             t_mesh_name = f"{art_name}{sep}Body"
@@ -206,16 +210,19 @@ class SylvanEnsembleManager:
             # 1a. Resolve the Rig FIRST
             src_rig_name = self.rig_map.get(art_name) or (src_mesh_name if art_name == "Root_Guardian" else None)
             rig = bpy.data.objects.get(t_rig_name)
+
             if not rig and src_rig_name:
+                # Search by exact name OR source_name property
                 source_rig = (bpy.data.objects.get(src_rig_name) or
                               next((o for o in coll.objects if o.get("source_name") == src_rig_name), None))
 
                 if source_rig:
-                    # If it's already been renamed, it's 'claimed'. Duplicate.
+                    # If it's already been renamed, it's 'claimed' by another spirit. Duplicate it.
                     if source_rig.name != src_rig_name:
                         rig = source_rig.copy()
                         if source_rig.data: rig.data = source_rig.data.copy()
                         coll.objects.link(rig)
+                        rig["source_name"] = src_rig_name
                     else:
                         rig = source_rig
 
@@ -231,21 +238,26 @@ class SylvanEnsembleManager:
                          mesh = source_mesh.copy()
                          if source_mesh.data: mesh.data = source_mesh.data.copy()
                          coll.objects.link(mesh)
+                         mesh["source_name"] = src_mesh_name
                     else:
                          mesh = source_mesh
 
-            if not mesh: continue
+            if not mesh:
+                print(f"ASSET_MANAGER WARNING: Could not resolve mesh for {art_name} (src: {src_mesh_name})")
+                continue
 
             # Final fallback for rig if not yet found
             if not rig:
                 rig = mesh.find_armature() or (mesh if mesh.type == 'ARMATURE' else None)
 
-            # Special case: If mesh and rig are same object, DUPLICATE to allow Sync
+            # Special case: If mesh and rig are same object (skeleton-based), DUPLICATE to allow Sync
             if mesh == rig and mesh is not None:
-                # Rig stays as the original (renamed later), mesh becomes a copy
-                mesh = rig.copy()
-                if rig.data: mesh.data = rig.data.copy()
-                coll.objects.link(mesh)
+                # Original becomes the Rig, copy becomes the Mesh
+                mesh_copy = mesh.copy()
+                if mesh.data: mesh_copy.data = mesh.data.copy()
+                coll.objects.link(mesh_copy)
+                mesh_copy["source_name"] = src_mesh_name
+                mesh = mesh_copy # Proceed with the copy as the 'Body'
 
             mesh.name = t_mesh_name
 
