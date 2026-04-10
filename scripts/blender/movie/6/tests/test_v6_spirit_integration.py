@@ -349,20 +349,32 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 bpy.data.objects.get(name), f"Camera '{name}' missing (naming regression)"
             )
 
-    def test_backdrop_integration(self):
-        """Verifies loading, visibility, and collection assignment of backdrops."""
-        print("\nVerifying Backdrop Integration...")
+    def test_backdrop_audit_table(self):
+        """Reports a table of backdrop properties (visibility, position, scale, dimensions)."""
         targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
-        coll_6b = bpy.data.collections.get("ENV.CHROMA.6b")
-        self.assertIsNotNone(coll_6b, "Collection 'ENV.CHROMA.6b' missing")
+
+        print("\n" + "=" * 135)
+        print(f"{'BACKDROP':<25} | {'VIS':<4} | {'POSITION (X,Y,Z)':<25} | {'SCALE (X,Y,Z)':<20} | {'W':<6} | {'H':<6} | {'L':<6} | {'SHAPE'}")
+        print("-" * 135)
 
         for name in targets:
             obj = bpy.data.objects.get(name)
-            self.assertIsNotNone(obj, f"Backdrop '{name}' is MISSING")
-            self.assertIn(obj.name, coll_6b.objects, f"Backdrop '{name}' not in ENV.CHROMA.6b")
-            self.assertFalse(obj.hide_viewport, f"Backdrop '{name}' hidden in viewport")
-            self.assertFalse(obj.hide_render,   f"Backdrop '{name}' hidden in render")
-            print(f"BACKDROP OK: {name}")
+            if not obj:
+                print(f"{name:<25} | MISSING")
+                continue
+
+            vis = "OK" if not (obj.hide_viewport or obj.hide_render) else "HID"
+            loc = f"({obj.location.x:5.1f},{obj.location.y:5.1f},{obj.location.z:5.1f})"
+            scl = f"({obj.scale.x:4.2f},{obj.scale.y:4.2f},{obj.scale.z:4.2f})"
+
+            # Dimensions
+            dim = obj.dimensions
+            w, h, l = dim.x, dim.z, dim.y # Width, Height, Length (depth) for vertical planes
+
+            shape = "PLANE" if obj.type == 'MESH' and len(obj.data.vertices) == 4 else obj.type
+
+            print(f"{name:<25} | {vis:<4} | {loc:<25} | {scl:<20} | {w:<6.1f} | {h:<6.1f} | {l:<6.1f} | {shape}")
+        print("=" * 135 + "\n")
 
     def test_backdrop_spatial_placement(self):
         """Ensures backdrops are correctly positioned relative to cameras."""

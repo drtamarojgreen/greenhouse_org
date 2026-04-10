@@ -249,9 +249,9 @@ class SylvanEnsembleManager:
                 rig.name = t_rig_name
 
                 # Enforce Parent-Child Relationship (Rig is Parent)
-                # We revert to Parent-Child but ensure identity local transforms.
                 if mesh != rig:
                     # Isolation: Unparent rogue children from rig/mesh while keeping world transforms
+                    # to avoid distortion if the parent was scaled.
                     for child in list(rig.children):
                         if child != mesh:
                             mw = child.matrix_world.copy()
@@ -263,12 +263,13 @@ class SylvanEnsembleManager:
                         child.parent = None
                         child.matrix_world = mw
 
-                    mesh.parent = rig
-                    mesh.location = (0, 0, 0)
-                    mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                    if mesh.parent != rig:
+                        mesh.parent = rig
+                        mesh.location = (0, 0, 0)
+                        mesh.rotation_euler = (0, 0, 0)
+                        mesh.scale = (1, 1, 1)
 
-                # Reset Rig transforms (identity at origin before director takes over)
+                # Reset Rig transforms ONLY if not yet normalized to identity at origin.
                 if not rig.get("normalized_height"):
                     rig.location = (0, 0, 0)
                     rig.rotation_euler = (0, 0, 0)
