@@ -81,13 +81,14 @@ class SylvanEnsembleManager:
         if missing:
             print(f"ASSET_MANAGER WARNING: These source objects were not found in blend: {missing}")
 
-        # Link appended objects into the collection AND the scene view-layer
+        # Link only the newly loaded objects into the asset collection
+        # This prevents environmental objects (cameras, backdrops) from being swept into 6a.ASSETS
         for obj in bpy.data.objects:
-            if obj.name not in coll.objects:
+            if (obj.name in want or any(obj.name.startswith(w) for w in want)) and obj.name not in coll.objects:
                 try:
                     coll.objects.link(obj)
                 except RuntimeError:
-                    pass  # already in collection
+                    pass
 
     def link_protagonists(self):
         """Appends protagonists from the v5 production blend."""
