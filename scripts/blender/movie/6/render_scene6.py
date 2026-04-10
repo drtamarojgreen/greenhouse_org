@@ -4,8 +4,10 @@ import bpy
 import time
 
 # Ensure movie root and v6 are in path
-V6_DIR = os.path.dirname(os.path.abspath(__file__))
-if V6_DIR not in sys.path: sys.path.append(V6_DIR)
+V6_DIR    = os.path.dirname(os.path.abspath(__file__))
+MOVIE_ROOT = os.path.dirname(V6_DIR)
+if MOVIE_ROOT not in sys.path: sys.path.append(MOVIE_ROOT)
+if V6_DIR     not in sys.path: sys.path.append(V6_DIR)
 
 import config
 from dialogue_scene_v6 import DialogueSceneV6
