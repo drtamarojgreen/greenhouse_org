@@ -80,27 +80,38 @@ class SylvanDirector:
             # Cinematic fan spread
             angle = (i / max(num - 1, 1)) * math.pi * 0.9 - math.pi * 0.45
             dist  = 9.0 + (i % 2) * 2.5
-            rig.location = (
+            loc_base = mathutils.Vector((
                 math.sin(angle) * dist,
                 6.0 + math.cos(angle) * 4.0,
                 0.0,
-            )
+            ))
+            rig.location = loc_base
 
-            # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
-            rig.scale = (1.0, 1.0, 1.0)
+            # Find sibling mesh and sync location
+            mesh_name = rig.name.replace(".Rig", ".Body").replace("_Rig", "_Body")
+            mesh = bpy.data.objects.get(mesh_name)
+            if mesh:
+                mesh.location = loc_base
+
+            # Growth dynamics: scale relative to normalized base
+            base_s = rig.scale.x
+
+            rig.scale = (base_s, base_s, base_s)
             rig.keyframe_insert(data_path="scale", frame=1)
 
-            rig.scale = (1.05, 1.05, 1.05)
+            rig.scale = (base_s * 1.05, base_s * 1.05, base_s * 1.05)
             rig.keyframe_insert(data_path="scale", frame=2)
 
-            rig.scale = (1.0, 1.0, 1.0)
+            rig.scale = (base_s, base_s, base_s)
             rig.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
 
             # Gentle ascent over the full scene
-            rig.location.z = 0.0
-            rig.keyframe_insert(data_path="location", frame=1)
-            rig.location.z = 1.5
-            rig.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
+            for obj in [rig, mesh]:
+                if not obj: continue
+                obj.location.z = 0.0
+                obj.keyframe_insert(data_path="location", frame=1)
+                obj.location.z = 1.5
+                obj.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
 
     # ------------------------------------------------------------------
     # PROTAGONIST PLACEMENT
@@ -108,14 +119,25 @@ class SylvanDirector:
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at their production positions."""
-        herb = (bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig") or
-                bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body") or
-                bpy.data.objects.get(config.CHAR_HERBACEOUS))
-        arbor = (bpy.data.objects.get(config.CHAR_ARBOR + "_Rig") or
-                 bpy.data.objects.get(config.CHAR_ARBOR + "_Body") or
-                 bpy.data.objects.get(config.CHAR_ARBOR))
+        # Check both suffixes and the base name
+        h_names = [config.CHAR_HERBACEOUS + "_Rig", config.CHAR_HERBACEOUS + "_Body", config.CHAR_HERBACEOUS]
+        a_names = [config.CHAR_ARBOR + "_Rig", config.CHAR_ARBOR + "_Body", config.CHAR_ARBOR]
 
-        if herb:
-            herb.location = config.CHAR_HERBACEOUS_POS
-        if arbor:
-            arbor.location = config.CHAR_ARBOR_POS
+        for name in h_names:
+            obj = bpy.data.objects.get(name)
+            if obj:
+                obj.location = config.CHAR_HERBACEOUS_POS
+                # If we moved a rig, move the mesh too (safety)
+                if "_Rig" in name:
+                    mesh = bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
+                    if mesh: mesh.location = config.CHAR_HERBACEOUS_POS
+                break
+
+        for name in a_names:
+            obj = bpy.data.objects.get(name)
+            if obj:
+                obj.location = config.CHAR_ARBOR_POS
+                if "_Rig" in name:
+                    mesh = bpy.data.objects.get(config.CHAR_ARBOR + "_Body")
+                    if mesh: mesh.location = config.CHAR_ARBOR_POS
+                break
