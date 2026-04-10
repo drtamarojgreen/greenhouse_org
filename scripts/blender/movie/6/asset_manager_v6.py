@@ -203,12 +203,21 @@ class SylvanEnsembleManager:
                 rig.name = t_rig_name
                 # Enforce clean hierarchy: Mesh as child of Rig with identity transforms
                 # This prevents the "distorting everything" double-transform bug
-                if mesh != rig and mesh.parent != rig:
-                    mesh.parent = rig
-                    # Sync local origin to rig origin
-                    mesh.location = (0, 0, 0)
-                    mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                if mesh != rig:
+                    # Isolation: Unparent rogue children (cameras, empties) from the rig
+                    for child in list(rig.children):
+                        if child != mesh:
+                            child.parent = None
+
+                    if mesh.parent != rig:
+                        mesh.parent = rig
+                        # Sync local origin to rig origin
+                        mesh.location = (0, 0, 0)
+                        mesh.rotation_euler = (0, 0, 0)
+                        mesh.scale = (1, 1, 1)
+                else:
+                    # If mesh is rig (Root_Guardian), ensure it has no parent
+                    mesh.parent = None
 
                 # Restore Armature modifier correctly
                 mesh.constraints.clear()
