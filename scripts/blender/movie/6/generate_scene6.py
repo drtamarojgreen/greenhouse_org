@@ -1,8 +1,15 @@
 import bpy
 import os
+import sys
 import time
-import config
 
+# Ensure movie root and v6 are in path for shared utility access
+V6_DIR    = os.path.dirname(os.path.abspath(__file__))
+MOVIE_ROOT = os.path.dirname(V6_DIR)
+if MOVIE_ROOT not in sys.path: sys.path.append(MOVIE_ROOT)
+if V6_DIR    not in sys.path: sys.path.append(V6_DIR)
+
+import config
 from asset_manager_v6 import SylvanEnsembleManager
 from director_v6 import SylvanDirector
 from dialogue_scene_v6 import DialogueSceneV6
@@ -42,12 +49,12 @@ def force_majestic_height(rig, target_h):
             if 0.99 < factor < 1.01:
                  return
 
-            # Apply to Mesh instead of Rig to avoid conflict with Director's rig animation
-            if mesh:
+            # Movie 6: Scale BOTH Rig and Mesh to maintain sync in Sibling hierarchy
+            rig.scale = tuple(s * factor for s in rig.scale)
+            if mesh and mesh != rig:
                  mesh.scale = tuple(s * factor for s in mesh.scale)
-                 print(f"ASSET_MANAGER: Scaled Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
+                 print(f"ASSET_MANAGER: Scaled Rig {rig.name} and Mesh {mesh.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
             else:
-                 rig.scale = tuple(s * factor for s in rig.scale)
                  print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
 
             bpy.context.view_layer.update()
@@ -152,13 +159,13 @@ def generate_full_scene_v6():
         scene_logic = DialogueSceneV6(characters, [])
         scene_logic.setup_scene(use_fbx=use_fbx)
 
-        # 3. Cinematic direction
+        # 3. Height normalization (apply scale before cinematic keyframing)
+        standardize_ensemble_heights()
+
+        # 4. Cinematic direction
         director.position_protagonists()
         director.compose_ensemble()
         director.setup_cinematics()
-
-        # 4. Height normalization (apply scale before keyframing or adjust)
-        standardize_ensemble_heights()
 
         print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")
 

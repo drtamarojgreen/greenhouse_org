@@ -119,46 +119,54 @@ class SylvanDirector:
             return
 
         for i, rig in enumerate(spirits):
+            # Find Mesh sibling
+            mesh_name = rig.name.replace(".Rig", ".Body")
+            mesh = bpy.data.objects.get(mesh_name) if mesh_name != rig.name else None
+
             # Cinematic fan spread
             angle = (i / max(num - 1, 1)) * math.pi * 0.9 - math.pi * 0.45
             dist  = 9.0 + (i % 2) * 2.5
-            rig.location = (
+
+            loc = (
                 math.sin(angle) * dist,
                 6.0 + math.cos(angle) * 4.0,
                 0.0,
             )
 
-            # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
-            # Scale keyframes are subtle (max 1.05) to avoid breaking Majestic height standards
-            rig.scale = (1.0, 1.0, 1.0)
-            rig.keyframe_insert(data_path="scale", frame=1)
+            # Apply to both siblings
+            for obj in [rig, mesh]:
+                if not obj: continue
+                obj.location = loc
 
-            rig.scale = (1.05, 1.05, 1.05)
-            rig.keyframe_insert(data_path="scale", frame=2)
+                # Growth dynamics: compact at frame 1, majestically tall by frame 2, settled by end
+                # Scale keyframes are relative to the normalized base scale
+                base_s = obj.scale.copy()
 
-            rig.scale = (1.02, 1.02, 1.02)
-            rig.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
+                obj.scale = base_s
+                obj.keyframe_insert(data_path="scale", frame=1)
 
-            # Gentle ascent over the full scene
-            rig.location.z = 0.0
-            rig.keyframe_insert(data_path="location", frame=1)
-            rig.location.z = 1.5
-            rig.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
+                obj.scale = base_s * 1.05
+                obj.keyframe_insert(data_path="scale", frame=2)
+
+                obj.scale = base_s * 1.02
+                obj.keyframe_insert(data_path="scale", frame=config.TOTAL_FRAMES)
+
+                # Gentle ascent over the full scene
+                obj.location.z = 0.0
+                obj.keyframe_insert(data_path="location", frame=1)
+                obj.location.z = 1.5
+                obj.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
 
     # ------------------------------------------------------------------
     # PROTAGONIST PLACEMENT
     # ------------------------------------------------------------------
 
     def position_protagonists(self):
-        """Places Herbaceous and Arbor at their production positions."""
-        herb = (bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig")
-                or bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
-                or bpy.data.objects.get(config.CHAR_HERBACEOUS))
-        arbor = (bpy.data.objects.get(config.CHAR_ARBOR + "_Rig")
-                 or bpy.data.objects.get(config.CHAR_ARBOR + "_Body")
-                 or bpy.data.objects.get(config.CHAR_ARBOR))
+        """Places Herbaceous and Arbor at their production positions (Syncing Sibling Mesh/Rig)."""
+        for name, pos in [(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS),
+                          (config.CHAR_ARBOR, config.CHAR_ARBOR_POS)]:
+            rig  = bpy.data.objects.get(f"{name}_Rig")
+            mesh = bpy.data.objects.get(f"{name}_Body")
 
-        if herb:
-            herb.location = config.CHAR_HERBACEOUS_POS
-        if arbor:
-            arbor.location = config.CHAR_ARBOR_POS
+            if rig:  rig.location = pos
+            if mesh: mesh.location = pos

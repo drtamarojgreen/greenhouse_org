@@ -163,8 +163,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def test_armature_mesh_synchronization(self):
         """
-        Verify synchronization using Parent-Child or Constraint.
-        In modern 5.0 pipeline, Mesh is child of Rig with 0,0,0 local transform.
+        Verify synchronization using Sibling relationship.
+        In Movie 6 pipeline, Mesh and Rig are both siblings (parent=None).
         """
         self.scene_logic._link_spirit_assets()
 
@@ -180,8 +180,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
             if not rig or not mesh:
                 continue
 
-            # Standard production hierarchy check
-            self.assertEqual(mesh.parent, rig, f"Mesh {mesh_name} not child of Rig {rig_name}")
+            # Movie 6 Sibling Hierarchy check
+            self.assertIsNone(mesh.parent, f"Mesh {mesh_name} should have no parent (Sibling Protocol)")
+            self.assertIsNone(rig.parent, f"Rig {rig_name} should have no parent (Sibling Protocol)")
 
             m_loc = mesh.matrix_world.to_translation()
             r_loc = rig.matrix_world.to_translation()
@@ -474,38 +475,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
             has_offset_keys = False
             if cam.animation_data and cam.animation_data.action:
                 fcurves = get_action_curves(cam.animation_data.action, obj=cam)
-                fcurves = cam.animation_data.action.fcurves
                 has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in fcurves)
-                action = cam.animation_data.action
-
-                # Case 1: Legacy / Simple Actions
-                if hasattr(action, "fcurves"):
-                     has_offset_keys = any(fc.data_path.endswith("offset_factor") for fc in action.fcurves)
-
-                # Case 2: Blender 5 Slotted Actions (Utilizing style utility patterns)
-                if not has_offset_keys:
-                    try:
-                        # Check slots
-                        if hasattr(action, "slots"):
-                            from bpy_extras import anim_utils
-                            for slot in action.slots:
-                                # Use anim_utils to get channel bag
-                                try:
-                                    bag = anim_utils.action_get_channelbag_for_slot(action, slot)
-                                    if bag and hasattr(bag, "fcurves"):
-                                        if any(fc.data_path.endswith("offset_factor") for fc in bag.fcurves):
-                                            has_offset_keys = True
-                                            break
-                                except:
-                                    # Some slots might not have bags
-                                    continue
-                    except Exception as e:
-                        print(f"DEBUG: Slotted Action check failed: {e}")
-
-                # Case 3: If still not found, check the object's own fcurves if possible
-                if not has_offset_keys and hasattr(cam.animation_data, "action"):
-                     # Sometimes action.fcurves is what we want
-                     pass
 
                 self.assertTrue(has_offset_keys, "DIAGNOSTIC: Camera uses Fixed Location but has no offset keyframes.")
 

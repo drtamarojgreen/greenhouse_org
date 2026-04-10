@@ -176,61 +176,99 @@ class SylvanEnsembleManager:
         """
         Final 5.0 Renormalization rewrite.
         Scopes changes ONLY to items in the asset collection to protect environment.
+        Enforces Movie 6 Sibling Relationship (Mesh and Rig both parent=None).
         """
         print("ASSET_MANAGER: Rewriting Scoped Asset Hierarchy...")
 
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
 
-        # 1. Process Assets explicitly from ensemble definitions
-        for src_mesh, art_name in self.ensemble.items():
-            is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
-            sep = "_" if is_p else "."
+        # 0. Build source map to avoid missing objects after partial renames
+        src_map = {obj.name: obj for obj in coll.objects}
+        rename_map = {} # obj -> final_name
+
+        # 1. Map Protagonists
+        for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
+            m_src = f"{name}_Body"
+            r_src = f"{name}_Rig"
+            if m_src in src_map: rename_map[src_map[m_src]] = m_src
+            if r_src in src_map: rename_map[src_map[r_src]] = r_src
+
+        # 2. Map Ensemble
+        for src_mesh_name, art_name in self.ensemble.items():
+            sep = "."
             t_mesh_name = f"{art_name}{sep}Body"
             t_rig_name  = f"{art_name}{sep}Rig"
 
-            mesh = bpy.data.objects.get(t_mesh_name) or bpy.data.objects.get(src_mesh)
+            # Find Mesh
+            mesh = src_map.get(t_mesh_name) or src_map.get(src_mesh_name)
+            if mesh:
+                # Priority: Mesh name is art_name.Body
+                rename_map[mesh] = t_mesh_name
+
+                # Find Rig
+                src_rig_name = self.rig_map.get(art_name)
+                rig = (src_map.get(t_rig_name) or
+                       (src_map.get(src_rig_name) if src_rig_name else None) or
+                       mesh.find_armature())
+
+                if rig and rig != mesh:
+                    # Shared rigs: only rename if not already mapped to something else
+                    if rig not in rename_map:
+                        rename_map[rig] = t_rig_name
+
+        # Execute Renames (with temporary names to avoid collisions)
+        for obj in rename_map.keys():
+            obj.name += "_TEMP"
+        for obj, final_name in rename_map.items():
+            obj.name = final_name
+
+        # 3. Apply Sibling Protocol and Transform Sync
+        for _, art_name in self.ensemble.items():
+            is_p = art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
+            sep = "_" if is_p else "."
+            mesh = bpy.data.objects.get(f"{art_name}{sep}Body")
+            rig  = bpy.data.objects.get(f"{art_name}{sep}Rig")
+
+            # Special case for shared rigs or self-rigged armatures
+            if not rig:
+                if art_name == "Root_Guardian" and mesh and mesh.type == 'ARMATURE':
+                    rig = mesh
+                else:
+                    src_rig_name = self.rig_map.get(art_name)
+                    if src_rig_name and src_rig_name in src_map:
+                        obj = src_map[src_rig_name]
+                        final_name = rename_map.get(obj)
+                        if final_name:
+                            rig = bpy.data.objects.get(final_name)
+
             if not mesh: continue
 
-            mesh.name = t_mesh_name
-
-            src_rig = self.rig_map.get(art_name)
-            rig = (bpy.data.objects.get(t_rig_name) or
-                   (bpy.data.objects.get(src_rig) if src_rig else None) or
-                   mesh.find_armature())
-
             if rig:
-                rig.name = t_rig_name
-                # Enforce clean hierarchy: Mesh as child of Rig with identity transforms
-                # This prevents the "distorting everything" double-transform bug
+                # Reset Rig scale to baseline and unparent
+                rig.parent = None
+                rig.location = (0, 0, 0)
+                rig.rotation_euler = (0, 0, 0)
+                rig.scale = (1, 1, 1)
+
                 if mesh != rig:
-                    # Isolation: Unparent rogue children (cameras, empties) from the rig
-                    for child in list(rig.children):
-                        if child != mesh:
-                            child.parent = None
-
-                    if mesh.parent != rig:
-                        mesh.parent = rig
-                        # Sync local origin to rig origin
-                        mesh.location = (0, 0, 0)
-                        mesh.rotation_euler = (0, 0, 0)
-                        mesh.scale = (1, 1, 1)
-                else:
-                    # If mesh is rig (Root_Guardian), ensure it has no parent
+                    # Sync Mesh to origin and unparent
                     mesh.parent = None
+                    mesh.location = (0, 0, 0)
+                    mesh.rotation_euler = (0, 0, 0)
+                    mesh.scale = (1, 1, 1)
 
-                # Restore Armature modifier correctly
-                mesh.constraints.clear()
-                arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
-                if not arm_mod:
-                    arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = rig
+                    # Restore Armature modifier
+                    arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
+                    if not arm_mod:
+                        arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
+                    arm_mod.object = rig
 
                 rig.hide_render = rig.hide_viewport = False
 
             mesh.hide_render = mesh.hide_viewport = False
 
-        # 2. Targeted cleanup: ensure all assets are visible (no-hidden guardian)
+        # 4. Targeted cleanup: ensure all assets are visible
         for obj in coll.objects:
             obj.hide_render = obj.hide_viewport = False
 
