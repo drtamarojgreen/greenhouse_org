@@ -57,62 +57,6 @@ def create_lip_material_v6(name):
     bsdf.inputs['Roughness'].default_value = 0.4 # Slight sheen
     return mat
 
-def setup_production_lighting(subjects):
-    """Adds 6-point lighting for full-body isolation, now config-driven."""
-    for i, obj in enumerate(subjects):
-        armature = obj.parent if obj.parent and obj.parent.type == 'ARMATURE' else None
-        base_loc = obj.matrix_world.translation
-
-        rim_name = f"RimLight_{obj.name}"
-        if rim_name not in bpy.data.objects:
-            loc = (base_loc.x, base_loc.y + 3.0, base_loc.z + 3.0)
-            bpy.ops.object.light_add(type='SPOT', location=loc)
-            rim = bpy.context.active_object
-            rim.name = rim_name
-            rim.data.energy = config.LIGHT_RIM_ENERGY
-            rim.data.spot_size = math.radians(config.LIGHT_RIM_ANGLE)
-            rim.data.color = config.LIGHT_RIM_COLOR
-            t = rim.constraints.new(type='TRACK_TO')
-            t.target = armature if armature else obj
-            if armature: t.subtarget = "Head"
-            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
-
-        key_name = f"HeadKey_{obj.name}"
-        if key_name not in bpy.data.objects:
-            mid_name = config.LIGHTING_MIDPOINT
-            if mid_name not in bpy.data.objects:
-                mid = bpy.data.objects.new(mid_name, None)
-                mid.location = (0, 0, 2.2)
-                bpy.context.scene.collection.objects.link(mid)
-            else:
-                mid = bpy.data.objects.get(mid_name)
-
-            x_side = 3.5 if base_loc.x > 0 else -3.5
-            loc = (base_loc.x + x_side, base_loc.y - 6.0, base_loc.z + 2.0)
-            bpy.ops.object.light_add(type='SPOT', location=loc)
-            key = bpy.context.active_object
-            key.name = key_name
-            key.data.energy = config.LIGHT_KEY_ENERGY
-            key.data.spot_size = math.radians(config.LIGHT_KEY_ANGLE)
-            key.data.color = config.LIGHT_KEY_COLOR
-            t = key.constraints.new(type='TRACK_TO')
-            t.target = mid
-            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
-
-        leg_name = f"LegKey_{obj.name}"
-        if leg_name not in bpy.data.objects:
-            loc = (obj.location.x * 1.5, obj.location.y - 4.0, 0.5)
-            bpy.ops.object.light_add(type='SPOT', location=loc)
-            leg = bpy.context.active_object
-            leg.name = leg_name
-            leg.data.energy = config.LIGHT_LEG_ENERGY
-            leg.data.spot_size = math.radians(config.LIGHT_LEG_ANGLE)
-            leg.data.color = config.LIGHT_LEG_COLOR
-            t = leg.constraints.new(type='TRACK_TO')
-            t.target = armature if armature else obj
-            if armature: t.subtarget = "Torso"
-            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
-
 def create_iris_material_v6(name, color=(0.36, 0.24, 0.62)):
     """Eye shader."""
     mat = bpy.data.materials.new(name=name)
@@ -308,6 +252,62 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
 
     return defs
 
+def setup_production_lighting(subjects):
+    """Adds 6-point lighting for full-body isolation, now config-driven."""
+    for i, obj in enumerate(subjects):
+        armature = obj.parent if obj.parent and obj.parent.type == 'ARMATURE' else None
+        base_loc = obj.matrix_world.translation
+
+        rim_name = f"RimLight_{obj.name}"
+        if rim_name not in bpy.data.objects:
+            loc = (base_loc.x, base_loc.y + 3.0, base_loc.z + 3.0)
+            bpy.ops.object.light_add(type='SPOT', location=loc)
+            rim = bpy.context.active_object
+            rim.name = rim_name
+            rim.data.energy = config.LIGHT_RIM_ENERGY
+            rim.data.spot_size = math.radians(config.LIGHT_RIM_ANGLE)
+            rim.data.color = config.LIGHT_RIM_COLOR
+            t = rim.constraints.new(type='TRACK_TO')
+            t.target = armature if armature else obj
+            if armature: t.subtarget = "Head"
+            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
+
+        key_name = f"HeadKey_{obj.name}"
+        if key_name not in bpy.data.objects:
+            mid_name = config.LIGHTING_MIDPOINT
+            if mid_name not in bpy.data.objects:
+                mid = bpy.data.objects.new(mid_name, None)
+                mid.location = (0, 0, 2.2)
+                bpy.context.scene.collection.objects.link(mid)
+            else:
+                mid = bpy.data.objects.get(mid_name)
+
+            x_side = 3.5 if base_loc.x > 0 else -3.5
+            loc = (base_loc.x + x_side, base_loc.y - 6.0, base_loc.z + 2.0)
+            bpy.ops.object.light_add(type='SPOT', location=loc)
+            key = bpy.context.active_object
+            key.name = key_name
+            key.data.energy = config.LIGHT_KEY_ENERGY
+            key.data.spot_size = math.radians(config.LIGHT_KEY_ANGLE)
+            key.data.color = config.LIGHT_KEY_COLOR
+            t = key.constraints.new(type='TRACK_TO')
+            t.target = mid
+            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
+
+        leg_name = f"LegKey_{obj.name}"
+        if leg_name not in bpy.data.objects:
+            loc = (obj.location.x * 1.5, obj.location.y - 4.0, 0.5)
+            bpy.ops.object.light_add(type='SPOT', location=loc)
+            leg = bpy.context.active_object
+            leg.name = leg_name
+            leg.data.energy = config.LIGHT_LEG_ENERGY
+            leg.data.spot_size = math.radians(config.LIGHT_LEG_ANGLE)
+            leg.data.color = config.LIGHT_LEG_COLOR
+            t = leg.constraints.new(type='TRACK_TO')
+            t.target = armature if armature else obj
+            if armature: t.subtarget = "Torso"
+            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
+
 def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
     armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
     armature_obj = bpy.data.objects.new(name, armature_data)
@@ -340,9 +340,27 @@ def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
         "Ear.R": ((-head_r*0.9, 0, torso_h+neck_h+head_r), (-head_r*1.1, 0, torso_h+neck_h+head_r+0.1), "Head"),
         "Eye.L": ((head_r*0.35, -head_r*0.84, torso_h+neck_h+head_r*1.35), (head_r*0.35, -head_r*0.92, torso_h+neck_h+head_r*1.35), "Head"),
         "Eye.R": ((-head_r*0.35,-head_r*0.84, torso_h+neck_h+head_r*1.35), ((-head_r*0.35,-head_r*0.92, torso_h+neck_h+head_r*1.35)), "Head"),
+        "Eyelid.Upper.L": ((head_r*0.35, -head_r*0.84, torso_h+neck_h+head_r*1.40), (head_r*0.35, -head_r*0.92, torso_h+neck_h+head_r*1.40), "Head"),
+        "Eyelid.Lower.L": ((head_r*0.35, -head_r*0.84, torso_h+neck_h+head_r*1.30), (head_r*0.35, -head_r*0.92, torso_h+neck_h+head_r*1.30), "Head"),
+        "Eyelid.Upper.R": ((-head_r*0.35,-head_r*0.84, torso_h+neck_h+head_r*1.40), ((-head_r*0.35,-head_r*0.92, torso_h+neck_h+head_r*1.40)), "Head"),
+        "Eyelid.Lower.R": ((-head_r*0.35,-head_r*0.84, torso_h+neck_h+head_r*1.30), ((-head_r*0.35,-head_r*0.92, torso_h+neck_h+head_r*1.30)), "Head"),
+        "Eyebrow.L": ((head_r*0.35, -head_r*0.81, torso_h+neck_h+head_r*1.45), (head_r*0.4,  -head_r*0.89, torso_h+neck_h+head_r*1.45), "Head"),
+        "Eyebrow.R": ((-head_r*0.35,-head_r*0.81, torso_h+neck_h+head_r*1.45), ((-head_r*0.4, -head_r*0.89, torso_h+neck_h+head_r*1.45)), "Head"),
         "Nose": ((0, -head_r*0.97, torso_h+neck_h+head_r*1.05), (0, -head_r*1.07, torso_h+neck_h+head_r*1.05), "Head"),
         "Lip.Upper": ((0, -head_r*0.96, torso_h+neck_h+head_r*0.82), (0, -head_r*1.06, torso_h+neck_h+head_r*0.82), "Head"),
         "Lip.Lower": ((0, -head_r*0.95, torso_h+neck_h+head_r*0.76), (0, -head_r*1.05, torso_h+neck_h+head_r*0.76), "Head"),
+        "Finger.1.L": ((0.4, 0, torso_h*0.9-0.95), (0.45,0, torso_h*0.9-1.1),  "Hand.L"),
+        "Finger.2.L": ((0.4, 0, torso_h*0.9-0.95), (0.4, 0.05, torso_h*0.9-1.1), "Hand.L"),
+        "Finger.3.L": ((0.4, 0, torso_h*0.9-0.95), (0.35,0, torso_h*0.9-1.1),  "Hand.L"),
+        "Finger.1.R": ((-0.4, 0, torso_h*0.9-0.95), (-0.45,0, torso_h*0.9-1.1), "Hand.R"),
+        "Finger.2.R": ((-0.4, 0, torso_h*0.9-0.95), (-0.4, 0.05, torso_h*0.9-1.1), "Hand.R"),
+        "Finger.3.R": ((-0.4, 0, torso_h*0.9-0.95), (-0.35,0, torso_h*0.9-1.1), "Hand.R"),
+        "Toe.1.L": ((0.25,-0.15,-0.95),  (0.32,-0.45,-0.95), "Foot.L"),
+        "Toe.2.L": ((0.25,-0.15,-0.95),  (0.25,-0.5, -0.95), "Foot.L"),
+        "Toe.3.L": ((0.25,-0.15,-0.95),  (0.18,-0.45,-0.95), "Foot.L"),
+        "Toe.1.R": ((-0.25,-0.15,-0.95), (-0.32,-0.45,-0.95), "Foot.R"),
+        "Toe.2.R": ((-0.25,-0.15,-0.95), (-0.25,-0.5, -0.95), "Foot.R"),
+        "Toe.3.R": ((-0.25,-0.15,-0.95), (-0.18,-0.45,-0.95), "Foot.R"),
     }
 
     facial_defs = _build_facial_bone_defs(head_r, torso_h, neck_h)
@@ -367,11 +385,18 @@ def _add_v6_organic_part(bm, mesh_obj, dlayer, rad1, rad2, height, loc, bname, m
     ret = bmesh.ops.create_cone(bm, segments=24, cap_ends=True, radius1=rad1, radius2=rad2, depth=height, matrix=matrix)
     for v in ret['verts']:
         v[dlayer][vg.index] = 1.0
-        # Organic Bulge math:
         dist_from_center = (v.co - mathutils.Vector(loc)).length
         z_fact = 1.0 - abs(dist_from_center / (height / 2))
         factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
         v.co = mathutils.Vector(loc) + (v.co - mathutils.Vector(loc)) * factor
+    return ret
+
+def _add_v6_joint_bulb(bm, mesh_obj, dlayer, loc, rad, bname):
+    vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
+    matrix = mathutils.Matrix.Translation(loc)
+    ret = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=rad, matrix=matrix)
+    for v in ret['verts']:
+        v[dlayer][vg.index] = 1.0
 
 def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
@@ -384,34 +409,111 @@ def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
 
     # Torso
     _add_v6_organic_part(bm, mesh_obj, dlayer, 0.5, 0.25, torso_h, (0, 0, torso_h/2), "Torso", mid_scale=1.2)
+    _add_v6_joint_bulb(bm, mesh_obj, dlayer, (0, 0, torso_h), 0.18, "Torso")
+
     # Neck
-    _add_v6_organic_part(bm, mesh_obj, dlayer, 0.2, 0.15, neck_h, (0, 0, torso_h + neck_h/2), "Neck")
+    _add_v6_organic_part(bm, mesh_obj, dlayer, 0.15, 0.12, neck_h, (0, 0, torso_h+neck_h/2), "Neck")
 
     # Head
     matrix_head = mathutils.Matrix.Translation((0, 0, torso_h+neck_h+head_r))
-    ret_head = bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
+    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
     head_vg = mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")
-    for v in ret_head['verts']:
-        v[dlayer][head_vg.index] = 1.0
+    for v in bm.verts:
+        if v.co.z > torso_h + neck_h:
+            head_vg.add([v.index], 1.0, 'REPLACE')
 
     # Limbs
     for side, sx in [("L", 1), ("R", -1)]:
         # Arms
-        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.12, 0.1, 0.2, (sx*0.3, 0, torso_h*0.9), f"Shoulder.{side}")
-        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.1, 0.08, 0.4, (sx*0.4, 0, torso_h*0.9-0.2), f"Arm.{side}")
-        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.08, 0.06, 0.4, (sx*0.4, 0, torso_h*0.9-0.6), f"Elbow.{side}")
-        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.07, 0.04, 0.15, (sx*0.4, 0, torso_h*0.9-0.875), f"Hand.{side}")
+        s_loc = (0.4*sx, 0, torso_h*0.9)
+        e_loc = (0.4*sx, 0, torso_h*0.9-0.4)
+        h_loc = (0.4*sx, 0, torso_h*0.9-0.8)
+        _add_v6_joint_bulb(bm, mesh_obj, dlayer, s_loc, 0.16, f"Arm.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.14, 0.11, 0.4, (s_loc[0], s_loc[1], s_loc[2]-0.2), f"Arm.{side}", mid_scale=1.15)
+        _add_v6_joint_bulb(bm, mesh_obj, dlayer, e_loc, 0.12, f"Elbow.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.11, 0.08, 0.4, (e_loc[0], e_loc[1], e_loc[2]-0.2), f"Elbow.{side}", mid_scale=1.1)
+        _add_v6_joint_bulb(bm, mesh_obj, dlayer, h_loc, 0.1, f"Hand.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.08, 0.12, 0.15, (h_loc[0], h_loc[1], h_loc[2]-0.07), f"Hand.{side}")
+        for f in range(1, 4):
+            fx = h_loc[0] + (f-2)*0.06
+            _add_v6_organic_part(bm, mesh_obj, dlayer, 0.04, 0.01, 0.25, (fx, h_loc[1], h_loc[2]-0.2), f"Finger.{f}.{side}")
 
         # Legs
-        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.15, 0.12, 0.1, (sx*0.2, 0, 0.1), f"Hip.{side}")
-        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.12, 0.1, 0.5, (sx*0.25, 0, -0.15), f"Thigh.{side}")
-        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.1, 0.08, 0.5, (sx*0.25, 0, -0.65), f"Knee.{side}")
-        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.08, 0.05, 0.2, (sx*0.25, -0.075, -0.925), f"Foot.{side}", rot=(math.radians(90), 0, 0))
+        hi_loc = (0.25*sx, 0, 0.1)
+        k_loc  = (0.25*sx, 0, -0.4)
+        an_loc = (0.25*sx, 0, -0.9)
+        _add_v6_joint_bulb(bm, mesh_obj, dlayer, hi_loc, 0.22, f"Thigh.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.2, 0.16, 0.5, (hi_loc[0], hi_loc[1], hi_loc[2]-0.25), f"Thigh.{side}", mid_scale=1.15)
+        _add_v6_joint_bulb(bm, mesh_obj, dlayer, k_loc, 0.16, f"Knee.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.16, 0.12, 0.5, (k_loc[0], k_loc[1], k_loc[2]-0.25), f"Knee.{side}", mid_scale=1.1)
+        _add_v6_joint_bulb(bm, mesh_obj, dlayer, an_loc, 0.12, f"Foot.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.1, 0.15, 0.25, (an_loc[0], an_loc[1]-0.15, an_loc[2]), f"Foot.{side}", rot=(math.radians(90), 0, 0))
+        for t in range(1, 4):
+            tx = an_loc[0] + (t-2)*0.08
+            _add_v6_organic_part(bm, mesh_obj, dlayer, 0.05, 0.02, 0.25, (tx, an_loc[1]-0.3, an_loc[2]), f"Toe.{t}.{side}", rot=(math.radians(90), 0, 0))
+
+    # 4. Foliage
+    foliage_vg = (mesh_obj.vertex_groups.get("Foliage") or mesh_obj.vertex_groups.new(name="Foliage"))
+    head_center = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
+    FACE_Y_CLEAR = head_center.y
+
+    for i in range(16):
+        angle = (i/16)*6.28
+        z_off = random.uniform(head_r*0.4, head_r*0.9)
+        loc = head_center + mathutils.Vector((math.cos(angle)*head_r*0.5, math.sin(angle)*head_r*0.5, z_off))
+        if loc.y <= FACE_Y_CLEAR: continue
+        dir_vec = (loc - head_center).normalized()
+        rot_quat = dir_vec.to_track_quat('Z', 'Y')
+        b_height = random.uniform(0.3, 0.6)
+        b_ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.04, radius2=0.01, depth=b_height, matrix=(mathutils.Matrix.Translation(loc + dir_vec*(b_height/2)) @ rot_quat.to_matrix().to_4x4()))
+        for v in b_ret['verts']: v[dlayer][head_vg.index] = 1.0
+        for j in range(12):
+            l_loc = loc + dir_vec * random.uniform(b_height*0.2, b_height)
+            l_scale = random.uniform(0.2, 0.45)
+            l_m = (mathutils.Matrix.Translation(l_loc) @ mathutils.Euler((random.uniform(0,3), 0, angle)).to_matrix().to_4x4())
+            l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=l_scale, matrix=l_m)
+            for v in l_ret['verts']:
+                v[dlayer][head_vg.index] = 1.0
+                v[dlayer][foliage_vg.index] = 1.0
+                for face in v.link_faces: face.material_index = 1
+
+    limbs_foliage = ["Arm.L","Arm.R","Elbow.L","Elbow.R","Thigh.L","Thigh.R","Knee.L","Knee.R"]
+    for bone_name in limbs_foliage:
+        vg = mesh_obj.vertex_groups.get(bone_name)
+        if not vg: continue
+        vg_verts = [v for v in bm.verts if vg.index in v[dlayer]]
+        for _ in range(10):
+            if not vg_verts: break
+            v_target = random.choice(vg_verts)
+            l_loc = v_target.co + v_target.normal * 0.05
+            l_m = (mathutils.Matrix.Translation(l_loc) @ mathutils.Euler((random.uniform(0,3), 0, random.uniform(0,6))).to_matrix().to_4x4())
+            l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.2, matrix=l_m)
+            for v in l_ret['verts']:
+                v[dlayer][vg.index] = 1.0
+                v[dlayer][foliage_vg.index] = 0.5
+                for face in v.link_faces: face.material_index = 1
+
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.005)
+    for v in bm.verts:
+        weights = v[dlayer]
+        if len(weights) > 1:
+            max_vg = max(weights.keys(), key=lambda k: weights[k])
+            for vg_idx in list(weights.keys()):
+                if vg_idx != max_vg: v[dlayer][vg_idx] = 0.0
+    for _ in range(10): bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.7)
 
     bm.to_mesh(mesh_data)
     bm.free()
 
     mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
+    mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF').levels = 2
+    mesh_obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
+
+    tex_bark = (bpy.data.textures.get("BarkBump") or bpy.data.textures.new("BarkBump", type='CLOUDS'))
+    tex_bark.noise_scale = 0.05
+    disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')
+    disp.texture = tex_bark; disp.strength = 0.06; disp.vertex_group = "Torso"
+
     return mesh_obj
 
 def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
@@ -437,7 +539,25 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     mesh_obj.data.materials.append(create_bark_material_v6(f"Bark_{name}", color=bark_color))
     mesh_obj.data.materials.append(create_leaf_material_v6(f"Leaf_{name}", color=leaf_color))
 
-    # 4. Facial Props
+    # 4. A-Pose
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode='POSE')
+    for side in ("L", "R"):
+        mult = 1 if side == "L" else -1
+        if f"Arm.{side}" in arm_obj.pose.bones:
+            bone = arm_obj.pose.bones[f"Arm.{side}"]
+            bone.rotation_mode = 'XYZ'
+            bone.rotation_euler[0] = math.radians(-40)
+            bone.rotation_euler[2] = math.radians(-40 * mult)
+            bone.keyframe_insert(data_path="rotation_euler", frame=1)
+        if f"Elbow.{side}" in arm_obj.pose.bones:
+            ebone = arm_obj.pose.bones[f"Elbow.{side}"]
+            ebone.rotation_mode = 'XYZ'
+            ebone.rotation_euler[0] = math.radians(30)
+            ebone.keyframe_insert(data_path="rotation_euler", frame=1)
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    # 5. Facial Props
     bones_map = {b.name: b.name for b in arm_obj.data.bones}
     iris_mat = create_iris_material_v6(f"Iris_{name}")
     sclera_mat = create_sclera_material_v6(f"Sclera_{name}")

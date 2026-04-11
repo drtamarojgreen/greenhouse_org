@@ -139,7 +139,7 @@ class SylvanEnsembleManager:
                     target_h = 1.0
                     if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
                     elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
-                    elif "Phoenix" in art_name: target_h = config.PHEONIX_HEIGHT
+                    elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
                     self.normalize_character_scale(rig, target_h)
 
                 if mesh.type == 'MESH':
