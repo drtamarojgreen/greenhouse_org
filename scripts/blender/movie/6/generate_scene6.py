@@ -1,4 +1,13 @@
+"""
+Scene 6 Generator
+=================
+v5 foundation (identical camera + backdrop setup) plus Sylvan Ensemble
+imported from the production blend file.
+"""
+
 import bpy
+import math
+import mathutils
 import os
 import sys
 import time
