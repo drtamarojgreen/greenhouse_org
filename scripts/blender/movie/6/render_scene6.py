@@ -3,9 +3,12 @@ import os
 import bpy
 import time
 
-# Ensure movie 6 directory is in path
+# --- Path Injection (ensures movie/6 and assets_v6 are prioritized) ---
 V6_DIR = os.path.dirname(os.path.abspath(__file__))
-if V6_DIR not in sys.path: sys.path.append(V6_DIR)
+if V6_DIR not in sys.path: sys.path.insert(0, V6_DIR)
+
+ASSETS_V6_DIR = os.path.join(V6_DIR, "assets_v6")
+if ASSETS_V6_DIR not in sys.path: sys.path.insert(0, ASSETS_V6_DIR)
 
 from generate_scene6 import generate_full_scene_v6
 

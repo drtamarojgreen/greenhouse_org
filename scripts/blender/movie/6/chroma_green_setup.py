@@ -1,46 +1,53 @@
 """
-Chroma Green Setup Module
-Isolated background and material setup for green-screen rendering.
+Chroma Green Setup Module - Movie 6
+Localized version matching reliable v5 behavior.
 """
-
-try:
-    import bpy
-except ImportError:
-    bpy = None
-
-try:
-    from . import config
-except (ImportError, ValueError):
-    import config
+import bpy
+import os
+import mathutils
+import math
+import json
 
 def setup_chroma_green_backdrop():
     """
-    Creates a green screen backdrop and sets the World background to chroma green.
+    Creates a green screen backdrop and sets the World background.
+    Matches v5 logic for high reliability.
     """
     if not bpy: return None
 
-    # 1. Backdrop Object
-    color = config.CHROMA_GREEN_RGB
+    # 1. Resolve Config
+    # We try to find config.json in the same directory as this file
+    config_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(config_dir, "config.json")
+
+    # Fallback to absolute production path if localized fails
+    if not os.path.exists(config_path):
+        config_path = "/home/tamarojgreen/development/LLM/greenhouse_org/scripts/blender/movie/6/config.json"
+
+    bg_images = []
+    try:
+        if os.path.exists(config_path):
+            with open(config_path, "r") as f:
+                bg_images = json.load(f).get("background_images", [])
+    except: pass
+
+    # 2. Backdrop Geometry
     existing_wide = bpy.data.objects.get("ChromaBackdrop_Wide")
     if existing_wide:
         return existing_wide
 
-    import mathutils
-    import math
-    import json
-    import os
     planes = []
-
-    # 1. Wide Angle Backdrop (Y=50)
+    # Wide Angle Backdrop (Y=50)
     bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 50, 5))
     bw = bpy.context.active_object
     bw.name = "ChromaBackdrop_Wide"
+    # Match v5 camera for tracking
     cam_wide_loc = mathutils.Vector((0.0, -8.0, 2.0))
     vec_wide = cam_wide_loc - mathutils.Vector((0, 50, 5))
     bw.rotation_euler = vec_wide.to_track_quat('Z', 'Y').to_euler()
     planes.append(bw)
 
-    # 2. OTS1 Backdrop (Behind Herbaceous: X=-50, Y=-20)
+    # OTS1 Backdrop (Size 1000 like v5)
     bpy.ops.mesh.primitive_plane_add(size=1000, location=(-50, -20, 5))
     bo1 = bpy.context.active_object
     bo1.name = "ChromaBackdrop_OTS1"
@@ -49,7 +56,7 @@ def setup_chroma_green_backdrop():
     bo1.rotation_euler = vec_o1.to_track_quat('Z', 'Y').to_euler()
     planes.append(bo1)
 
-    # 3. OTS2 Backdrop (Behind Arbor: X=50, Y=20)
+    # OTS2 Backdrop (Size 1000 like v5)
     bpy.ops.mesh.primitive_plane_add(size=1000, location=(50, 20, 5))
     bo2 = bpy.context.active_object
     bo2.name = "ChromaBackdrop_OTS2"
@@ -58,54 +65,51 @@ def setup_chroma_green_backdrop():
     bo2.rotation_euler = vec_o2.to_track_quat('Z', 'Y').to_euler()
     planes.append(bo2)
 
-    for backdrop in planes:
-        # Disable shadow reflection/reception
-        backdrop.visible_shadow = False
-        backdrop.visible_diffuse = False
-        backdrop.visible_glossy = False
-        backdrop.visible_transmission = False
-
-    config_path = os.path.join(os.path.dirname(__file__), "config.json")
-    try:
-        with open(config_path, "r") as f:
-            bg_images = json.load(f).get("background_images", [])
-    except Exception:
-        bg_images = []
+    # 3. Materials
+    # Pure green color from v5
+    green_rgb = (0, 1, 0, 1)
 
     for i, p in enumerate(planes):
-        mat = bpy.data.materials.new(name=f"ImageBackground_{i}")
+        # Clear existing materials
+        p.data.materials.clear()
+
+        mat = bpy.data.materials.new(name=f"BackdropMaterial_{i}")
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         nodes.clear()
 
+        # Emission shader is best for backdrops to avoid lighting artifacts
         emit = nodes.new(type='ShaderNodeEmission')
-        # Use direct indices for B5.0 compatibility
-        # emit.inputs[0] is Color, emit.inputs[1] is Strength
+        # Strength 5.0 for better visibility in renders
+        emit.inputs[1].default_value = 5.0
 
         if bg_images and len(bg_images) > i:
             img_path = bg_images[i]
             if os.path.exists(img_path):
                 tex_img = nodes.new(type='ShaderNodeTexImage')
-                loaded_img = bpy.data.images.load(filepath=img_path)
-                tex_img.image = loaded_img
+                try:
+                    loaded_img = bpy.data.images.load(filepath=img_path)
+                    tex_img.image = loaded_img
 
-                tex_coord = nodes.new(type='ShaderNodeTexCoord')
-                mat.node_tree.links.new(tex_coord.outputs['Window'], tex_img.inputs['Vector'])
-
-                mat.node_tree.links.new(tex_img.outputs['Color'], emit.inputs[0])
-                emit.inputs[1].default_value = 1.0 # Strength
+                    # Window coordinates match v5's perfect display
+                    tex_coord = nodes.new(type='ShaderNodeTexCoord')
+                    mat.node_tree.links.new(tex_coord.outputs['Window'], tex_img.inputs['Vector'])
+                    mat.node_tree.links.new(tex_img.outputs['Color'], emit.inputs[0])
+                except:
+                    emit.inputs[0].default_value = green_rgb
             else:
-                emit.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
-                emit.inputs[1].default_value = 1.0
+                emit.inputs[0].default_value = green_rgb
         else:
-            emit.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
-            emit.inputs[1].default_value = 1.0
+            emit.inputs[0].default_value = green_rgb
 
         out = nodes.new(type='ShaderNodeOutputMaterial')
         mat.node_tree.links.new(emit.outputs[0], out.inputs[0])
         p.data.materials.append(mat)
 
-    # 2. World Background (Sky) - Refined for Anti-Spill
+        # Set viewport color for easier debugging
+        mat.diffuse_color = green_rgb
+
+    # 4. World Setup
     if not bpy.context.scene.world:
         bpy.context.scene.world = bpy.data.worlds.new("ChromaWorld")
 
@@ -118,13 +122,14 @@ def setup_chroma_green_backdrop():
     mix = w_nodes.new(type='ShaderNodeMixShader')
 
     bg_dark = w_nodes.new(type='ShaderNodeBackground')
-    bg_dark.inputs[0].default_value = (0.01, 0.01, 0.01, 1.0) # Near-black for camera rays
+    bg_dark.inputs[0].default_value = (0.01, 0.01, 0.01, 1.0)
 
     bg_neutral = w_nodes.new(type='ShaderNodeBackground')
-    bg_neutral.inputs[0].default_value = (0.05, 0.05, 0.05, 1.0) # Very dim neutral
+    bg_neutral.inputs[0].default_value = (0.05, 0.05, 0.05, 1.0)
 
     w_out = w_nodes.new(type='ShaderNodeOutputWorld')
 
+    # Is Camera Ray factor selects bg_dark for background, bg_neutral for lighting
     world.node_tree.links.new(lp.outputs['Is Camera Ray'], mix.inputs[0])
     world.node_tree.links.new(bg_neutral.outputs[0], mix.inputs[1])
     world.node_tree.links.new(bg_dark.outputs[0], mix.inputs[2])
@@ -132,15 +137,3 @@ def setup_chroma_green_backdrop():
 
     print("Background setup complete.")
     return planes[0] if planes else None
-
-def apply_anti_spill_lighting(subject_obj, backdrop_obj, distance=5.0):
-    """
-    Separates subject lights from backdrop lighting to prevent green spill.
-    """
-    pass
-
-def validate_backdrop_coverage(camera_obj, backdrop_obj):
-    """
-    Verifies the backdrop fills the entire camera frame.
-    """
-    return True

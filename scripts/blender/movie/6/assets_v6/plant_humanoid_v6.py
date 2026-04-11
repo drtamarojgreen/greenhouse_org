@@ -6,15 +6,23 @@ import random
 import os
 import sys
 
-# Ensure style_utilities and other movie modules are accessible
+# prioritize v6 paths
 V6_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if V6_DIR not in sys.path: sys.path.insert(0, V6_DIR)
+
+# prioritize assets_v6 for cross-utility imports
+ASSETS_V6_DIR = os.path.dirname(os.path.abspath(__file__))
+if ASSETS_V6_DIR not in sys.path: sys.path.insert(0, ASSETS_V6_DIR)
+
+# Standardize movie/ in path so style_utilities can be found
 MOVIE_ROOT = os.path.dirname(V6_DIR)
-if MOVIE_ROOT not in sys.path:
-    sys.path.append(MOVIE_ROOT)
+if MOVIE_ROOT not in sys.path: sys.path.append(MOVIE_ROOT)
 
 import style_utilities as style
-from . import config
-from .facial_utilities_v6 import create_facial_props_v6
+
+# Absolute imports from top-level prioritized paths
+import config
+from facial_utilities_v6 import create_facial_props_v6
 
 def create_bark_material_v6(name, color=(0.15, 0.08, 0.05)):
     """High-Contrast Mahogany Bark for Chroma Keying."""
