@@ -122,6 +122,9 @@ class SylvanDirector:
             return
 
         for i, rig in enumerate(spirits):
+            # Reset world matrix to ensure no inherited or delta transforms interfere with Fan placement
+            rig.matrix_world = mathutils.Matrix.Identity(4)
+
             # Cinematic fan spread
             angle = (i / max(num - 1, 1)) * math.pi * 0.9 - math.pi * 0.45
             dist  = 9.0 + (i % 2) * 2.5
@@ -153,8 +156,10 @@ class SylvanDirector:
                  or bpy.data.objects.get(config.CHAR_ARBOR))
 
         if herb:
+            herb.matrix_world = mathutils.Matrix.Identity(4)
             herb.location = config.CHAR_HERBACEOUS_POS
             herb.keyframe_insert(data_path="location", frame=1)
         if arbor:
+            arbor.matrix_world = mathutils.Matrix.Identity(4)
             arbor.location = config.CHAR_ARBOR_POS
             arbor.keyframe_insert(data_path="location", frame=1)

@@ -1,6 +1,7 @@
 import bpy
 import os
 import time
+import mathutils
 import config
 
 from style_utilities.engine_operations import update_view_layer
@@ -230,17 +231,18 @@ class SylvanEnsembleManager:
                     if v.co.length > 1000.0:
                         is_shard = True
 
-                    # 2. World-Space Check (Only if vertex weights are negligible)
+                    # 2. World-Space Check
                     if not is_shard and safe_eval:
                         eval_v = eval_obj.data.vertices[i]
                         w_co = eval_obj.matrix_world @ eval_v.co
 
-                        # Catch extreme world-space shards (e.g. 1062m reported in log)
+                        # Aggressive catch for extreme world-space shards
                         if w_co.length > 500.0 or abs(w_co.z) > 500.0:
-                            # Verify if this is a 'shard' by checking weight sum.
-                            # Real character vertices have significant bone weights.
+                            # Real character vertices should not be this far from the rig origin
+                            # especially if the rig itself is at a reasonable location.
                             weight_sum = sum(g.weight for g in v.groups)
-                            if weight_sum < 0.1:
+                            # If it's very far AND has low weights, OR if it's EXTREMELY far (>1000m), it's a shard.
+                            if weight_sum < 0.2 or w_co.length > 1000.0:
                                  is_shard = True
 
                     if is_shard:
@@ -334,26 +336,21 @@ class SylvanEnsembleManager:
                   bpy.data.objects.get(t_rig_name) or \
                   mesh.find_armature()
 
+            # Special case for skeleton-based assets where the mesh IS the rig (e.g. Root_Guardian)
+            if not rig and mesh.type == 'ARMATURE':
+                rig = mesh
+
             # Duplication logic for shared assets (e.g. Root_Guardian vs Phoenix Rig collision)
             # If the found rig already has a production name but it's not the one we want, duplicate it.
             if rig and (".Rig" in rig.name or ".Body" in rig.name) and rig.name != t_rig_name and rig.name != t_mesh_name:
                  print(f"ASSET_MANAGER: Duplicating shared asset {rig.name} for {art_name}")
+                 is_shared_skeleton = (mesh == rig)
                  new_rig = rig.copy()
                  if rig.data: new_rig.data = rig.data.copy()
                  coll.objects.link(new_rig)
                  rig = new_rig
-
-            # Special case for skeleton-based assets where the mesh IS the rig (e.g. Root_Guardian)
-            if not rig and mesh.type == 'ARMATURE':
-                rig = mesh
-                # If this mesh/rig is shared (e.g. 'skeleton' used as mesh for Root_Guardian
-                # but as rig for Phoenix), we must duplicate it.
-                if (".Rig" in rig.name or ".Body" in rig.name) and rig.name != t_mesh_name:
-                     print(f"ASSET_MANAGER: Duplicating shared skeleton {rig.name} for {art_name}")
-                     new_mesh = rig.copy()
-                     if rig.data: new_mesh.data = rig.data.copy()
-                     coll.objects.link(new_mesh)
-                     mesh = rig = new_mesh
+                 if is_shared_skeleton:
+                     mesh = rig
 
             # Perform Renaming (Careful with shared rigs)
             if rig:
@@ -369,7 +366,22 @@ class SylvanEnsembleManager:
                         if rig.name != t_rig_name:
                             rig.name = t_rig_name
 
-                # PRESERVE rig.scale
+                # ------------------------------------------------------------------
+                # EXTREME SCALE PROTECTION
+                # ------------------------------------------------------------------
+                # Reset extreme scales (>100x) that cause coordinate drift/occlusion
+                if any(s > 100.0 for s in rig.scale):
+                    print(f"ASSET_MANAGER: Resetting extreme scale on {rig.name} ({rig.scale})")
+                    rig.scale = (1.0, 1.0, 1.0)
+
+                # Height-based safety: if the asset is still > 100m, it's likely a technical error
+                update_view_layer()
+                bbox = [rig.matrix_world @ mathutils.Vector(c) for c in rig.bound_box]
+                if bbox:
+                    h = max(v.z for v in bbox) - min(v.z for v in bbox)
+                    if h > 100.0:
+                        print(f"ASSET_MANAGER: Resetting scale on massive asset {rig.name} ({h:.2f}m)")
+                        rig.scale = (1.0, 1.0, 1.0)
 
                 # Enforce clean hierarchy: Mesh as child of Rig
                 if mesh != rig:

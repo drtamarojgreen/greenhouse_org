@@ -32,7 +32,7 @@ RIG_MAP_SRC = {
     "Emerald_Sentinel": "Armature",
     "Phoenix_Herald":   "skeleton",
     "Golden_Phoenix":   "skeleton.001",
-    # Root_Guardian is itself the skeleton object; it has no separate rig row.
+    "Root_Guardian":    "skeleton",
 }
 
 # 2. PROTAGONISTS
