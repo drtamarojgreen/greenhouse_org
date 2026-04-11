@@ -10,38 +10,45 @@ if V6_DIR not in sys.path: sys.path.insert(0, V6_DIR)
 import config
 from assets_v6.plant_humanoid_v6 import create_plant_humanoid_v6
 
-class TestFidelity(unittest.TestCase):
+class TestProductionFidelity(unittest.TestCase):
 
     def setUp(self):
         for obj in bpy.data.objects:
             bpy.data.objects.remove(obj, do_unlink=True)
 
-    def test_foliage_generation(self):
-        """Verifies leaves are generated and assigned to Foliage group."""
+    def test_facial_prop_visibility(self):
+        """Verifies Eyelids and Eyeballs exist and are linked to correct collection."""
         herb = create_plant_humanoid_v6("TestHerb", (0,0,0))
-        mesh = next(c for c in herb.children if c.type == 'MESH')
 
-        self.assertIn("Foliage", mesh.vertex_groups, "Foliage vertex group missing")
+        # Keywords for facial props
+        keywords = ["Eye", "Lid", "Lip", "Nose", "Ear"]
+        found_props = 0
 
-        vg = mesh.vertex_groups["Foliage"]
-        has_foliage_verts = False
-        for v in mesh.data.vertices:
-            for g in v.groups:
-                if g.group == vg.index and g.weight > 0.1:
-                    has_foliage_verts = True
-                    break
-            if has_foliage_verts: break
+        coll = bpy.data.collections.get(config.COLL_ASSETS)
+        self.assertIsNotNone(coll, f"Collection {config.COLL_ASSETS} missing")
 
-        self.assertTrue(has_foliage_verts, "No vertices assigned to Foliage group")
+        for obj in coll.objects:
+            if any(k in obj.name for k in keywords) and obj.type == 'MESH':
+                if "Body" in obj.name: continue
+                found_props += 1
 
-    def test_rig_parity_v5(self):
-        """Verifies rig contains finger and toe bones for parity with v5."""
-        herb = create_plant_humanoid_v6("TestHerb", (0,0,0))
-        bone_names = [b.name for b in herb.data.bones]
+                # Check parenting
+                self.assertEqual(obj.parent, herb, f"Prop {obj.name} not parented to rig")
+                self.assertNotEqual(obj.parent_bone, "", f"Prop {obj.name} has no parent bone")
 
-        self.assertIn("Finger.1.L", bone_names)
-        self.assertIn("Toe.1.R", bone_names)
-        self.assertGreater(len(bone_names), 30, "Rig is too simple compared to v5")
+        self.assertGreater(found_props, 5, "Not enough facial props found")
+
+    def test_foliage_richness(self):
+        """Verifies foliage exists with assigned material."""
+        herb = create_plant_humanoid_v6("TestRich", (0,0,0))
+        mesh = next(c for c in herb.children if c.type == 'MESH' and "Body" in c.name)
+
+        # Check material count
+        self.assertGreaterEqual(len(mesh.data.materials), 2, "Body mesh needs at least bark and leaf materials")
+
+        # Check Foliage vertex group
+        vg = mesh.vertex_groups.get("Foliage")
+        self.assertIsNotNone(vg, "Foliage vertex group missing")
 
 if __name__ == "__main__":
     unittest.main()

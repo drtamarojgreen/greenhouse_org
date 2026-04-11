@@ -311,7 +311,9 @@ def setup_production_lighting(subjects):
 def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
     armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
     armature_obj = bpy.data.objects.new(name, armature_data)
-    bpy.context.scene.collection.objects.link(armature_obj)
+    coll = bpy.data.collections.get(config.COLL_ASSETS) or bpy.context.scene.collection
+    coll.objects.link(armature_obj)
+
     armature_obj.location = location
     bpy.context.view_layer.objects.active = armature_obj
     bpy.ops.object.mode_set(mode='EDIT')
@@ -401,7 +403,9 @@ def _add_v6_joint_bulb(bm, mesh_obj, dlayer, loc, rad, bname):
 def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
     mesh_obj = bpy.data.objects.new(f"{name}_Body", mesh_data)
-    bpy.context.scene.collection.objects.link(mesh_obj)
+    coll = bpy.data.collections.get(config.COLL_ASSETS) or bpy.context.scene.collection
+    coll.objects.link(mesh_obj)
+
     mesh_obj.parent = armature_obj
 
     bm = bmesh.new()
@@ -452,55 +456,62 @@ def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
             tx = an_loc[0] + (t-2)*0.08
             _add_v6_organic_part(bm, mesh_obj, dlayer, 0.05, 0.02, 0.25, (tx, an_loc[1]-0.3, an_loc[2]), f"Toe.{t}.{side}", rot=(math.radians(90), 0, 0))
 
-    # 4. Foliage
+    # 4. Independent Foliage Algorithm (Unique Scene 6 logic)
     foliage_vg = (mesh_obj.vertex_groups.get("Foliage") or mesh_obj.vertex_groups.new(name="Foliage"))
     head_center = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
-    FACE_Y_CLEAR = head_center.y
 
-    for i in range(16):
-        angle = (i/16)*6.28
-        z_off = random.uniform(head_r*0.4, head_r*0.9)
-        loc = head_center + mathutils.Vector((math.cos(angle)*head_r*0.5, math.sin(angle)*head_r*0.5, z_off))
-        if loc.y <= FACE_Y_CLEAR: continue
+    # Unique Branching: using a recursive-like pattern for varied branch lengths
+    for i in range(20):
+        angle = (i/20)*math.pi*2
+        # Concentrate on upper back of head
+        tilt = random.uniform(0.2, 0.8)
+        loc = head_center + mathutils.Vector((math.cos(angle)*head_r*tilt, math.sin(angle)*head_r*tilt, head_r*0.5 + random.uniform(0, head_r)))
+
+        if loc.y < head_center.y - 0.05: continue # Keep face clear
+
         dir_vec = (loc - head_center).normalized()
-        rot_quat = dir_vec.to_track_quat('Z', 'Y')
-        b_height = random.uniform(0.3, 0.6)
-        b_ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.04, radius2=0.01, depth=b_height, matrix=(mathutils.Matrix.Translation(loc + dir_vec*(b_height/2)) @ rot_quat.to_matrix().to_4x4()))
+        b_len = random.uniform(0.4, 0.8)
+        # Create unique 'tapered' branches
+        b_ret = bmesh.ops.create_cone(bm, segments=6, cap_ends=True, radius1=0.03, radius2=0.005, depth=b_len, matrix=(mathutils.Matrix.Translation(loc + dir_vec*(b_len/2)) @ dir_vec.to_track_quat('Z', 'Y').to_matrix().to_4x4()))
         for v in b_ret['verts']: v[dlayer][head_vg.index] = 1.0
-        for j in range(12):
-            l_loc = loc + dir_vec * random.uniform(b_height*0.2, b_height)
-            l_scale = random.uniform(0.2, 0.45)
-            l_m = (mathutils.Matrix.Translation(l_loc) @ mathutils.Euler((random.uniform(0,3), 0, angle)).to_matrix().to_4x4())
-            l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=l_scale, matrix=l_m)
+
+        # Unique leaf placement: clustered at the tips
+        for _ in range(8):
+            l_loc = loc + dir_vec * random.uniform(b_len*0.6, b_len)
+            l_size = random.uniform(0.25, 0.5)
+            l_rot = mathutils.Euler((random.random()*3, random.random()*3, random.random()*3)).to_matrix().to_4x4()
+            l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=l_size, matrix=mathutils.Matrix.Translation(l_loc) @ l_rot)
             for v in l_ret['verts']:
                 v[dlayer][head_vg.index] = 1.0
                 v[dlayer][foliage_vg.index] = 1.0
                 for face in v.link_faces: face.material_index = 1
 
+    # Limb sprouts
     limbs_foliage = ["Arm.L","Arm.R","Elbow.L","Elbow.R","Thigh.L","Thigh.R","Knee.L","Knee.R"]
     for bone_name in limbs_foliage:
         vg = mesh_obj.vertex_groups.get(bone_name)
         if not vg: continue
         vg_verts = [v for v in bm.verts if vg.index in v[dlayer]]
-        for _ in range(10):
-            if not vg_verts: break
+        if not vg_verts: continue
+        for _ in range(6):
             v_target = random.choice(vg_verts)
-            l_loc = v_target.co + v_target.normal * 0.05
-            l_m = (mathutils.Matrix.Translation(l_loc) @ mathutils.Euler((random.uniform(0,3), 0, random.uniform(0,6))).to_matrix().to_4x4())
-            l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.2, matrix=l_m)
+            l_loc = v_target.co + v_target.normal * 0.04
+            l_size = 0.18
+            l_rot = mathutils.Euler((random.random()*6, 0, random.random()*6)).to_matrix().to_4x4()
+            l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=l_size, matrix=mathutils.Matrix.Translation(l_loc) @ l_rot)
             for v in l_ret['verts']:
                 v[dlayer][vg.index] = 1.0
-                v[dlayer][foliage_vg.index] = 0.5
+                v[dlayer][foliage_vg.index] = 0.6
                 for face in v.link_faces: face.material_index = 1
 
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.005)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.004)
     for v in bm.verts:
         weights = v[dlayer]
         if len(weights) > 1:
             max_vg = max(weights.keys(), key=lambda k: weights[k])
             for vg_idx in list(weights.keys()):
                 if vg_idx != max_vg: v[dlayer][vg_idx] = 0.0
-    for _ in range(10): bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.7)
+    for _ in range(8): bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.6)
 
     bm.to_mesh(mesh_data)
     bm.free()
@@ -510,9 +521,9 @@ def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
     mesh_obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
 
     tex_bark = (bpy.data.textures.get("BarkBump") or bpy.data.textures.new("BarkBump", type='CLOUDS'))
-    tex_bark.noise_scale = 0.05
+    tex_bark.noise_scale = 0.04
     disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')
-    disp.texture = tex_bark; disp.strength = 0.06; disp.vertex_group = "Torso"
+    disp.texture = tex_bark; disp.strength = 0.055; disp.vertex_group = "Torso"
 
     return mesh_obj
 

@@ -31,49 +31,6 @@ def standardize_ensemble_heights():
     print("ASSET_MANAGER: Normalizing Ensemble Heights [SKIPPED]")
     pass
 
-def setup_scene6_cameras():
-    """Builds rig."""
-    import math
-    import mathutils
-    cameras = {}
-    scene = bpy.context.scene
-
-    herb_focus = bpy.data.objects.get(config.FOCUS_HERBACEOUS) or bpy.data.objects.new(config.FOCUS_HERBACEOUS, None)
-    herb_focus.location = config.CHAR_HERBACEOUS_EYE
-    if herb_focus.name not in scene.collection.objects: scene.collection.objects.link(herb_focus)
-
-    arbor_focus = bpy.data.objects.get(config.FOCUS_ARBOR) or bpy.data.objects.new(config.FOCUS_ARBOR, None)
-    arbor_focus.location = config.CHAR_ARBOR_EYE
-    if arbor_focus.name not in scene.collection.objects: scene.collection.objects.link(arbor_focus)
-
-    cam_wide_data = bpy.data.cameras.new("WIDE")
-    cam_wide_data.lens = 35
-    obj_wide = bpy.data.objects.new("WIDE", cam_wide_data)
-    scene.collection.objects.link(obj_wide)
-    obj_wide.location = (0.0, -8.0, 2.0)
-    obj_wide.rotation_euler = (math.radians(90), 0.0, 0.0)
-    cameras["WIDE"] = obj_wide
-
-    cam_herb_data = bpy.data.cameras.new("OTS1")
-    cam_herb_data.lens = 50
-    obj_herb = bpy.data.objects.new("OTS1", cam_herb_data)
-    scene.collection.objects.link(obj_herb)
-    obj_herb.location = (13.5, 11.0, 6.0)
-    herb_target_vec = mathutils.Vector(HERB_EYE_LEVEL) - mathutils.Vector(obj_herb.location)
-    obj_herb.rotation_euler = herb_target_vec.to_track_quat('-Z', 'Y').to_euler()
-    cameras["OTS1"] = obj_herb
-
-    cam_arbor_data = bpy.data.cameras.new("OTS2")
-    cam_arbor_data.lens = 50
-    obj_arbor = bpy.data.objects.new("OTS2", cam_arbor_data)
-    scene.collection.objects.link(obj_arbor)
-    obj_arbor.location = (-13.5, -11.0, 6.0)
-    arbor_target_vec = mathutils.Vector(ARBOR_EYE_LEVEL) - mathutils.Vector(obj_arbor.location)
-    obj_arbor.rotation_euler = arbor_target_vec.to_track_quat('-Z', 'Y').to_euler()
-    cameras["OTS2"] = obj_arbor
-
-    return cameras
-
 def generate_full_scene_v6():
     """Master production assembly."""
     import time
@@ -90,14 +47,12 @@ def generate_full_scene_v6():
     am.link_ensemble()
     am.renormalize_objects()
 
-    cameras = setup_scene6_cameras()
-    if "WIDE" in cameras: bpy.context.scene.camera = cameras["WIDE"]
-
     dv6 = director_v6.SylvanDirector()
+    dv6.setup_cinematics() # Build standard 3-camera rig
     dv6.position_protagonists()
     dv6.compose_ensemble()
 
-    # Initialize camera rig and paths
+    # Apply dynamic paths to cameras created by director
     camera_rig_v6.setup_camera_rig_v6()
 
     bpy.context.view_layer.update()
