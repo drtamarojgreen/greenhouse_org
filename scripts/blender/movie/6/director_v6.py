@@ -1,7 +1,9 @@
 import bpy
 import math
 import mathutils
+import random
 import config
+import animation_library_v6
 
 
 class SylvanDirector:
@@ -119,3 +121,29 @@ class SylvanDirector:
         
         if herb: herb.location = config.CHAR_HERBACEOUS_POS
         if arbor: arbor.location = config.CHAR_ARBOR_POS
+
+    def apply_scene_animations(self):
+        """Orchestrates varied animations across all characters."""
+        coll = bpy.data.collections.get(config.COLL_ASSETS)
+        if not coll: return
+
+        # 1. Protagonists (The Conversation)
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        arbor = bpy.data.objects.get(config.CHAR_ARBOR)
+
+        if herb:
+            animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=config.TOTAL_FRAMES)
+            animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
+
+        if arbor:
+            animation_library_v6.apply_animation_by_tag(arbor, "talking", 60, duration=config.TOTAL_FRAMES)
+            animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
+
+        # 2. Ensemble Spirits (Atmospheric Motion)
+        spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor]]
+        tags = ["dance", "nod", "shake", "idle"]
+
+        for i, spirit in enumerate(spirits):
+            tag = random.choice(tags)
+            start = 1 + (i * 24)
+            animation_library_v6.apply_animation_by_tag(spirit, tag, start, duration=config.TOTAL_FRAMES)

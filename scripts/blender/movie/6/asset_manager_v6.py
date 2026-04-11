@@ -135,12 +135,20 @@ class SylvanEnsembleManager:
                     mesh.rotation_euler = (0, 0, 0)
                     # Preserve scale or normalize as needed
 
-                if art_name not in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
+                # Check for protagonist rigs specifically, not just mesh names
+                protags = [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]
+                is_protag = any(p in rig.name or p in art_name for p in protags)
+
+                if not is_protag:
+                    # Calculate target height based on art_name
                     target_h = 1.0
                     if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
                     elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
                     elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
-                    self.normalize_character_scale(rig, target_h)
+
+                    # Only normalize if not already scaled (avoid multi-mesh compounding)
+                    if abs(rig.scale.x - 1.0) < 0.001:
+                        self.normalize_character_scale(rig, target_h)
 
                 if mesh.type == 'MESH':
                     arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
