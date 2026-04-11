@@ -48,8 +48,6 @@ class DialogueSceneV6:
 
     def _link_spirit_assets(self):
         """Regression wrapper for asset manager's linking sequence."""
-        from generate_scene6 import standardize_ensemble_heights
         self.asset_manager.link_ensemble()
         self.asset_manager.renormalize_objects()
         self.asset_manager.repair_materials()
-        standardize_ensemble_heights()

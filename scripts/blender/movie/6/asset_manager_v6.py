@@ -8,7 +8,7 @@ class SylvanEnsembleManager:
     """Manages the linking, renaming, and integrity of the 8-character spirit ensemble."""
 
     def __init__(self):
-        self.collection_name = "6a.ASSETS"
+        self.collection_name = config.COLL_CHARACTERS
         self.ensemble  = config.SPIRIT_ENSEMBLE   # {src_mesh_name: art_name}
         self.rig_map   = config.RIG_MAP_SRC        # {art_name: src_armature_name}
 
@@ -37,7 +37,7 @@ class SylvanEnsembleManager:
                 except Exception:
                     pass
 
-        # 3. Single orphan purge pass (was accidentally doubled before)
+        # 3. Single orphan purge pass
         bpy.ops.outliner.orphans_purge(
             do_local_ids=True, do_linked_ids=True, do_recursive=True
         )
@@ -55,17 +55,13 @@ class SylvanEnsembleManager:
              print("ASSET_MANAGER: Ensemble already linked — skipping.")
              return
 
-        # Ensure the SET.SPIRITS collection exists and is in the scene graph
+        # Ensure the Characters collection exists and is in the scene graph
         coll = bpy.data.collections.get(self.collection_name)
         if not coll:
             coll = bpy.data.collections.new(self.collection_name)
         if self.collection_name not in bpy.context.scene.collection.children:
             bpy.context.scene.collection.children.link(coll)
 
-        # Build the list of source object names we want:
-        #   - source mesh names (keys of SPIRIT_ENSEMBLE)
-        #   - source armature names (values of RIG_MAP_SRC)
-        #   - protagonist meshes and rigs
         src_mesh_names = list(self.ensemble.keys())
         src_rig_names  = list(self.rig_map.values())
         want = set(src_mesh_names + src_rig_names)
@@ -78,12 +74,7 @@ class SylvanEnsembleManager:
             available = set(data_from.objects)
             data_to.objects = [n for n in want if n in available]
 
-        missing = want - set(data_from.objects if hasattr(data_from, 'objects') else [])
-        if missing:
-            print(f"ASSET_MANAGER WARNING: These source objects were not found in blend: {missing}")
-
         # Link only the newly loaded objects into the asset collection
-        # This prevents environmental objects (cameras, backdrops) from being swept into 6a.ASSETS
         for obj in bpy.data.objects:
             if (obj.name in want or any(obj.name.startswith(w) for w in want)) and obj.name not in coll.objects:
                 try:
@@ -93,8 +84,8 @@ class SylvanEnsembleManager:
                     pass
 
     def link_protagonists(self):
-        """Appends protagonists from the v5 production blend."""
-        print(f"ASSET_MANAGER: Linking Protagonists from {config.PROTAGONIST_SOURCE_BLEND}...")
+        """Appends protagonists or creates them natively if blend is missing."""
+        print(f"ASSET_MANAGER: Handling Protagonists...")
 
         coll = bpy.data.collections.get(self.collection_name)
         if not coll:
@@ -107,6 +98,7 @@ class SylvanEnsembleManager:
                 f"{config.CHAR_HERBACEOUS}_Rig", f"{config.CHAR_ARBOR}_Rig"}
 
         if os.path.exists(config.PROTAGONIST_SOURCE_BLEND):
+            print(f"ASSET_MANAGER: Linking Protagonists from {config.PROTAGONIST_SOURCE_BLEND}...")
             with bpy.data.libraries.load(config.PROTAGONIST_SOURCE_BLEND, link=False) as (data_from, data_to):
                 available = set(data_from.objects)
                 data_to.objects = [n for n in want if n in available]
@@ -119,42 +111,14 @@ class SylvanEnsembleManager:
                     except RuntimeError:
                         pass
         else:
-            # Mocking protagonists for test environment if blend is missing
-            print(f"ASSET_MANAGER WARNING: Protagonist blend missing, creating mocks.")
-            for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
-                mesh_name = f"{name}_Body"
-                rig_name  = f"{name}_Rig"
-
-                # Create Mock Rig
-                rig_obj = bpy.data.objects.get(rig_name)
-                if not rig_obj:
-                    arm_data = bpy.data.armatures.new(rig_name)
-                    rig_obj = bpy.data.objects.new(rig_name, arm_data)
-                    coll.objects.link(rig_obj)
-                    rig_obj["source_name"] = rig_name
-
-                # Create Mock Mesh
-                mesh_obj = bpy.data.objects.get(mesh_name)
-                if not mesh_obj:
-                    bpy.ops.mesh.primitive_cube_add(size=2, location=(0,0,1))
-                    mesh_obj = bpy.context.active_object
-                    mesh_obj.name = mesh_name
-                    mesh_obj["source_name"] = mesh_name
-                    if mesh_name not in coll.objects:
-                         coll.objects.link(mesh_obj)
-
-                # Enforce Parent-Child for mocks
-                mesh_obj.parent = rig_obj
-                # Restore Armature modifier for mocks
-                arm_mod = next((m for m in mesh_obj.modifiers if m.type == 'ARMATURE'), None)
-                if not arm_mod:
-                    arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
-
-                if arm_mod:
-                    arm_mod.object = rig_obj
+            # Native port fallback for test environment
+            print(f"ASSET_MANAGER: Creating Protagonists natively...")
+            from assets_v6 import create_plant_humanoid_v6
+            create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
+            create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def import_fbx_ensemble(self):
-        """Imports the Sylvan Ensemble from standalone FBX assets (Phase B workflow)."""
+        """Imports the Sylvan Ensemble from standalone FBX assets."""
         asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
         print(f"ASSET_MANAGER: Importing Sylvan Ensemble from FBX: {asset_dir}")
 
@@ -167,35 +131,27 @@ class SylvanEnsembleManager:
         for art_name in self.ensemble.values():
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
             if os.path.exists(fbx_path):
-                # Ensure we import into the correct collection
                 with bpy.context.temp_override(collection=coll):
                     bpy.ops.import_scene.fbx(filepath=fbx_path)
                 print(f"  Imported: {art_name}")
-            else:
-                print(f"  WARNING: FBX not found for {art_name}: {fbx_path}")
 
     # ------------------------------------------------------------------
     # RENORMALIZATION
     # ------------------------------------------------------------------
 
     def renormalize_objects(self):
-        """
-        Final 5.0 Renormalization rewrite.
-        Scopes changes ONLY to items in the asset collection to protect environment.
-        """
+        """Scopes changes ONLY to items in the asset collection to protect environment."""
         print("ASSET_MANAGER: Rewriting Scoped Asset Hierarchy...")
 
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
 
-        # 1. Build list of characters to process (Ensemble + Protagonists)
         targets = []
         seen_art_names = set()
         for src, art in self.ensemble.items():
              targets.append((src, art, "."))
              seen_art_names.add(art)
 
-        # Pre-process Root_Guardian if not already in ensemble (fallback)
         if "Root_Guardian" not in seen_art_names:
              targets.append(("skeleton", "Root_Guardian", "."))
              seen_art_names.add("Root_Guardian")
@@ -207,17 +163,14 @@ class SylvanEnsembleManager:
             t_mesh_name = f"{art_name}{sep}Body"
             t_rig_name  = f"{art_name}{sep}Rig"
 
-            # 1a. Resolve the Rig FIRST
             src_rig_name = self.rig_map.get(art_name) or (src_mesh_name if art_name == "Root_Guardian" else None)
             rig = bpy.data.objects.get(t_rig_name)
 
             if not rig and src_rig_name:
-                # Search by exact name OR source_name property
                 source_rig = (bpy.data.objects.get(src_rig_name) or
                               next((o for o in coll.objects if o.get("source_name") == src_rig_name), None))
 
                 if source_rig:
-                    # If it's already been renamed, it's 'claimed' by another spirit. Duplicate it.
                     if source_rig.name != src_rig_name:
                         rig = source_rig.copy()
                         if source_rig.data: rig.data = source_rig.data.copy()
@@ -226,14 +179,12 @@ class SylvanEnsembleManager:
                     else:
                         rig = source_rig
 
-            # 1b. Resolve the Mesh
             mesh = bpy.data.objects.get(t_mesh_name)
             if not mesh:
                 source_mesh = (bpy.data.objects.get(src_mesh_name) or
                                next((o for o in coll.objects if o.get("source_name") == src_mesh_name), None))
 
                 if source_mesh:
-                    # If it's already been renamed, it's 'claimed'. Duplicate.
                     if source_mesh.name != src_mesh_name:
                          mesh = source_mesh.copy()
                          if source_mesh.data: mesh.data = source_mesh.data.copy()
@@ -243,35 +194,26 @@ class SylvanEnsembleManager:
                          mesh = source_mesh
 
             if not mesh:
-                print(f"ASSET_MANAGER WARNING: Could not resolve mesh for {art_name} (src: {src_mesh_name})")
                 continue
 
-            # Final fallback for rig if not yet found
             if not rig:
                 rig = mesh.find_armature() or (mesh if mesh.type == 'ARMATURE' else None)
 
-            # Special case: If mesh and rig are same object (skeleton-based), DUPLICATE to allow Sync
             if mesh == rig and mesh is not None:
-                # Original becomes the Rig, copy becomes the Mesh
                 mesh_copy = mesh.copy()
                 if mesh.data: mesh_copy.data = mesh.data.copy()
                 coll.objects.link(mesh_copy)
                 mesh_copy["source_name"] = src_mesh_name
-                mesh = mesh_copy # Proceed with the copy as the 'Body'
+                mesh = mesh_copy
 
             mesh.name = t_mesh_name
 
             if rig:
                 rig.name = t_rig_name
-
-                # Enforce Parent-Child Relationship (Rig is Parent)
                 if mesh != rig:
-                    # Clear legacy animation on Mesh to prevent spatial offset from Rig
                     if mesh.animation_data:
                         mesh.animation_data_clear()
 
-                    # Isolation: Unparent rogue children from rig/mesh while keeping world transforms
-                    # to avoid distortion if the parent was scaled.
                     for child in list(rig.children):
                         if child != mesh:
                             mw = child.matrix_world.copy()
@@ -283,41 +225,30 @@ class SylvanEnsembleManager:
                         child.parent = None
                         child.matrix_world = mw
 
-                    # Force Mesh to be at Rig's origin
                     mesh.parent = rig
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
                     mesh.scale = (1, 1, 1)
 
-                # Reset Rig transforms ONLY if not yet normalized to identity at origin.
                 if not rig.get("normalized_height"):
                     rig.location = (0, 0, 0)
                     rig.rotation_euler = (0, 0, 0)
                     rig.scale = (1, 1, 1)
 
-                # Restore Armature modifier correctly (only for MESH objects)
                 if mesh.type == 'MESH':
                     mesh.constraints.clear()
-                    arm_mod = None
-                    for m in mesh.modifiers:
-                        if m.type == 'ARMATURE':
-                            arm_mod = m
-                            break
+                    arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
                     if not arm_mod:
                         try:
-                            # Use mesh.modifiers.new which returns the modifier or raises error
                             arm_mod = mesh.modifiers.new(name="Armature", type='ARMATURE')
                         except Exception:
                             arm_mod = None
-
                     if arm_mod:
                         arm_mod.object = rig
 
                 rig.hide_render = rig.hide_viewport = False
-
             mesh.hide_render = mesh.hide_viewport = False
 
-        # 2. Targeted cleanup: ensure all assets are visible (no-hidden guardian)
         for obj in coll.objects:
             obj.hide_render = obj.hide_viewport = False
 
@@ -358,60 +289,17 @@ class SylvanEnsembleManager:
             if os.path.exists(img_path):
                 img = bpy.data.images.get(tex_name) or bpy.data.images.load(img_path)
                 n_tex.image = img
-            else:
-                print(f"ASSET_MANAGER WARNING: Texture not found: {img_path}")
 
             links = mat.node_tree.links
-            # Blender 5.0+ Principled BSDF uses "Base Color"
             target_socket = n_bsdf.inputs.get("Base Color") or n_bsdf.inputs[0]
             links.new(n_tex.outputs['Color'],  target_socket)
             links.new(n_bsdf.outputs['BSDF'],  n_out.inputs['Surface'])
 
     # ------------------------------------------------------------------
-    # OPTIONAL: HEIGHT NORMALIZATION (disabled by default)
+    # OPTIONAL: HEIGHT NORMALIZATION (disabled)
     # ------------------------------------------------------------------
 
     def force_majestic_height(self):
         """Scales rigs dynamically to reach the target height (e.g. 6 m)."""
-        # DISABLED as per user request
+        # DISABLED per user request to prevent distortion
         return
-
-        from animation_library_v6 import get_bone
-
-        for art_name in self.ensemble.values():
-            if art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR):
-                continue
-
-            rig = bpy.data.objects.get(f"{art_name}.Rig")
-            if not rig:
-                continue
-
-            h_bone_names = ["Head", "Neck", "Spine2", "top"]
-            f_bone_names = ["Foot.L", "Foot.R", "Hips", "bottom"]
-
-            h_bone = next((get_bone(rig, b) for b in h_bone_names if get_bone(rig, b)), None)
-            f_bone = next((get_bone(rig, b) for b in f_bone_names if get_bone(rig, b)), None)
-
-            if h_bone and f_bone:
-                bpy.context.view_layer.update()
-                h_pos = (rig.matrix_world @ h_bone.head).z
-                f_pos = (rig.matrix_world @ f_bone.tail).z
-                current_h = abs(h_pos - f_pos)
-
-                if current_h > 0:
-                    scale_factor = config.MAJESTIC_HEIGHT / current_h
-                    rig.scale    = tuple(s * scale_factor for s in rig.scale)
-                    print(f"ASSET_MANAGER: Scaled {art_name} by {scale_factor:.2f} "
-                          f"to reach {config.MAJESTIC_HEIGHT} m")
-                    bpy.context.view_layer.update()
-
-    def _normalize_vertex_groups(self, mesh, rig):
-        """Ensures vertex group names match bone names exactly."""
-        bone_names = {b.name for b in rig.pose.bones}
-        for vg in mesh.vertex_groups:
-            if vg.name not in bone_names:
-                core = vg.name.replace("mixamorig:", "")
-                for b_name in bone_names:
-                    if core.lower() in b_name.lower():
-                        vg.name = b_name
-                        break

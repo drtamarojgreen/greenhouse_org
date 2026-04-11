@@ -1,67 +1,51 @@
 import bpy
-import math
-import mathutils
 import os
-import sys
 import time
 import config
 
-# Setup paths to access v5 assets and shared utilities
-V6_DIR = os.path.dirname(os.path.abspath(__file__))
-V5_DIR = os.path.join(os.path.dirname(V6_DIR), "5")
-MOVIE_ROOT = os.path.dirname(V6_DIR) # scripts/blender/movie
-BLENDER_ROOT = os.path.dirname(MOVIE_ROOT) # scripts/blender
-
-for p in [V5_DIR, MOVIE_ROOT, BLENDER_ROOT]:
-    if p not in sys.path:
-        sys.path.append(p)
-
-from assets_v5.plant_humanoid_v5 import create_plant_humanoid_v5, setup_production_lighting
 from asset_manager_v6 import SylvanEnsembleManager
 from director_v6 import SylvanDirector
-from dialogue_scene_v6 import DialogueSceneV6
 from chroma_green_setup import setup_chroma_green_backdrop
 
 
 def generate_full_scene_v6():
-    """Master production assembly for Scene 6, using reliable v5 core logic."""
+    """Master production assembly for Scene 6."""
     start_t = time.time()
     try:
-        # 0. THE SCORCHED-EARTH PURGE (from v5)
+        # 0. THE SCORCHED-EARTH PURGE (from v5 logic)
         print("PURGE: Removing all persistent data blocks...")
         for coll in list(bpy.data.collections):
             for obj in list(coll.objects):
                 coll.objects.unlink(obj)
 
-        for block in [bpy.data.objects, bpy.data.meshes, bpy.data.cameras,
-                      bpy.data.lights, bpy.data.materials, bpy.data.actions, bpy.data.worlds]:
+        for block in [bpy.data.objects, bpy.data.meshes, bpy.data.armatures,
+                      bpy.data.cameras, bpy.data.lights, bpy.data.materials,
+                      bpy.data.actions, bpy.data.worlds, bpy.data.images]:
             for item in list(block):
                 try:
                     block.remove(item, do_unlink=True)
-                except Exception as e:
-                    print(f"PURGE WARNING: Could not remove {item.name}: {e}")
+                except Exception:
+                    pass
 
-        # Confirm units are standard
+        # Ensure units are standard
         bpy.context.scene.unit_settings.system = 'METRIC'
         bpy.context.scene.unit_settings.scale_length = 1.0
+
+        director = SylvanDirector()
 
         # 1. Base structure (chroma backdrop + world)
         backdrop = setup_chroma_green_backdrop()
         print(f"ENV: Backdrop '{backdrop.name if backdrop else 'FAILED'}' ready.")
 
-        # 2. Asset Generation (Humanoid V5)
-        # We use v5's procedural generation for protagonists
-        create_plant_humanoid_v5(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
-        create_plant_humanoid_v5(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
-
-        # 3. Ensemble & Sylvan spirits
+        # 2. Ensemble & protagonists
         asset_manager = SylvanEnsembleManager()
+        asset_manager.link_protagonists()
         asset_manager.link_ensemble()
-        asset_manager.renormalize_objects()
-        # asset_manager.repair_materials() # Optional
 
-        # 4. Cinematic direction & Cameras
-        director = SylvanDirector()
+        # 3. Clean renaming and Parent-Child setup
+        asset_manager.renormalize_objects()
+
+        # 4. Cinematic direction
         director.position_protagonists()
         director.compose_ensemble()
         director.setup_cinematics()

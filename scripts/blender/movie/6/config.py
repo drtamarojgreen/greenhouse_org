@@ -78,3 +78,7 @@ TEX_JOY   = "Tree_Spirit_of_Joy_1207153014_texture.png"
 CAMERA_NAME  = "WIDE"
 BACKDROP_NAME = "ChromaBackdrop_Wide"
 CHROMA_GREEN_RGB = (0, 1, 0)
+
+# 8. PERFECT WORLD COLLECTION NAMES
+COLL_CHARACTERS = "Characters"
+COLL_ENV        = "Environment"
