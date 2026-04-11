@@ -17,6 +17,7 @@ import config
 import plant_humanoid_v6
 import asset_manager_v6
 import director_v6
+import camera_rig_v6
 import chroma_green_setup
 
 # --- COORDINATE CONSTANTS (production requirements) ---
@@ -95,6 +96,9 @@ def generate_full_scene_v6():
     dv6 = director_v6.SylvanDirector()
     dv6.position_protagonists()
     dv6.compose_ensemble()
+
+    # Initialize camera rig and paths
+    camera_rig_v6.setup_camera_rig_v6()
 
     bpy.context.view_layer.update()
     print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")

@@ -58,7 +58,7 @@ def create_lip_material_v6(name):
     return mat
 
 def setup_production_lighting(subjects):
-    """Adds 6-point lighting for full-body isolation."""
+    """Adds 6-point lighting for full-body isolation, now config-driven."""
     for i, obj in enumerate(subjects):
         armature = obj.parent if obj.parent and obj.parent.type == 'ARMATURE' else None
         base_loc = obj.matrix_world.translation
@@ -69,8 +69,9 @@ def setup_production_lighting(subjects):
             bpy.ops.object.light_add(type='SPOT', location=loc)
             rim = bpy.context.active_object
             rim.name = rim_name
-            rim.data.energy = 12000.0; rim.data.spot_size = math.radians(40)
-            rim.data.color = (1.0, 0.9, 0.8)
+            rim.data.energy = config.LIGHT_RIM_ENERGY
+            rim.data.spot_size = math.radians(config.LIGHT_RIM_ANGLE)
+            rim.data.color = config.LIGHT_RIM_COLOR
             t = rim.constraints.new(type='TRACK_TO')
             t.target = armature if armature else obj
             if armature: t.subtarget = "Head"
@@ -91,8 +92,9 @@ def setup_production_lighting(subjects):
             bpy.ops.object.light_add(type='SPOT', location=loc)
             key = bpy.context.active_object
             key.name = key_name
-            key.data.energy = 10000.0; key.data.spot_size = math.radians(45)
-            key.data.color = (0.95, 1.0, 1.0)
+            key.data.energy = config.LIGHT_KEY_ENERGY
+            key.data.spot_size = math.radians(config.LIGHT_KEY_ANGLE)
+            key.data.color = config.LIGHT_KEY_COLOR
             t = key.constraints.new(type='TRACK_TO')
             t.target = mid
             t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
@@ -103,8 +105,9 @@ def setup_production_lighting(subjects):
             bpy.ops.object.light_add(type='SPOT', location=loc)
             leg = bpy.context.active_object
             leg.name = leg_name
-            leg.data.energy = 5000.0; leg.data.spot_size = math.radians(50)
-            leg.data.color = (1.0, 1.0, 0.95)
+            leg.data.energy = config.LIGHT_LEG_ENERGY
+            leg.data.spot_size = math.radians(config.LIGHT_LEG_ANGLE)
+            leg.data.color = config.LIGHT_LEG_COLOR
             t = leg.constraints.new(type='TRACK_TO')
             t.target = armature if armature else obj
             if armature: t.subtarget = "Torso"
@@ -154,7 +157,6 @@ def create_iris_material_v6(name, color=(0.36, 0.24, 0.62)):
 
     return mat
 
-
 def create_sclera_material_v6(name):
     """White sclera material."""
     mat = bpy.data.materials.new(name=name)
@@ -184,15 +186,13 @@ def create_leaf_material_v6(name, color=(0.4, 0.6, 0.2)):
 
     return mat
 
-
 # ---------------------------------------------------------------------------
-# HEAD MATH HELPERS
+# INTERNALS & HELPERS
 # ---------------------------------------------------------------------------
 
 def _sphere_surface_y(x_norm, z_norm):
     inner = max(0.0, 1.0 - x_norm ** 2 - z_norm ** 2)
     return -math.sqrt(inner)
-
 
 def _build_facial_bone_defs(head_r, torso_h, neck_h):
     hcz = torso_h + neck_h + head_r
@@ -308,15 +308,7 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
 
     return defs
 
-
-def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
-    """
-    Self-contained procedural plant humanoid for Scene 6.
-    """
-    location = mathutils.Vector(location)
-    if seed is not None: random.seed(seed)
-
-    # 1. Armature
+def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
     armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
     armature_obj = bpy.data.objects.new(name, armature_data)
     bpy.context.scene.collection.objects.link(armature_obj)
@@ -324,11 +316,7 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     bpy.context.view_layer.objects.active = armature_obj
     bpy.ops.object.mode_set(mode='EDIT')
 
-    torso_h = 1.5 * height_scale
-    head_r  = 0.4
-    neck_h  = 0.2
-
-    bones = {
+    bones_def = {
         "Torso": ((0,0,0), (0,0,torso_h), None),
         "Neck":  ((0,0,torso_h), (0,0,torso_h+neck_h), "Torso"),
         "Head":  ((0,0,torso_h+neck_h), (0,0,torso_h+neck_h+head_r*2), "Neck"),
@@ -358,68 +346,103 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     }
 
     facial_defs = _build_facial_bone_defs(head_r, torso_h, neck_h)
-    for bname, (h, t, p) in bones.items():
+    for bname, (h, t, p) in bones_def.items():
         bone = armature_data.edit_bones.new(bname)
         bone.head, bone.tail = h, t
         if bname == "Head": bone.roll = math.radians(180)
         if p: bone.parent = armature_data.edit_bones[p]
 
-    for bname, (h, t, parent_name, btype) in facial_defs.items():
-        if btype == 'structural':
-            bone = armature_data.edit_bones.new(bname)
-            bone.head, bone.tail = h, t
-            if parent_name and parent_name in armature_data.edit_bones:
-                bone.parent = armature_data.edit_bones[parent_name]
-
-    for bname, (h, t, parent_name, btype) in facial_defs.items():
-        if btype == 'control':
-            bone = armature_data.edit_bones.new(bname)
-            bone.head, bone.tail = h, t
-            if parent_name and parent_name in armature_data.edit_bones:
-                bone.parent = armature_data.edit_bones[parent_name]
+    for bname, (h, t, p_name, btype) in facial_defs.items():
+        bone = armature_data.edit_bones.new(bname)
+        bone.head, bone.tail = h, t
+        if p_name and p_name in armature_data.edit_bones:
+            bone.parent = armature_data.edit_bones[p_name]
 
     bpy.ops.object.mode_set(mode='OBJECT')
+    return armature_obj
 
-    # 2. Mesh Construction
+def _add_v6_organic_part(bm, mesh_obj, dlayer, rad1, rad2, height, loc, bname, mid_scale=1.1, rot=(0,0,0)):
+    vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
+    matrix = (mathutils.Matrix.Translation(loc) @ mathutils.Euler(rot).to_matrix().to_4x4())
+    ret = bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=rad1, radius2=rad2, depth=height, matrix=matrix)
+    for v in ret['verts']:
+        v[dlayer][vg.index] = 1.0
+        # Restoration of Organic Bulge math:
+        dist_from_center = (v.co - mathutils.Vector(loc)).length
+        z_fact = 1.0 - abs(dist_from_center / (height / 2))
+        factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
+        v.co = mathutils.Vector(loc) + (v.co - mathutils.Vector(loc)) * factor
+
+def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
     mesh_obj = bpy.data.objects.new(f"{name}_Body", mesh_data)
     bpy.context.scene.collection.objects.link(mesh_obj)
     mesh_obj.parent = armature_obj
+
     bm = bmesh.new()
     dlayer = bm.verts.layers.deform.verify()
 
-    def add_organic_part(rad1, rad2, height, loc, bname, mid_scale=1.1, rot=(0,0,0)):
-        vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
-        matrix = (mathutils.Matrix.Translation(loc) @ mathutils.Euler(rot).to_matrix().to_4x4())
-        ret = bmesh.ops.create_cone(bm, segments=24, cap_ends=True, radius1=rad1, radius2=rad2, depth=height, matrix=matrix)
-        for v in ret['verts']:
-            v[dlayer][vg.index] = 1.0
-            dist = (v.co - mathutils.Vector(loc)).length
-            z_fact = 1.0 - abs(dist / (height / 2))
-            factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
-            v.co = mathutils.Vector(loc) + (v.co - mathutils.Vector(loc)) * factor
+    # Torso
+    _add_v6_organic_part(bm, mesh_obj, dlayer, 0.5, 0.25, torso_h, (0, 0, torso_h/2), "Torso", mid_scale=1.2)
+    # Neck
+    _add_v6_organic_part(bm, mesh_obj, dlayer, 0.2, 0.15, neck_h, (0, 0, torso_h + neck_h/2), "Neck")
 
-    add_organic_part(0.5, 0.25, torso_h, (0, 0, torso_h/2), "Torso", mid_scale=1.2)
-
+    # Head
     matrix_head = mathutils.Matrix.Translation((0, 0, torso_h+neck_h+head_r))
-    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
-    head_vg = (mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head"))
-    for v in bm.verts:
-        if v.co.z > torso_h + neck_h: head_vg.add([v.index], 1.0, 'REPLACE')
+    ret_head = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=head_r, matrix=matrix_head)
+    head_vg = mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")
+    for v in ret_head['verts']:
+        v[dlayer][head_vg.index] = 1.0
 
-    bm.to_mesh(mesh_data); bm.free()
+    # Limbs
+    for side, sx in [("L", 1), ("R", -1)]:
+        # Arms
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.12, 0.1, 0.2, (sx*0.3, 0, torso_h*0.9), f"Shoulder.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.1, 0.08, 0.4, (sx*0.4, 0, torso_h*0.9-0.2), f"Arm.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.08, 0.06, 0.4, (sx*0.4, 0, torso_h*0.9-0.6), f"Elbow.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.07, 0.04, 0.15, (sx*0.4, 0, torso_h*0.9-0.875), f"Hand.{side}")
+
+        # Legs
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.15, 0.12, 0.1, (sx*0.2, 0, 0.1), f"Hip.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.12, 0.1, 0.5, (sx*0.25, 0, -0.15), f"Thigh.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.1, 0.08, 0.5, (sx*0.25, 0, -0.65), f"Knee.{side}")
+        _add_v6_organic_part(bm, mesh_obj, dlayer, 0.08, 0.05, 0.2, (sx*0.25, -0.075, -0.925), f"Foot.{side}", rot=(math.radians(90), 0, 0))
+
+    bm.to_mesh(mesh_data)
+    bm.free()
 
     mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
+    return mesh_obj
+
+def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
+    """
+    Refactored modular procedural plant humanoid for Scene 6.
+    """
+    location = mathutils.Vector(location)
+    if seed is not None: random.seed(seed)
+
+    torso_h = 1.5 * height_scale
+    head_r  = 0.4
+    neck_h  = 0.2
+
+    # 1. Armature
+    arm_obj = _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h)
+
+    # 2. Mesh
+    mesh_obj = _create_v6_mesh(name, arm_obj, height_scale, head_r, torso_h, neck_h)
+
+    # 3. Materials
     bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
     leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
     mesh_obj.data.materials.append(create_bark_material_v6(f"Bark_{name}", color=bark_color))
     mesh_obj.data.materials.append(create_leaf_material_v6(f"Leaf_{name}", color=leaf_color))
 
-    bones_map = {b.name: b.name for b in armature_obj.data.bones}
+    # 4. Facial Props
+    bones_map = {b.name: b.name for b in arm_obj.data.bones}
     iris_mat = create_iris_material_v6(f"Iris_{name}")
     sclera_mat = create_sclera_material_v6(f"Sclera_{name}")
     bark_mat = create_bark_material_v6(f"FacialBark_{name}", color=bark_color)
     lip_mat = create_lip_material_v6(f"LipMat_{name}")
-    create_facial_props_v6(name, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
+    create_facial_props_v6(name, arm_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
 
-    return armature_obj
+    return arm_obj
