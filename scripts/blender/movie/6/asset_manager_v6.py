@@ -180,13 +180,17 @@ class SylvanEnsembleManager:
 
     def sanitize_shards(self, obj):
         """Collapses rogue vertices (farther than 20m) to (0,0,0) to fix bounding boxes."""
-        if obj.type != 'MESH' or obj.library: return
+        if not obj or obj.type != 'MESH' or obj.library: return
 
         # Guard against recursive modification of linked data
         if getattr(obj.data, "is_library_indirect", False): return
 
         print(f"ASSET_MANAGER: Sanitizing shards for {obj.name}...")
         sanitized_count = 0
+
+        # Determine current scale factor to adjust threshold if needed
+        # (Though we usually sanitize at identity scale during renormalization)
+
         for v in obj.data.vertices:
             # Check local space first (strict 20m threshold for character scale)
             if v.co.length > 20.0:
@@ -194,9 +198,10 @@ class SylvanEnsembleManager:
                 sanitized_count += 1
                 continue
 
-            # Check world space (approximate)
+            # Check world space (only if object is at extreme world coordinates)
             w_co = obj.matrix_world @ v.co
-            if w_co.length > 100.0: # Keep 100m for world-space as a safety boundary
+            if w_co.length > 100.0:
+                # If the vertex is at 100m while the object is near origin, it's a shard
                 v.co = (0, 0, 0)
                 sanitized_count += 1
 

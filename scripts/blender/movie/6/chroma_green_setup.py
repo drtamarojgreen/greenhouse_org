@@ -50,27 +50,24 @@ def setup_chroma_green_backdrop():
     bpy.ops.mesh.primitive_plane_add(size=1000, location=(0, 50, 5))
     bw = bpy.context.active_object
     bw.name = "ChromaBackdrop_Wide"
-    cam_wide_loc = mathutils.Vector((0.0, -18.0, 5.5))
-    vec_wide = cam_wide_loc - mathutils.Vector((0, 50, 5))
-    bw.rotation_euler = vec_wide.to_track_quat('Z', 'Y').to_euler()
+    # Rotate to be vertical and face the WIDE camera
+    bw.rotation_euler = (math.radians(90), 0, 0)
     planes.append(bw)
 
     # 2. OTS1 backdrop — behind Herbaceous
     bpy.ops.mesh.primitive_plane_add(size=1000, location=(-50, -20, 5))
     bo1 = bpy.context.active_object
     bo1.name = "ChromaBackdrop_OTS1"
-    cam_ots1_loc = mathutils.Vector((13.5, 11.0, 6.0))
-    vec_o1 = cam_ots1_loc - mathutils.Vector((-50, -20, 5))
-    bo1.rotation_euler = vec_o1.to_track_quat('Z', 'Y').to_euler()
+    # Angled to face OTS1 camera
+    bo1.rotation_euler = (math.radians(90), 0, math.radians(-45))
     planes.append(bo1)
 
     # 3. OTS2 backdrop — behind Arbor
     bpy.ops.mesh.primitive_plane_add(size=1000, location=(50, 20, 5))
     bo2 = bpy.context.active_object
     bo2.name = "ChromaBackdrop_OTS2"
-    cam_ots2_loc = mathutils.Vector((-13.5, -11.0, 6.0))
-    vec_o2 = cam_ots2_loc - mathutils.Vector((50, 20, 5))
-    bo2.rotation_euler = vec_o2.to_track_quat('Z', 'Y').to_euler()
+    # Angled to face OTS2 camera
+    bo2.rotation_euler = (math.radians(90), 0, math.radians(45))
     planes.append(bo2)
 
     # Link planes to 6b collection
@@ -103,7 +100,7 @@ def setup_chroma_green_backdrop():
         strength_socket = emit.inputs.get("Strength") or emit.inputs[1]
         color_socket = emit.inputs.get("Color") or emit.inputs[0]
 
-        strength_socket.default_value = 1.0  # strength
+        strength_socket.default_value = 5.0  # High-strength emission for production
 
         if bg_images and i < len(bg_images):
             img_path = bg_images[i]
@@ -153,6 +150,33 @@ def setup_chroma_green_backdrop():
     world.node_tree.links.new(bg_dark.outputs[0],           mix.inputs[2])
     world.node_tree.links.new(mix.outputs[0],               w_out.inputs[0])
 
+    # -----------------------------------------------------------------------
+    # Production Volume Cubes (1000m depth markers)
+    # -----------------------------------------------------------------------
+    volume_targets = [
+        ("VolumeCube_Green",  (0, 1050, 0),   (0, 1, 0, 1)),
+        ("VolumeCube_Yellow", (-1050, 0, 0),  (1, 1, 0, 1)),
+        ("VolumeCube_Red",    (1050, 0, 0),   (1, 0, 0, 1)),
+    ]
+
+    for name, loc, col in volume_targets:
+        if not bpy.data.objects.get(name):
+            bpy.ops.mesh.primitive_cube_add(size=1000, location=loc)
+            cube = bpy.context.active_object
+            cube.name = name
+            coll_6b.objects.link(cube)
+
+            mat = bpy.data.materials.new(name=f"Mat.{name}")
+            mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+            nodes.clear()
+            n_out = nodes.new('ShaderNodeOutputMaterial')
+            n_emit = nodes.new('ShaderNodeEmission')
+            n_emit.inputs[0].default_value = col
+            n_emit.inputs[1].default_value = 0.5 # Subtle volume glow
+            mat.node_tree.links.new(n_emit.outputs[0], n_out.inputs[0])
+            cube.data.materials.append(mat)
+
     print("Background setup complete.")
     # planes is guaranteed non-empty here (we only reach this branch when creating fresh)
     return planes[0]
@@ -168,4 +192,29 @@ def apply_anti_spill_lighting(subject_obj, backdrop_obj, distance=5.0):
 
 def validate_backdrop_coverage(camera_obj, backdrop_obj):
     """Verifies the backdrop fills the entire camera frame (frustum check)."""
-    return True
+    if not camera_obj or not backdrop_obj: return False
+
+    import mathutils
+    from bpy_extras.object_utils import world_to_camera_view
+
+    scene = bpy.context.scene
+    mesh = backdrop_obj.data
+    matrix = backdrop_obj.matrix_world
+
+    # Check 4 corners of the plane
+    corners = [matrix @ v.co for v in mesh.vertices[:4]]
+    coords_2d = [world_to_camera_view(scene, camera_obj, c) for c in corners]
+
+    # Check if the backdrop covers the [0,1] range in UV space (camera view)
+    min_x = min(c.x for c in coords_2d)
+    max_x = max(c.x for c in coords_2d)
+    min_y = min(c.y for c in coords_2d)
+    max_y = max(c.y for c in coords_2d)
+
+    # Backdrop must encompass the 0.0-1.0 camera frame
+    is_covered = (min_x <= 0.0 and max_x >= 1.0 and min_y <= 0.0 and max_y >= 1.0)
+
+    # Diagnostic print
+    print(f"COVERAGE: {backdrop_obj.name} vs {camera_obj.name}: X=[{min_x:.2f}, {max_x:.2f}], Y=[{min_y:.2f}, {max_y:.2f}] (OK={is_covered})")
+
+    return is_covered

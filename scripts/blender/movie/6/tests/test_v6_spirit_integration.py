@@ -61,6 +61,27 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def get_world_height(self, obj):
         if obj.type == 'MESH':
+            import statistics
+            dg = bpy.context.evaluated_depsgraph_get()
+            eval_obj = obj.evaluated_get(dg)
+            eval_mesh = eval_obj.data
+
+            all_z = [(eval_obj.matrix_world @ v.co).z for v in eval_mesh.vertices]
+            if not all_z: return 0.0
+
+            med_z = statistics.median(all_z)
+            z_vals = []
+            for v in eval_mesh.vertices:
+                w_co_z = (eval_obj.matrix_world @ v.co).z
+                # Standard outlier filter (consistent with generate_scene6.py)
+                if abs(w_co_z - med_z) > 10.0: continue
+                if v.groups:
+                    if sum(g.weight for g in v.groups) < 0.1: continue
+                z_vals.append(w_co_z)
+
+            if z_vals:
+                return max(z_vals) - min(z_vals)
+
             bbox    = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
             z_vals  = [v.z for v in bbox]
             return max(z_vals) - min(z_vals)
@@ -162,8 +183,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def test_armature_mesh_synchronization(self):
         """
-        Verify synchronization using Parent-Child or Constraint.
-        In modern 5.0 pipeline, Mesh is child of Rig with 0,0,0 local transform.
+        Verify synchronization using Sibling Protocol.
+        In modern 5.0 pipeline, Mesh is unparented from Rig for transform stability.
         """
         self.scene_logic._link_spirit_assets()
 
@@ -179,8 +200,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
             if not rig or not mesh:
                 continue
 
-            # Standard production hierarchy check
-            self.assertEqual(mesh.parent, rig, f"Mesh {mesh_name} not child of Rig {rig_name}")
+            # Sibling Protocol check: Parent must be None (Sibling)
+            self.assertIsNone(mesh.parent, f"Mesh {mesh_name} should be unparented (Sibling Protocol)")
 
             m_loc = mesh.matrix_world.to_translation()
             r_loc = rig.matrix_world.to_translation()
@@ -242,6 +263,32 @@ class TestV6SpiritIntegration(unittest.TestCase):
                     for g in v_max.groups
                 ]
                 print(f"  CRITICAL: Shard at {z_max}m! Influences: {weights}")
+
+    def test_backdrop_render_coverage(self):
+        """Verifies mathematical camera coverage for backdrops."""
+        from chroma_green_setup import validate_backdrop_coverage
+
+        cam = bpy.data.objects.get(config.CAMERA_NAME)
+        backdrop = bpy.data.objects.get(config.BACKDROP_NAME)
+
+        if cam and backdrop:
+            is_covered = validate_backdrop_coverage(cam, backdrop)
+            self.assertTrue(is_covered, "WIDE Backdrop does not cover camera frustum.")
+
+    def test_backdrop_material_emission(self):
+        """Verifies backdrop material has sufficient emission strength."""
+        for name in ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]:
+            obj = bpy.data.objects.get(name)
+            if not obj: continue
+
+            if obj.data.materials:
+                mat = obj.data.materials[0]
+                if mat.use_nodes:
+                    emit = next((n for n in mat.node_tree.nodes if n.type == 'EMISSION'), None)
+                    if emit:
+                        strength = emit.inputs.get("Strength").default_value
+                        print(f"EMISSION: {name} -> {strength}")
+                        self.assertGreaterEqual(strength, 1.0)
 
     def test_spatial_audit_table(self):
         targets  = [config.CHAR_HERBACEOUS + "_Body", config.CHAR_ARBOR + "_Body"]
@@ -347,6 +394,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
                      if d_hit > d_obj:
                           is_hit = True
 
+                d_hit = (loc - origin).length
+                d_obj = (target_pt - origin).length
                 # DEBUG: Cam->Hit: {d_hit:.2f}m, Cam->Target: {d_obj:.2f}m
                 self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} (Dist hit={d_hit:.2f}, obj={d_obj:.2f})")
             else:
@@ -366,10 +415,12 @@ class TestV6SpiritIntegration(unittest.TestCase):
     def test_backdrop_audit_table(self):
         """Reports a table of backdrop properties (visibility, position, scale, dimensions)."""
         targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
+        cam = bpy.data.objects.get(config.CAMERA_NAME)
+        c_loc = cam.matrix_world.to_translation() if cam else mathutils.Vector((0,0,0))
 
-        print("\n" + "=" * 135)
-        print(f"{'BACKDROP':<25} | {'VIS':<4} | {'POSITION (X,Y,Z)':<25} | {'SCALE (X,Y,Z)':<20} | {'W':<6} | {'H':<6} | {'L':<6} | {'SHAPE'}")
-        print("-" * 135)
+        print("\n" + "=" * 175)
+        print(f"{'BACKDROP':<25} | {'VIS':<4} | {'POSITION (X,Y,Z)':<22} | {'CAM DIST':<10} | {'DIFF.X':<8} | {'DIFF.Y':<8} | {'DIFF.Z':<8} | {'W':<6} | {'L':<6} | {'SHAPE'}")
+        print("-" * 175)
 
         for name in targets:
             obj = bpy.data.objects.get(name)
@@ -378,17 +429,97 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 continue
 
             vis = "OK" if not (obj.hide_viewport or obj.hide_render) else "HID"
-            loc = f"({obj.location.x:5.1f},{obj.location.y:5.1f},{obj.location.z:5.1f})"
-            scl = f"({obj.scale.x:4.2f},{obj.scale.y:4.2f},{obj.scale.z:4.2f})"
+            loc = obj.matrix_world.to_translation()
+            loc_str = f"({loc.x:5.1f},{loc.y:5.1f},{loc.z:5.1f})"
+
+            diff = loc - c_loc
+            dist = diff.length
 
             # Dimensions
             dim = obj.dimensions
-            w, h, l = dim.x, dim.z, dim.y # Width, Height, Length (depth) for vertical planes
+            w, h, l = dim.x, dim.z, dim.y
 
             shape = "PLANE" if obj.type == 'MESH' and len(obj.data.vertices) == 4 else obj.type
 
-            print(f"{name:<25} | {vis:<4} | {loc:<25} | {scl:<20} | {w:<6.1f} | {h:<6.1f} | {l:<6.1f} | {shape}")
-        print("=" * 135 + "\n")
+            print(f"{name:<25} | {vis:<4} | {loc_str:<22} | {dist:<10.1f} | {diff.x:<8.1f} | {diff.y:<8.1f} | {diff.z:<8.1f} | {w:<6.1f} | {l:<6.1f} | {shape}")
+        print("=" * 175 + "\n")
+
+    def test_backdrop_visual_debug_cylinders(self):
+        """Draws visual debug cylinders to backdrops for orientation audit."""
+        print("\nDIAGNOSTIC: Drawing backdrop debug cylinders...")
+        targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]
+
+        # Create debug material
+        mat = bpy.data.materials.get("Mat.Debug.Backdrop") or bpy.data.materials.new("Mat.Debug.Backdrop")
+        mat.use_nodes = True
+        bsdf = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+        if bsdf: bsdf.inputs[0].default_value = (0, 0, 0, 1) # Black
+
+        for name in targets:
+            target = bpy.data.objects.get(name)
+            if not target: continue
+
+            t_loc = target.matrix_world.to_translation()
+
+            # Add cylinder from origin to backdrop
+            bpy.ops.mesh.primitive_cylinder_add(radius=0.1, depth=t_loc.length, location=t_loc/2)
+            cyl = bpy.context.active_object
+            cyl.name = f"DEBUG.Vector.{name}"
+            cyl.data.materials.append(mat)
+
+            # Orient cylinder to point at target
+            vec = t_loc
+            cyl.rotation_euler = vec.to_track_quat('Z', 'Y').to_euler()
+            print(f"  > Created debug vector for {name} (Length: {t_loc.length:.2f}m)")
+
+    def test_backdrop_visibility_progression(self):
+        """Staged audit of backdrop visibility states (Environment -> Protagonist -> Ensemble)."""
+        print("\nDIAGNOSTIC: Backdrop Visibility Progression Audit")
+        print("-" * 50)
+
+        # 1. Environment Check
+        print("[STAGE 1: ENVIRONMENT]")
+        targets = ["ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2",
+                   "VolumeCube_Green", "VolumeCube_Yellow", "VolumeCube_Red"]
+        for name in targets:
+            obj = bpy.data.objects.get(name)
+            exists = "YES" if obj else "NO"
+            hidden = "HID" if obj and (obj.hide_viewport or obj.hide_render) else "OK"
+            print(f"  {name:<25} | Exists: {exists} | Visibility: {hidden}")
+
+        # 2. Protagonist Occlusion Raycast
+        print("\n[STAGE 2: PROTAGONIST SYNC]")
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
+        if herb:
+            print(f"  Herbaceous Loc: {herb.matrix_world.to_translation()}")
+
+        # 3. Ensemble & Optical Clearance
+        print("\n[STAGE 3: OPTICAL CLEARANCE]")
+        cam = bpy.data.objects.get(config.CAMERA_NAME)
+        if cam:
+            origin = cam.matrix_world.to_translation()
+            dg = bpy.context.evaluated_depsgraph_get()
+            for name in targets:
+                target = bpy.data.objects.get(name)
+                if target:
+                    # Raycast to object center
+                    direction = (target.matrix_world.to_translation() - origin).normalized()
+                    hit, loc, norm, idx, hit_obj, mat = bpy.context.scene.ray_cast(dg, origin, direction)
+                    hit_name = hit_obj.name if hit else "MISS"
+                    print(f"  Raycast to {name:<20} -> Hit: {hit_name}")
+
+    def test_volume_cube_audit(self):
+        """Verifies presence and basic state of production depth markers."""
+        for name in ["VolumeCube_Green", "VolumeCube_Yellow", "VolumeCube_Red"]:
+            obj = bpy.data.objects.get(name)
+            self.assertIsNotNone(obj, f"Volume Cube {name} is missing.")
+            self.assertFalse(obj.hide_render, f"Volume Cube {name} is hidden.")
+
+            # Check Material
+            if obj.data.materials:
+                mat = obj.data.materials[0]
+                emit = next((n for n in mat.node_tree.nodes if n.type == 'EMISSION'), None)
+                self.assertIsNotNone(emit, f"Volume Cube {name} missing emission shader.")
 
     def test_backdrop_spatial_placement(self):
         """Ensures backdrops are correctly positioned relative to cameras."""
