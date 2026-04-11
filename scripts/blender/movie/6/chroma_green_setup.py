@@ -53,7 +53,7 @@ def setup_chroma_green_backdrop():
     bpy.ops.mesh.primitive_plane_add(size=1000, location=(50, 20, 5))
     bo2 = bpy.context.active_object
     bo2.name = "ChromaBackdrop_OTS2"
-    cam_ots2_loc = mathutils.Vector((4.0, -3.0, 2.8))
+    cam_ots2_loc = mathutils.Vector((-4.0, -3.0, 2.8))
     vec_o2 = cam_ots2_loc - mathutils.Vector((50, 20, 5))
     bo2.rotation_euler = vec_o2.to_track_quat('Z', 'Y').to_euler()
     planes.append(bo2)
@@ -80,7 +80,7 @@ def setup_chroma_green_backdrop():
 
         emit = nodes.new(type='ShaderNodeEmission')
         # Use direct indices for B5.0 compatibility
-        emit.inputs[1].default_value = 1.0 # Strength
+        # emit.inputs[0] is Color, emit.inputs[1] is Strength
 
         if bg_images and len(bg_images) > i:
             img_path = bg_images[i]
@@ -93,10 +93,13 @@ def setup_chroma_green_backdrop():
                 mat.node_tree.links.new(tex_coord.outputs['Window'], tex_img.inputs['Vector'])
 
                 mat.node_tree.links.new(tex_img.outputs['Color'], emit.inputs[0])
+                emit.inputs[1].default_value = 1.0 # Strength
             else:
                 emit.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
+                emit.inputs[1].default_value = 1.0
         else:
             emit.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
+            emit.inputs[1].default_value = 1.0
 
         out = nodes.new(type='ShaderNodeOutputMaterial')
         mat.node_tree.links.new(emit.outputs[0], out.inputs[0])

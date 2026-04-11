@@ -5,29 +5,25 @@ import time
 import math
 import mathutils
 
-# Ensure movie modules are in path
+# Ensure movie 6 directory is in path for flat imports
 V6_DIR = os.path.dirname(os.path.abspath(__file__))
-# We want to be able to import from movie.5 and movie.6
+if V6_DIR not in sys.path:
+    sys.path.append(V6_DIR)
+
+# Ensure style_utilities (in movie/) is also accessible
 MOVIE_DIR = os.path.dirname(V6_DIR)
 if MOVIE_DIR not in sys.path:
     sys.path.append(MOVIE_DIR)
 
-# Add V5 directory to path so we can import assets_v5 directly
-V5_DIR = os.path.join(MOVIE_DIR, "5")
-if V5_DIR not in sys.path:
-    sys.path.append(V5_DIR)
-
-from assets_v5.plant_humanoid_v5 import create_plant_humanoid_v5
+# Absolute imports from V6_DIR (now in sys.path)
+from assets_v6.plant_humanoid_v6 import create_plant_humanoid_v6
 from chroma_green_setup import setup_chroma_green_backdrop
 from asset_manager_v6 import SylvanEnsembleManager
 from director_v6 import SylvanDirector
 
-try:
-    import config
-except ImportError:
-    from . import config
+import config
 
-# --- COORDINATE CONSTANTS (matching v5) ---
+# --- COORDINATE CONSTANTS (matching production requirements) ---
 HERB_BASE = (-1.75, -0.3, 0.0)
 ARBOR_BASE = (1.75, 0.3, 0.0)
 HERB_EYE_LEVEL = (-1.75, -0.3, 2.5)
@@ -39,7 +35,7 @@ def standardize_ensemble_heights():
     pass
 
 def setup_scene6_cameras():
-    """Builds a professional 3-camera cinematic rig matching v5 logic."""
+    """Builds a professional 3-camera cinematic rig."""
     cameras = {}
     scene = bpy.context.scene
 
@@ -86,10 +82,10 @@ def setup_scene6_cameras():
     return cameras
 
 def generate_full_scene_v6():
-    """Master production assembly for Scene 6, matching v5 reliability."""
+    """Master production assembly for Scene 6."""
     start_t = time.time()
 
-    # 0. PURGE (v5 scorched-earth style)
+    # 0. PURGE
     print("PURGE: Removing all persistent data blocks...")
     for coll in list(bpy.data.collections):
         for obj in list(coll.objects):
@@ -108,9 +104,9 @@ def generate_full_scene_v6():
     # 1. Backdrop
     setup_chroma_green_backdrop()
 
-    # 2. Protagonists (v5 procedural)
-    create_plant_humanoid_v5(config.CHAR_HERBACEOUS, HERB_BASE)
-    create_plant_humanoid_v5(config.CHAR_ARBOR, ARBOR_BASE)
+    # 2. Protagonists (v6 procedural)
+    create_plant_humanoid_v6(config.CHAR_HERBACEOUS, HERB_BASE)
+    create_plant_humanoid_v6(config.CHAR_ARBOR, ARBOR_BASE)
 
     # 3. Sylvan Ensemble (spirits)
     asset_manager = SylvanEnsembleManager()
