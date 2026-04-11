@@ -87,16 +87,16 @@ def setup_chroma_green_backdrop():
                     mat.node_tree.links.new(tex_coord.outputs['Window'], tex_img.inputs['Vector'])
                     mat.node_tree.links.new(tex_img.outputs['Color'], emit.inputs[0])
                 except:
-                    emit.inputs[0].default_value = green_rgb[:4] if len(green_rgb) >= 4 else (*green_rgb[:3], 1.0)
+                    emit.inputs[0].default_value = green_rgb
             else:
-                emit.inputs[0].default_value = green_rgb[:4] if len(green_rgb) >= 4 else (*green_rgb[:3], 1.0)
+                emit.inputs[0].default_value = green_rgb
         else:
-            emit.inputs[0].default_value = green_rgb[:4] if len(green_rgb) >= 4 else (*green_rgb[:3], 1.0)
+            emit.inputs[0].default_value = green_rgb
 
         out = nodes.new(type='ShaderNodeOutputMaterial')
         mat.node_tree.links.new(emit.outputs[0], out.inputs[0])
         p.data.materials.append(mat)
-        mat.diffuse_color = green_rgb[:4] if len(green_rgb) >= 4 else (*green_rgb[:3], 1.0)
+        mat.diffuse_color = green_rgb
 
     # 4. World Setup
     if not bpy.context.scene.world:

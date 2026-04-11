@@ -75,7 +75,7 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def renormalize_objects(self):
-        """Syncs spirit meshes to rigs while preserving baseline scaling."""
+        """Syncs spirit meshes to rigs while preserving imported baseline scaling."""
         import mathutils
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
@@ -114,7 +114,7 @@ class SylvanEnsembleManager:
                     mesh.parent = rig
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
-                    # PRESERVE BASELINE SCALE: No (1,1,1) reset.
+                    # PRESERVE BASELINE SCALE: No (1,1,1) reset or view_layer update scaling.
                     mesh.matrix_parent_inverse = mathutils.Matrix.Identity(4)
 
                 if mesh.type == 'MESH':

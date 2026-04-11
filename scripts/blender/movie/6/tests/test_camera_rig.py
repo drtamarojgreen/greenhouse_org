@@ -27,9 +27,6 @@ def test_camera_rig():
 
                 if cam.animation_data and cam.animation_data.action:
                     found_fcurve = False
-                    # Check the fcurves for the specific constraint data path
-                    # Standard data path for object constraint offset_factor: 'constraints["Follow Path"].offset_factor'
-                    # Note: "Follow Path" is the default name, but we should find the actual constraint name
                     dp = f'constraints["{fp_constraint.name}"].offset_factor'
                     for fcurve in cam.animation_data.action.fcurves:
                         if fcurve.data_path == dp:

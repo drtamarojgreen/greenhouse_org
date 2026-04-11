@@ -22,6 +22,10 @@ def create_camera_path(name, points):
 
 def setup_follow_path(cam_obj, path_obj, start_frame, end_frame):
     """Binds camera to path with Follow Path constraint."""
+    # CLEAR OBJECT TRANSFORMS to ensure the constraint uses the path absolute world coords
+    cam_obj.location = (0, 0, 0)
+    cam_obj.rotation_euler = (0, 0, 0)
+
     constraint = cam_obj.constraints.new(type='FOLLOW_PATH')
     constraint.target = path_obj
     constraint.use_fixed_location = True

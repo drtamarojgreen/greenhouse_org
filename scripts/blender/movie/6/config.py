@@ -5,7 +5,7 @@ TOTAL_FRAMES = 4200
 EQUIPMENT_DIR = "/home/tamarojgreen/Documents/Movie_Equipment/"
 SPIRITS_ASSET_BLEND = os.path.join(EQUIPMENT_DIR, "MHD2_animation133.blend")
 
-# 1. ENSEMBLE DEFINITIONS (Artistic Naming)
+# 1. ENSEMBLE DEFINITIONS
 SPIRIT_ENSEMBLE = {
     "Mesh1_Mesh1.044": "Sylvan_Majesty",
     "Mesh1_Mesh1.001": "Radiant_Aura",
@@ -17,7 +17,7 @@ SPIRIT_ENSEMBLE = {
     "skeleton": "Root_Guardian"
 }
 
-# Source armature names for each artistic character
+# Source armature names
 RIG_MAP_SRC = {
     "Sylvan_Majesty":   "Armature.002",
     "Radiant_Aura":     "Armature.004",
@@ -46,20 +46,20 @@ CHAR_ARBOR_POS      = ( 1.75,  0.3, 0.0)
 HERB_EYE_LEVEL  = (-1.75, -0.3, 2.5)
 ARBOR_EYE_LEVEL = (1.75, 0.3, 2.5)
 
-# 5. LIGHTING CONSTANTS
+# 5. LIGHTING
 RIM_LIGHT_ENERGY = 12000.0
 KEY_LIGHT_ENERGY = 10000.0
 LEG_LIGHT_ENERGY = 5000.0
-RIM_LIGHT_COLOR  = (1.0, 0.9, 0.8)
-KEY_LIGHT_COLOR  = (0.95, 1.0, 1.0)
-LEG_LIGHT_COLOR  = (1.0, 1.0, 0.95)
+RIM_LIGHT_COLOR  = (1.0, 0.9, 0.8, 1.0)
+KEY_LIGHT_COLOR  = (0.95, 1.0, 1.0, 1.0)
+LEG_LIGHT_COLOR  = (1.0, 1.0, 0.95, 1.0)
 
 # 6. PLANT HUMANOID DIMENSIONS
 PH_TORSO_H = 1.5
 PH_HEAD_R  = 0.4
 PH_NECK_H  = 0.2
 
-# 7. CAMERAS & CINEMATICS
+# 7. CAMERAS
 WIDE_CAM_POS  = (0.0, -8.0, 2.0)
 OTS1_CAM_POS  = (13.5, 11.0, 6.0)
 OTS2_CAM_POS  = (-13.5, -11.0, 6.0)

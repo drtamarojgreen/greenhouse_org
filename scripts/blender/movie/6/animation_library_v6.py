@@ -15,24 +15,26 @@ BONE_NAME_MAP = {
     "Hand.L": "mixamorig:LeftHand",
     "Hand.R": "mixamorig:RightHand",
     "Foot.L": "mixamorig:LeftFoot",
-    "Foot.R": "mixamorig:RightFoot"
+    "Foot.R": "mixamorig:RightFoot",
+    "Arm.L": "mixamorig:LeftArm",
+    "Arm.R": "mixamorig:RightArm",
+    "Elbow.L": "mixamorig:LeftForeArm",
+    "Elbow.R": "mixamorig:RightForeArm",
+    "Thigh.L": "mixamorig:LeftUpLeg",
+    "Thigh.R": "mixamorig:RightUpLeg",
+    "Knee.L": "mixamorig:LeftLeg",
+    "Knee.R": "mixamorig:RightLeg"
 }
 
 def get_bone(arm_obj, name):
     """Safely retrieves a bone by standard name, mapped Mixamo name, or prefix fallback."""
     if not arm_obj or arm_obj.type != 'ARMATURE': return None
-    
-    # 1. Try standard name (Internal/V5)
     bone = arm_obj.pose.bones.get(name)
     if bone: return bone
-    
-    # 2. Try mapped name (V6/Mixamo)
     mapped_name = BONE_NAME_MAP.get(name)
     if mapped_name:
         bone = arm_obj.pose.bones.get(mapped_name)
         if bone: return bone
-    
-    # 3. Try automatic prefixing
     return arm_obj.pose.bones.get(f"mixamorig:{name}")
 
 # ---------------------------------------------------------------------------
@@ -40,11 +42,9 @@ def get_bone(arm_obj, name):
 # ---------------------------------------------------------------------------
 
 def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=None):
-    """Dispatcher to apply animations based on modular tags."""
-    full_tag = tag
-    arg = None
+    """Dispatcher to apply varied animations based on modular tags."""
     if ":" in tag:
-        tag, arg = tag.split(":", 1)
+        tag, _ = tag.split(":", 1)
     
     registry = {
         "nod": (apply_nod, 24),
@@ -52,6 +52,13 @@ def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=No
         "blink": (apply_blink, 6),
         "talking": (apply_talking_arms, duration or 60),
         "dance": (apply_dance, duration or 600),
+        "float": (apply_float, duration or 120),
+        "sway": (apply_sway, duration or 80),
+        "shiver": (apply_shiver, 48),
+        "droop": (apply_droop, 60),
+        "stretch": (apply_stretch, 40),
+        "joyful": (apply_joyful, 40),
+        "bend": (apply_bend, 60),
     }
     
     if tag in registry:
@@ -62,117 +69,135 @@ def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=No
     return False
 
 # ---------------------------------------------------------------------------
-# ANIMATION FUNCTIONS (REFACTORED FOR GET_BONE)
+# ANIMATION FUNCTIONS
 # ---------------------------------------------------------------------------
 
 def apply_nod(arm_obj, start_frame, duration=24):
     head = get_bone(arm_obj, "Head")
     neck = get_bone(arm_obj, "Neck")
     if not head or not neck: return
-
     mid_frame = start_frame + (duration // 2)
     end_frame = start_frame + duration
-    
-    dp_h = f'pose.bones["{head.name}"].rotation_euler'
-    dp_n = f'pose.bones["{neck.name}"].rotation_euler'
-
-    # Keyframe initial
-    arm_obj.keyframe_insert(data_path=dp_h, frame=start_frame)
-    arm_obj.keyframe_insert(data_path=dp_n, frame=start_frame)
-
-    # Nod down
-    head.rotation_euler[0] += math.radians(15)
-    neck.rotation_euler[0] += math.radians(5)
-    arm_obj.keyframe_insert(data_path=dp_h, frame=mid_frame)
-    arm_obj.keyframe_insert(data_path=dp_n, frame=mid_frame)
-
-    # Return
-    head.rotation_euler[0] -= math.radians(15)
-    neck.rotation_euler[0] -= math.radians(5)
-    arm_obj.keyframe_insert(data_path=dp_h, frame=end_frame)
-    arm_obj.keyframe_insert(data_path=dp_n, frame=end_frame)
+    for b in (head, neck):
+        b.rotation_mode = 'XYZ'
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
+        b.rotation_euler[0] += math.radians(-12)
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=mid_frame)
+        b.rotation_euler[0] -= math.radians(-12)
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=end_frame)
 
 def apply_shake_head(arm_obj, start_frame, duration=45):
     head = get_bone(arm_obj, "Head")
     if not head: return
-    
-    dp = f'pose.bones["{head.name}"].rotation_euler'
-    arm_obj.keyframe_insert(data_path=dp, index=2, frame=start_frame)
-    
-    cycle = duration // 3
-    for i, offset in enumerate([15, -15, 0]):
-        f = start_frame + (i + 1) * cycle
+    head.rotation_mode = 'XYZ'
+    end_frame = start_frame + duration
+    head.keyframe_insert(data_path="rotation_euler", index=2, frame=start_frame)
+    for i, offset in enumerate([18, -18, 0]):
+        f = start_frame + (i + 1) * (duration // 3)
         head.rotation_euler[2] = math.radians(offset)
-        arm_obj.keyframe_insert(data_path=dp, index=2, frame=f)
+        head.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
 
 def apply_blink(arm_obj, start_frame, duration=6):
-    # Spirits might not have eye meshes setup the same way as plants.
-    # We look for Eye objects parented to the armature.
     for child in arm_obj.children:
-        if "Eye" in child.name:
-            child.scale[2] = 1.0
+        if "Eyelid" in child.name:
             child.keyframe_insert(data_path="scale", index=2, frame=start_frame)
-            child.scale[2] = 0.1
+            child.scale[2] = 0.02
             child.keyframe_insert(data_path="scale", index=2, frame=start_frame + (duration//2))
             child.scale[2] = 1.0
             child.keyframe_insert(data_path="scale", index=2, frame=start_frame + duration)
 
 def apply_talking_arms(arm_obj, start_frame, duration=60):
-    hand_l = get_bone(arm_obj, "Hand.L")
-    hand_r = get_bone(arm_obj, "Hand.R")
-    if not hand_l or not hand_r: return
-    
-    dp_l = f'pose.bones["{hand_l.name}"].location'
-    dp_r = f'pose.bones["{hand_r.name}"].location'
-    
-    for f in range(start_frame, start_frame + duration, 10):
-        hand_l.location[2] += random.uniform(-0.05, 0.05)
-        hand_r.location[2] += random.uniform(-0.05, 0.05)
-        arm_obj.keyframe_insert(data_path=dp_l, index=2, frame=f)
-        arm_obj.keyframe_insert(data_path=dp_r, index=2, frame=f)
+    arm_l = get_bone(arm_obj, "Arm.L")
+    arm_r = get_bone(arm_obj, "Arm.R")
+    if not arm_l or not arm_r: return
+    end_frame = start_frame + duration
+    for b in (arm_l, arm_r):
+        b.rotation_mode = 'XYZ'
+        b.keyframe_insert(data_path="rotation_euler", frame=start_frame)
+    for f in range(start_frame + 5, end_frame - 5, 12):
+        arm_l.rotation_euler[0] = math.radians(-80 + random.uniform(-10, 10))
+        arm_r.rotation_euler[0] = math.radians(-80 + random.uniform(-10, 10))
+        arm_l.keyframe_insert(data_path="rotation_euler", frame=f)
+        arm_r.keyframe_insert(data_path="rotation_euler", frame=f)
 
 def apply_dance(arm_obj, start_frame, duration=600):
-    """Rhythmic bobbing using get_bone."""
     torso = get_bone(arm_obj, "Torso")
-    hip = get_bone(arm_obj, "Tail") # Use Hips as secondary bob
     if not torso: return
-    
-    dp_t = f'pose.bones["{torso.name}"].location'
-    
-    for f in range(start_frame, start_frame + duration, 4):
-        phase = (f - start_frame) * 0.1
-        torso.location[2] = math.sin(phase) * 0.1
-        arm_obj.keyframe_insert(data_path=dp_t, index=2, frame=f)
-        
-        if hip:
-            dp_h = f'pose.bones["{hip.name}"].location'
-            hip.location[1] = math.cos(phase) * 0.05
-            arm_obj.keyframe_insert(data_path=dp_h, index=1, frame=f)
+    torso.rotation_mode = 'XYZ'
+    # Start keyframe
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame)
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=start_frame)
+    for f in range(start_frame + 10, start_frame + duration, 20):
+        phase = (f - start_frame) * 0.2
+        torso.location[2] = math.sin(phase) * 0.15
+        torso.rotation_euler[2] = math.cos(phase) * math.radians(8)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=f)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=f)
 
-# ---------------------------------------------------------------------------
-# PROP ATTACHMENT
-# ---------------------------------------------------------------------------
+def apply_float(arm_obj, start_frame, duration=120):
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame)
+    for f in range(start_frame + 10, start_frame + duration + 1, 15):
+        phase = (f - start_frame) / duration * 2 * math.pi
+        torso.location[2] = math.sin(phase) * 0.25
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=f)
 
-def attach_prop(armature_obj, prop_obj, bone_name="Hand.L", frame=1):
-    """Attaches a prop to a bone using Child-Of constraint (Mixamo aware)."""
-    target_bone = get_bone(armature_obj, bone_name)
-    if not target_bone:
-        print(f"Warning: Bone {bone_name} not found for prop attachment.")
-        return
-        
-    bpy.context.scene.frame_set(frame)
-    
-    con_name = "SpiritGrasp"
-    con = prop_obj.constraints.get(con_name) or prop_obj.constraints.new(type='CHILD_OF')
-    con.name = con_name
-    con.target = armature_obj
-    con.subtarget = target_bone.name
-    
-    # Visual inverse to keep current position
-    old_matrix = prop_obj.matrix_world.copy()
-    con.inverse_matrix = armature_obj.matrix_world.inverted() @ armature_obj.pose.bones[target_bone.name].matrix.inverted()
-    prop_obj.matrix_world = old_matrix
-    
-    # Keyframe the influence
-    con.influence = 1.0
-    prop_obj.keyframe_insert(data_path=f'constraints["{con_name}"].influence', frame=frame)
+def apply_sway(arm_obj, start_frame, duration=80):
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+    torso.rotation_mode = 'XYZ'
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=start_frame)
+    for f in range(start_frame + 8, start_frame + duration + 1, 10):
+        phase = (f - start_frame) / duration * 2 * math.pi
+        torso.rotation_euler[2] = math.sin(phase) * math.radians(6)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=f)
+
+def apply_shiver(arm_obj, start_frame, duration=48):
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', frame=start_frame)
+    for f in range(start_frame + 1, start_frame + duration):
+        torso.location[0] = random.uniform(-0.015, 0.015)
+        torso.location[1] = random.uniform(-0.015, 0.015)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', frame=f)
+
+def apply_droop(arm_obj, start_frame, duration=60):
+    head = get_bone(arm_obj, "Head")
+    neck = get_bone(arm_obj, "Neck")
+    if not head or not neck: return
+    for b in (head, neck):
+        b.rotation_mode = 'XYZ'
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
+        b.rotation_euler[0] = math.radians(-30)
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration // 2)
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration)
+
+def apply_stretch(arm_obj, start_frame, duration=40):
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+    torso.rotation_mode = 'XYZ'
+    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
+    torso.rotation_euler[0] = math.radians(15)
+    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration // 2)
+    torso.rotation_euler[0] = 0
+    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration)
+
+def apply_joyful(arm_obj, start_frame, duration=40):
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame)
+    torso.location[2] += 0.2
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame + 10)
+    torso.location[2] -= 0.2
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame + duration)
+
+def apply_bend(arm_obj, start_frame, duration=60):
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+    torso.rotation_mode = 'XYZ'
+    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
+    torso.rotation_euler[0] = math.radians(-45)
+    arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration // 2)
+    torso.rotation_euler[0] = 0
+    arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration)

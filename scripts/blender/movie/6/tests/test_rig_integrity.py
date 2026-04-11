@@ -20,7 +20,7 @@ def test_rig_integrity():
             print(f"FAILED: Body not found for character.")
             continue
 
-        armature = body.find_armature()
+        armature = body.parent if body.parent and body.parent.type == 'ARMATURE' else None
         if not armature:
             print(f"FAILED: No armature found for {body.name}")
             continue
@@ -32,7 +32,9 @@ def test_rig_integrity():
             "Arm.L", "Elbow.L", "Hand.L",
             "Arm.R", "Elbow.R", "Hand.R",
             "Thigh.L", "Knee.L", "Foot.L",
-            "Thigh.R", "Knee.R", "Foot.R"
+            "Thigh.R", "Knee.R", "Foot.R",
+            "Eyelid.Upper.L", "Eyelid.Lower.L",
+            "Eyebrow.L", "Eyebrow.R"
         ]
 
         missing_vgs = []
@@ -44,6 +46,12 @@ def test_rig_integrity():
             print(f"FAILED: Missing Vertex Groups: {missing_vgs}")
         else:
             print(f"PASSED: All mandatory vertex groups present on {body.name}")
+
+        # Check for Foliage group
+        if "Foliage" in body.vertex_groups:
+            print(f"PASSED: Foliage vertex group present on {body.name}")
+        else:
+            print(f"FAILED: Missing Foliage vertex group on {body.name}")
 
 if __name__ == "__main__":
     test_rig_integrity()
