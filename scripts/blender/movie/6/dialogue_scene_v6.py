@@ -47,9 +47,6 @@ class DialogueSceneV6:
             rig.keyframe_insert(data_path="location", frame=line["end_frame"])
 
     def _link_spirit_assets(self):
-        """Regression wrapper for asset manager's linking sequence."""
-        from generate_scene6 import standardize_ensemble_heights
-        self.asset_manager.link_ensemble()
-        self.asset_manager.renormalize_objects()
-        self.asset_manager.repair_materials()
-        standardize_ensemble_heights()
+        """Regression wrapper — links and normalises the spirit ensemble."""
+        from generate_scene6 import _link_spirit_ensemble
+        _link_spirit_ensemble()
