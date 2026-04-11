@@ -36,8 +36,8 @@ def generate_full_scene_v6():
     am.link_ensemble()
     am.renormalize_objects()
 
-    cameras = camera_rig_v6.setup_scene6_cameras()
-    if "WIDE" in cameras: bpy.context.scene.camera = cameras["WIDE"]
+    # Use the orchestrated animated camera rig
+    camera_rig_v6.setup_scene6_cameras()
 
     dv6 = director_v6.SylvanDirector()
     dv6.position_protagonists()

@@ -141,21 +141,15 @@ def _sphere_surface_y(x_norm, z_norm):
 def _build_facial_bone_defs(head_r, torso_h, neck_h):
     hcz = torso_h + neck_h + head_r
 
-    def proj(x_norm, z_norm, tail_len=0.1, x_norm_tail=None, z_norm_tail=None):
+    def proj(x_norm, z_norm, tail_len=0.1):
         y_surf = _sphere_surface_y(x_norm, z_norm)
         hx = head_r * x_norm
         hy = head_r * y_surf
         hz = hcz + head_r * z_norm
-        if x_norm_tail is not None and z_norm_tail is not None:
-            ty_surf = _sphere_surface_y(x_norm_tail, z_norm_tail)
-            tx = head_r * x_norm_tail
-            ty = head_r * ty_surf
-            tz = hcz + head_r * z_norm_tail
-        else:
-            dir_vec = mathutils.Vector((hx, hy, hz - hcz)).normalized()
-            tx = hx + dir_vec.x * head_r * tail_len
-            ty = hy + dir_vec.y * head_r * tail_len
-            tz = hz + dir_vec.z * head_r * tail_len
+        dir_vec = mathutils.Vector((hx, hy, hz - hcz)).normalized()
+        tx = hx + dir_vec.x * head_r * tail_len
+        ty = hy + dir_vec.y * head_r * tail_len
+        tz = hz + dir_vec.z * head_r * tail_len
         return (hx, hy, hz), (tx, ty, tz)
 
     def ctrl(base_head, offset=(0, 0, 0), tail_offset=(0, 0.01, 0)):
@@ -168,11 +162,11 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
         return (hx, hy, hz), (tx, ty, tz)
 
     eye_x, eye_z        = 0.35,  0.35
-    eld_u_x, eld_u_z    = 0.35,  0.40
-    eld_l_x, eld_l_z    = 0.35,  0.30
-    nose_x,  nose_z     = 0.00,  0.05
-    lip_u_x, lip_u_z    = 0.00, -0.18
-    lip_l_x, lip_l_z    = 0.00, -0.24
+    eld_u_z             = 0.40
+    eld_l_z             = 0.30
+    nose_z              = 0.05
+    lip_u_z             = -0.18
+    lip_l_z             = -0.24
 
     pupil_x, pupil_z    = eye_x, eye_z
     eld_corner_med_x    = 0.15
@@ -208,14 +202,20 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
         defs[f"Eyelid.Corner.Lat.{side}"] = (h, t, "Head", 'structural')
 
     for side, sx in (("L", 1), ("R", -1)):
-        xn = sx * eld_u_x
-        y_u = head_r * _sphere_surface_y(eld_u_x, eld_u_z)
+        y_u = head_r * _sphere_surface_y(eye_x, eld_u_z)
         z_u = hcz + head_r * eld_u_z
-        base_u = (head_r * xn, y_u, z_u)
-        y_l = head_r * _sphere_surface_y(eld_l_x, eld_l_z)
+        base_u = (head_r * sx * eye_x, y_u, z_u)
+
+        y_l = head_r * _sphere_surface_y(eye_x, eld_l_z)
         z_l = hcz + head_r * eld_l_z
-        xn_l = sx * eld_l_x
-        base_l = (head_r * xn_l, y_l, z_l)
+        base_l = (head_r * sx * eye_x, y_l, z_l)
+
+        # Structural bones for eyelids
+        h_u, t_u = proj(sx * eye_x, eld_u_z, tail_len=0.08)
+        defs[f"Eyelid.Upper.{side}"] = (h_u, t_u, "Head", 'structural')
+        h_l, t_l = proj(sx * eye_x, eld_l_z, tail_len=0.08)
+        defs[f"Eyelid.Lower.{side}"] = (h_l, t_l, "Head", 'structural')
+
         ch_u, ct_u = ctrl(base_u, offset=(0, -head_r * 0.02, head_r * 0.05), tail_offset=(0, -head_r * 0.02, head_r * 0.08))
         defs[f"Eyelid.Ctrl.Upper.{side}"] = (ch_u, ct_u, f"Eyelid.Upper.{side}", 'control')
         ch_l, ct_l = ctrl(base_l, offset=(0, -head_r * 0.02, -head_r * 0.05), tail_offset=(0, -head_r * 0.02, -head_r * 0.08))
@@ -333,24 +333,24 @@ def _add_v6_leaf_geometry(bm, dlayer, mesh_obj, parent_loc, direction, bname):
     leaf_vg = mesh_obj.vertex_groups.get("Leaves") or mesh_obj.vertex_groups.new(name="Leaves")
     bone_vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
 
-    # Randomize leaf orientation
     up = mathutils.Vector((0, 0, 1))
     quat = up.rotation_difference(direction)
 
-    # Create a simple diamond/leaf shape using a thin cube
     size = random.uniform(0.15, 0.3)
     loc = parent_loc + direction * 0.1
     matrix = mathutils.Matrix.Translation(loc) @ quat.to_matrix().to_4x4()
 
     ret = bmesh.ops.create_cube(bm, size=size, matrix=matrix)
     for v in ret['verts']:
-        # Flatten leaf
         local_pos = matrix.inverted() @ v.co
         v.co = matrix @ mathutils.Vector((local_pos.x * 1.5, local_pos.y * 0.1, local_pos.z * 1.5))
-
-        # Weighting
         v[dlayer][leaf_vg.index] = 1.0
-        v[dlayer][bone_vg.index] = 0.5 # Follow bone motion partially
+        v[dlayer][bone_vg.index] = 0.5
+
+def _assign_v6_vertex_groups(mesh_obj, bm, dlayer):
+    """Assigns vertices to vertex groups for bone deformation."""
+    # This is handled during geometry creation in _create_v6_body_mesh
+    pass
 
 def _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
@@ -389,13 +389,11 @@ def _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
         tail = bone.tail_local
         length = (tail - head).length
         mid = (head + tail) / 2.0
-
         direction = (tail - head).normalized()
         rot_quat = mathutils.Vector((0, 0, 1)).rotation_difference(direction)
 
         _add_v6_organic_part(bm, dlayer, mesh_obj, rad1, rad2, length, mid, bname, mid_scale=mscale, rot_quat=rot_quat)
 
-        # Add leaves to Torso and Arms
         if bname in ["Torso", "Arm.L", "Arm.R"]:
             for _ in range(5):
                 offset = mathutils.Vector((random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(-1, 1))).normalized() * rad1
@@ -415,23 +413,20 @@ def _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
 def _setup_v6_modifiers(mesh_obj, armature_obj):
     mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
 
-def _setup_v6_materials(mesh_obj, name):
-    bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
-    leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
-
+def _setup_v6_materials(mesh_obj, name, bark_color, leaf_color):
     bark_mat = create_bark_material_v6(f"Bark_{name}", color=bark_color)
     leaf_mat = create_leaf_material_v6(f"Leaf_{name}", color=leaf_color)
 
     mesh_obj.data.materials.append(bark_mat)
     mesh_obj.data.materials.append(leaf_mat)
 
-    # Assign leaf material to "Leaves" vertex group (material index 1)
     vg_leaves = mesh_obj.vertex_groups.get("Leaves")
     if vg_leaves:
+        bpy.context.view_layer.objects.active = mesh_obj
         for poly in mesh_obj.data.polygons:
-            # If any vertex in polygon is in Leaves group, assign leaf mat
             if any(vg_leaves.index in [g.group for g in mesh_obj.data.vertices[v_idx].groups] for v_idx in poly.vertices):
                 poly.material_index = 1
+    return bark_mat, leaf_mat
 
 def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     """
@@ -444,23 +439,21 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     head_r  = 0.4
     neck_h  = 0.2
 
-    # 1. Armature
+    # Scoped colors
+    bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
+    leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
+
     armature_obj = _create_v6_armature(name, location, torso_h, head_r, neck_h)
-
-    # 2. Mesh Construction
     mesh_obj = _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h)
-
-    # 3. Modifiers & Materials
     _setup_v6_modifiers(mesh_obj, armature_obj)
-    _setup_v6_materials(mesh_obj, name)
+    bark_mat_prod, _ = _setup_v6_materials(mesh_obj, name, bark_color, leaf_color)
 
-    # 4. Facial Props
     bones_map = {b.name: b.name for b in armature_obj.data.bones}
     iris_mat = create_iris_material_v6(f"Iris_{name}")
     sclera_mat = create_sclera_material_v6(f"Sclera_{name}")
-    bark_mat = create_bark_material_v6(f"FacialBark_{name}", color=bark_color)
+    bark_mat_facial = create_bark_material_v6(f"FacialBark_{name}", color=bark_color)
     lip_mat = create_lip_material_v6(f"LipMat_{name}")
-    create_facial_props_v6(name, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
+    create_facial_props_v6(name, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat_facial, lip_mat)
 
     return armature_obj
 
@@ -476,7 +469,7 @@ def setup_production_lighting(subjects):
             bpy.ops.object.light_add(type='SPOT', location=loc)
             rim = bpy.context.active_object
             rim.name = rim_name
-            rim.data.energy = 12000.0; rim.data.spot_size = math.radians(40)
+            rim.data.energy = config.ENERGY_RIM; rim.data.spot_size = config.SPOT_SIZE_RIM
             rim.data.color = (1.0, 0.9, 0.8)
             t = rim.constraints.new(type='TRACK_TO')
             t.target = armature if armature else obj
@@ -498,7 +491,7 @@ def setup_production_lighting(subjects):
             bpy.ops.object.light_add(type='SPOT', location=loc)
             key = bpy.context.active_object
             key.name = key_name
-            key.data.energy = 10000.0; key.data.spot_size = math.radians(45)
+            key.data.energy = config.ENERGY_HEAD_KEY; key.data.spot_size = config.SPOT_SIZE_HEAD_KEY
             key.data.color = (0.95, 1.0, 1.0)
             t = key.constraints.new(type='TRACK_TO')
             t.target = mid
@@ -510,7 +503,7 @@ def setup_production_lighting(subjects):
             bpy.ops.object.light_add(type='SPOT', location=loc)
             leg = bpy.context.active_object
             leg.name = leg_name
-            leg.data.energy = 5000.0; leg.data.spot_size = math.radians(50)
+            leg.data.energy = config.ENERGY_LEG_KEY; leg.data.spot_size = config.SPOT_SIZE_LEG_KEY
             leg.data.color = (1.0, 1.0, 0.95)
             t = leg.constraints.new(type='TRACK_TO')
             t.target = armature if armature else obj

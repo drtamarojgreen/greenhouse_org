@@ -39,7 +39,7 @@ PROTAGONIST_SOURCE = {
     CHAR_ARBOR:      {"mesh": "Arbor_V5_Body",      "rig": "Arbor_V5_Rig"},
 }
 
-# 4. TARGET HEIGHTS (Recommendation B)
+# 4. TARGET HEIGHTS (Production Standard)
 CHAR_HERBACEOUS_HEIGHT = 2.4
 CHAR_ARBOR_HEIGHT      = 2.6
 MAJESTIC_HEIGHT        = 6.0
@@ -63,31 +63,31 @@ TARGET_HEIGHTS = {
     "Root_Guardian":    GUARDIAN_HEIGHT
 }
 
-# 5. SPATIAL CONSTANTS (Recommendation B)
+# 5. SPATIAL CONSTANTS
 CHAR_HERBACEOUS_POS = (-1.75, -0.3, 0.0)
 CHAR_ARBOR_POS      = ( 1.75,  0.3, 0.0)
 
 HERB_EYE_LEVEL   = (-1.75, -0.3, 2.5)
 ARBOR_EYE_LEVEL  = ( 1.75,  0.3, 2.5)
 
-# 6. CAMERA CONFIG (Recommendation B)
+# 6. CAMERA CONFIG
 CAMERA_WIDE_LOC = (0.0, -8.0, 2.0)
 CAMERA_OTS1_LOC = (13.5, 11.0, 6.0)
 CAMERA_OTS2_LOC = (-13.5, -11.0, 6.0)
 
-# 7. BACKDROP CONFIG (Recommendation B)
+# 7. BACKDROP CONFIG
 BACKDROP_WIDE_LOC = (0, 50, 5)
 BACKDROP_OTS1_LOC = (-50, -20, 5)
 BACKDROP_OTS2_LOC = (50, 20, 5)
 BACKDROP_SIZE_WIDE = 200
 BACKDROP_SIZE_OTS  = 1000
 
-# 8. PLANT HUMANOID DIMENSIONS (Recommendation B)
+# 8. PLANT HUMANOID DIMENSIONS
 TORSO_H_BASE = 1.5
 HEAD_R_BASE  = 0.4
 NECK_H_BASE  = 0.2
 
-# Facial Bone Projection
+# Facial Bone Projection (Eye, Nose, Lip constants)
 EYE_PROJ_X = 0.35
 EYE_PROJ_Z = 0.35
 ELD_U_Z = 0.40
@@ -96,7 +96,7 @@ NOSE_Z  = 0.05
 LIP_U_Z = -0.18
 LIP_L_Z = -0.24
 
-# 9. LIGHTING CONFIG (Recommendation B)
+# 9. LIGHTING CONFIG
 ENERGY_RIM = 12000.0
 ENERGY_HEAD_KEY = 10000.0
 ENERGY_LEG_KEY = 5000.0
@@ -105,7 +105,7 @@ SPOT_SIZE_RIM = math.radians(40)
 SPOT_SIZE_HEAD_KEY = math.radians(45)
 SPOT_SIZE_LEG_KEY = math.radians(50)
 
-# 10. RENDER CONFIG (Recommendation B)
+# 10. RENDER CONFIG
 RENDER_OUTPUT_PATH = "/tmp/scene6_render"
 DEFAULT_FRAME_START = 1
 DEFAULT_FRAME_END = 250
