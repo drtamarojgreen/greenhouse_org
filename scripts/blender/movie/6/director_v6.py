@@ -22,14 +22,14 @@ class SylvanDirector:
             self.scene.collection.children.link(coll)
 
         # 1. WIDE master (v5 standard)
-        self._create_camera("WIDE", (0.0, -8.0, 2.0), (math.radians(90), 0, 0), coll, lens=35)
+        self._create_camera("WIDE", config.WIDE_CAM_POS, (math.radians(90), 0, 0), coll, lens=35)
 
-        # 2. OTS rigs (v5 targets: Herbaceous eye level at (-1.75, -0.3, 2.5), Arbor at (1.75, 0.3, 2.5))
+        # 2. OTS rigs
         ots_targets = {
-            "OTS1":         {"pos": ( 13.5,  11.0, 6.0), "target": (-1.75, -0.3, 2.5)},
-            "OTS2":         {"pos": (-13.5, -11.0, 6.0), "target": ( 1.75,  0.3, 2.5)},
-            "OTS_Static_1": {"pos": ( 13.5,  11.0, 6.0), "target": (-1.75, -0.3, 2.5)},
-            "OTS_Static_2": {"pos": (-13.5, -11.0, 6.0), "target": ( 1.75,  0.3, 2.5)},
+            "OTS1":         {"pos": config.OTS1_CAM_POS, "target": config.HERB_EYE_LEVEL},
+            "OTS2":         {"pos": config.OTS2_CAM_POS, "target": config.ARBOR_EYE_LEVEL},
+            "OTS_Static_1": {"pos": config.OTS1_CAM_POS, "target": config.HERB_EYE_LEVEL},
+            "OTS_Static_2": {"pos": config.OTS2_CAM_POS, "target": config.ARBOR_EYE_LEVEL},
         }
 
         for name, data in ots_targets.items():
@@ -39,6 +39,10 @@ class SylvanDirector:
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
                 cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
         
+        # 3. Setup Animation Rig
+        import camera_rig_v6
+        camera_rig_v6.setup_camera_rig_v6()
+
         # Set Active Camera
         if "WIDE" in bpy.data.objects:
             self.scene.camera = bpy.data.objects["WIDE"]
