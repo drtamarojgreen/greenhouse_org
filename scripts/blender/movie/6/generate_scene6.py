@@ -1,213 +1,67 @@
 import bpy
+import math
+import mathutils
 import os
+import sys
 import time
 import config
 
+# Setup paths to access v5 assets and shared utilities
+V6_DIR = os.path.dirname(os.path.abspath(__file__))
+V5_DIR = os.path.join(os.path.dirname(V6_DIR), "5")
+MOVIE_ROOT = os.path.dirname(V6_DIR) # scripts/blender/movie
+BLENDER_ROOT = os.path.dirname(MOVIE_ROOT) # scripts/blender
+
+for p in [V5_DIR, MOVIE_ROOT, BLENDER_ROOT]:
+    if p not in sys.path:
+        sys.path.append(p)
+
+from assets_v5.plant_humanoid_v5 import create_plant_humanoid_v5, setup_production_lighting
 from asset_manager_v6 import SylvanEnsembleManager
 from director_v6 import SylvanDirector
 from dialogue_scene_v6 import DialogueSceneV6
 from chroma_green_setup import setup_chroma_green_backdrop
 
 
-# ---------------------------------------------------------------------------
-# HEIGHT NORMALIZATION HELPERS  (defined here so they are importable and
-# so standardize_ensemble_heights() can call force_majestic_height() without
-# a circular import)
-# ---------------------------------------------------------------------------
-
-def force_majestic_height(rig, target_h):
-    """World-space height normalization for a single rig/mesh ensemble."""
-    from animation_library_v6 import get_bone
-    import mathutils
-    import statistics
-
-    # Find the Mesh child
-    mesh = next((o for o in bpy.data.objects if o.parent == rig or rig.name.replace(".Rig", ".Body") == o.name), None)
-
-    # Pre-reset scale if it is extreme to ensure stable height calculation
-    if rig.scale.x > 100 or rig.scale.x < 0.01:
-        rig.scale = (1, 1, 1)
-
-    bpy.context.view_layer.update()
-
-    if mesh and mesh.type == 'MESH':
-        # Use evaluated mesh with shard filtering for accurate height
-        dg = bpy.context.evaluated_depsgraph_get()
-        eval_obj = mesh.evaluated_get(dg)
-        eval_mesh = eval_obj.data
-
-        # 1. Collect all world Z coordinates
-        all_z = [(eval_obj.matrix_world @ v.co).z for v in eval_mesh.vertices]
-        if not all_z:
-            curr_h = 0
-        else:
-            # 2. Outlier Detection: Use median to find the "core" cluster
-            med_z = statistics.median(all_z)
-
-            # 3. Filter vertices by spatial proximity and weight
-            z_vals = []
-            for v in eval_mesh.vertices:
-                w_co_z = (eval_obj.matrix_world @ v.co).z
-                # Ignore vertices more than 10m from median (filters floating shards)
-                if abs(w_co_z - med_z) > 10.0:
-                    continue
-
-                if v.groups:
-                    total_w = sum(g.weight for g in v.groups)
-                    if total_w < 0.1:
-                        continue
-
-                z_vals.append(w_co_z)
-
-            if z_vals:
-                curr_h = max(z_vals) - min(z_vals)
-            else:
-                # Fallback to bound box
-                bbox = [mesh.matrix_world @ mathutils.Vector(c) for c in mesh.bound_box]
-                z_vals_bbox = [v.z for v in bbox]
-                curr_h = max(z_vals_bbox) - min(z_vals_bbox)
-    else:
-        # Fallback to bone-based height if no mesh found or if mesh is same as rig
-        head = get_bone(rig, "Head") or get_bone(rig, "Neck") or get_bone(rig, "top")
-        foot = (get_bone(rig, "Foot.L")
-                or get_bone(rig, "Foot.R")
-                or get_bone(rig, "LeftFoot")
-                or get_bone(rig, "Hips")
-                or get_bone(rig, "bottom"))
-
-        if head and foot:
-            h_pos  = (rig.matrix_world @ head.head).z
-            f_pos  = (rig.matrix_world @ foot.tail).z
-            curr_h = abs(h_pos - f_pos)
-        else:
-            curr_h = 0
-
-    if curr_h > 0.01:
-        factor = target_h / curr_h
-
-        # If factor is near 1.0, we're already normalized
-        if 0.98 < factor < 1.02:
-             return
-
-        # Normalize Rig Scale. In the Parent-Child hierarchy, the child Mesh
-        # inherits the Rig's scale. Scaling the Mesh directly leads to
-        # double-scaling distortion or drift if not handled at the origin.
-        rig.scale = tuple(s * factor for s in rig.scale)
-        rig["normalized_height"] = True
-
-        if mesh and mesh != rig:
-             print(f"ASSET_MANAGER: Normalized {rig.name} (factor {factor:.2f}, height {curr_h:.2f}m)")
-        else:
-             print(f"ASSET_MANAGER: Scaled Rig {rig.name} by {factor:.2f} (Current: {curr_h:.2f}m)")
-
-        bpy.context.view_layer.update()
-
-
-def standardize_ensemble_heights():
-    """Ensures Sylvan spirits meet the 'Double Majesty' scale requirements."""
-    print("ASSET_MANAGER: Normalizing Ensemble Heights...")
-    coll = bpy.data.collections.get("6a.ASSETS")
-    if not coll:
-        print("ASSET_MANAGER WARNING: No 6a.ASSETS collection found for normalization.")
-        return
-
-    for obj in coll.objects:
-        # Include characters with .Rig suffix OR characters that ARE armatures (Root_Guardian)
-        is_spirit_rig = ".Rig" in obj.name or (obj.type == 'ARMATURE' and "Body" in obj.name)
-        if not is_spirit_rig:
-            continue
-
-        # Prevent double-scaling if normalization was already applied
-        if obj.get("normalized_height"):
-             continue
-
-        target = config.MAJESTIC_HEIGHT
-        if "Sprite" in obj.name:
-            target = config.SPRITE_HEIGHT
-        if "Phoenix" in obj.name:
-            target = config.PHEONIX_HEIGHT
-        force_majestic_height(obj, target)
-
-        # Tag rig to prevent re-normalization in this pass
-        obj["normalized_height"] = True
-
-
-# ---------------------------------------------------------------------------
-# ENVIRONMENT
-# ---------------------------------------------------------------------------
-
-def setup_production_environment():
-    """Creates the wide chroma backdrop (fallback — normally done by chroma_green_setup)."""
-    existing = bpy.data.objects.get(config.BACKDROP_NAME)
-    if existing:
-        bpy.data.objects.remove(existing, do_unlink=True)
-
-    bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 20, 0))
-    obj = bpy.context.active_object
-    obj.name = config.BACKDROP_NAME
-    obj.rotation_euler = (1.5708, 0, 0)
-
-    mat = bpy.data.materials.new(name="Mat.Chroma")
-    mat.use_nodes = True
-    nodes = mat.node_tree.nodes
-    bsdf = next((n for n in nodes if n.type == 'BSDF_PRINCIPLED'), None)
-    if bsdf:
-        # Blender 5.0+ uses "Base Color"
-        color_input = bsdf.inputs.get("Base Color") or bsdf.inputs[0]
-        color_input.default_value = (0, 1, 0, 1)
-    obj.data.materials.append(mat)
-    return obj
-
-
-# ---------------------------------------------------------------------------
-# MASTER ASSEMBLY
-# ---------------------------------------------------------------------------
-
 def generate_full_scene_v6():
-    """Master production assembly for Scene 6."""
+    """Master production assembly for Scene 6, using reliable v5 core logic."""
     start_t = time.time()
     try:
-        # 0. Clean scene initialization — absolute first step
-        SylvanEnsembleManager().ensure_clean_slate()
+        # 0. THE SCORCHED-EARTH PURGE (from v5)
+        print("PURGE: Removing all persistent data blocks...")
+        for coll in list(bpy.data.collections):
+            for obj in list(coll.objects):
+                coll.objects.unlink(obj)
 
-        director = SylvanDirector()
+        for block in [bpy.data.objects, bpy.data.meshes, bpy.data.cameras,
+                      bpy.data.lights, bpy.data.materials, bpy.data.actions, bpy.data.worlds]:
+            for item in list(block):
+                try:
+                    block.remove(item, do_unlink=True)
+                except Exception as e:
+                    print(f"PURGE WARNING: Could not remove {item.name}: {e}")
+
+        # Confirm units are standard
+        bpy.context.scene.unit_settings.system = 'METRIC'
+        bpy.context.scene.unit_settings.scale_length = 1.0
 
         # 1. Base structure (chroma backdrop + world)
         backdrop = setup_chroma_green_backdrop()
-        print(f"ENV: Backdrop '{backdrop.name if backdrop else 'FAILED'}' restored from v5 logic.")
+        print(f"ENV: Backdrop '{backdrop.name if backdrop else 'FAILED'}' ready.")
 
-        # Pipeline Markers for Tests
-        env_coll = bpy.data.collections.get("6b.ENVIRONMENT")
-        if not env_coll:
-            env_coll = bpy.data.collections.new("6b.ENVIRONMENT")
-            bpy.context.scene.collection.children.link(env_coll)
+        # 2. Asset Generation (Humanoid V5)
+        # We use v5's procedural generation for protagonists
+        create_plant_humanoid_v5(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
+        create_plant_humanoid_v5(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
-        if backdrop and backdrop.name not in env_coll.objects:
-            try:
-                env_coll.objects.link(backdrop)
-                # Also link other backdrop parts if they exist
-                for name in ["ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2"]:
-                     bo = bpy.data.objects.get(name)
-                     if bo and bo.name not in env_coll.objects:
-                         env_coll.objects.link(bo)
-            except: pass
-
-        # 2. Ensemble & protagonists
+        # 3. Ensemble & Sylvan spirits
         asset_manager = SylvanEnsembleManager()
-        asset_manager.link_protagonists()
+        asset_manager.link_ensemble()
+        asset_manager.renormalize_objects()
+        # asset_manager.repair_materials() # Optional
 
-        # Try FBX import first (Phase B requirement), fall back to blend linking if not found
-        asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
-        use_fbx = any(f.endswith(".fbx") for f in os.listdir(asset_dir)) if os.path.exists(asset_dir) else False
-
-        characters = {}   # extend here when protagonist rigs are available
-        scene_logic = DialogueSceneV6(characters, [])
-        scene_logic.setup_scene(use_fbx=use_fbx)
-
-        # 3. Height normalization (apply scale BEFORE keyframing in compose_ensemble)
-        standardize_ensemble_heights()
-
-        # 4. Cinematic direction
+        # 4. Cinematic direction & Cameras
+        director = SylvanDirector()
         director.position_protagonists()
         director.compose_ensemble()
         director.setup_cinematics()

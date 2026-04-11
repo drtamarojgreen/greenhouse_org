@@ -373,6 +373,9 @@ class SylvanEnsembleManager:
 
     def force_majestic_height(self):
         """Scales rigs dynamically to reach the target height (e.g. 6 m)."""
+        # DISABLED as per user request
+        return
+
         from animation_library_v6 import get_bone
 
         for art_name in self.ensemble.values():

@@ -21,16 +21,23 @@ class SylvanDirector:
         if coll.name not in self.scene.collection.children:
             self.scene.collection.children.link(coll)
 
-        # 1. WIDE master (v5 standard) — name must match config.CAMERA_NAME ("WIDE")
-        wide_cam = self._create_camera("WIDE", (0, -18, 5.5), (math.radians(82), 0, 0), coll, lens=22)
-        self._setup_camera_curve(wide_cam, coll)
+        # --- COORDINATE CONSTANTS from v5 ---
+        HERB_EYE_LEVEL = (-1.75, -0.3, 2.5)
+        ARBOR_EYE_LEVEL = (1.75, 0.3, 2.5)
+        CAM_WIDE_LOC = (0.0, -8.0, 2.0)
+        CAM_WIDE_ROT = (math.radians(90), 0.0, 0.0)
+        CAM_HERB_OTS_START = (13.5, 11.0, 6.0)
+        CAM_ARBOR_OTS_START = (-13.5, -11.0, 6.0)
 
-        # 2. OTS rigs (v5 names preserved for naming-parity tests)
+        # 1. WIDE master (v5 standard)
+        self._create_camera("WIDE", CAM_WIDE_LOC, CAM_WIDE_ROT, coll, lens=35)
+
+        # 2. OTS rigs (v5 names and positions)
         ots_targets = {
-            "OTS1":         {"pos": ( 13.5,  11.0, 6.0), "target": (0, 0, 2.5)},
-            "OTS2":         {"pos": (-13.5, -11.0, 6.0), "target": (0, 0, 2.5)},
-            "OTS_Static_1": {"pos": ( 13.5,  11.0, 6.0), "target": (0, 0, 2.5)},
-            "OTS_Static_2": {"pos": (-13.5, -11.0, 6.0), "target": (0, 0, 2.5)},
+            "OTS1":         {"pos": CAM_HERB_OTS_START, "target": HERB_EYE_LEVEL},
+            "OTS2":         {"pos": CAM_ARBOR_OTS_START, "target": ARBOR_EYE_LEVEL},
+            "OTS_Static_1": {"pos": CAM_HERB_OTS_START, "target": HERB_EYE_LEVEL},
+            "OTS_Static_2": {"pos": CAM_ARBOR_OTS_START, "target": ARBOR_EYE_LEVEL},
         }
 
         for name, data in ots_targets.items():

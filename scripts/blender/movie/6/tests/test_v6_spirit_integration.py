@@ -341,9 +341,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 is_hit = art_base in hit_obj.name or hit_obj.name in art_base
 
                 # If we hit a backdrop, check if it's behind
+                d_hit = (loc - origin).length
+                d_obj = (target_pt - origin).length
                 if not is_hit and "Backdrop" in hit_obj.name:
-                     d_hit = (loc - origin).length
-                     d_obj = (target_pt - origin).length
                      if d_hit > d_obj:
                           is_hit = True
 
