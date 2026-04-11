@@ -277,13 +277,13 @@ def _create_v6_armature(name, location, torso_h, head_r, neck_h):
         "Thigh.R": ((-0.25, 0, 0.1), (-0.25, 0, -0.4), "Hip.R"),
         "Knee.R":  ((-0.25, 0, -0.4), (-0.25, 0, -0.9), "Thigh.R"),
         "Hand.L":     ((0.4, 0, torso_h*0.9-0.8),  (0.4, 0, torso_h*0.9-0.95), "Elbow.L"),
-        "Hand.R":     ((-0.4, 0, torso_h*0.9-0.8),  ((-0.4, 0, torso_h*0.9-0.95)), "Elbow.R"),
+        "Hand.R":     ((-0.4, 0, torso_h*0.9-0.8),  (-0.4, 0, torso_h*0.9-0.95), "Elbow.R"),
         "Foot.L":  ((0.25, 0, -0.9),     (0.25,-0.15,-0.95), "Knee.L"),
         "Foot.R":  ((-0.25, 0, -0.9),    (-0.25,-0.15,-0.95), "Knee.R"),
         "Ear.L": ((head_r*0.9, 0, torso_h+neck_h+head_r), (head_r*1.1, 0, torso_h+neck_h+head_r+0.1), "Head"),
         "Ear.R": ((-head_r*0.9, 0, torso_h+neck_h+head_r), (-head_r*1.1, 0, torso_h+neck_h+head_r+0.1), "Head"),
         "Eye.L": ((head_r*0.35, -head_r*0.84, torso_h+neck_h+head_r*1.35), (head_r*0.35, -head_r*0.92, torso_h+neck_h+head_r*1.35), "Head"),
-        "Eye.R": ((-head_r*0.35,-head_r*0.84, torso_h+neck_h+head_r*1.35), ((-head_r*0.35,-head_r*0.92, torso_h+neck_h+head_r*1.35)), "Head"),
+        "Eye.R": ((-head_r*0.35,-head_r*0.84, torso_h+neck_h+head_r*1.35), (-head_r*0.35,-head_r*0.92, torso_h+neck_h+head_r*1.35), "Head"),
         "Nose": ((0, -head_r*0.97, torso_h+neck_h+head_r*1.05), (0, -head_r*1.07, torso_h+neck_h+head_r*1.05), "Head"),
         "Lip.Upper": ((0, -head_r*0.96, torso_h+neck_h+head_r*0.82), (0, -head_r*1.06, torso_h+neck_h+head_r*0.82), "Head"),
         "Lip.Lower": ((0, -head_r*0.95, torso_h+neck_h+head_r*0.76), (0, -head_r*1.05, torso_h+neck_h+head_r*0.76), "Head"),
@@ -328,6 +328,30 @@ def _add_v6_organic_part(bm, dlayer, mesh_obj, rad1, rad2, height, loc, bname, m
         factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
         v.co = matrix @ mathutils.Vector((local_pos.x * factor, local_pos.y * factor, local_pos.z))
 
+def _add_v6_leaf_geometry(bm, dlayer, mesh_obj, parent_loc, direction, bname):
+    """Procedurally generates organic leaf shapes attached to the body."""
+    leaf_vg = mesh_obj.vertex_groups.get("Leaves") or mesh_obj.vertex_groups.new(name="Leaves")
+    bone_vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
+
+    # Randomize leaf orientation
+    up = mathutils.Vector((0, 0, 1))
+    quat = up.rotation_difference(direction)
+
+    # Create a simple diamond/leaf shape using a thin cube
+    size = random.uniform(0.15, 0.3)
+    loc = parent_loc + direction * 0.1
+    matrix = mathutils.Matrix.Translation(loc) @ quat.to_matrix().to_4x4()
+
+    ret = bmesh.ops.create_cube(bm, size=size, matrix=matrix)
+    for v in ret['verts']:
+        # Flatten leaf
+        local_pos = matrix.inverted() @ v.co
+        v.co = matrix @ mathutils.Vector((local_pos.x * 1.5, local_pos.y * 0.1, local_pos.z * 1.5))
+
+        # Weighting
+        v[dlayer][leaf_vg.index] = 1.0
+        v[dlayer][bone_vg.index] = 0.5 # Follow bone motion partially
+
 def _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
     mesh_obj = bpy.data.objects.new(f"{name}_Body", mesh_data)
@@ -339,15 +363,19 @@ def _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
     parts = [
         (0.5, 0.25, 1.2, "Torso"),
         (0.12, 0.12, 1.0, "Neck"),
+        (0.15, 0.15, 1.0, "Shoulder.L"),
         (0.18, 0.14, 1.1, "Arm.L"),
         (0.14, 0.1, 1.1, "Elbow.L"),
         (0.1, 0.08, 1.1, "Hand.L"),
+        (0.15, 0.15, 1.0, "Shoulder.R"),
         (0.18, 0.14, 1.1, "Arm.R"),
         (0.14, 0.1, 1.1, "Elbow.R"),
         (0.1, 0.08, 1.1, "Hand.R"),
+        (0.2, 0.2, 1.0, "Hip.L"),
         (0.25, 0.2, 1.1, "Thigh.L"),
         (0.2, 0.15, 1.1, "Knee.L"),
         (0.15, 0.25, 1.1, "Foot.L"),
+        (0.2, 0.2, 1.0, "Hip.R"),
         (0.25, 0.2, 1.1, "Thigh.R"),
         (0.2, 0.15, 1.1, "Knee.R"),
         (0.15, 0.25, 1.1, "Foot.R"),
@@ -367,6 +395,12 @@ def _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
 
         _add_v6_organic_part(bm, dlayer, mesh_obj, rad1, rad2, length, mid, bname, mid_scale=mscale, rot_quat=rot_quat)
 
+        # Add leaves to Torso and Arms
+        if bname in ["Torso", "Arm.L", "Arm.R"]:
+            for _ in range(5):
+                offset = mathutils.Vector((random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(-1, 1))).normalized() * rad1
+                _add_v6_leaf_geometry(bm, dlayer, mesh_obj, mid + offset, offset.normalized(), bname)
+
     # Head sphere
     matrix_head = mathutils.Matrix.Translation((0, 0, torso_h+neck_h+head_r))
     sphere_geom = bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
@@ -384,8 +418,20 @@ def _setup_v6_modifiers(mesh_obj, armature_obj):
 def _setup_v6_materials(mesh_obj, name):
     bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
     leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
-    mesh_obj.data.materials.append(create_bark_material_v6(f"Bark_{name}", color=bark_color))
-    mesh_obj.data.materials.append(create_leaf_material_v6(f"Leaf_{name}", color=leaf_color))
+
+    bark_mat = create_bark_material_v6(f"Bark_{name}", color=bark_color)
+    leaf_mat = create_leaf_material_v6(f"Leaf_{name}", color=leaf_color)
+
+    mesh_obj.data.materials.append(bark_mat)
+    mesh_obj.data.materials.append(leaf_mat)
+
+    # Assign leaf material to "Leaves" vertex group (material index 1)
+    vg_leaves = mesh_obj.vertex_groups.get("Leaves")
+    if vg_leaves:
+        for poly in mesh_obj.data.polygons:
+            # If any vertex in polygon is in Leaves group, assign leaf mat
+            if any(vg_leaves.index in [g.group for g in mesh_obj.data.vertices[v_idx].groups] for v_idx in poly.vertices):
+                poly.material_index = 1
 
 def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     """
@@ -410,7 +456,6 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
 
     # 4. Facial Props
     bones_map = {b.name: b.name for b in armature_obj.data.bones}
-    bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
     iris_mat = create_iris_material_v6(f"Iris_{name}")
     sclera_mat = create_sclera_material_v6(f"Sclera_{name}")
     bark_mat = create_bark_material_v6(f"FacialBark_{name}", color=bark_color)
