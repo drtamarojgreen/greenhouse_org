@@ -63,9 +63,19 @@ SPIRIT_JOY_POS = (0.0, 10.0, 0.0)
 SPIRIT_LEAFY_SCALE = (1.0, 1.0, 1.0)
 SPIRIT_JOY_SCALE = (1.0, 1.0, 1.0)
 
-# 3. SPATIAL CONSTANTS
-CHAR_HERBACEOUS_POS = (-1.75, -5.0, 0.0)
-CHAR_ARBOR_POS = (1.75, -4.5, 0.0)
+# 3. SPATIAL CONSTANTS (Matched to v5 standards)
+CHAR_HERBACEOUS_POS = (-1.75, -0.3, 0.0)
+CHAR_ARBOR_POS = (1.75, 0.3, 0.0)
+
+# Eye levels for camera tracking
+HERB_EYE_LEVEL = (-1.75, -0.3, 2.5)
+ARBOR_EYE_LEVEL = (1.75, 0.3, 2.5)
+
+# Camera Locations
+CAM_WIDE_LOC = (0.0, -8.0, 2.0)
+CAM_OTS1_POS = (13.5, 11.0, 6.0)
+CAM_OTS2_POS = (-13.5, -11.0, 6.0)
+
 MAJESTIC_HEIGHT = 6.0 
 SPRITE_HEIGHT = 5.5
 PHEONIX_HEIGHT = 5.5

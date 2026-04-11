@@ -19,7 +19,6 @@ class DialogueSceneV6:
         
         # 1. Assets (The Sylvan Ensemble)
         self.asset_manager.link_ensemble()
-        self.asset_manager.renormalize_objects()
         self.asset_manager.repair_materials()
         
         # 2. Dialogue & Keyframing
@@ -45,5 +44,4 @@ class DialogueSceneV6:
     def _link_spirit_assets(self):
         """Regression wrapper for asset manager's linking sequence."""
         self.asset_manager.link_ensemble()
-        self.asset_manager.renormalize_objects()
         self.asset_manager.repair_materials()

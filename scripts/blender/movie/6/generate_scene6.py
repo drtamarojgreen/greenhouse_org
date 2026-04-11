@@ -1,92 +1,42 @@
 import bpy
 import os
+import sys
 import time
+
+# Ensure movie root and v6 are in path
+V6_DIR = os.path.dirname(os.path.abspath(__file__))
+MOVIE_ROOT = os.path.dirname(V6_DIR)
+if MOVIE_ROOT not in sys.path: sys.path.append(MOVIE_ROOT)
+if V6_DIR not in sys.path: sys.path.append(V6_DIR)
+
 import config
 from director_v6 import SylvanDirector
-from dialogue_scene_v6 import DialogueSceneV6
+from asset_manager_v6 import SylvanEnsembleManager
+from chroma_green_setup import setup_chroma_green_backdrop
 
 def generate_full_scene_v6():
-    """Master production assembly for Scene 6."""
+    """Direct assembly sequence for Scene 6."""
     start_t = time.time()
-    try:
-        # 0. Clean Scene Initialization (Absolute First Step)
-        from asset_manager_v6 import SylvanEnsembleManager
-        SylvanEnsembleManager().ensure_clean_slate()
-        
-        director = SylvanDirector()
-        
-        # 1. Base Structure (Chroma & Floor)
-        from chroma_green_setup import setup_chroma_green_backdrop
-        backdrop = setup_chroma_green_backdrop()
-        print(f"ENV: Backdrop {backdrop.name if backdrop else 'FAILED'} restored from v5 logic.")
-        
-        # 2. Ensemble & Protagonists
-        # characters = {
-        #     config.CHAR_HERBACEOUS: {"rig_name": config.CHAR_HERBACEOUS + ".Rig"},
-        #     config.CHAR_ARBOR: {"rig_name": config.CHAR_ARBOR + ".Rig"}
-        # }
-        characters = {} 
-        scene_logic = DialogueSceneV6(characters, [])
-        scene_logic.setup_scene()
-        
-        # 3. Cinematic Direction
-        director.position_protagonists()
-        director.compose_ensemble()
-        director.setup_cinematics()
-        
-        # 4. Final Height Normalization (DISABLED per user request)
-        # standardize_ensemble_heights()
-        
-        print(f"SUCCESS: Scene 6 Production assembled in {time.time() - start_t:.2f}s")
-        
-    except Exception as e:
-        print(f"CRITICAL: Assembly failed: {str(e)}")
-        import traceback
-        traceback.print_exc()
-
-def setup_production_environment():
-    """Creates the wide chroma backdrop."""
-    if config.BACKDROP_NAME in bpy.data.objects:
-        bpy.data.objects.remove(bpy.data.objects[config.BACKDROP_NAME], do_unlink=True)
     
-    bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 20, 0))
-    obj = bpy.context.active_object
-    obj.name = config.BACKDROP_NAME
-    obj.rotation_euler = (1.5708, 0, 0)
+    # 1. Clean Slate
+    manager = SylvanEnsembleManager()
+    manager.ensure_clean_slate()
     
-    mat = bpy.data.materials.new(name="Mat.Chroma")
-    mat.use_nodes = True
-    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 1, 0, 1)
-    obj.data.materials.append(mat)
+    # 2. Setup Backdrop
+    setup_chroma_green_backdrop()
 
-def standardize_ensemble_heights():
-    """Ensures Sylvan spirits meet the 'Double Majesty' scale requirements."""
-    from director_v6 import SylvanDirector
-    from asset_manager_v6 import SylvanEnsembleManager
-    # Basic world height verification loop
-    for obj in bpy.data.objects:
-        if ".Rig" in obj.name:
-            target = config.MAJESTIC_HEIGHT
-            if "Sprite" in obj.name: target = config.SPRITE_HEIGHT
-            if "Phoenix" in obj.name: target = config.PHEONIX_HEIGHT
-            
-            from generate_scene6 import force_majestic_height
-            force_majestic_height(obj, target)
+    # 3. Link Spirits
+    manager.link_ensemble()
+    manager.repair_materials()
 
-def force_majestic_height(rig, target_h):
-    """World-space bone-based height normalization."""
-    # Note: Imported from legacy for backward compatibility during refactor
-    from animation_library_v6 import get_bone
-    head = get_bone(rig, "Head") or get_bone(rig, "Neck")
-    foot = get_bone(rig, "Foot.L") or get_bone(rig, "Foot.R") or get_bone(rig, "LeftFoot")
+    # 4. Cinematic Setup
+    director = SylvanDirector()
+    director.position_protagonists()
+    director.compose_ensemble()
+    director.setup_cinematics()
     
-    if head and foot:
-        bpy.context.view_layer.update()
-        h_pos = rig.matrix_world @ head.head
-        f_pos = rig.matrix_world @ foot.tail
-        curr_h = abs(h_pos.z - f_pos.z)
-        if curr_h > 0.01:
-            rig.scale *= (target_h / curr_h)
+    bpy.context.view_layer.update()
+    print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")
 
 if __name__ == "__main__":
     generate_full_scene_v6()

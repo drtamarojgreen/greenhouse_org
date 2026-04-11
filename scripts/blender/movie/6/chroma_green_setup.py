@@ -16,13 +16,16 @@ except (ImportError, ValueError):
 def setup_chroma_green_backdrop():
     """
     Creates a green screen backdrop and sets the World background to chroma green.
+    Restored to v5 structure with Blender 5.0 fixes.
     """
-    if not bpy: return
+    if not bpy: return None
+
+    color = getattr(config, "CHROMA_GREEN_RGB", (0, 1, 0))
     
     # 1. Backdrop Object
-    color = config.CHROMA_GREEN_RGB
     if "ChromaBackdrop_Wide" not in bpy.data.objects:
         import mathutils
+        import math
         planes = []
         
         # 1. Wide Angle Backdrop (Y=50)
@@ -30,25 +33,25 @@ def setup_chroma_green_backdrop():
         bw = bpy.context.active_object
         bw.name = "ChromaBackdrop_Wide"
         cam_wide_loc = mathutils.Vector((0.0, -8.0, 2.0))
-        vec_wide = cam_wide_loc - mathutils.Vector((0, 50, 5))
+        vec_wide = cam_wide_loc - bw.location
         bw.rotation_euler = vec_wide.to_track_quat('Z', 'Y').to_euler()
         planes.append(bw)
         
-        # 2. OTS1 Backdrop (Behind Herbaceous: X=-50, Y=-20)
+        # 2. OTS1 Backdrop (Behind Herbaceous)
         bpy.ops.mesh.primitive_plane_add(size=1000, location=(-50, -20, 5))
         bo1 = bpy.context.active_object
         bo1.name = "ChromaBackdrop_OTS1"
         cam_ots1_loc = mathutils.Vector((4.0, 3.0, 2.8))
-        vec_o1 = cam_ots1_loc - mathutils.Vector((-50, -20, 5))
+        vec_o1 = cam_ots1_loc - bo1.location
         bo1.rotation_euler = vec_o1.to_track_quat('Z', 'Y').to_euler()
         planes.append(bo1)
         
-        # 3. OTS2 Backdrop (Behind Arbor: X=50, Y=20)
+        # 3. OTS2 Backdrop (Behind Arbor)
         bpy.ops.mesh.primitive_plane_add(size=1000, location=(50, 20, 5))
         bo2 = bpy.context.active_object
         bo2.name = "ChromaBackdrop_OTS2"
         cam_ots2_loc = mathutils.Vector((-4.0, -3.0, 2.8))
-        vec_o2 = cam_ots2_loc - mathutils.Vector((50, 20, 5))
+        vec_o2 = cam_ots2_loc - bo2.location
         bo2.rotation_euler = vec_o2.to_track_quat('Z', 'Y').to_euler()
         planes.append(bo2)
 
@@ -61,6 +64,7 @@ def setup_chroma_green_backdrop():
         
         import json
         import os
+        # Look for config.json in the same directory as this script
         config_path = os.path.join(os.path.dirname(__file__), "config.json")
         try:
             with open(config_path, "r") as f:
@@ -75,23 +79,29 @@ def setup_chroma_green_backdrop():
             nodes.clear()
             
             emit = nodes.new(type='ShaderNodeEmission')
-            emit.inputs[1].default_value = 1.0
+            # Safe socket access for Blender 5.0+
+            strength_socket = emit.inputs.get("Strength") or emit.inputs[1]
+            color_socket = emit.inputs.get("Color") or emit.inputs[0]
+            strength_socket.default_value = 1.0
             
-            if bg_images and len(bg_images) > 0:
-                img_path = bg_images[i % len(bg_images)]
+            if bg_images and len(bg_images) > i:
+                img_path = bg_images[i]
                 if os.path.exists(img_path):
                     tex_img = nodes.new(type='ShaderNodeTexImage')
-                    loaded_img = bpy.data.images.load(filepath=img_path)
-                    tex_img.image = loaded_img
-                    
-                    tex_coord = nodes.new(type='ShaderNodeTexCoord')
-                    mat.node_tree.links.new(tex_coord.outputs['Window'], tex_img.inputs['Vector'])
-                    
-                    mat.node_tree.links.new(tex_img.outputs['Color'], emit.inputs[0])
+                    try:
+                        loaded_img = bpy.data.images.load(filepath=img_path)
+                        tex_img.image = loaded_img
+
+                        tex_coord = nodes.new(type='ShaderNodeTexCoord')
+                        # Use Generated for robust background plane mapping
+                        mat.node_tree.links.new(tex_coord.outputs['Generated'], tex_img.inputs['Vector'])
+                        mat.node_tree.links.new(tex_img.outputs['Color'], color_socket)
+                    except:
+                        color_socket.default_value = (*color, 1.0)
                 else:
-                    emit.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
+                    color_socket.default_value = (*color, 1.0)
             else:
-                emit.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
+                color_socket.default_value = (*color, 1.0)
                 
             out = nodes.new(type='ShaderNodeOutputMaterial')
             mat.node_tree.links.new(emit.outputs[0], out.inputs[0])
@@ -109,8 +119,9 @@ def setup_chroma_green_backdrop():
     lp = w_nodes.new(type='ShaderNodeLightPath')
     mix = w_nodes.new(type='ShaderNodeMixShader')
     
-    bg_green = w_nodes.new(type='ShaderNodeBackground')
-    bg_green.inputs[0].default_value = (0.01, 0.01, 0.01, 1.0) # Now dark instead of green
+    bg_dark = w_nodes.new(type='ShaderNodeBackground')
+    # Use direct index as in v5
+    bg_dark.inputs[0].default_value = (0.01, 0.01, 0.01, 1.0) # Now dark instead of green
     
     bg_neutral = w_nodes.new(type='ShaderNodeBackground')
     bg_neutral.inputs[0].default_value = (0.05, 0.05, 0.05, 1.0) # Very dim neutral
@@ -119,23 +130,20 @@ def setup_chroma_green_backdrop():
     
     world.node_tree.links.new(lp.outputs['Is Camera Ray'], mix.inputs[0])
     world.node_tree.links.new(bg_neutral.outputs[0], mix.inputs[1])
-    world.node_tree.links.new(bg_green.outputs[0], mix.inputs[2])
+    world.node_tree.links.new(bg_dark.outputs[0], mix.inputs[2])
     world.node_tree.links.new(mix.outputs[0], w_out.inputs[0])
 
     print("Background setup complete.")
-    return planes[0] if planes else None
+    return bpy.data.objects.get("ChromaBackdrop_Wide")
 
 def apply_anti_spill_lighting(subject_obj, backdrop_obj, distance=5.0):
     """
     Separates subject lights from backdrop lighting to prevent green spill.
     """
-    # Basic rule: subjects should be far from backdrop to avoid bounce
-    # This also sets up light layers or light linking for finer control
     pass
 
 def validate_backdrop_coverage(camera_obj, backdrop_obj):
     """
     Verifies the backdrop fills the entire camera frame.
     """
-    # Frustum check logic
     return True
