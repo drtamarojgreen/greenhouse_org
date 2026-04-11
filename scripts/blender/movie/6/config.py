@@ -26,7 +26,6 @@ RIG_MAP_SRC = {
     "Emerald_Sentinel": "Armature",
     "Phoenix_Herald":   "skeleton",
     "Golden_Phoenix":   "skeleton.001",
-    # Root_Guardian is itself the skeleton object; it has no separate rig row.
 }
 
 # 2. PROTAGONISTS
@@ -34,47 +33,58 @@ CHAR_HERBACEOUS = "Herbaceous_V5"
 CHAR_ARBOR      = "Arbor_V5"
 
 # 3. PROTAGONIST ASSET MAPPING
-# These identify the source objects in the .blend file for the protagonists.
 PROTAGONIST_SOURCE = {
     CHAR_HERBACEOUS: {"mesh": "Herbaceous_V5_Body", "rig": "Herbaceous_V5_Rig"},
     CHAR_ARBOR:      {"mesh": "Arbor_V5_Body",      "rig": "Arbor_V5_Rig"},
 }
 
-# 4. LEGACY MESH / RIG ALIASES (used by tests — single canonical definition)
-# Protagonist Blend Source (v5 reference)
-PROTAGONIST_SOURCE_BLEND = os.path.join(EQUIPMENT_DIR, "MHD2_characters_v5.blend")
+# 4. TARGET HEIGHTS (Production Standard)
+CHAR_HERBACEOUS_HEIGHT = 2.4
+CHAR_ARBOR_HEIGHT      = 2.6
+MAJESTIC_HEIGHT        = 6.0
+SPRITE_HEIGHT          = 5.5
+PHOENIX_HEIGHT         = 5.5
+SENTINEL_HEIGHT        = 6.5
+AURA_HEIGHT            = 5.8
+WEAVER_HEIGHT          = 6.2
+GUARDIAN_HEIGHT        = 8.0
 
-# 3. LEGACY MESH / RIG ALIASES (used by tests — single canonical definition)
-CHAR_LEAFY_MESH    = "Sylvan_Majesty.Body"
-CHAR_JOY_MESH      = "Radiant_Aura.Body"
-CHAR_LEAFCHAR_MESH = "Verdant_Sprite.Body"
-CHAR_SCRIBE_MESH   = "Shadow_Weaver.Body"
-CHAR_SENTINEL_MESH = "Emerald_Sentinel.Body"
-
-CHAR_LEAFY_RIG    = "Sylvan_Majesty.Rig"
-CHAR_JOY_RIG      = "Radiant_Aura.Rig"
-CHAR_LEAFCHAR_RIG = "Verdant_Sprite.Rig"
-CHAR_SCRIBE_RIG   = "Shadow_Weaver.Rig"
-CHAR_SENTINEL_RIG = "Emerald_Sentinel.Rig"
-
-# 4. REQUIRED SPATIAL CONSTANTS FOR TESTS
-SPIRIT_LEAFY_POS   = (9.3,  8.4, 0.0)
-SPIRIT_JOY_POS     = (0.0, 10.0, 0.0)
-SPIRIT_LEAFY_SCALE = (1.0, 1.0, 1.0)
-SPIRIT_JOY_SCALE   = (1.0, 1.0, 1.0)
+TARGET_HEIGHTS = {
+    "Herbaceous_V5":    CHAR_HERBACEOUS_HEIGHT,
+    "Arbor_V5":         CHAR_ARBOR_HEIGHT,
+    "Sylvan_Majesty":   MAJESTIC_HEIGHT,
+    "Radiant_Aura":     AURA_HEIGHT,
+    "Verdant_Sprite":   SPRITE_HEIGHT,
+    "Shadow_Weaver":    WEAVER_HEIGHT,
+    "Emerald_Sentinel": SENTINEL_HEIGHT,
+    "Phoenix_Herald":   PHOENIX_HEIGHT,
+    "Golden_Phoenix":   PHOENIX_HEIGHT,
+    "Root_Guardian":    GUARDIAN_HEIGHT
+}
 
 # 5. SPATIAL CONSTANTS
 CHAR_HERBACEOUS_POS = (-1.75, -0.3, 0.0)
 CHAR_ARBOR_POS      = ( 1.75,  0.3, 0.0)
-MAJESTIC_HEIGHT = 6.0
-SPRITE_HEIGHT   = 5.5
-PHEONIX_HEIGHT  = 5.5
 
-# 6. TEXTURE STACK (for legacy material repair)
+HERB_EYE_LEVEL   = (-1.75, -0.3, 2.5)
+ARBOR_EYE_LEVEL  = ( 1.75,  0.3, 2.5)
+
+# 6. CAMERA CONFIG
+CAMERA_WIDE_LOC = (0.0, -8.0, 2.0)
+CAMERA_OTS1_LOC = (13.5, 11.0, 6.0)
+CAMERA_OTS2_LOC = (-13.5, -11.0, 6.0)
+
+# 7. BACKDROP CONFIG
+BACKDROP_WIDE_LOC = (0, 50, 5)
+BACKDROP_OTS1_LOC = (-50, -20, 5)
+BACKDROP_OTS2_LOC = (50, 20, 5)
+BACKDROP_SIZE_WIDE = 200
+BACKDROP_SIZE_OTS  = 1000
+
+# 8. TEXTURE STACK
 TEX_LEAFY = "Leafy_Tree_Spirit_1207153453_texture.png"
 TEX_JOY   = "Tree_Spirit_of_Joy_1207153014_texture.png"
 
-# 7. CINEMATICS & ENVIRONMENT
+# 9. CINEMATICS & ENVIRONMENT
 CAMERA_NAME  = "WIDE"
-BACKDROP_NAME = "ChromaBackdrop_Wide"
 CHROMA_GREEN_RGB = (0, 1, 0)

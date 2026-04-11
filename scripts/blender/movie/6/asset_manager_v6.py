@@ -1,6 +1,7 @@
 import bpy
 import os
 import sys
+import mathutils
 
 # Standardize path injection for movie/6 assets
 V6_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -73,6 +74,23 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
+    def normalize_character_scale(self, obj, target_height):
+        """Scales object to match target height in world space."""
+        if not obj or obj.type != 'MESH': return
+
+        # Ensure matrix is up to date
+        bpy.context.view_layer.update()
+
+        # Calculate current height from bounding box
+        bbox = [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
+        z_coords = [v.z for v in bbox]
+        current_height = max(z_coords) - min(z_coords)
+
+        if current_height > 0.001:
+            scale_factor = target_height / current_height
+            obj.scale *= scale_factor
+            bpy.context.view_layer.update()
+
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
         coll = bpy.data.collections.get(self.collection_name)
@@ -112,7 +130,9 @@ class SylvanEnsembleManager:
                     mesh.parent = rig
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+
+                    target_h = config.TARGET_HEIGHTS.get(art_name, 5.0)
+                    self.normalize_character_scale(mesh, target_h)
 
                 if mesh.type == 'MESH':
                     arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
