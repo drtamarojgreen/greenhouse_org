@@ -364,10 +364,10 @@ def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
 def _add_v6_organic_part(bm, mesh_obj, dlayer, rad1, rad2, height, loc, bname, mid_scale=1.1, rot=(0,0,0)):
     vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
     matrix = (mathutils.Matrix.Translation(loc) @ mathutils.Euler(rot).to_matrix().to_4x4())
-    ret = bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=rad1, radius2=rad2, depth=height, matrix=matrix)
+    ret = bmesh.ops.create_cone(bm, segments=24, cap_ends=True, radius1=rad1, radius2=rad2, depth=height, matrix=matrix)
     for v in ret['verts']:
         v[dlayer][vg.index] = 1.0
-        # Restoration of Organic Bulge math:
+        # Organic Bulge math:
         dist_from_center = (v.co - mathutils.Vector(loc)).length
         z_fact = 1.0 - abs(dist_from_center / (height / 2))
         factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
@@ -389,7 +389,7 @@ def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
 
     # Head
     matrix_head = mathutils.Matrix.Translation((0, 0, torso_h+neck_h+head_r))
-    ret_head = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=head_r, matrix=matrix_head)
+    ret_head = bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
     head_vg = mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")
     for v in ret_head['verts']:
         v[dlayer][head_vg.index] = 1.0

@@ -70,32 +70,8 @@ class SylvanEnsembleManager:
 
     def link_protagonists(self):
         """Creates procedural protagonists."""
-        create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS, height_scale=config.CHAR_HERBACEOUS_HEIGHT/1.5)
-        create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS, height_scale=config.CHAR_ARBOR_HEIGHT/1.5)
-
-    def normalize_character_scale(self, rig, target_height):
-        """Scales rig and children to match target_height (world Z)."""
-        if not rig: return
-
-        # Ensure rig has children (meshes)
-        meshes = [c for c in rig.children if c.type == 'MESH']
-        if not meshes: return
-
-        # Calculate current height (BBox max Z - min Z)
-        # Using the meshes to get the actual geometry height
-        import mathutils
-        min_z, max_z = float('inf'), float('-inf')
-        for m in meshes:
-            for corner in m.bound_box:
-                world_corner = m.matrix_world @ mathutils.Vector(corner)
-                min_z = min(min_z, world_corner.z)
-                max_z = max(max_z, world_corner.z)
-
-        current_height = max_z - min_z
-        if current_height > 0:
-            scale_factor = target_height / current_height
-            rig.scale *= scale_factor
-            bpy.context.view_layer.update()
+        create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
+        create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
@@ -138,15 +114,6 @@ class SylvanEnsembleManager:
                     mesh.rotation_euler = (0, 0, 0)
                     mesh.scale = (1, 1, 1)
 
-                # Apply height-aware normalization
-                target_h = 1.0
-                if art_name == config.CHAR_HERBACEOUS: target_h = config.CHAR_HERBACEOUS_HEIGHT
-                elif art_name == config.CHAR_ARBOR: target_h = config.CHAR_ARBOR_HEIGHT
-                elif "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
-                elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
-                elif "Phoenix" in art_name: target_h = config.PHEONIX_HEIGHT
-
-                self.normalize_character_scale(rig, target_h)
 
                 if mesh.type == 'MESH':
                     arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
