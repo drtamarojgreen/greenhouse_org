@@ -640,6 +640,69 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
                 self.assertTrue(has_offset_keys, f"DIAGNOSTIC: Camera {name} has no offset keyframes.")
 
+    def _report_backdrop_status(self, stage_name):
+        """Internal helper to log backdrop and volume status during assembly progression."""
+        print(f"\n--- STAGE: {stage_name} ---")
+        print(f"{'BACKDROP/VOLUME':<25} | {'EXISTS':<8} | {'FLAGS (V/R)':<12} | {'RAYCAST'}")
+        print("-" * 75)
+
+        cam = bpy.data.objects.get(config.CAMERA_NAME)
+        dg = bpy.context.evaluated_depsgraph_get()
+        origin = cam.matrix_world.to_translation() if cam else mathutils.Vector((0, -36, 11))
+
+        targets = [
+            "ChromaBackdrop_Wide", "ChromaBackdrop_OTS1", "ChromaBackdrop_OTS2",
+            "ChromaVolume_Wide", "ChromaVolume_OTS1", "ChromaVolume_OTS2"
+        ]
+
+        for name in targets:
+            obj = bpy.data.objects.get(name)
+            exists = "YES" if obj else "NO"
+            flags = "N/A"
+            rc_status = "N/A"
+
+            if obj:
+                flags = f"{not obj.hide_viewport}/{not obj.hide_render}"
+                # Aim raycast at object center
+                target_pt = obj.matrix_world.to_translation()
+                direction = (target_pt - origin).normalized()
+                hit, loc, norm, idx, hit_obj, mat = bpy.context.scene.ray_cast(dg, origin, direction)
+
+                if hit:
+                    rc_status = f"HIT: {hit_obj.name}"
+                else:
+                    rc_status = "MISS"
+
+            print(f"{name:<25} | {exists:<8} | {flags:<12} | {rc_status}")
+
+    def test_backdrop_visibility_progression(self):
+        """Tracks backdrop visibility through each stage of scene assembly."""
+        print("\nDIAGNOSTIC: Analyzing Backdrop Visibility Progression...")
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        from chroma_green_setup import setup_chroma_green_backdrop
+        from asset_manager_v6 import SylvanEnsembleManager
+
+        # Stage 1: Environment Only
+        setup_chroma_green_backdrop()
+        bpy.context.view_layer.update()
+        self._report_backdrop_status("Environment Setup Only")
+
+        # Stage 2: Protagonists Linked
+        am = SylvanEnsembleManager()
+        am.link_protagonists()
+        bpy.context.view_layer.update()
+        self._report_backdrop_status("After Protagonist Import")
+
+        # Stage 3: Spirits Linked & Positioned
+        am.link_ensemble()
+        am.renormalize_objects()
+        from director_v6 import SylvanDirector
+        director = SylvanDirector()
+        director.position_protagonists()
+        director.compose_ensemble()
+        bpy.context.view_layer.update()
+        self._report_backdrop_status("Full Assembly (Post-Director)")
+
     def test_diagnostic_occlusion_and_sync(self):
         """Deep dive into raycast occlusion and coordinate sync issues."""
         print("\nDIAGNOSTIC: Analyzing Occlusion and Sync...")
