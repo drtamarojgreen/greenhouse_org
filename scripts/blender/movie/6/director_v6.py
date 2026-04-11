@@ -106,7 +106,13 @@ class SylvanDirector:
                 0.0,
             )
 
+            # Correct orientation: Face the origin/protagonists
+            # Import offset fix: characters are faced to their right (90 deg Z)
+            # We subtract 90 deg (pi/2) to compensate, then add the angle to face center
+            rig.rotation_euler[2] = (math.pi + angle) - (math.pi / 2)
+
             rig.keyframe_insert(data_path="location", frame=1)
+            rig.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
             rig.location.z = 1.5
             rig.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
 

@@ -52,6 +52,10 @@ def generate_full_scene_v6():
     # Trigger character animations
     dv6.apply_scene_animations()
 
+    # Setup production lighting for all characters
+    all_subjects = [o for o in bpy.data.collections[config.COLL_ASSETS].objects if o.type == 'MESH']
+    plant_humanoid_v6.setup_production_lighting(all_subjects)
+
     bpy.context.view_layer.update()
     print(f"SUCCESS: Scene 6 assembled in {time.time() - start_t:.2f}s")
 
