@@ -252,7 +252,7 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
 
     return defs
 
-def _create_armature(name, location, torso_h, head_r, neck_h):
+def _create_v6_armature(name, location, torso_h, head_r, neck_h):
     armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
     armature_obj = bpy.data.objects.new(name, armature_data)
     bpy.context.scene.collection.objects.link(armature_obj)
@@ -313,7 +313,7 @@ def _create_armature(name, location, torso_h, head_r, neck_h):
     bpy.ops.object.mode_set(mode='OBJECT')
     return armature_obj
 
-def _add_organic_part_bmesh(bm, dlayer, mesh_obj, rad1, rad2, height, loc, bname, mid_scale=1.1, rot_quat=None):
+def _add_v6_organic_part(bm, dlayer, mesh_obj, rad1, rad2, height, loc, bname, mid_scale=1.1, rot_quat=None):
     vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
 
     matrix = mathutils.Matrix.Translation(loc)
@@ -328,7 +328,7 @@ def _add_organic_part_bmesh(bm, dlayer, mesh_obj, rad1, rad2, height, loc, bname
         factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
         v.co = matrix @ mathutils.Vector((local_pos.x * factor, local_pos.y * factor, local_pos.z))
 
-def _create_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
+def _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
     mesh_obj = bpy.data.objects.new(f"{name}_Body", mesh_data)
     bpy.context.scene.collection.objects.link(mesh_obj)
@@ -365,7 +365,7 @@ def _create_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
         direction = (tail - head).normalized()
         rot_quat = mathutils.Vector((0, 0, 1)).rotation_difference(direction)
 
-        _add_organic_part_bmesh(bm, dlayer, mesh_obj, rad1, rad2, length, mid, bname, mid_scale=mscale, rot_quat=rot_quat)
+        _add_v6_organic_part(bm, dlayer, mesh_obj, rad1, rad2, length, mid, bname, mid_scale=mscale, rot_quat=rot_quat)
 
     # Head sphere
     matrix_head = mathutils.Matrix.Translation((0, 0, torso_h+neck_h+head_r))
@@ -378,10 +378,10 @@ def _create_body_mesh(name, armature_obj, torso_h, head_r, neck_h):
     bm.free()
     return mesh_obj
 
-def _setup_modifiers(mesh_obj, armature_obj):
+def _setup_v6_modifiers(mesh_obj, armature_obj):
     mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
 
-def _setup_materials(mesh_obj, name):
+def _setup_v6_materials(mesh_obj, name):
     bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
     leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
     mesh_obj.data.materials.append(create_bark_material_v6(f"Bark_{name}", color=bark_color))
@@ -399,14 +399,14 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     neck_h  = 0.2
 
     # 1. Armature
-    armature_obj = _create_armature(name, location, torso_h, head_r, neck_h)
+    armature_obj = _create_v6_armature(name, location, torso_h, head_r, neck_h)
 
     # 2. Mesh Construction
-    mesh_obj = _create_body_mesh(name, armature_obj, torso_h, head_r, neck_h)
+    mesh_obj = _create_v6_body_mesh(name, armature_obj, torso_h, head_r, neck_h)
 
     # 3. Modifiers & Materials
-    _setup_modifiers(mesh_obj, armature_obj)
-    _setup_materials(mesh_obj, name)
+    _setup_v6_modifiers(mesh_obj, armature_obj)
+    _setup_v6_materials(mesh_obj, name)
 
     # 4. Facial Props
     bones_map = {b.name: b.name for b in armature_obj.data.bones}
