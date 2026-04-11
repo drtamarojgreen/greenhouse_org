@@ -23,7 +23,7 @@ class SylvanEnsembleManager:
     """Manages the linking, renaming, and integrity of the spirit ensemble."""
 
     def __init__(self):
-        self.collection_name = "6a.ASSETS"
+        self.collection_name = config.COLL_ASSETS
         self.ensemble  = config.SPIRIT_ENSEMBLE
         self.rig_map   = config.RIG_MAP_SRC
 
@@ -73,6 +73,27 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
+    def normalize_character_scale(self, rig, target_height):
+        """Calculates world-height from mesh data and scales rig to match target."""
+        if not rig: return
+        meshes = [c for c in rig.children if c.type == 'MESH']
+        if not meshes: return
+
+        import mathutils
+        min_z, max_z = float('inf'), float('-inf')
+        for m in meshes:
+            # Calculate world-space bounds manually to avoid view_layer.update()
+            mw = m.matrix_world
+            for corner in m.bound_box:
+                world_pt = mw @ mathutils.Vector(corner)
+                min_z = min(min_z, world_pt.z)
+                max_z = max(max_z, world_pt.z)
+
+        current_h = max_z - min_z
+        if current_h > 0.001:
+            scale_factor = target_height / current_h
+            rig.scale *= scale_factor
+
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
         coll = bpy.data.collections.get(self.collection_name)
@@ -112,8 +133,14 @@ class SylvanEnsembleManager:
                     mesh.parent = rig
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                    # Preserve scale or normalize as needed
 
+                if art_name not in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
+                    target_h = 1.0
+                    if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
+                    elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
+                    elif "Phoenix" in art_name: target_h = config.PHEONIX_HEIGHT
+                    self.normalize_character_scale(rig, target_h)
 
                 if mesh.type == 'MESH':
                     arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')

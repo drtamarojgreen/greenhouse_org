@@ -79,7 +79,7 @@ def setup_production_lighting(subjects):
 
         key_name = f"HeadKey_{obj.name}"
         if key_name not in bpy.data.objects:
-            mid_name = "Lighting_Midpoint"
+            mid_name = config.LIGHTING_MIDPOINT
             if mid_name not in bpy.data.objects:
                 mid = bpy.data.objects.new(mid_name, None)
                 mid.location = (0, 0, 2.2)

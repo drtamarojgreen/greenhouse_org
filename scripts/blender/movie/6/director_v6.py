@@ -16,8 +16,8 @@ class SylvanDirector:
 
     def setup_cinematics(self):
         """Builds the professional 3-camera cinematic rig matching v5 logic."""
-        coll = (bpy.data.collections.get("SETTINGS.CAMERAS")
-                or bpy.data.collections.new("SETTINGS.CAMERAS"))
+        coll = (bpy.data.collections.get(config.COLL_CAMERAS)
+                or bpy.data.collections.new(config.COLL_CAMERAS))
         if coll.name not in self.scene.collection.children:
             self.scene.collection.children.link(coll)
 
@@ -81,7 +81,7 @@ class SylvanDirector:
             rig.location = (math.sin(angle) * dist, 8.0 + math.cos(angle) * 3.0, 0.0)
             rig.scale = (1, 1, 1)
         """Algorithmically positions ensemble members in a cinematic fan."""
-        coll = bpy.data.collections.get("6a.ASSETS")
+        coll = bpy.data.collections.get(config.COLL_ASSETS)
         if not coll:
             return
 

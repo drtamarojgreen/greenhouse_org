@@ -38,12 +38,12 @@ def setup_scene6_cameras():
     cameras = {}
     scene = bpy.context.scene
 
-    herb_focus = bpy.data.objects.get("Focus_Herbaceous") or bpy.data.objects.new("Focus_Herbaceous", None)
-    herb_focus.location = HERB_EYE_LEVEL
+    herb_focus = bpy.data.objects.get(config.FOCUS_HERBACEOUS) or bpy.data.objects.new(config.FOCUS_HERBACEOUS, None)
+    herb_focus.location = config.CHAR_HERBACEOUS_EYE
     if herb_focus.name not in scene.collection.objects: scene.collection.objects.link(herb_focus)
 
-    arbor_focus = bpy.data.objects.get("Focus_Arbor") or bpy.data.objects.new("Focus_Arbor", None)
-    arbor_focus.location = ARBOR_EYE_LEVEL
+    arbor_focus = bpy.data.objects.get(config.FOCUS_ARBOR) or bpy.data.objects.new(config.FOCUS_ARBOR, None)
+    arbor_focus.location = config.CHAR_ARBOR_EYE
     if arbor_focus.name not in scene.collection.objects: scene.collection.objects.link(arbor_focus)
 
     cam_wide_data = bpy.data.cameras.new("WIDE")

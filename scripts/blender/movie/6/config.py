@@ -78,7 +78,16 @@ CAM_WIDE_POS = (0.0, -8.0, 2.0)
 CAM_OTS1_POS = (13.5, 11.0, 6.0)
 CAM_OTS2_POS = (-13.5, -11.0, 6.0)
 
-# 7. LIGHTING CONSTANTS
+# 7. COLLECTION NAMES
+COLL_ASSETS   = "6a.ASSETS"
+COLL_CAMERAS  = "SETTINGS.CAMERAS"
+
+# 8. HELPER NAMES
+FOCUS_HERBACEOUS = "Focus_Herbaceous"
+FOCUS_ARBOR      = "Focus_Arbor"
+LIGHTING_MIDPOINT = "Lighting_Midpoint"
+
+# 9. LIGHTING CONSTANTS
 LIGHT_RIM_ENERGY = 12000.0
 LIGHT_RIM_COLOR = (1.0, 0.9, 0.8)
 LIGHT_RIM_ANGLE = 40
@@ -91,7 +100,7 @@ LIGHT_LEG_ENERGY = 5000.0
 LIGHT_LEG_COLOR = (1.0, 1.0, 0.95)
 LIGHT_LEG_ANGLE = 50
 
-# 8. TEXTURE STACK (for legacy material repair)
+# 10. TEXTURE STACK (for legacy material repair)
 TEX_LEAFY = "Leafy_Tree_Spirit_1207153453_texture.png"
 TEX_JOY   = "Tree_Spirit_of_Joy_1207153014_texture.png"
 
