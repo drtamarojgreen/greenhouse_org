@@ -8,7 +8,7 @@ class SylvanEnsembleManager:
     """Manages the linking, renaming, and integrity of the 8-character spirit ensemble."""
 
     def __init__(self):
-        self.collection_name = "6a.ASSETS"
+        self.collection_name = "SET.SPIRITS.6a"
         self.ensemble  = config.SPIRIT_ENSEMBLE   # {src_mesh_name: art_name}
         self.rig_map   = config.RIG_MAP_SRC        # {art_name: src_armature_name}
 
@@ -83,7 +83,7 @@ class SylvanEnsembleManager:
             print(f"ASSET_MANAGER WARNING: These source objects were not found in blend: {missing}")
 
         # Link only the newly loaded objects into the asset collection
-        # This prevents environmental objects (cameras, backdrops) from being swept into 6a.ASSETS
+        # This prevents environmental objects (cameras, backdrops) from being swept into SET.SPIRITS.6a
         for obj in bpy.data.objects:
             if (obj.name in want or any(obj.name.startswith(w) for w in want)) and obj.name not in coll.objects:
                 try:
@@ -207,6 +207,7 @@ class SylvanEnsembleManager:
 
         if sanitized_count > 0:
             print(f"  > Sanitized {sanitized_count} rogue vertices.")
+            obj.data.update()
 
     def renormalize_objects(self):
         """
@@ -321,8 +322,11 @@ class SylvanEnsembleManager:
                         mesh.parent = None
                         mesh.matrix_world = mw
 
-                # Reset Rig transforms ONLY if not yet normalized to identity at origin.
+                # Reset transforms ONLY if not yet normalized to identity at origin.
                 if not rig.get("normalized_height"):
+                    if mesh and mesh != rig:
+                        mesh.location = (0, 0, 0)
+                        mesh.rotation_euler = (0, 0, 0)
                     rig.location = (0, 0, 0)
                     rig.rotation_euler = (0, 0, 0)
                     rig.scale = (1, 1, 1)

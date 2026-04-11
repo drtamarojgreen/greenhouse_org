@@ -105,9 +105,9 @@ class SylvanDirector:
 
     def compose_ensemble(self):
         """Algorithmically positions ensemble members in a cinematic fan."""
-        coll = bpy.data.collections.get("6a.ASSETS")
+        coll = bpy.data.collections.get("SET.SPIRITS.6a")
         if not coll:
-            print("DIRECTOR: No 6a.ASSETS collection found — skipping ensemble composition.")
+            print("DIRECTOR: No SET.SPIRITS.6a collection found — skipping ensemble composition.")
             return
 
         # Include characters with .Rig suffix OR characters that ARE armatures (Root_Guardian)

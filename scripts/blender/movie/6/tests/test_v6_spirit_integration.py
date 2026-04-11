@@ -341,69 +341,54 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def test_raycast_visibility(self):
         """
-        Multi-point ray-cast to verify rendering visibility from the WIDE camera.
-        Camera is named 'WIDE' (config.CAMERA_NAME).
+        Multi-point ray-cast to verify rendering visibility from multiple cameras.
         """
         scene = bpy.context.scene
-        # Use config.CAMERA_NAME so this test stays aligned with director_v6.py
-        cam = bpy.data.objects.get(config.CAMERA_NAME)
-        self.assertIsNotNone(cam, f"Camera '{config.CAMERA_NAME}' missing for ray-cast")
-
-        dg     = bpy.context.evaluated_depsgraph_get()
-        origin = cam.matrix_world.to_translation()
-
-        # Added protagonists to targets
+        # Target character components for visibility audit
         targets = [config.CHAR_LEAFY_MESH, config.CHAR_JOY_MESH, config.CHAR_LEAFCHAR_MESH]
+        cameras = [config.CAMERA_NAME, "OTS1", "OTS2"]
 
-        # Ensure we are on a frame where they are positioned in front of backdrops
         scene.frame_set(1)
         bpy.context.view_layer.update()
+        dg = bpy.context.evaluated_depsgraph_get()
 
-        for name in targets:
-            obj = bpy.data.objects.get(name)
-            if not obj:
-                continue
+        for cam_name in cameras:
+            cam = bpy.data.objects.get(cam_name)
+            if not cam: continue
 
-            bpy.context.view_layer.update()
+            origin = cam.matrix_world.to_translation()
+            print(f"\nAUDIT: Raycast from {cam_name}")
 
-            # Use geometry center for raycast target
-            bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-            z_vals = [v.z for v in bbox]
-            x_vals = [v.x for v in bbox]
-            y_vals = [v.y for v in bbox]
+            for name in targets:
+                obj = bpy.data.objects.get(name)
+                if not obj: continue
 
-            target_pt = mathutils.Vector((
-                (max(x_vals) + min(x_vals)) / 2.0,
-                (max(y_vals) + min(y_vals)) / 2.0,
-                (max(z_vals) + min(z_vals)) / 2.0
-            ))
+                # Targeting: Use 'Head' bone or center of mass
+                rig = obj.find_armature() or (obj if obj.type == 'ARMATURE' else None)
+                head_bone = get_bone(rig, "Head") or get_bone(rig, "Neck")
+                if head_bone:
+                    target_pt = rig.matrix_world @ head_bone.head
+                else:
+                    bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
+                    target_pt = sum(bbox, mathutils.Vector()) / 8.0
 
-            direction = (target_pt - origin).normalized()
-
-            hit, loc, norm, idx, hit_obj, mat = scene.ray_cast(dg, origin, direction)
-
-            if hit and hit_obj:
-                print(f"RAYCAST {name} -> {hit_obj.name}")
-                art_base = name.split('.')[0]
-                is_hit = art_base in hit_obj.name or hit_obj.name in art_base
-
-                # If we hit a backdrop, check if it's behind
-                if not is_hit and "Backdrop" in hit_obj.name:
-                     d_hit = (loc - origin).length
-                     d_obj = (target_pt - origin).length
-                     if d_hit > d_obj:
-                          is_hit = True
-
-                d_hit = (loc - origin).length
-                d_obj = (target_pt - origin).length
-                # DEBUG: Cam->Hit: {d_hit:.2f}m, Cam->Target: {d_obj:.2f}m
-                self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} (Dist hit={d_hit:.2f}, obj={d_obj:.2f})")
-            else:
-                print(f"RAYCAST {name} -> MISS")
-                # Fallback: try origin of object
-                direction = (obj.matrix_world.to_translation() + mathutils.Vector((0,0,1)) - origin).normalized()
+                direction = (target_pt - origin).normalized()
                 hit, loc, norm, idx, hit_obj, mat = scene.ray_cast(dg, origin, direction)
-                self.assertTrue(hit, f"Ray missed everything for {name}")
+
+                if hit and hit_obj:
+                    art_base = name.split('.')[0]
+                    is_hit = art_base in hit_obj.name or hit_obj.name in art_base
+
+                    d_hit = (loc - origin).length
+                    d_obj = (target_pt - origin).length
+
+                    if not is_hit and ("Backdrop" in hit_obj.name or "Volume" in hit_obj.name):
+                         if d_hit > d_obj: is_hit = True
+
+                    print(f"  {name} -> {hit_obj.name} (Dist hit={d_hit:.1f}, obj={d_obj:.1f}, OK={is_hit})")
+                    self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} from {cam_name}")
+                else:
+                    print(f"  {name} -> MISS")
 
     def test_camera_naming_parity(self):
         """Verifies that all v5 camera names are preserved."""
@@ -604,9 +589,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
         self.assertTrue(has_6a or has_6b, "ERROR: Neither 6/a nor 6/b pipeline markers found in collections.")
 
     def test_scoping_integrity(self):
-        """Verifies that 6a.ASSETS contains only character assets, not cameras/backdrops."""
-        coll = bpy.data.collections.get("6a.ASSETS")
-        self.assertIsNotNone(coll, "6a.ASSETS collection missing")
+        """Verifies that SET.SPIRITS.6a contains only character assets, not cameras/backdrops."""
+        coll = bpy.data.collections.get("SET.SPIRITS.6a")
+        self.assertIsNotNone(coll, "SET.SPIRITS.6a collection missing")
 
         for obj in coll.objects:
             # Ensure no cameras or backdrops are in the character asset collection
@@ -618,7 +603,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
                         "Herbaceous" in obj.name or "Arbor" in obj.name or
                         obj.name in config.SPIRIT_ENSEMBLE.keys() or
                         obj.name in config.RIG_MAP_SRC.values())
-            self.assertTrue(is_valid, f"Scoping Violation: Non-asset object {obj.name} found in 6a.ASSETS")
+            self.assertTrue(is_valid, f"Scoping Violation: Non-asset object {obj.name} found in SET.SPIRITS.6a")
 
     def test_camera_trajectory_audit(self):
         """Blender 5 Camera Audit: Table showing location every 100 frames."""

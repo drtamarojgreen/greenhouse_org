@@ -108,9 +108,9 @@ def force_majestic_height(rig, target_h):
 def standardize_ensemble_heights():
     """Ensures Sylvan spirits meet the 'Double Majesty' scale requirements."""
     print("ASSET_MANAGER: Normalizing Ensemble Heights...")
-    coll = bpy.data.collections.get("6a.ASSETS")
+    coll = bpy.data.collections.get("SET.SPIRITS.6a")
     if not coll:
-        print("ASSET_MANAGER WARNING: No 6a.ASSETS collection found for normalization.")
+        print("ASSET_MANAGER WARNING: No SET.SPIRITS.6a collection found for normalization.")
         return
 
     for obj in coll.objects:
@@ -179,9 +179,9 @@ def generate_full_scene_v6():
         print(f"ENV: Backdrop '{backdrop.name if backdrop else 'FAILED'}' restored from v5 logic.")
 
         # Pipeline Markers for Tests
-        env_coll = bpy.data.collections.get("6b.ENVIRONMENT")
+        env_coll = bpy.data.collections.get("ENV.CHROMA.6b")
         if not env_coll:
-            env_coll = bpy.data.collections.new("6b.ENVIRONMENT")
+            env_coll = bpy.data.collections.new("ENV.CHROMA.6b")
             bpy.context.scene.collection.children.link(env_coll)
 
         if backdrop and backdrop.name not in env_coll.objects:
