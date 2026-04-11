@@ -59,7 +59,7 @@ def create_lip_material_v6(name):
 
 def setup_production_lighting(subjects):
     """Adds 6-point lighting for full-body isolation."""
-    for i, obj in enumerate(subjects):
+    for obj in subjects:
         armature = obj.parent if obj.parent and obj.parent.type == 'ARMATURE' else None
         base_loc = obj.matrix_world.translation
 
@@ -69,33 +69,36 @@ def setup_production_lighting(subjects):
             bpy.ops.object.light_add(type='SPOT', location=loc)
             rim = bpy.context.active_object
             rim.name = rim_name
-            rim.data.energy = config.RIM_LIGHT_ENERGY; rim.data.spot_size = math.radians(40)
-            rim.data.color = config.RIM_LIGHT_COLOR
+            rim.data.energy = config.RIM_LIGHT_ENERGY
+            rim.data.spot_size = math.radians(40)
+            rim.data.color = config.RIM_LIGHT_COLOR[:3]
             t = rim.constraints.new(type='TRACK_TO')
             t.target = armature if armature else obj
             if armature: t.subtarget = "Head"
-            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
+            t.track_axis = 'TRACK_NEGATIVE_Z'
+            t.up_axis = 'UP_Y'
 
         key_name = f"HeadKey_{obj.name}"
         if key_name not in bpy.data.objects:
             mid_name = "Lighting_Midpoint"
-            if mid_name not in bpy.data.objects:
+            mid = bpy.data.objects.get(mid_name)
+            if not mid:
                 mid = bpy.data.objects.new(mid_name, None)
                 mid.location = (0, 0, 2.2)
                 bpy.context.scene.collection.objects.link(mid)
-            else:
-                mid = bpy.data.objects.get(mid_name)
 
             x_side = 3.5 if base_loc.x > 0 else -3.5
             loc = (base_loc.x + x_side, base_loc.y - 6.0, base_loc.z + 2.0)
             bpy.ops.object.light_add(type='SPOT', location=loc)
             key = bpy.context.active_object
             key.name = key_name
-            key.data.energy = config.KEY_LIGHT_ENERGY; key.data.spot_size = math.radians(45)
-            key.data.color = config.KEY_LIGHT_COLOR
+            key.data.energy = config.KEY_LIGHT_ENERGY
+            key.data.spot_size = math.radians(45)
+            key.data.color = config.KEY_LIGHT_COLOR[:3]
             t = key.constraints.new(type='TRACK_TO')
             t.target = mid
-            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
+            t.track_axis = 'TRACK_NEGATIVE_Z'
+            t.up_axis = 'UP_Y'
 
         leg_name = f"LegKey_{obj.name}"
         if leg_name not in bpy.data.objects:
@@ -103,12 +106,14 @@ def setup_production_lighting(subjects):
             bpy.ops.object.light_add(type='SPOT', location=loc)
             leg = bpy.context.active_object
             leg.name = leg_name
-            leg.data.energy = config.LEG_LIGHT_ENERGY; leg.data.spot_size = math.radians(50)
-            leg.data.color = config.LEG_LIGHT_COLOR
+            leg.data.energy = config.LEG_LIGHT_ENERGY
+            leg.data.spot_size = math.radians(50)
+            leg.data.color = config.LEG_LIGHT_COLOR[:3]
             t = leg.constraints.new(type='TRACK_TO')
             t.target = armature if armature else obj
             if armature: t.subtarget = "Torso"
-            t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
+            t.track_axis = 'TRACK_NEGATIVE_Z'
+            t.up_axis = 'UP_Y'
 
 def create_iris_material_v6(name, color=(0.36, 0.24, 0.62)):
     """Eye shader."""
@@ -345,13 +350,13 @@ def _build_armature_v6(name, torso_h, head_r, neck_h):
         "Lip.Lower": ((0, -head_r*0.95, torso_h+neck_h+head_r*0.76), (0, -head_r*1.05, torso_h+neck_h+head_r*0.76), "Head"),
     }
 
-    facial_defs = _build_facial_bone_defs(head_r, torso_h, neck_h)
     for bname, (h, t, p) in bones.items():
         bone = armature_data.edit_bones.new(bname)
         bone.head, bone.tail = h, t
         if bname == "Head": bone.roll = math.radians(180)
         if p: bone.parent = armature_data.edit_bones[p]
 
+    facial_defs = _build_facial_bone_defs(head_r, torso_h, neck_h)
     for bname, (h, t, parent_name, btype) in facial_defs.items():
         bone = armature_data.edit_bones.new(bname)
         bone.head, bone.tail = h, t

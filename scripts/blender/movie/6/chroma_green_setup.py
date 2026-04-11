@@ -7,6 +7,7 @@ import os
 import mathutils
 import math
 import json
+import config
 
 def setup_chroma_green_backdrop():
     """
@@ -16,11 +17,9 @@ def setup_chroma_green_backdrop():
     if not bpy: return None
 
     # 1. Resolve Config
-    # We try to find config.json in the same directory as this file
     config_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(config_dir, "config.json")
 
-    # Fallback to absolute production path if localized fails
     if not os.path.exists(config_path):
         config_path = "/home/tamarojgreen/development/LLM/greenhouse_org/scripts/blender/movie/6/config.json"
 
@@ -41,7 +40,6 @@ def setup_chroma_green_backdrop():
     bpy.ops.mesh.primitive_plane_add(size=config.BACKDROP_WIDE_SIZE, location=config.BACKDROP_WIDE_POS)
     bw = bpy.context.active_object
     bw.name = "ChromaBackdrop_Wide"
-    # Match v5 camera for tracking
     cam_wide_loc = mathutils.Vector(config.WIDE_CAM_POS)
     vec_wide = cam_wide_loc - mathutils.Vector(config.BACKDROP_WIDE_POS)
     bw.rotation_euler = vec_wide.to_track_quat('Z', 'Y').to_euler()
@@ -66,21 +64,16 @@ def setup_chroma_green_backdrop():
     planes.append(bo2)
 
     # 3. Materials
-    # Pure green color from v5
-    green_rgb = (0, 1, 0, 1)
+    green_rgb = config.CHROMA_GREEN_RGB
 
     for i, p in enumerate(planes):
-        # Clear existing materials
         p.data.materials.clear()
-
         mat = bpy.data.materials.new(name=f"BackdropMaterial_{i}")
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         nodes.clear()
 
-        # Emission shader is best for backdrops to avoid lighting artifacts
         emit = nodes.new(type='ShaderNodeEmission')
-        # Strength 5.0 for better visibility in renders
         emit.inputs[1].default_value = 5.0
 
         if bg_images and len(bg_images) > i:
@@ -90,24 +83,20 @@ def setup_chroma_green_backdrop():
                 try:
                     loaded_img = bpy.data.images.load(filepath=img_path)
                     tex_img.image = loaded_img
-
-                    # Window coordinates match v5's perfect display
                     tex_coord = nodes.new(type='ShaderNodeTexCoord')
                     mat.node_tree.links.new(tex_coord.outputs['Window'], tex_img.inputs['Vector'])
                     mat.node_tree.links.new(tex_img.outputs['Color'], emit.inputs[0])
                 except:
-                    emit.inputs[0].default_value = green_rgb
+                    emit.inputs[0].default_value = green_rgb[:4] if len(green_rgb) >= 4 else (*green_rgb[:3], 1.0)
             else:
-                emit.inputs[0].default_value = green_rgb
+                emit.inputs[0].default_value = green_rgb[:4] if len(green_rgb) >= 4 else (*green_rgb[:3], 1.0)
         else:
-            emit.inputs[0].default_value = green_rgb
+            emit.inputs[0].default_value = green_rgb[:4] if len(green_rgb) >= 4 else (*green_rgb[:3], 1.0)
 
         out = nodes.new(type='ShaderNodeOutputMaterial')
         mat.node_tree.links.new(emit.outputs[0], out.inputs[0])
         p.data.materials.append(mat)
-
-        # Set viewport color for easier debugging
-        mat.diffuse_color = green_rgb
+        mat.diffuse_color = green_rgb[:4] if len(green_rgb) >= 4 else (*green_rgb[:3], 1.0)
 
     # 4. World Setup
     if not bpy.context.scene.world:
@@ -120,16 +109,12 @@ def setup_chroma_green_backdrop():
 
     lp = w_nodes.new(type='ShaderNodeLightPath')
     mix = w_nodes.new(type='ShaderNodeMixShader')
-
     bg_dark = w_nodes.new(type='ShaderNodeBackground')
     bg_dark.inputs[0].default_value = (0.01, 0.01, 0.01, 1.0)
-
     bg_neutral = w_nodes.new(type='ShaderNodeBackground')
     bg_neutral.inputs[0].default_value = (0.05, 0.05, 0.05, 1.0)
-
     w_out = w_nodes.new(type='ShaderNodeOutputWorld')
 
-    # Is Camera Ray factor selects bg_dark for background, bg_neutral for lighting
     world.node_tree.links.new(lp.outputs['Is Camera Ray'], mix.inputs[0])
     world.node_tree.links.new(bg_neutral.outputs[0], mix.inputs[1])
     world.node_tree.links.new(bg_dark.outputs[0], mix.inputs[2])

@@ -21,10 +21,8 @@ class SylvanDirector:
         if coll.name not in self.scene.collection.children:
             self.scene.collection.children.link(coll)
 
-        # 1. WIDE master (v5 standard)
         self._create_camera("WIDE", config.WIDE_CAM_POS, (math.radians(90), 0, 0), coll, lens=35)
 
-        # 2. OTS rigs
         ots_targets = {
             "OTS1":         {"pos": config.OTS1_CAM_POS, "target": config.HERB_EYE_LEVEL},
             "OTS2":         {"pos": config.OTS2_CAM_POS, "target": config.ARBOR_EYE_LEVEL},
@@ -39,11 +37,9 @@ class SylvanDirector:
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
                 cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
         
-        # 3. Setup Animation Rig
         import camera_rig_v6
         camera_rig_v6.setup_camera_rig_v6()
 
-        # Set Active Camera
         if "WIDE" in bpy.data.objects:
             self.scene.camera = bpy.data.objects["WIDE"]
 
@@ -74,16 +70,6 @@ class SylvanDirector:
     # ------------------------------------------------------------------
 
     def compose_ensemble(self):
-        """Predictable fan placement for spirits."""
-        spirits = sorted([o for o in bpy.data.objects if ".Rig" in o.name], key=lambda o: o.name)
-        num = len(spirits)
-        if num == 0: return
-        
-        for i, rig in enumerate(spirits):
-            angle = (i / (num - 1 if num > 1 else 1)) * math.pi * 0.8 - math.pi * 0.4
-            dist = 10.0
-            rig.location = (math.sin(angle) * dist, 8.0 + math.cos(angle) * 3.0, 0.0)
-            rig.scale = (1, 1, 1)
         """Algorithmically positions ensemble members in a cinematic fan."""
         coll = bpy.data.collections.get("6a.ASSETS")
         if not coll:
@@ -99,6 +85,8 @@ class SylvanDirector:
             return
 
         for i, rig in enumerate(spirits):
+            rig.matrix_world = mathutils.Matrix.Identity(4)
+
             angle = (i / max(num - 1, 1)) * math.pi * 0.9 - math.pi * 0.45
             dist  = 9.0 + (i % 2) * 2.5
 
@@ -121,5 +109,9 @@ class SylvanDirector:
         herb = bpy.data.objects.get(config.CHAR_HERBACEOUS + ".Body") or bpy.data.objects.get(config.CHAR_HERBACEOUS)
         arbor = bpy.data.objects.get(config.CHAR_ARBOR + ".Body") or bpy.data.objects.get(config.CHAR_ARBOR)
         
-        if herb: herb.location = config.CHAR_HERBACEOUS_POS
-        if arbor: arbor.location = config.CHAR_ARBOR_POS
+        if herb:
+            herb.matrix_world = mathutils.Matrix.Identity(4)
+            herb.location = config.CHAR_HERBACEOUS_POS
+        if arbor:
+            arbor.matrix_world = mathutils.Matrix.Identity(4)
+            arbor.location = config.CHAR_ARBOR_POS

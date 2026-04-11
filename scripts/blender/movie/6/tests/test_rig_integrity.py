@@ -27,7 +27,6 @@ def test_rig_integrity():
 
         print(f"Checking {body.name} (Rig: {armature.name})...")
 
-        # Mandatory bones from PH_BONES or similar
         mandatory_bones = [
             "Torso", "Neck", "Head",
             "Arm.L", "Elbow.L", "Hand.L",

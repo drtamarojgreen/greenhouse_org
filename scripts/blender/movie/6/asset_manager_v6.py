@@ -61,7 +61,8 @@ class SylvanEnsembleManager:
              return
 
         with bpy.data.libraries.load(config.SPIRITS_ASSET_BLEND, link=False) as (data_from, data_to):
-            data_to.objects = [n for n in want if n in data_from.objects]
+            # Strict filtering: only link objects explicitly in 'want'
+            data_to.objects = [n for n in data_from.objects if n in want]
 
         for obj in data_to.objects:
             if obj and obj.name not in coll.objects:
@@ -73,27 +74,8 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
-    def normalize_character_scale(self, rig, mesh, artistic_name):
-        """Calculates and applies scale to reach target height from config."""
-        target_h = config.HEIGHT_TARGETS.get(artistic_name)
-        if not target_h:
-            return
-
-        # Update view layer to ensure world matrices are current
-        bpy.context.view_layer.update()
-
-        # Calculate current height (BBox max Z - min Z)
-        bbox = [mesh.matrix_world @ mathutils.Vector(v) for v in mesh.bound_box]
-        z_vals = [v.z for v in bbox]
-        current_h = max(z_vals) - min(z_vals) if z_vals else 0
-
-        if current_h > 0.01:
-            ratio = target_h / current_h
-            rig.scale *= ratio
-            bpy.context.view_layer.update()
-
     def renormalize_objects(self):
-        """Syncs spirit meshes to rigs."""
+        """Syncs spirit meshes to rigs while preserving baseline scaling."""
         import mathutils
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
@@ -132,14 +114,12 @@ class SylvanEnsembleManager:
                     mesh.parent = rig
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)
-                    mesh.scale = (1, 1, 1)
+                    # PRESERVE BASELINE SCALE: No (1,1,1) reset.
+                    mesh.matrix_parent_inverse = mathutils.Matrix.Identity(4)
 
                 if mesh.type == 'MESH':
                     arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
                     arm_mod.object = rig
-
-                # Apply canonical scaling
-                self.normalize_character_scale(rig, mesh, art_name)
 
     def repair_materials(self):
         """Ensures spirit materials are linked (minimal logic)."""

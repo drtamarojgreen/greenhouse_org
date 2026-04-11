@@ -3,7 +3,7 @@ import mathutils
 import config
 
 def create_camera_path(name, points):
-    """Creates a Bezier curve for camera movement."""
+    """Creates an organic Bezier curve for camera movement."""
     curve_data = bpy.data.curves.new(name=f"Path_{name}", type='CURVE')
     curve_data.dimensions = '3D'
     curve_data.fill_mode = 'FULL'
@@ -26,15 +26,15 @@ def setup_follow_path(cam_obj, path_obj, start_frame, end_frame):
     constraint.target = path_obj
     constraint.use_fixed_location = True
 
-    # Animate offset
+    # Animate offset factor for organic motion timing
     constraint.offset_factor = 0.0
     constraint.keyframe_insert(data_path="offset_factor", frame=start_frame)
     constraint.offset_factor = 1.0
     constraint.keyframe_insert(data_path="offset_factor", frame=end_frame)
 
 def setup_camera_rig_v6():
-    """Builds the animated camera rig for Scene 6."""
-    # 1. Wide Path
+    """Builds the animated organic camera rig for Scene 6."""
+    # 1. Wide Angle Sweep
     wide_points = [
         (0, -12, 3),
         (0, -8, 2),
@@ -45,7 +45,7 @@ def setup_camera_rig_v6():
     if cam_wide:
         setup_follow_path(cam_wide, path_wide, config.CAM_ANIM_START, config.CAM_ANIM_END)
 
-    # 2. OTS1 Path
+    # 2. OTS1 Organic Drift
     ots1_points = [
         (15, 12, 7),
         (13.5, 11, 6),
@@ -56,7 +56,7 @@ def setup_camera_rig_v6():
     if cam_ots1:
         setup_follow_path(cam_ots1, path_ots1, config.CAM_ANIM_START, config.CAM_ANIM_END)
 
-    # 3. OTS2 Path
+    # 3. OTS2 Organic Drift
     ots2_points = [
         (-15, -12, 7),
         (-13.5, -11, 6),

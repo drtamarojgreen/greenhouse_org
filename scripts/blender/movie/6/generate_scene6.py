@@ -87,6 +87,7 @@ def generate_full_scene_v6():
     if "WIDE" in cameras: bpy.context.scene.camera = cameras["WIDE"]
 
     dv6 = director_v6.SylvanDirector()
+    dv6.setup_cinematics()
     dv6.position_protagonists()
     dv6.compose_ensemble()
 
