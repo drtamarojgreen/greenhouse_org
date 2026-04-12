@@ -28,7 +28,7 @@ class TestRigIntegrity(unittest.TestCase):
 
         for bone in arm_obj.data.bones:
             # Skip control bones and structural facial bones that might not have weights
-            if "Ctrl" in bone.name or any(facial in bone.name for facial in ["Eye.", "Pupil.", "Eyelid.", "Nose.", "Lip.", "Chin", "Ear."]):
+            if "Ctrl" in bone.name or any(facial in bone.name for facial in ["Eye.", "Pupil.", "Nose.", "Lip.", "Chin", "Ear."]):
                 continue
 
             vg = mesh_obj.vertex_groups.get(bone.name)
