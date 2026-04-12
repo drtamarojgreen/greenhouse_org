@@ -22,6 +22,7 @@ import style_utilities as style
 
 # Absolute imports from top-level prioritized paths
 import config
+import animation_library_v6
 from facial_utilities_v6 import create_facial_props_v6
 
 def create_bark_material_v6(name, color=(0.15, 0.08, 0.05)):
@@ -255,7 +256,8 @@ def _build_facial_bone_defs(head_r, torso_h, neck_h):
 def setup_production_lighting(subjects):
     """Adds 6-point lighting for full-body isolation, now config-driven."""
     for i, obj in enumerate(subjects):
-        armature = obj.parent if obj.parent and obj.parent.type == 'ARMATURE' else None
+        # Reliable armature lookup
+        armature = obj.find_armature() if obj.type == 'MESH' else (obj if obj.type == 'ARMATURE' else None)
         base_loc = obj.matrix_world.translation
 
         rim_name = f"RimLight_{obj.name}"
@@ -269,7 +271,9 @@ def setup_production_lighting(subjects):
             rim.data.color = config.LIGHT_RIM_COLOR
             t = rim.constraints.new(type='TRACK_TO')
             t.target = armature if armature else obj
-            if armature: t.subtarget = "Head"
+            if armature:
+                head_bone = animation_library_v6.get_bone(armature, "Head")
+                if head_bone: t.subtarget = head_bone.name
             t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
 
         key_name = f"HeadKey_{obj.name}"
@@ -305,7 +309,9 @@ def setup_production_lighting(subjects):
             leg.data.color = config.LIGHT_LEG_COLOR
             t = leg.constraints.new(type='TRACK_TO')
             t.target = armature if armature else obj
-            if armature: t.subtarget = "Torso"
+            if armature:
+                torso_bone = animation_library_v6.get_bone(armature, "Torso")
+                if torso_bone: t.subtarget = torso_bone.name
             t.track_axis = 'TRACK_NEGATIVE_Z'; t.up_axis = 'UP_Y'
 
 def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):

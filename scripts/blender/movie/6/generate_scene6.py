@@ -53,7 +53,9 @@ def generate_full_scene_v6():
     dv6.apply_scene_animations()
 
     # Setup production lighting for all characters
-    all_subjects = [o for o in bpy.data.collections[config.COLL_ASSETS].objects if o.type == 'MESH']
+    # Filter to main bodies or rigs to avoid constraint spam on sub-props
+    all_subjects = [o for o in bpy.data.collections[config.COLL_ASSETS].objects
+                    if (o.type == 'MESH' and "Body" in o.name) or o.type == 'ARMATURE']
     plant_humanoid_v6.setup_production_lighting(all_subjects)
 
     bpy.context.view_layer.update()
