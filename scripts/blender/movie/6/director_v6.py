@@ -59,6 +59,9 @@ class SylvanDirector:
         obj.scale          = (1, 1, 1)
         obj.parent         = None
 
+        # Ensure full environment visibility (Point 142)
+        cam_data.clip_end = 2000.0
+
         if obj.name not in coll.objects:
             coll.objects.link(obj)
 

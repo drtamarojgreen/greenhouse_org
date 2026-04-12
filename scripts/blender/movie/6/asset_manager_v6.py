@@ -67,6 +67,10 @@ class SylvanEnsembleManager:
             if obj and obj.name not in coll.objects:
                 coll.objects.link(obj)
                 obj["source_name"] = obj.name
+                # Recursively link children (Point 142)
+                for child in obj.children_recursive:
+                    if child.name not in coll.objects:
+                        coll.objects.link(child)
 
     def link_protagonists(self):
         """Creates procedural protagonists."""
@@ -121,15 +125,14 @@ class SylvanEnsembleManager:
             if not rig: rig = mesh.find_armature()
 
             if mesh == rig:
-                mesh_copy = mesh.copy()
-                if mesh.data: mesh_copy.data = mesh.data.copy()
-                coll.objects.link(mesh_copy)
-                mesh = mesh_copy
+                # Root_Guardian case: the rig is also the body.
+                # We rename it once and ensure it's treated as a rig.
+                pass
 
-            mesh.name = t_mesh_name
+            if mesh: mesh.name = t_mesh_name
             if rig:
                 rig.name = t_rig_name
-                if mesh != rig:
+                if mesh and mesh != rig:
                     mesh.parent = rig
                     mesh.location = (0, 0, 0)
                     mesh.rotation_euler = (0, 0, 0)

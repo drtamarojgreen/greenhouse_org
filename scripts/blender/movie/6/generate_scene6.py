@@ -53,6 +53,9 @@ def generate_full_scene_v6():
     dv6.apply_scene_animations()
 
     # Setup production lighting for all characters
+    # Force dependency graph update so world-space locations are accurate for lighting (Point 142)
+    bpy.context.view_layer.update()
+
     # Filter to main bodies or rigs to avoid constraint spam on sub-props
     all_subjects = [o for o in bpy.data.collections[config.COLL_ASSETS].objects
                     if (o.type == 'MESH' and "Body" in o.name) or o.type == 'ARMATURE']
