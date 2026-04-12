@@ -85,6 +85,7 @@ class SylvanDirector:
             return
 
         for i, rig in enumerate(spirits):
+            # CLEAR WORLD MATRIX TO IDENTITY before placement to avoid transform accumulation
             rig.matrix_world = mathutils.Matrix.Identity(4)
 
             angle = (i / max(num - 1, 1)) * math.pi * 0.9 - math.pi * 0.45
@@ -106,8 +107,8 @@ class SylvanDirector:
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at v5-standard production coordinates."""
-        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS + ".Body") or bpy.data.objects.get(config.CHAR_HERBACEOUS)
-        arbor = bpy.data.objects.get(config.CHAR_ARBOR + ".Body") or bpy.data.objects.get(config.CHAR_ARBOR)
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Rig") or bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        arbor = bpy.data.objects.get(config.CHAR_ARBOR + "_Rig") or bpy.data.objects.get(config.CHAR_ARBOR)
         
         if herb:
             herb.matrix_world = mathutils.Matrix.Identity(4)

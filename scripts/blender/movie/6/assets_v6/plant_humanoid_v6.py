@@ -57,64 +57,6 @@ def create_lip_material_v6(name):
     bsdf.inputs['Roughness'].default_value = 0.4 # Slight sheen
     return mat
 
-def setup_production_lighting(subjects):
-    """Adds 6-point lighting for full-body isolation."""
-    for obj in subjects:
-        armature = obj.parent if obj.parent and obj.parent.type == 'ARMATURE' else None
-        base_loc = obj.matrix_world.translation
-
-        rim_name = f"RimLight_{obj.name}"
-        if rim_name not in bpy.data.objects:
-            loc = (base_loc.x, base_loc.y + 3.0, base_loc.z + 3.0)
-            bpy.ops.object.light_add(type='SPOT', location=loc)
-            rim = bpy.context.active_object
-            rim.name = rim_name
-            rim.data.energy = config.RIM_LIGHT_ENERGY
-            rim.data.spot_size = math.radians(40)
-            rim.data.color = config.RIM_LIGHT_COLOR[:3]
-            t = rim.constraints.new(type='TRACK_TO')
-            t.target = armature if armature else obj
-            if armature: t.subtarget = "Head"
-            t.track_axis = 'TRACK_NEGATIVE_Z'
-            t.up_axis = 'UP_Y'
-
-        key_name = f"HeadKey_{obj.name}"
-        if key_name not in bpy.data.objects:
-            mid_name = "Lighting_Midpoint"
-            mid = bpy.data.objects.get(mid_name)
-            if not mid:
-                mid = bpy.data.objects.new(mid_name, None)
-                mid.location = (0, 0, 2.2)
-                bpy.context.scene.collection.objects.link(mid)
-
-            x_side = 3.5 if base_loc.x > 0 else -3.5
-            loc = (base_loc.x + x_side, base_loc.y - 6.0, base_loc.z + 2.0)
-            bpy.ops.object.light_add(type='SPOT', location=loc)
-            key = bpy.context.active_object
-            key.name = key_name
-            key.data.energy = config.KEY_LIGHT_ENERGY
-            key.data.spot_size = math.radians(45)
-            key.data.color = config.KEY_LIGHT_COLOR[:3]
-            t = key.constraints.new(type='TRACK_TO')
-            t.target = mid
-            t.track_axis = 'TRACK_NEGATIVE_Z'
-            t.up_axis = 'UP_Y'
-
-        leg_name = f"LegKey_{obj.name}"
-        if leg_name not in bpy.data.objects:
-            loc = (obj.location.x * 1.5, obj.location.y - 4.0, 0.5)
-            bpy.ops.object.light_add(type='SPOT', location=loc)
-            leg = bpy.context.active_object
-            leg.name = leg_name
-            leg.data.energy = config.LEG_LIGHT_ENERGY
-            leg.data.spot_size = math.radians(50)
-            leg.data.color = config.LEG_LIGHT_COLOR[:3]
-            t = leg.constraints.new(type='TRACK_TO')
-            t.target = armature if armature else obj
-            if armature: t.subtarget = "Torso"
-            t.track_axis = 'TRACK_NEGATIVE_Z'
-            t.up_axis = 'UP_Y'
-
 def create_iris_material_v6(name, color=(0.36, 0.24, 0.62)):
     """Eye shader."""
     mat = bpy.data.materials.new(name=name)
@@ -384,6 +326,7 @@ def _add_weighted_primitive(bm, dlayer, mesh_obj, bname, rad1, rad2, height, loc
             z_fact = 1.0 - abs(dist / (height / 2))
             factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
             v.co = mathutils.Vector(loc) + (v.co - mathutils.Vector(loc)) * factor
+    return ret
 
 def _add_v6_joint_bulb(bm, dlayer, mesh_obj, loc, rad, bname):
     vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
@@ -391,6 +334,7 @@ def _add_v6_joint_bulb(bm, dlayer, mesh_obj, loc, rad, bname):
     ret = bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=rad, matrix=matrix)
     for v in ret['verts']:
         v[dlayer][vg.index] = 1.0
+    return ret
 
 def _build_mesh_v6(name, armature_obj, torso_h, head_r, neck_h):
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")

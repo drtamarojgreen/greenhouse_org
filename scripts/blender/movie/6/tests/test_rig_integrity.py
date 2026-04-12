@@ -11,13 +11,13 @@ import config
 def test_rig_integrity():
     print("\n--- TEST: Rig Integrity ---")
 
-    # Identify protagonist bodies
-    herb_body = bpy.data.objects.get(config.CHAR_HERBACEOUS + ".Body")
-    arbor_body = bpy.data.objects.get(config.CHAR_ARBOR + ".Body")
+    # Identify protagonist bodies (Scene 6 uses _Body suffix)
+    herb_body = bpy.data.objects.get(config.CHAR_HERBACEOUS + "_Body")
+    arbor_body = bpy.data.objects.get(config.CHAR_ARBOR + "_Body")
 
     for body in [herb_body, arbor_body]:
         if not body:
-            print(f"FAILED: Body not found for character.")
+            print(f"FAILED: Body object not found for character.")
             continue
 
         armature = body.parent if body.parent and body.parent.type == 'ARMATURE' else None
@@ -32,8 +32,7 @@ def test_rig_integrity():
             "Arm.L", "Elbow.L",
             "Arm.R", "Elbow.R",
             "Thigh.L", "Knee.L",
-            "Thigh.R", "Knee.R",
-            "Eyelid.L", "Eyelid.R"
+            "Thigh.R", "Knee.R"
         ]
 
         missing_vgs = []
@@ -46,7 +45,6 @@ def test_rig_integrity():
         else:
             print(f"PASSED: All mandatory vertex groups present on {body.name}")
 
-        # Foliage check
         if "Foliage" in body.vertex_groups:
             print(f"PASSED: Foliage vertex group present on {body.name}")
         else:

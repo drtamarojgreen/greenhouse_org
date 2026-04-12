@@ -54,7 +54,7 @@ def generate_full_scene_v6():
 
             # Ambient Blinking for plant characters
             if "Herbaceous" in obj.name or "Arbor" in obj.name:
-                anim.apply_animation_by_tag(obj, "blink", 45)
+                anim.apply_animation_by_tag(obj, "blink", 1, duration=config.TOTAL_FRAMES)
 
     bpy.context.view_layer.update()
     print(f"SUCCESS: Scene 6 assembled with performing ensemble in {time.time() - start_t:.2f}s")
