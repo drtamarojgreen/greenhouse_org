@@ -397,8 +397,9 @@ def _add_v6_organic_part(bm, mesh_obj, dlayer, rad1, rad2, height, loc, bname, m
         z_fact = 1.0 - abs(dist_from_center / (height / 2))
         factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
         v.co = mathutils.Vector(loc) + (v.co - mathutils.Vector(loc)) * factor
-    for face in ret['faces']:
-        face.smooth = True
+    for v in ret['verts']:
+        for face in v.link_faces:
+            face.smooth = True
     return ret
 
 def _add_v6_joint_bulb(bm, mesh_obj, dlayer, loc, rad, bname):
@@ -407,8 +408,8 @@ def _add_v6_joint_bulb(bm, mesh_obj, dlayer, loc, rad, bname):
     ret = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=rad, matrix=matrix)
     for v in ret['verts']:
         v[dlayer][vg.index] = 1.0
-    for face in ret['faces']:
-        face.smooth = True
+        for face in v.link_faces:
+            face.smooth = True
 
 def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
@@ -434,9 +435,9 @@ def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
     head_vg = mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")
     for v in ret_head['verts']:
         v[dlayer][head_vg.index] = 1.0
-    for face in ret_head['faces']:
-        face.smooth = True
-        face.material_index = 0
+        for face in v.link_faces:
+            face.smooth = True
+            face.material_index = 0
 
     # Limbs
     for side, sx in [("L", 1), ("R", -1)]:
