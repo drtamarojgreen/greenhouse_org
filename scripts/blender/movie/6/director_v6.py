@@ -2,6 +2,7 @@ import bpy
 import math
 import mathutils
 import config
+import camera_rig_v6
 from animation_library_v6 import apply_animation_by_tag
 
 
@@ -16,31 +17,12 @@ class SylvanDirector:
     # ------------------------------------------------------------------
 
     def setup_cinematics(self):
-        """Builds the professional 3-camera cinematic rig matching v5 logic."""
-        coll = (bpy.data.collections.get("SETTINGS.CAMERAS")
-                or bpy.data.collections.new("SETTINGS.CAMERAS"))
-        if coll.name not in self.scene.collection.children:
-            self.scene.collection.children.link(coll)
-
-        # 1. WIDE master (v5 standard)
-        self._create_camera("WIDE", config.CAMERA_WIDE_LOC, (math.radians(90), 0, 0), coll, lens=35)
-
-        # 2. OTS rigs
-        ots_targets = {
-            "OTS1":         {"pos": config.CAMERA_OTS1_LOC, "target": config.HERB_EYE_LEVEL},
-            "OTS2":         {"pos": config.CAMERA_OTS2_LOC, "target": config.ARBOR_EYE_LEVEL},
-        }
-
-        for name, data in ots_targets.items():
-            self._create_camera(name, data["pos"], (0,0,0), coll, lens=50)
-            cam = bpy.data.objects.get(name)
-            if cam:
-                vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
-                cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
+        """Orchestrates animated camera rigs from camera_rig_v6."""
+        cameras = camera_rig_v6.setup_scene6_cameras()
         
-        # Set Active Camera
-        if "WIDE" in bpy.data.objects:
-            self.scene.camera = bpy.data.objects["WIDE"]
+        # Set Active Camera to WIDE by default
+        if "WIDE" in cameras:
+            self.scene.camera = cameras["WIDE"]
 
     def _create_camera(self, name, pos, rot, coll, lens=35):
         """Creates (or reuses) a camera and links it into the given collection."""

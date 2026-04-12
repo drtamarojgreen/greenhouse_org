@@ -54,7 +54,7 @@ def create_lip_material_v6(name):
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs['Base Color'].default_value = (0.8, 0.2, 0.3, 1.0)
-    bsdf.inputs['Roughness'].default_value = 0.4
+    bsdf.inputs['Roughness'].default_value = 0.4 # Slight sheen
     return mat
 
 def create_iris_material_v6(name, color=(0.36, 0.24, 0.62)):
@@ -130,6 +130,10 @@ def create_leaf_material_v6(name, color=(0.4, 0.6, 0.2)):
 
     return mat
 
+# ---------------------------------------------------------------------------
+# HEAD MATH HELPERS
+# ---------------------------------------------------------------------------
+
 def _sphere_surface_y(x_norm, z_norm):
     inner = max(0.0, 1.0 - x_norm ** 2 - z_norm ** 2)
     return -math.sqrt(inner)
@@ -155,12 +159,12 @@ def _build_facial_bone_defs(head_r, hcz):
         tz = hz + tail_offset[2]
         return (hx, hy, hz), (tx, ty, tz)
 
-    eye_x, eye_z = getattr(config, 'EYE_PROJ_X', 0.35), getattr(config, 'EYE_PROJ_Z', 0.35)
-    eld_u_z = getattr(config, 'ELD_U_Z', 0.40)
-    eld_l_z = getattr(config, 'ELD_L_Z', 0.30)
-    nose_z  = getattr(config, 'NOSE_Z', 0.05)
-    lip_u_z = getattr(config, 'LIP_U_Z', -0.18)
-    lip_l_z = getattr(config, 'LIP_L_Z', -0.24)
+    eye_x, eye_z        = config.EYE_PROJ_X, config.EYE_PROJ_Z
+    eld_u_z             = config.ELD_U_Z
+    eld_l_z             = config.ELD_L_Z
+    nose_z              = config.NOSE_Z
+    lip_u_z             = config.LIP_U_Z
+    lip_l_z             = config.LIP_L_Z
 
     pupil_x, pupil_z    = eye_x, eye_z
     eld_corner_med_x    = 0.15
@@ -204,6 +208,7 @@ def _build_facial_bone_defs(head_r, hcz):
         z_l = hcz + head_r * eld_l_z
         base_l = (head_r * sx * eye_x, y_l, z_l)
 
+        # Structural bones for eyelids
         h_u, t_u = proj(sx * eye_x, eld_u_z, tail_len=0.08)
         defs[f"Eyelid.Upper.{side}"] = (h_u, t_u, "Head", 'structural')
         h_l, t_l = proj(sx * eye_x, eld_l_z, tail_len=0.08)
@@ -388,7 +393,10 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     """Self-contained procedural plant humanoid for Scene 6."""
     location = mathutils.Vector(location)
     if seed is not None: random.seed(seed)
-    torso_h, head_r, neck_h = 1.5 * height_scale, 0.4, 0.2
+    torso_h = config.TORSO_H_BASE * height_scale
+    head_r  = config.HEAD_R_BASE * height_scale
+    neck_h  = config.NECK_H_BASE * height_scale
+
     bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
     leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
 
