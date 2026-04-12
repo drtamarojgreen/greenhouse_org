@@ -400,54 +400,40 @@ def _build_mesh_v6(name, armature_obj, torso_h, head_r, neck_h):
     bm = bmesh.new()
     dlayer = bm.verts.layers.deform.verify()
 
-    # Torso
+    # 1. TORSO & HEAD
     _add_weighted_primitive(bm, dlayer, mesh_obj, "Torso", 0.5, 0.25, torso_h, (0,0,torso_h/2), mid_scale=1.2)
     _add_v6_joint_bulb(bm, dlayer, mesh_obj, (0, 0, torso_h), 0.18, "Torso")
+    _add_weighted_primitive(bm, dlayer, mesh_obj, "Neck", 0.15, 0.12, neck_h, (0, 0, torso_h+neck_h/2))
 
-    # Neck
-    _add_weighted_primitive(bm, dlayer, mesh_obj, "Neck", 0.15, 0.12, neck_h, (0, 0, torso_h+neck_h/2), mid_scale=1.0)
-
-    # Head
     matrix_head = mathutils.Matrix.Translation((0, 0, torso_h+neck_h+head_r))
     bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
     head_vg = (mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head"))
     for v in bm.verts:
-        if v.co.z > torso_h + neck_h:
-            if not v[dlayer].keys():
-                v[dlayer][head_vg.index] = 1.0
+        if v.co.z > torso_h + neck_h and not v[dlayer].keys():
+            v[dlayer][head_vg.index] = 1.0
 
-    # LIMBS
+    # 2. LIMBS
     for side, sx in [("L", 1), ("R", -1)]:
-        # Shoulders
-        _add_v6_joint_bulb(bm, dlayer, mesh_obj, (sx*0.3, 0, torso_h*0.9), 0.16, f"Arm.{side}")
-        _add_weighted_primitive(bm, dlayer, mesh_obj, f"Shoulder.{side}", 0.1, 0.1, 0.2, (sx*0.3, 0, torso_h*0.9), rot=(0, sx*math.pi/2, 0))
         # Arms
+        _add_v6_joint_bulb(bm, dlayer, mesh_obj, (sx*0.4, 0, torso_h*0.9), 0.16, f"Arm.{side}")
         _add_weighted_primitive(bm, dlayer, mesh_obj, f"Arm.{side}", 0.14, 0.11, 0.4, (sx*0.4, 0, torso_h*0.9-0.2), rot=(math.pi/2, 0, 0), mid_scale=1.15)
         _add_v6_joint_bulb(bm, dlayer, mesh_obj, (sx*0.4, 0, torso_h*0.9-0.4), 0.12, f"Elbow.{side}")
-        # Elbows
         _add_weighted_primitive(bm, dlayer, mesh_obj, f"Elbow.{side}", 0.11, 0.08, 0.4, (sx*0.4, 0, torso_h*0.9-0.6), rot=(math.pi/2, 0, 0), mid_scale=1.1)
         _add_v6_joint_bulb(bm, dlayer, mesh_obj, (sx*0.4, 0, torso_h*0.9-0.8), 0.1, f"Hand.{side}")
-        # Hands
         _add_weighted_primitive(bm, dlayer, mesh_obj, f"Hand.{side}", 0.08, 0.12, 0.15, (sx*0.4, 0, torso_h*0.9-0.875), rot=(math.pi/2, 0, 0))
 
         # Legs
-        # Hips
         _add_v6_joint_bulb(bm, dlayer, mesh_obj, (sx*0.25, 0, 0.1), 0.22, f"Thigh.{side}")
-        _add_weighted_primitive(bm, dlayer, mesh_obj, f"Hip.{side}", 0.15, 0.15, 0.1, (sx*0.2, 0, 0.1), rot=(0, sx*math.pi/2, 0))
-        # Thighs
         _add_weighted_primitive(bm, dlayer, mesh_obj, f"Thigh.{side}", 0.2, 0.16, 0.5, (sx*0.25, 0, -0.15), rot=(math.pi/2, 0, 0), mid_scale=1.15)
         _add_v6_joint_bulb(bm, dlayer, mesh_obj, (sx*0.25, 0, -0.4), 0.16, f"Knee.{side}")
-        # Knees
         _add_weighted_primitive(bm, dlayer, mesh_obj, f"Knee.{side}", 0.16, 0.12, 0.5, (sx*0.25, 0, -0.65), rot=(math.pi/2, 0, 0), mid_scale=1.1)
         _add_v6_joint_bulb(bm, dlayer, mesh_obj, (sx*0.25, 0, -0.9), 0.12, f"Foot.{side}")
-        # Feet
         _add_weighted_primitive(bm, dlayer, mesh_obj, f"Foot.{side}", 0.1, 0.15, 0.25, (sx*0.25, -0.075, -0.925), rot=(math.pi/2 + 0.2, 0, 0))
 
-    # FOLIAGE
+    # 3. FOLIAGE
     foliage_vg = mesh_obj.vertex_groups.get("Foliage") or mesh_obj.vertex_groups.new(name="Foliage")
     head_center = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
     FACE_Y_CLEAR = head_center.y
-
     for i in range(16):
         angle = (i/16)*6.28
         z_off = random.uniform(head_r*0.4, head_r*0.9)
@@ -468,24 +454,7 @@ def _build_mesh_v6(name, armature_obj, torso_h, head_r, neck_h):
                 v[dlayer][foliage_vg.index] = 1.0
                 for face in v.link_faces: face.material_index = 1
 
-    # LIMB FOLIAGE
-    limbs = ["Arm.L","Arm.R","Elbow.L","Elbow.R", "Thigh.L","Thigh.R","Knee.L","Knee.R"]
-    for bone_name in limbs:
-        vg = mesh_obj.vertex_groups.get(bone_name)
-        if not vg: continue
-        vg_verts = [v for v in bm.verts if vg.index in [k for k in v[dlayer].keys()]]
-        for _ in range(10):
-            if not vg_verts: break
-            v_target = random.choice(vg_verts)
-            l_loc = v_target.co + v_target.normal * 0.05
-            l_m = (mathutils.Matrix.Translation(l_loc) @ mathutils.Euler((random.uniform(0,3), 0, random.uniform(0,6))).to_matrix().to_4x4())
-            l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.2, matrix=l_m)
-            for v in l_ret['verts']:
-                v[dlayer][vg.index] = 1.0
-                v[dlayer][foliage_vg.index] = 0.5
-                for face in v.link_faces: face.material_index = 1
-
-    # CLEANING & SMOOTHING
+    # 4. CLEANING & SMOOTHING
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.005)
     for v in bm.verts:
         weights = v[dlayer]
@@ -495,49 +464,29 @@ def _build_mesh_v6(name, armature_obj, torso_h, head_r, neck_h):
                 if vg_idx != max_vg: v[dlayer][vg_idx] = 0.0
     for _ in range(10): bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.7)
 
-    bm.to_mesh(mesh_data)
-    bm.free()
+    bm.to_mesh(mesh_data); bm.free()
     return mesh_obj
 
 def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
-    """
-    Self-contained procedural plant humanoid for Scene 6.
-    """
-    location = mathutils.Vector(location)
+    """Self-contained procedural plant humanoid for Scene 6."""
     if seed is not None: random.seed(seed)
-
     torso_h = config.PH_TORSO_H * height_scale
     head_r  = config.PH_HEAD_R
     neck_h  = config.PH_NECK_H
-
-    # 1. Armature
     armature_obj = _build_armature_v6(name, torso_h, head_r, neck_h)
     armature_obj.location = location
-
-    # 2. Mesh Construction
     mesh_obj = _build_mesh_v6(name, armature_obj, torso_h, head_r, neck_h)
-
-    # 3. Modifiers & Materials
     mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
-    mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF').levels = 2
-    mesh_obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
-
-    tex_bark = (bpy.data.textures.get("BarkBump") or bpy.data.textures.new("BarkBump", type='CLOUDS'))
-    tex_bark.noise_scale = 0.05
-    disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')
-    disp.texture = tex_bark; disp.strength = 0.06; disp.vertex_group = "Torso"
 
     bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
     leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
     mesh_obj.data.materials.append(create_bark_material_v6(f"Bark_{name}", color=bark_color))
     mesh_obj.data.materials.append(create_leaf_material_v6(f"Leaf_{name}", color=leaf_color))
 
-    # 4. Facial Props
     bones_map = {b.name: b.name for b in armature_obj.data.bones}
     iris_mat = create_iris_material_v6(f"Iris_{name}")
     sclera_mat = create_sclera_material_v6(f"Sclera_{name}")
     bark_mat = create_bark_material_v6(f"FacialBark_{name}", color=bark_color)
     lip_mat = create_lip_material_v6(f"LipMat_{name}")
     create_facial_props_v6(name, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
-
     return armature_obj

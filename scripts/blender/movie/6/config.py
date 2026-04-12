@@ -1,6 +1,6 @@
 import os
 
-# Scene 6 Production Configuration
+# Scene 6 Production Configuration: The Spirits of the Greenhouse
 TOTAL_FRAMES = 4200
 EQUIPMENT_DIR = "/home/tamarojgreen/Documents/Movie_Equipment/"
 SPIRITS_ASSET_BLEND = os.path.join(EQUIPMENT_DIR, "MHD2_animation133.blend")
@@ -17,7 +17,6 @@ SPIRIT_ENSEMBLE = {
     "skeleton": "Root_Guardian"
 }
 
-# Source armature names
 RIG_MAP_SRC = {
     "Sylvan_Majesty":   "Armature.002",
     "Radiant_Aura":     "Armature.004",
@@ -30,51 +29,50 @@ RIG_MAP_SRC = {
 }
 
 # 2. PROTAGONISTS
-CHAR_HERBACEOUS = "Herbaceous_V5"
-CHAR_ARBOR      = "Arbor_V5"
+CHAR_HERBACEOUS = "Herbaceous_V6"
+CHAR_ARBOR      = "Arbor_V6"
 
-# 3. PROTAGONIST ASSET MAPPING
-PROTAGONIST_SOURCE = {
-    CHAR_HERBACEOUS: {"mesh": "Herbaceous_V5_Body", "rig": "Herbaceous_V5_Rig"},
-    CHAR_ARBOR:      {"mesh": "Arbor_V5_Body",      "rig": "Arbor_V5_Rig"},
-}
-
-# 4. SPATIAL CONSTANTS
+# 3. SPATIAL CONSTANTS
 CHAR_HERBACEOUS_POS = (-1.75, -0.3, 0.0)
 CHAR_ARBOR_POS      = ( 1.75,  0.3, 0.0)
+HERB_EYE_LEVEL      = (-1.75, -0.3, 2.5)
+ARBOR_EYE_LEVEL     = (1.75, 0.3, 2.5)
 
-HERB_EYE_LEVEL  = (-1.75, -0.3, 2.5)
-ARBOR_EYE_LEVEL = (1.75, 0.3, 2.5)
+# 4. LIGHTING & ATMOSPHERE
+RIM_LIGHT_ENERGY = 15000.0
+KEY_LIGHT_ENERGY = 12000.0
+LEG_LIGHT_ENERGY = 6000.0
+RIM_LIGHT_COLOR  = (0.8, 0.9, 1.0, 1.0)
+KEY_LIGHT_COLOR  = (1.0, 1.0, 0.9, 1.0)
+CHROMA_GREEN_RGB = (0.0, 1.0, 0.0, 1.0)
 
-# 5. LIGHTING
-RIM_LIGHT_ENERGY = 12000.0
-KEY_LIGHT_ENERGY = 10000.0
-LEG_LIGHT_ENERGY = 5000.0
-RIM_LIGHT_COLOR  = (1.0, 0.9, 0.8, 1.0)
-KEY_LIGHT_COLOR  = (0.95, 1.0, 1.0, 1.0)
-LEG_LIGHT_COLOR  = (1.0, 1.0, 0.95, 1.0)
+# 5. CAMERAS
+WIDE_CAM_POS  = (0.0, -10.0, 2.5)
+OTS1_CAM_POS  = (14.0, 12.0, 7.0)
+OTS2_CAM_POS  = (-14.0, -12.0, 7.0)
+CAM_ANIM_START = 1
+CAM_ANIM_END   = 4200
 
 # 6. PLANT HUMANOID DIMENSIONS
 PH_TORSO_H = 1.5
 PH_HEAD_R  = 0.4
 PH_NECK_H  = 0.2
 
-# 7. CAMERAS
-WIDE_CAM_POS  = (0.0, -8.0, 2.0)
-OTS1_CAM_POS  = (13.5, 11.0, 6.0)
-OTS2_CAM_POS  = (-13.5, -11.0, 6.0)
-
-CAM_ANIM_START = 1
-CAM_ANIM_END   = 4200
+# 7. PERFORMANCE ROLES (Varied Performances)
+PERFORMANCES = {
+    CHAR_HERBACEOUS: "bloom_sway",
+    CHAR_ARBOR:      "ancient_talking",
+    "Sylvan_Majesty": "majestic_glide",
+    "Radiant_Aura":   "spirit_dance",
+    "Verdant_Sprite": "sprite_flutter",
+    "Shadow_Weaver":  "ethereal_drift",
+    "Emerald_Sentinel": "stoic_pulse",
+    "Phoenix_Herald": "solar_flare",
+    "Golden_Phoenix": "golden_ascent",
+    "Root_Guardian":  "earth_hum"
+}
 
 # 8. BACKDROPS
-BACKDROP_WIDE_POS = (0, 50, 5)
-BACKDROP_OTS1_POS = (-50, -20, 5)
-BACKDROP_OTS2_POS = (50, 20, 5)
-BACKDROP_WIDE_SIZE = 200
-BACKDROP_OTS_SIZE  = 1000
-CHROMA_GREEN_RGB   = (0.0, 1.0, 0.0, 1.0)
-
-# 9. CINEMATICS & ENVIRONMENT
-CAMERA_NAME  = "WIDE"
-BACKDROP_NAME = "ChromaBackdrop_Wide"
+BACKDROP_WIDE_POS = (0, 60, 5)
+BACKDROP_WIDE_SIZE = 250
+BACKDROP_OTS_SIZE  = 1200

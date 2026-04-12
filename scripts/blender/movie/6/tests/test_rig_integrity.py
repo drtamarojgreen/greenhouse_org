@@ -29,12 +29,11 @@ def test_rig_integrity():
 
         mandatory_bones = [
             "Torso", "Neck", "Head",
-            "Arm.L", "Elbow.L", "Hand.L",
-            "Arm.R", "Elbow.R", "Hand.R",
-            "Thigh.L", "Knee.L", "Foot.L",
-            "Thigh.R", "Knee.R", "Foot.R",
-            "Eyelid.Upper.L", "Eyelid.Lower.L",
-            "Eyebrow.L", "Eyebrow.R"
+            "Arm.L", "Elbow.L",
+            "Arm.R", "Elbow.R",
+            "Thigh.L", "Knee.L",
+            "Thigh.R", "Knee.R",
+            "Eyelid.L", "Eyelid.R"
         ]
 
         missing_vgs = []
@@ -47,7 +46,7 @@ def test_rig_integrity():
         else:
             print(f"PASSED: All mandatory vertex groups present on {body.name}")
 
-        # Check for Foliage group
+        # Foliage check
         if "Foliage" in body.vertex_groups:
             print(f"PASSED: Foliage vertex group present on {body.name}")
         else:

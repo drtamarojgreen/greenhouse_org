@@ -22,7 +22,6 @@ def create_camera_path(name, points):
 
 def setup_follow_path(cam_obj, path_obj, start_frame, end_frame):
     """Binds camera to path with Follow Path constraint."""
-    # CLEAR OBJECT TRANSFORMS to ensure the constraint uses the path absolute world coords
     cam_obj.location = (0, 0, 0)
     cam_obj.rotation_euler = (0, 0, 0)
 
@@ -38,33 +37,30 @@ def setup_follow_path(cam_obj, path_obj, start_frame, end_frame):
 
 def setup_camera_rig_v6():
     """Builds the animated organic camera rig for Scene 6."""
-    # 1. Wide Angle Sweep
     wide_points = [
-        (0, -12, 3),
-        (0, -8, 2),
-        (2, -6, 2.5)
+        (0, -15, 3.5),
+        (0, -10, 2.5),
+        (2.5, -8, 3.0)
     ]
     path_wide = create_camera_path("WIDE", wide_points)
     cam_wide = bpy.data.objects.get("WIDE")
     if cam_wide:
         setup_follow_path(cam_wide, path_wide, config.CAM_ANIM_START, config.CAM_ANIM_END)
 
-    # 2. OTS1 Organic Drift
     ots1_points = [
-        (15, 12, 7),
-        (13.5, 11, 6),
-        (12, 10, 5.5)
+        (16, 14, 8),
+        (14, 12, 7),
+        (12, 10, 6.5)
     ]
     path_ots1 = create_camera_path("OTS1", ots1_points)
     cam_ots1 = bpy.data.objects.get("OTS1")
     if cam_ots1:
         setup_follow_path(cam_ots1, path_ots1, config.CAM_ANIM_START, config.CAM_ANIM_END)
 
-    # 3. OTS2 Organic Drift
     ots2_points = [
-        (-15, -12, 7),
-        (-13.5, -11, 6),
-        (-12, -10, 5.5)
+        (-16, -14, 8),
+        (-14, -12, 7),
+        (-12, -10, 6.5)
     ]
     path_ots2 = create_camera_path("OTS2", ots2_points)
     cam_ots2 = bpy.data.objects.get("OTS2")

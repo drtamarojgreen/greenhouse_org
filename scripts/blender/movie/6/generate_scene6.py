@@ -21,7 +21,7 @@ import chroma_green_setup
 import animation_library_v6 as anim
 
 def generate_full_scene_v6():
-    """Master production assembly with varied animations."""
+    """Master production assembly with varied performances."""
     import time
     start_t = time.time()
 
@@ -41,22 +41,23 @@ def generate_full_scene_v6():
     dv6.position_protagonists()
     dv6.compose_ensemble()
 
-    # Varied Animations
-    if herb:
-        anim.apply_animation_by_tag(herb, "sway", 1, duration=config.TOTAL_FRAMES)
-        anim.apply_animation_by_tag(herb, "blink", 40, duration=8)
-    if arbor:
-        anim.apply_animation_by_tag(arbor, "talking", 1, duration=config.TOTAL_FRAMES)
-        anim.apply_animation_by_tag(arbor, "nod", 60)
+    # Apply Varied Performances
+    for obj in bpy.data.objects:
+        if obj.type == 'ARMATURE':
+            tag = config.PERFORMANCES.get(obj.name, "spirit_dance")
+            # For ensemble members which might be renamed with suffixes, try base name
+            if tag == "spirit_dance" and "." in obj.name:
+                base_n = obj.name.split(".")[0]
+                tag = config.PERFORMANCES.get(base_n, "spirit_dance")
 
-    spirits = [o for o in bpy.data.objects if o.type == 'ARMATURE' and o.name not in [herb.name, arbor.name]]
-    tags = ["float", "dance", "shake", "shiver", "droop", "stretch", "joyful", "bend"]
-    for i, spirit in enumerate(spirits):
-        tag = tags[i % len(tags)]
-        anim.apply_animation_by_tag(spirit, tag, 1, duration=config.TOTAL_FRAMES)
+            anim.apply_animation_by_tag(obj, tag, 1, duration=config.TOTAL_FRAMES)
+
+            # Ambient Blinking for plant characters
+            if "Herbaceous" in obj.name or "Arbor" in obj.name:
+                anim.apply_animation_by_tag(obj, "blink", 45)
 
     bpy.context.view_layer.update()
-    print(f"SUCCESS: Scene 6 assembled with varied animations in {time.time() - start_t:.2f}s")
+    print(f"SUCCESS: Scene 6 assembled with performing ensemble in {time.time() - start_t:.2f}s")
 
 if __name__ == "__main__":
     generate_full_scene_v6()

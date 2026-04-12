@@ -42,162 +42,138 @@ def get_bone(arm_obj, name):
 # ---------------------------------------------------------------------------
 
 def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=None):
-    """Dispatcher to apply varied animations based on modular tags."""
-    if ":" in tag:
-        tag, _ = tag.split(":", 1)
+    """Dispatcher to apply animations based on varied performing styles."""
+    if ":" in tag: tag, _ = tag.split(":", 1)
     
     registry = {
-        "nod": (apply_nod, 24),
-        "shake": (apply_shake_head, 45),
+        "spirit_dance": (apply_dance, duration or 600),
+        "ancient_talking": (apply_talking_arms, duration or 120),
+        "bloom_sway": (apply_sway, duration or 100),
+        "ethereal_drift": (apply_drift, duration or 300),
+        "golden_ascent": (apply_ascent, duration or 400),
+        "solar_flare": (apply_flare, duration or 45),
+        "earth_hum": (apply_hum, duration or 200),
+        "majestic_glide": (apply_glide, duration or 1000),
+        "sprite_flutter": (apply_flutter, duration or 60),
+        "stoic_pulse": (apply_pulse, duration or 120),
         "blink": (apply_blink, 6),
-        "talking": (apply_talking_arms, duration or 60),
-        "dance": (apply_dance, duration or 600),
-        "float": (apply_float, duration or 120),
-        "sway": (apply_sway, duration or 80),
-        "shiver": (apply_shiver, 48),
-        "droop": (apply_droop, 60),
-        "stretch": (apply_stretch, 40),
-        "joyful": (apply_joyful, 40),
-        "bend": (apply_bend, 60),
+        "nod": (apply_nod, 24)
     }
     
     if tag in registry:
         func, def_dur = registry[tag]
-        dur = duration if duration is not None else def_dur
-        func(arm_obj, start_frame, duration=dur)
+        func(arm_obj, start_frame, duration=duration if duration else def_dur)
         return True
     return False
 
 # ---------------------------------------------------------------------------
-# ANIMATION FUNCTIONS
+# PERFORMANCE FUNCTIONS
 # ---------------------------------------------------------------------------
 
-def apply_nod(arm_obj, start_frame, duration=24):
-    head = get_bone(arm_obj, "Head")
-    neck = get_bone(arm_obj, "Neck")
-    if not head or not neck: return
-    mid_frame = start_frame + (duration // 2)
-    end_frame = start_frame + duration
-    for b in (head, neck):
-        b.rotation_mode = 'XYZ'
-        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
-        b.rotation_euler[0] += math.radians(-12)
-        b.keyframe_insert(data_path="rotation_euler", index=0, frame=mid_frame)
-        b.rotation_euler[0] -= math.radians(-12)
-        b.keyframe_insert(data_path="rotation_euler", index=0, frame=end_frame)
+def _ensure_init(arm_obj, bone_names, frame):
+    """Keyframes the initial state of bones."""
+    for bn in bone_names:
+        b = get_bone(arm_obj, bn)
+        if b:
+            arm_obj.keyframe_insert(data_path=f'pose.bones["{b.name}"].location', frame=frame)
+            arm_obj.keyframe_insert(data_path=f'pose.bones["{b.name}"].rotation_euler', frame=frame)
 
-def apply_shake_head(arm_obj, start_frame, duration=45):
-    head = get_bone(arm_obj, "Head")
-    if not head: return
-    head.rotation_mode = 'XYZ'
-    end_frame = start_frame + duration
-    head.keyframe_insert(data_path="rotation_euler", index=2, frame=start_frame)
-    for i, offset in enumerate([18, -18, 0]):
-        f = start_frame + (i + 1) * (duration // 3)
-        head.rotation_euler[2] = math.radians(offset)
-        head.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
+def apply_dance(arm_obj, start_frame, duration=600):
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+    _ensure_init(arm_obj, ["Torso"], start_frame)
+    for f in range(start_frame + 20, start_frame + duration, 40):
+        phase = (f - start_frame) * 0.15
+        torso.location[2] = math.sin(phase) * 0.2
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=f)
+
+def apply_sway(arm_obj, start_frame, duration=120):
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+    _ensure_init(arm_obj, ["Torso"], start_frame)
+    for f in range(start_frame + 10, start_frame + duration, 20):
+        torso.rotation_mode = 'XYZ'
+        torso.rotation_euler[0] = math.radians(math.sin(f*0.05)*8)
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=0, frame=f)
+
+def apply_drift(arm_obj, start_frame, duration=300):
+    arm_obj.keyframe_insert(data_path="location", frame=start_frame)
+    for f in range(start_frame + 50, start_frame + duration, 50):
+        arm_obj.location.x += random.uniform(-0.2, 0.2)
+        arm_obj.keyframe_insert(data_path="location", index=0, frame=f)
+
+def apply_ascent(arm_obj, start_frame, duration=400):
+    arm_obj.keyframe_insert(data_path="location", index=2, frame=start_frame)
+    arm_obj.location.z += 3.0
+    arm_obj.keyframe_insert(data_path="location", index=2, frame=start_frame + duration)
+
+def apply_flare(arm_obj, start_frame, duration=45):
+    _ensure_init(arm_obj, ["Torso"], start_frame)
+    for f in range(start_frame + 5, start_frame + duration, 5):
+        arm_obj.rotation_euler[2] = math.radians(random.uniform(-10, 10))
+        arm_obj.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
+
+def apply_hum(arm_obj, start_frame, duration=200):
+    arm_obj.keyframe_insert(data_path="location", frame=start_frame)
+    for f in range(start_frame + 2, start_frame + duration, 4):
+        arm_obj.location.y += random.uniform(-0.02, 0.02)
+        arm_obj.keyframe_insert(data_path="location", index=1, frame=f)
+
+def apply_glide(arm_obj, start_frame, duration=1000):
+    arm_obj.keyframe_insert(data_path="location", frame=start_frame)
+    arm_obj.location.x += 6.0
+    arm_obj.keyframe_insert(data_path="location", index=0, frame=start_frame + duration)
+
+def apply_flutter(arm_obj, start_frame, duration=60):
+    arm_l = get_bone(arm_obj, "Arm.L")
+    arm_r = get_bone(arm_obj, "Arm.R")
+    if not (arm_l and arm_r): return
+    _ensure_init(arm_obj, ["Arm.L", "Arm.R"], start_frame)
+    for f in range(start_frame + 5, start_frame + duration, 10):
+        arm_l.rotation_mode = 'XYZ'
+        arm_r.rotation_mode = 'XYZ'
+        arm_l.rotation_euler[0] = math.radians(-60 + random.uniform(-15, 15))
+        arm_r.rotation_euler[0] = math.radians(-60 + random.uniform(-15, 15))
+        arm_l.keyframe_insert(data_path=f'pose.bones["{arm_l.name}"].rotation_euler', index=0, frame=f)
+        arm_r.keyframe_insert(data_path=f'pose.bones["{arm_r.name}"].rotation_euler', index=0, frame=f)
+
+def apply_pulse(arm_obj, start_frame, duration=120):
+    _ensure_init(arm_obj, ["Torso"], start_frame)
+    torso = get_bone(arm_obj, "Torso")
+    for f in range(start_frame + 15, start_frame + duration, 30):
+        torso.scale[2] = 1.05
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].scale', index=2, frame=f)
+        torso.scale[2] = 1.0
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].scale', index=2, frame=f+15)
 
 def apply_blink(arm_obj, start_frame, duration=6):
     for child in arm_obj.children:
         if "Eyelid" in child.name:
             child.keyframe_insert(data_path="scale", index=2, frame=start_frame)
-            child.scale[2] = 0.02
+            child.scale[2] = 0.05
             child.keyframe_insert(data_path="scale", index=2, frame=start_frame + (duration//2))
             child.scale[2] = 1.0
             child.keyframe_insert(data_path="scale", index=2, frame=start_frame + duration)
 
+def apply_nod(arm_obj, start_frame, duration=24):
+    head = get_bone(arm_obj, "Head")
+    if not head: return
+    _ensure_init(arm_obj, ["Head"], start_frame)
+    head.rotation_mode = 'XYZ'
+    head.rotation_euler[0] += math.radians(15)
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{head.name}"].rotation_euler', index=0, frame=start_frame + (duration//2))
+    head.rotation_euler[0] -= math.radians(15)
+    arm_obj.keyframe_insert(data_path=f'pose.bones["{head.name}"].rotation_euler', index=0, frame=start_frame + duration)
+
 def apply_talking_arms(arm_obj, start_frame, duration=60):
     arm_l = get_bone(arm_obj, "Arm.L")
     arm_r = get_bone(arm_obj, "Arm.R")
-    if not arm_l or not arm_r: return
-    end_frame = start_frame + duration
-    for b in (arm_l, arm_r):
-        b.rotation_mode = 'XYZ'
-        b.keyframe_insert(data_path="rotation_euler", frame=start_frame)
-    for f in range(start_frame + 5, end_frame - 5, 12):
-        arm_l.rotation_euler[0] = math.radians(-80 + random.uniform(-10, 10))
-        arm_r.rotation_euler[0] = math.radians(-80 + random.uniform(-10, 10))
-        arm_l.keyframe_insert(data_path="rotation_euler", frame=f)
-        arm_r.keyframe_insert(data_path="rotation_euler", frame=f)
-
-def apply_dance(arm_obj, start_frame, duration=600):
-    torso = get_bone(arm_obj, "Torso")
-    if not torso: return
-    torso.rotation_mode = 'XYZ'
-    # Start keyframe
-    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame)
-    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=start_frame)
-    for f in range(start_frame + 10, start_frame + duration, 20):
-        phase = (f - start_frame) * 0.2
-        torso.location[2] = math.sin(phase) * 0.15
-        torso.rotation_euler[2] = math.cos(phase) * math.radians(8)
-        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=f)
-        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=f)
-
-def apply_float(arm_obj, start_frame, duration=120):
-    torso = get_bone(arm_obj, "Torso")
-    if not torso: return
-    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame)
-    for f in range(start_frame + 10, start_frame + duration + 1, 15):
-        phase = (f - start_frame) / duration * 2 * math.pi
-        torso.location[2] = math.sin(phase) * 0.25
-        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=f)
-
-def apply_sway(arm_obj, start_frame, duration=80):
-    torso = get_bone(arm_obj, "Torso")
-    if not torso: return
-    torso.rotation_mode = 'XYZ'
-    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=start_frame)
-    for f in range(start_frame + 8, start_frame + duration + 1, 10):
-        phase = (f - start_frame) / duration * 2 * math.pi
-        torso.rotation_euler[2] = math.sin(phase) * math.radians(6)
-        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=2, frame=f)
-
-def apply_shiver(arm_obj, start_frame, duration=48):
-    torso = get_bone(arm_obj, "Torso")
-    if not torso: return
-    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', frame=start_frame)
-    for f in range(start_frame + 1, start_frame + duration):
-        torso.location[0] = random.uniform(-0.015, 0.015)
-        torso.location[1] = random.uniform(-0.015, 0.015)
-        arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', frame=f)
-
-def apply_droop(arm_obj, start_frame, duration=60):
-    head = get_bone(arm_obj, "Head")
-    neck = get_bone(arm_obj, "Neck")
-    if not head or not neck: return
-    for b in (head, neck):
-        b.rotation_mode = 'XYZ'
-        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
-        b.rotation_euler[0] = math.radians(-30)
-        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration // 2)
-        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration)
-
-def apply_stretch(arm_obj, start_frame, duration=40):
-    torso = get_bone(arm_obj, "Torso")
-    if not torso: return
-    torso.rotation_mode = 'XYZ'
-    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
-    torso.rotation_euler[0] = math.radians(15)
-    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration // 2)
-    torso.rotation_euler[0] = 0
-    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration)
-
-def apply_joyful(arm_obj, start_frame, duration=40):
-    torso = get_bone(arm_obj, "Torso")
-    if not torso: return
-    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame)
-    torso.location[2] += 0.2
-    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame + 10)
-    torso.location[2] -= 0.2
-    arm_obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start_frame + duration)
-
-def apply_bend(arm_obj, start_frame, duration=60):
-    torso = get_bone(arm_obj, "Torso")
-    if not torso: return
-    torso.rotation_mode = 'XYZ'
-    torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
-    torso.rotation_euler[0] = math.radians(-45)
-    arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration // 2)
-    torso.rotation_euler[0] = 0
-    arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame + duration)
+    if not (arm_l and arm_r): return
+    _ensure_init(arm_obj, ["Arm.L", "Arm.R"], start_frame)
+    for f in range(start_frame + 5, start_frame + duration, 15):
+        arm_l.rotation_mode = 'XYZ'
+        arm_r.rotation_mode = 'XYZ'
+        arm_l.rotation_euler[0] = math.radians(-45 + random.uniform(-10, 10))
+        arm_r.rotation_euler[0] = math.radians(-45 + random.uniform(-10, 10))
+        arm_l.keyframe_insert(data_path=f'pose.bones["{arm_l.name}"].rotation_euler', index=0, frame=f)
+        arm_r.keyframe_insert(data_path=f'pose.bones["{arm_r.name}"].rotation_euler', index=0, frame=f)

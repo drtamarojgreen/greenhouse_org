@@ -35,7 +35,7 @@ def test_camera_rig():
                     if found_fcurve:
                         print(f"  > PASSED: {cam_name} offset_factor is animated.")
                     else:
-                        print(f"  > FAILED: {cam_name} offset_factor is NOT animated (DP: {dp}).")
+                        print(f"  > FAILED: {cam_name} offset_factor is NOT animated.")
             else:
                 print(f"FAILED: Camera {cam_name} FOLLOW_PATH constraint has no target.")
         else:

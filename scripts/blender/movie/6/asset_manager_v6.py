@@ -2,125 +2,53 @@ import bpy
 import os
 import sys
 
-# Standardize path injection for movie/6 assets
+# prioritize movie/6
 V6_DIR = os.path.dirname(os.path.abspath(__file__))
 if V6_DIR not in sys.path: sys.path.insert(0, V6_DIR)
-
-# prioritize assets_v6 for create_plant_humanoid_v6 etc.
 ASSETS_V6_DIR = os.path.join(V6_DIR, "assets_v6")
 if ASSETS_V6_DIR not in sys.path: sys.path.insert(0, ASSETS_V6_DIR)
 
-# Robust import of config
-try:
-    import config
-except ImportError:
-    from . import config
-
+import config
 from plant_humanoid_v6 import create_plant_humanoid_v6
 
-
 class SylvanEnsembleManager:
-    """Manages the linking, renaming, and integrity of the spirit ensemble."""
-
     def __init__(self):
         self.collection_name = "6a.ASSETS"
-        self.ensemble  = config.SPIRIT_ENSEMBLE
-        self.rig_map   = config.RIG_MAP_SRC
+        self.ensemble = config.SPIRIT_ENSEMBLE
+        self.rig_map = config.RIG_MAP_SRC
 
     def ensure_clean_slate(self):
-        """Purges ALL data-blocks for a reproducible clean start."""
-        for obj in list(bpy.data.objects):
-            try:
-                bpy.data.objects.remove(obj, do_unlink=True)
-            except: pass
-
-        for block in (bpy.data.meshes, bpy.data.armatures,
-                      bpy.data.materials, bpy.data.cameras, bpy.data.lights,
-                      bpy.data.images, bpy.data.actions, bpy.data.worlds):
-            for item in list(block):
-                try:
-                    block.remove(item, do_unlink=True)
-                except: pass
-
+        for obj in list(bpy.data.objects): bpy.data.objects.remove(obj, do_unlink=True)
+        for block in (bpy.data.meshes, bpy.data.armatures, bpy.data.materials, bpy.data.cameras, bpy.data.lights, bpy.data.images, bpy.data.actions, bpy.data.worlds):
+            for item in list(block): block.remove(item, do_unlink=True)
         bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
 
     def link_ensemble(self):
-        """Appends ensemble objects from the production blend."""
-        if any(f"{art_name}" in obj.name for obj in bpy.data.objects for art_name in self.ensemble.values()):
-             return
-
         coll = bpy.data.collections.get(self.collection_name) or bpy.data.collections.new(self.collection_name)
-        if coll.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(coll)
-
-        src_mesh_names = list(self.ensemble.keys())
-        src_rig_names  = list(self.rig_map.values())
-        want = set(src_mesh_names + src_rig_names)
-
-        if not os.path.exists(config.SPIRITS_ASSET_BLEND):
-             return
-
-        with bpy.data.libraries.load(config.SPIRITS_ASSET_BLEND, link=False) as (data_from, data_to):
-            # Strict filtering: only link objects explicitly in 'want'
-            data_to.objects = [n for n in data_from.objects if n in want]
-
-        for obj in data_to.objects:
-            if obj and obj.name not in coll.objects:
-                coll.objects.link(obj)
-                obj["source_name"] = obj.name
-
-    def link_protagonists(self):
-        """Creates procedural protagonists."""
-        create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
-        create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
+        if coll.name not in bpy.context.scene.collection.children: bpy.context.scene.collection.children.link(coll)
+        want = set(list(self.ensemble.keys()) + list(self.rig_map.values()))
+        if os.path.exists(config.SPIRITS_ASSET_BLEND):
+            with bpy.data.libraries.load(config.SPIRITS_ASSET_BLEND, link=False) as (data_from, data_to):
+                data_to.objects = [n for n in data_from.objects if n in want]
+            for obj in data_to.objects:
+                if obj and obj.name not in coll.objects:
+                    coll.objects.link(obj)
+                    obj["source_name"] = obj.name
 
     def renormalize_objects(self):
-        """Syncs spirit meshes to rigs while preserving imported baseline scaling."""
         import mathutils
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
-
-        targets = []
-        for src, art in self.ensemble.items():
-             targets.append((src, art, "."))
-        if "Root_Guardian" not in self.ensemble.values():
-             targets.append(("skeleton", "Root_Guardian", "."))
-
-        for src_mesh_name, art_name, sep in targets:
-            t_mesh_name = f"{art_name}{sep}Body"
-            t_rig_name  = f"{art_name}{sep}Rig"
-
-            rig = bpy.data.objects.get(t_rig_name)
-            if not rig:
-                src_rig_name = self.rig_map.get(art_name) or (src_mesh_name if art_name == "Root_Guardian" else None)
-                rig = (bpy.data.objects.get(src_rig_name) or
-                       next((o for o in coll.objects if o.get("source_name") == src_rig_name), None))
-
+        targets = [(src, art) for src, art in self.ensemble.items()]
+        for src_mesh_name, art_name in targets:
+            t_mesh_name, t_rig_name = f"{art_name}.Body", f"{art_name}.Rig"
+            rig = bpy.data.objects.get(t_rig_name) or next((o for o in coll.objects if o.get("source_name") == self.rig_map.get(art_name)), None)
             mesh = bpy.data.objects.get(t_mesh_name) or next((o for o in coll.objects if o.get("source_name") == src_mesh_name), None)
-
             if not mesh: continue
-            if not rig: rig = mesh.find_armature()
-
-            if mesh == rig:
-                mesh_copy = mesh.copy()
-                if mesh.data: mesh_copy.data = mesh.data.copy()
-                coll.objects.link(mesh_copy)
-                mesh = mesh_copy
-
             mesh.name = t_mesh_name
             if rig:
                 rig.name = t_rig_name
-                if mesh != rig:
-                    mesh.parent = rig
-                    mesh.location = (0, 0, 0)
-                    mesh.rotation_euler = (0, 0, 0)
-                    # PRESERVE BASELINE SCALE: No (1,1,1) reset or view_layer update scaling.
-                    mesh.matrix_parent_inverse = mathutils.Matrix.Identity(4)
-
-                if mesh.type == 'MESH':
-                    arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
-                    arm_mod.object = rig
-
-    def repair_materials(self):
-        """Ensures spirit materials are linked (minimal logic)."""
-        pass
+                mesh.parent = rig
+                mesh.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+                arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
+                arm_mod.object = rig
