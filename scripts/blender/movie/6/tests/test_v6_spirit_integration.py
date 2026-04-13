@@ -340,14 +340,14 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 art_base = name.split('.')[0]
                 is_hit = art_base in hit_obj.name or hit_obj.name in art_base
 
+                d_hit = (loc - origin).length
+                d_obj = (target_pt - origin).length
+
                 # If we hit a backdrop, check if it's behind
                 if not is_hit and "Backdrop" in hit_obj.name:
-                     d_hit = (loc - origin).length
-                     d_obj = (target_pt - origin).length
                      if d_hit > d_obj:
                           is_hit = True
 
-                # DEBUG: Cam->Hit: {d_hit:.2f}m, Cam->Target: {d_obj:.2f}m
                 self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} (Dist hit={d_hit:.2f}, obj={d_obj:.2f})")
             else:
                 print(f"RAYCAST {name} -> MISS")

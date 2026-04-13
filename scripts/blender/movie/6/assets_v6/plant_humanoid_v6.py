@@ -124,7 +124,7 @@ def create_leaf_material_v6(name, color=(0.4, 0.6, 0.2)):
     node_out = nodes.new('ShaderNodeOutputMaterial')
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
 
-    style.set_principled_socket(node_bsdf, "Base Color", (*color, 1))
+    node_bsdf.inputs['Base Color'].default_value = (*color, 1)
     style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.5)
     style.set_principled_socket(node_bsdf, "Transmission Weight", 0.2)
     node_bsdf.inputs['Roughness'].default_value = 0.4
@@ -562,6 +562,24 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
     mesh_obj.data.materials.append(create_bark_material_v6(f"Bark_{name}", color=bark_color))
     mesh_obj.data.materials.append(create_leaf_material_v6(f"Leaf_{name}", color=leaf_color))
+
+    print(f"DEBUG MATERIAL ASSIGNMENT for {name}:")
+    print(f"  Mesh object: {mesh_obj.name}, type: {mesh_obj.type}")
+    print(f"  Number of material slots: {len(mesh_obj.data.materials)}")
+    for i, mat in enumerate(mesh_obj.data.materials):
+        if mat:
+            print(f"    Slot {i}: Material Name: {mat.name}")
+            if mat.use_nodes:
+                principled_bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if principled_bsdf:
+                    base_color = principled_bsdf.inputs['Base Color'].default_value
+                    print(f"      Principled BSDF Base Color: R={base_color[0]:.2f}, G={base_color[1]:.2f}, B={base_color[2]:.2f}, A={base_color[3]:.2f}")
+                else:
+                    print("      No Principled BSDF node found.")
+            else:
+                print("      Material does not use nodes.")
+        else:
+            print(f"    Slot {i}: Material is None")
 
     # 4. A-Pose
     bpy.context.view_layer.objects.active = arm_obj

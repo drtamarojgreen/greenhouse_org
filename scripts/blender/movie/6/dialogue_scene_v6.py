@@ -2,7 +2,7 @@ import bpy
 import os
 import time
 import config
-from .asset_manager_v6 import SylvanEnsembleManager
+from asset_manager_v6 import SylvanEnsembleManager
 
 class DialogueSceneV6:
     """Manages character interaction and animation for Scene 6."""

@@ -33,6 +33,17 @@ def generate_full_scene_v6():
     am = asset_manager_v6.SylvanEnsembleManager()
     am.ensure_clean_slate()
 
+    bpy.context.scene.render.engine = 'BLENDER_EEVEE'
+    bpy.context.scene.render.use_compositing = False
+
+    # Set Color Management to a neutral standard
+    bpy.context.scene.render.image_settings.color_mode = 'RGBA' # Ensure RGBA output
+    bpy.context.scene.display_settings.display_device = 'sRGB'
+    bpy.context.scene.view_settings.view_transform = 'Standard'
+    bpy.context.scene.view_settings.look = 'None'
+    bpy.context.scene.view_settings.exposure = 0.0
+    bpy.context.scene.view_settings.gamma = 1.0
+
     chroma_green_setup.setup_chroma_green_backdrop()
 
     plant_humanoid_v6.create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)

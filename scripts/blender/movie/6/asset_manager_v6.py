@@ -26,6 +26,7 @@ class SylvanEnsembleManager:
         self.collection_name = config.COLL_ASSETS
         self.ensemble  = config.SPIRIT_ENSEMBLE
         self.rig_map   = config.RIG_MAP_SRC
+        self.linked_objects_map = {}
 
     def ensure_clean_slate(self):
         """Purges ALL data-blocks for a reproducible clean start."""
@@ -58,19 +59,30 @@ class SylvanEnsembleManager:
         want = set(src_mesh_names + src_rig_names)
 
         if not os.path.exists(config.SPIRITS_ASSET_BLEND):
-             return
+            print(f"ERROR: Production asset blend not found: {config.SPIRITS_ASSET_BLEND}. Skipping ensemble linking.")
+            return
+
+        print(f"DEBUG: Attempting to link from: {config.SPIRITS_ASSET_BLEND}")
+        print(f"DEBUG: Objects requested for linking (want): {want}")
 
         with bpy.data.libraries.load(config.SPIRITS_ASSET_BLEND, link=False) as (data_from, data_to):
+            print(f"DEBUG: Objects available in blend (data_from.objects): {data_from.objects}")
             data_to.objects = [n for n in want if n in data_from.objects]
+            print(f"DEBUG: Objects actually loaded (data_to.objects): {data_to.objects}")
 
-        for obj in data_to.objects:
+        for obj in data_to.objects: # 'obj' is already the bpy.types.Object
+            print(f"DEBUG: Processing obj: {obj.name}, type: {type(obj)}") # Debug print
             if obj and obj.name not in coll.objects:
                 coll.objects.link(obj)
                 obj["source_name"] = obj.name
+                self.linked_objects_map[obj.name] = obj # Add to map
+                print(f"DEBUG: Linked object '{obj.name}' to collection '{coll.name}' (source_name: {obj['source_name']}). Added to map.")
                 # Recursively link children (Point 142)
                 for child in obj.children_recursive:
                     if child.name not in coll.objects:
                         coll.objects.link(child)
+                        self.linked_objects_map[child.name] = child # Add child to map
+                        print(f"DEBUG: Linked child object '{child.name}' to collection '{coll.name}'. Added to map.")
 
     def link_protagonists(self):
         """Creates procedural protagonists."""
@@ -103,59 +115,111 @@ class SylvanEnsembleManager:
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
 
+        print(f"DEBUG: Starting renormalize_objects. Collection: {coll.name}")
+
         targets = []
         for src, art in self.ensemble.items():
              targets.append((src, art, "."))
+        # Root_Guardian has "skeleton" as both mesh and rig.
+        # This prevents it being added twice.
         if "Root_Guardian" not in self.ensemble.values():
              targets.append(("skeleton", "Root_Guardian", "."))
+        print(f"DEBUG: Renormalize targets: {targets}")
 
-        for src_mesh_name, art_name, sep in targets:
+        # --- Phase 1: Resolve all original objects from the map to avoid renaming conflicts ---
+        resolved_objects = {} # Map art_name -> {"mesh": obj, "rig": obj}
+        for src_mesh_name_key, art_name_value in self.ensemble.items():
+            resolved_objects[art_name_value] = {}
+            # Resolve mesh object
+            mesh_obj = self.linked_objects_map.get(src_mesh_name_key)
+            if mesh_obj:
+                resolved_objects[art_name_value]["mesh"] = mesh_obj
+            else:
+                print(f"DEBUG: Could not resolve mesh for '{art_name_value}' from src '{src_mesh_name_key}'.")
+
+            # Resolve rig object
+            original_rig_name = self.rig_map.get(art_name_value)
+            if original_rig_name:
+                rig_obj = self.linked_objects_map.get(original_rig_name)
+                if rig_obj:
+                    resolved_objects[art_name_value]["rig"] = rig_obj
+                else:
+                    print(f"DEBUG: Could not resolve rig for '{art_name_value}' from src '{original_rig_name}'.")
+
+        # Special handling for Root_Guardian (if not already handled by ensemble map)
+        if "Root_Guardian" in self.ensemble.values(): # It's in the ensemble
+            skeleton_obj = self.linked_objects_map.get("skeleton")
+            if skeleton_obj:
+                # Ensure Root_Guardian entry exists and set its mesh/rig to skeleton_obj
+                if "Root_Guardian" not in resolved_objects:
+                    resolved_objects["Root_Guardian"] = {}
+                resolved_objects["Root_Guardian"]["mesh"] = skeleton_obj
+                resolved_objects["Root_Guardian"]["rig"] = skeleton_obj
+            else:
+                print(f"ERROR: 'skeleton' object (for Root_Guardian) not found in linked_objects_map.")
+
+        # --- Phase 2: Apply renames, parenting, and scaling using resolved objects ---
+        for src_mesh_name_from_targets, art_name, sep in targets: # targets still has the original src names
             t_mesh_name = f"{art_name}{sep}Body"
             t_rig_name  = f"{art_name}{sep}Rig"
 
-            rig = bpy.data.objects.get(t_rig_name)
+            print(f"DEBUG: Processing '{art_name}'. Target mesh:'{t_mesh_name}', target rig:'{t_rig_name}'")
+
+            resolved_entry = resolved_objects.get(art_name)
+            if not resolved_entry:
+                print(f"DEBUG: No resolved objects found for '{art_name}'. Skipping.")
+                continue
+
+            rig = resolved_entry.get("rig")
+            mesh = resolved_entry.get("mesh")
+
+            if not mesh:
+                print(f"DEBUG: No mesh found for '{art_name}' in resolved_objects. Skipping.")
+                continue
             if not rig:
-                src_rig_name = self.rig_map.get(art_name) or (src_mesh_name if art_name == "Root_Guardian" else None)
-                rig = (bpy.data.objects.get(src_rig_name) or
-                       next((o for o in coll.objects if o.get("source_name") == src_rig_name), None))
+                print(f"DEBUG: No rig found for '{art_name}' in resolved_objects. Skipping.")
+                continue
 
-            mesh = bpy.data.objects.get(t_mesh_name) or next((o for o in coll.objects if o.get("source_name") == src_mesh_name), None)
+            # Skip if mesh and rig are the same, but rig was not original 'skeleton' for Root_Guardian.
+            # This logic branch is intended for the special 'Root_Guardian' case.
+            if mesh == rig and art_name != "Root_Guardian":
+                print(f"DEBUG: Mesh and rig are same object for '{art_name}' but not Root_Guardian. Skipping this logic.")
+                pass # This original 'if mesh == rig' was meant for Root_Guardian specifically
 
-            if not mesh: continue
-            if not rig: rig = mesh.find_armature()
+            old_mesh_name = mesh.name
+            old_rig_name = rig.name
 
-            if mesh == rig:
-                # Root_Guardian case: the rig is also the body.
-                # We rename it once and ensure it's treated as a rig.
-                pass
+            # Rename if necessary and if not already renamed
+            if mesh and mesh.name != t_mesh_name: mesh.name = t_mesh_name
+            if rig and rig.name != t_rig_name: rig.name = t_rig_name
+            
+            print(f"DEBUG: Renamed mesh from '{old_mesh_name}' to '{mesh.name}' and rig from '{old_rig_name}' to '{rig.name}'.")
 
-            if mesh: mesh.name = t_mesh_name
-            if rig:
-                rig.name = t_rig_name
-                if mesh and mesh != rig:
-                    mesh.parent = rig
-                    mesh.location = (0, 0, 0)
-                    mesh.rotation_euler = (0, 0, 0)
-                    # Preserve scale or normalize as needed
+            if mesh and mesh != rig:
+                mesh.parent = rig
+                mesh.location = (0, 0, 0)
+                mesh.rotation_euler = (0, 0, 0)
+                print(f"DEBUG: Parenting {mesh.name} to {rig.name}. Current parent: {mesh.parent}. Mesh local loc/rot reset.")
 
-                # Check for protagonist rigs specifically, not just mesh names
-                protags = [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]
-                is_protag = any(p in rig.name or p in art_name for p in protags)
+            protags = [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]
+            is_protag = any(p in rig.name or p in art_name for p in protags)
 
-                if not is_protag:
-                    # Calculate target height based on art_name
-                    target_h = 1.0
-                    if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
-                    elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
-                    elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
+            if not is_protag:
+                target_h = 1.0
+                if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
+                elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
+                elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
+                print(f"DEBUG: Scaling '{art_name}' (Rig: '{rig.name}'). Current scale: {rig.scale.x:.2f}. Target height: {target_h:.2f}")
 
-                    # Only normalize if not already scaled (avoid multi-mesh compounding)
-                    if abs(rig.scale.x - 1.0) < 0.001:
-                        self.normalize_character_scale(rig, target_h)
+                self.normalize_character_scale(rig, target_h)
+            else:
+                print(f"DEBUG: '{art_name}' is a protagonist. Skipping scaling (handled elsewhere).")
 
-                if mesh.type == 'MESH':
-                    arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
-                    arm_mod.object = rig
+            if mesh.type == 'MESH':
+                arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
+                arm_mod.object = rig
+                print(f"DEBUG: Assigned armature modifier for '{mesh.name}' to '{rig.name}'.")
+        print("DEBUG: Finished renormalize_objects.")
 
     def repair_materials(self):
         """Ensures spirit materials are linked (minimal logic)."""
