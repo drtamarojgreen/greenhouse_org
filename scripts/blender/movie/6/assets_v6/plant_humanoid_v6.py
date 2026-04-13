@@ -378,9 +378,14 @@ def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
         if bname == "Head": bone.roll = math.radians(180)
         if p: bone.parent = armature_data.edit_bones[p]
 
+        # Non-body bones should not deform the main mesh
+        if any(x in bname for x in ["Ear", "Eye", "Eyelid", "Eyebrow", "Nose", "Lip", "Finger", "Toe", "Shoulder", "Hip"]):
+            bone.use_deform = False
+
     for bname, (h, t, p_name, btype) in facial_defs.items():
         bone = armature_data.edit_bones.new(bname)
         bone.head, bone.tail = h, t
+        bone.use_deform = False # Facial props are parented meshes, not weight-deformed
         if p_name and p_name in armature_data.edit_bones:
             bone.parent = armature_data.edit_bones[p_name]
 

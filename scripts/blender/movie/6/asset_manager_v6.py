@@ -90,20 +90,27 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Calculates world-height from mesh data and scales rig to match target."""
+        """Calculates world-height from mesh data and scales rig to match target, filtering outliers."""
         if not rig: return
         meshes = [c for c in rig.children if c.type == 'MESH']
         if not meshes: return
 
         import mathutils
-        min_z, max_z = float('inf'), float('-inf')
+        all_z = []
         for m in meshes:
-            # Calculate world-space bounds manually to avoid view_layer.update()
             mw = m.matrix_world
-            for corner in m.bound_box:
-                world_pt = mw @ mathutils.Vector(corner)
-                min_z = min(min_z, world_pt.z)
-                max_z = max(max_z, world_pt.z)
+            # Use vertices directly for more granular outlier detection than bound_box
+            for v in m.data.vertices:
+                all_z.append((mw @ v.co).z)
+
+        if not all_z: return
+        all_z.sort()
+
+        # Simple robust height: 1st to 99th percentile to skip "shards"
+        idx_min = int(len(all_z) * 0.01)
+        idx_max = int(len(all_z) * 0.99)
+        min_z = all_z[idx_min]
+        max_z = all_z[idx_max]
 
         current_h = max_z - min_z
         if current_h > 0.001:
@@ -200,6 +207,8 @@ class SylvanEnsembleManager:
                 mesh.location = (0, 0, 0)
                 mesh.rotation_euler = (0, 0, 0)
                 print(f"DEBUG: Parenting {mesh.name} to {rig.name}. Current parent: {mesh.parent}. Mesh local loc/rot reset.")
+            else:
+                print(f"DEBUG: Skipping parenting for '{art_name}' because mesh and rig are the same object.")
 
             protags = [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]
             is_protag = any(p in rig.name or p in art_name for p in protags)

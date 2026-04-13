@@ -46,6 +46,11 @@ def generate_full_scene_v6():
 
     chroma_green_setup.setup_chroma_green_backdrop()
 
+    # Ensure assets collection exists before creating procedural characters
+    if config.COLL_ASSETS not in bpy.data.collections:
+        assets_coll = bpy.data.collections.new(config.COLL_ASSETS)
+        bpy.context.scene.collection.children.link(assets_coll)
+
     plant_humanoid_v6.create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
     plant_humanoid_v6.create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 

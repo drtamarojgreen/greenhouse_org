@@ -75,16 +75,6 @@ class SylvanDirector:
     # ------------------------------------------------------------------
 
     def compose_ensemble(self):
-        """Predictable fan placement for spirits."""
-        spirits = sorted([o for o in bpy.data.objects if ".Rig" in o.name], key=lambda o: o.name)
-        num = len(spirits)
-        if num == 0: return
-        
-        for i, rig in enumerate(spirits):
-            angle = (i / (num - 1 if num > 1 else 1)) * math.pi * 0.8 - math.pi * 0.4
-            dist = 10.0
-            rig.location = (math.sin(angle) * dist, 8.0 + math.cos(angle) * 3.0, 0.0)
-            rig.scale = (1, 1, 1)
         """Algorithmically positions ensemble members in a cinematic fan."""
         coll = bpy.data.collections.get(config.COLL_ASSETS)
         if not coll:
@@ -100,8 +90,8 @@ class SylvanDirector:
             return
 
         for i, rig in enumerate(spirits):
-            angle = (i / max(num - 1, 1)) * math.pi * 0.9 - math.pi * 0.45
-            dist  = 9.0 + (i % 2) * 2.5
+            angle = (i / max(num - 1, 1)) * math.pi * 0.95 - math.pi * 0.475
+            dist  = 12.0 + (i % 2) * 3.5 # Increased distance to prevent occlusion
 
             rig.location = (
                 math.sin(angle) * dist,

@@ -34,6 +34,7 @@ class TestFacialAttachment(unittest.TestCase):
                 self.assertNotEqual(obj.parent_bone, "", f"Prop {obj.name} has no parent bone")
 
                 # Verify not stuck at origin
+                bpy.context.view_layer.update()
                 world_loc = obj.matrix_world.translation
                 self.assertGreater(world_loc.length, 0.1, f"Prop {obj.name} appears stuck at origin")
 

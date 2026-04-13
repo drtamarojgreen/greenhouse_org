@@ -121,8 +121,18 @@ def apply_blink(arm_obj, start_frame, duration=6):
 def apply_talking_arms(arm_obj, start_frame, duration=60):
     hand_l = get_bone(arm_obj, "Hand.L")
     hand_r = get_bone(arm_obj, "Hand.R")
-    if not hand_l or not hand_r: return
+    if not hand_l or not hand_r:
+        print(f"DEBUG: apply_talking_arms failed to find bones for {arm_obj.name}")
+        return
+
+    print(f"DEBUG: apply_talking_arms keyframing {arm_obj.name}")
+    if not arm_obj.animation_data:
+        arm_obj.animation_data_create()
     
+    # In Blender 4.0+, ensure we have an action
+    if not arm_obj.animation_data.action:
+        arm_obj.animation_data.action = bpy.data.actions.new(name=f"Action_{arm_obj.name}")
+
     dp_l = f'pose.bones["{hand_l.name}"].location'
     dp_r = f'pose.bones["{hand_r.name}"].location'
     

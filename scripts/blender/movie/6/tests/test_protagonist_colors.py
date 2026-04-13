@@ -45,11 +45,8 @@ class TestProtagonistColors(unittest.TestCase):
         return principled_bsdf.inputs['Base Color'].default_value
 
     def test_herbaceous_bark_color(self):
-        # The expected color for Herbaceous's bark material.
-        # !!! IMPORTANT: Replace these with the actual expected RGB values (0.0-1.0)
-        # For example, if it should be (0.1, 0.15, 0.05) from original plant_humanoid_v6.py
-        # expected_color = (0.1, 0.15, 0.05, 1.0) # RGBA
-        expected_color = (0.25, 0.35, 0.1, 1.0) # PLACEHOLDER: Lighter, greener brown (RGBA)
+        # The expected color for Herbaceous's bark material from plant_humanoid_v6.py
+        expected_color = (0.1, 0.15, 0.05, 1.0) # RGBA
         
         actual_color = self._get_principled_bsdf_base_color(f"{CHAR_HERBACEOUS}_Body", f"Bark_{CHAR_HERBACEOUS}")
         self.assertAlmostEqual(actual_color[0], expected_color[0], places=3)
@@ -57,9 +54,8 @@ class TestProtagonistColors(unittest.TestCase):
         self.assertAlmostEqual(actual_color[2], expected_color[2], places=3)
 
     def test_herbaceous_leaf_color(self):
-        # The expected color for Herbaceous's leaf material.
-        # expected_color = (0.6, 0.4, 0.8, 1.0) # RGBA
-        expected_color = (0.7, 0.5, 0.9, 1.0) # PLACEHOLDER: Brighter purple (RGBA)
+        # The expected color for Herbaceous's leaf material from plant_humanoid_v6.py
+        expected_color = (0.6, 0.4, 0.8, 1.0) # RGBA
 
         actual_color = self._get_principled_bsdf_base_color(f"{CHAR_HERBACEOUS}_Body", f"Leaf_{CHAR_HERBACEOUS}")
         self.assertAlmostEqual(actual_color[0], expected_color[0], places=3)
@@ -67,9 +63,8 @@ class TestProtagonistColors(unittest.TestCase):
         self.assertAlmostEqual(actual_color[2], expected_color[2], places=3)
 
     def test_arbor_bark_color(self):
-        # The expected color for Arbor's bark material.
-        # expected_color = (0.2, 0.12, 0.08, 1.0) # RGBA
-        expected_color = (0.4, 0.2, 0.1, 1.0) # PLACEHOLDER: Richer brown (RGBA)
+        # The expected color for Arbor's bark material from plant_humanoid_v6.py
+        expected_color = (0.2, 0.12, 0.08, 1.0) # RGBA
 
         actual_color = self._get_principled_bsdf_base_color(f"{CHAR_ARBOR}_Body", f"Bark_{CHAR_ARBOR}")
         self.assertAlmostEqual(actual_color[0], expected_color[0], places=3)
@@ -77,9 +72,8 @@ class TestProtagonistColors(unittest.TestCase):
         self.assertAlmostEqual(actual_color[2], expected_color[2], places=3)
 
     def test_arbor_leaf_color(self):
-        # The expected color for Arbor's leaf material.
-        # expected_color = (0.2, 0.6, 0.1, 1.0) # RGBA
-        expected_color = (0.3, 0.7, 0.2, 1.0) # PLACEHOLDER: Brighter green (RGBA)
+        # The expected color for Arbor's leaf material from plant_humanoid_v6.py
+        expected_color = (0.2, 0.6, 0.1, 1.0) # RGBA
 
         actual_color = self._get_principled_bsdf_base_color(f"{CHAR_ARBOR}_Body", f"Leaf_{CHAR_ARBOR}")
         self.assertAlmostEqual(actual_color[0], expected_color[0], places=3)
