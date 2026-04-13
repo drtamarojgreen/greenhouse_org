@@ -97,6 +97,13 @@ def extract_assets():
             bpy.ops.object.select_all(action='DESELECT')
             body.select_set(True)
             rig.select_set(True)
+
+            # Select all recursive children to ensure accessories/props are included
+            for child in body.children_recursive:
+                child.select_set(True)
+            for child in rig.children_recursive:
+                child.select_set(True)
+
             bpy.context.view_layer.objects.active = rig
 
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
@@ -120,6 +127,10 @@ def extract_assets():
 
             bpy.ops.object.select_all(action='DESELECT')
             body.select_set(True)
+            # Select all recursive children
+            for child in body.children_recursive:
+                child.select_set(True)
+
             bpy.context.view_layer.objects.active = body
 
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
