@@ -22,6 +22,7 @@ def _safe_fbx_export(filepath, use_selection=True):
     supported = {p.identifier for p in props}
 
     # Define a exhaustive list of potential parameters we want to set
+    # Note: 'use_space_transform' is critical in some versions but missing in others
     potential_kwargs = {
         "filepath": filepath,
         "use_selection": use_selection,
@@ -29,13 +30,26 @@ def _safe_fbx_export(filepath, use_selection=True):
         "bake_anim": False,
         "path_mode": 'COPY',
         "embed_textures": False,
+        "use_space_transform": False, # Explicitly include to satisfy internal checks
+        "axis_forward": '-Z',
+        "axis_up": 'Y',
     }
 
     # Filter kwargs to only include those supported by the current Blender version
     kwargs = {k: v for k, v in potential_kwargs.items() if k in supported}
 
-    # Execute with supported args
-    bpy.ops.export_scene.fbx(**kwargs)
+    # Execute with supported args, wrapped in try-except for internal addon errors
+    try:
+        bpy.ops.export_scene.fbx(**kwargs)
+    except Exception as e:
+        print(f"  WARNING: FBX Export failed for {os.path.basename(filepath)}: {e}")
+        # Try a second time with absolute minimal args if it failed
+        if "filepath" in kwargs:
+            print("  Retrying with minimal arguments...")
+            try:
+                bpy.ops.export_scene.fbx(filepath=filepath)
+            except:
+                print("  Minimal export failed.")
 
 
 def extract_assets():
