@@ -192,14 +192,16 @@ class TestV6SpiritIntegration(unittest.TestCase):
         targets  = [config.CHAR_HERBACEOUS + "_Body", config.CHAR_ARBOR + "_Body"]
         targets += [name + ".Body" for name in config.SPIRIT_ENSEMBLE.values()]
 
-        # Add Root_Guardian explicitly as it might have a dot or underscore depending on previous runs
-        if "Root_Guardian.Body" not in targets: targets.append("Root_Guardian.Body")
-
         # Ensure we are at a frame where characters have been positioned
         bpy.context.scene.frame_set(1)
 
         for name in targets:
             obj = bpy.data.objects.get(name)
+
+            # Root_Guardian might be .Rig if it's dual-purpose
+            if obj is None and "Root_Guardian" in name:
+                obj = bpy.data.objects.get("Root_Guardian.Rig")
+
             self.assertIsNotNone(obj, f"{name} is MISSING from scene data")
 
             bpy.context.view_layer.update()
@@ -247,15 +249,14 @@ class TestV6SpiritIntegration(unittest.TestCase):
         targets  = [config.CHAR_HERBACEOUS + "_Body", config.CHAR_ARBOR + "_Body"]
         targets += [name + ".Body" for name in config.SPIRIT_ENSEMBLE.values()]
 
-        # Include Root_Guardian explicitly
-        if "Root_Guardian.Body" not in targets: targets.append("Root_Guardian.Body")
-
         print("\n" + "=" * 115)
         print(f"{'OBJECT':<25} | {'RIG':<15} | {'LOC (Y)':<8} | {'RIG LOC (Y)':<12} | {'HEIGHT':<8} | {'PARENT':<15} | {'UP.Z'}")
         print("-" * 115)
 
         for name in targets:
             obj = bpy.data.objects.get(name)
+            if not obj and "Root_Guardian" in name:
+                obj = bpy.data.objects.get("Root_Guardian.Rig")
             if not obj:
                 continue
 
@@ -278,6 +279,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
         spirits = [name + ".Body" for name in config.SPIRIT_ENSEMBLE.values()]
         for name in spirits:
             obj = bpy.data.objects.get(name)
+            if not obj and "Root_Guardian" in name:
+                obj = bpy.data.objects.get("Root_Guardian.Rig")
             if not obj:
                 continue
 
@@ -314,6 +317,8 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
         for name in targets:
             obj = bpy.data.objects.get(name)
+            if not obj and "Root_Guardian" in name:
+                obj = bpy.data.objects.get("Root_Guardian.Rig")
             if not obj:
                 continue
 
@@ -547,7 +552,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
         cam = bpy.data.objects.get(config.CAMERA_NAME)
         self.assertIsNotNone(cam, f"{config.CAMERA_NAME} camera missing")
 
-        curve = bpy.data.objects.get(f"Curve.{config.CAMERA_NAME}")
+        curve = bpy.data.objects.get(f"Path_{config.CAMERA_NAME}")
         self.assertIsNotNone(curve, "Camera curve missing")
 
         con = next((c for c in cam.constraints if c.type == 'FOLLOW_PATH'), None)

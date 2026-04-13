@@ -27,7 +27,7 @@ class TestRigIntegrity(unittest.TestCase):
 
         # We only care about deformation bones (exclude control bones if any were added)
         for bone in armature.bones:
-            if "Ctrl" in bone.name: continue
+            if "Ctrl" in bone.name or not bone.use_deform: continue
 
             self.assertIn(bone.name, vg_names, f"Bone {bone.name} has no corresponding vertex group")
 

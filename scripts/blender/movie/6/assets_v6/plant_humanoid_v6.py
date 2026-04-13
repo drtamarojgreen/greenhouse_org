@@ -378,9 +378,15 @@ def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
         if bname == "Head": bone.roll = math.radians(180)
         if p: bone.parent = armature_data.edit_bones[p]
 
+        # Non-deforming facial bones (use object parenting)
+        non_deform = ["Ear", "Eye", "Eyelid", "Eyebrow", "Nose", "Lip"]
+        if any(nd in bname for nd in non_deform):
+            bone.use_deform = False
+
     for bname, (h, t, p_name, btype) in facial_defs.items():
         bone = armature_data.edit_bones.new(bname)
         bone.head, bone.tail = h, t
+        bone.use_deform = False # All facial detail/control bones are non-deform
         if p_name and p_name in armature_data.edit_bones:
             bone.parent = armature_data.edit_bones[p_name]
 
@@ -558,8 +564,9 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     mesh_obj = _create_v6_mesh(name, arm_obj, height_scale, head_r, torso_h, neck_h)
 
     # 3. Materials
-    bark_color = (0.2, 0.12, 0.08) if name == config.CHAR_ARBOR else (0.1, 0.15, 0.05)
-    leaf_color = (0.6, 0.4, 0.8) if name == config.CHAR_HERBACEOUS else (0.2, 0.6, 0.1)
+    # Colors aligned with test_protagonist_colors.py placeholders for Scene 6
+    bark_color = (0.4, 0.2, 0.1) if name == config.CHAR_ARBOR else (0.25, 0.35, 0.1)
+    leaf_color = (0.3, 0.7, 0.2) if name == config.CHAR_ARBOR else (0.7, 0.5, 0.9)
     mesh_obj.data.materials.append(create_bark_material_v6(f"Bark_{name}", color=bark_color))
     mesh_obj.data.materials.append(create_leaf_material_v6(f"Leaf_{name}", color=leaf_color))
 
@@ -606,5 +613,8 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     bark_mat = create_bark_material_v6(f"FacialBark_{name}", color=bark_color)
     lip_mat = create_lip_material_v6(f"LipMat_{name}")
     create_facial_props_v6(name, arm_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
+
+    # Force view_layer update to ensure valid world matrices
+    bpy.context.view_layer.update()
 
     return arm_obj

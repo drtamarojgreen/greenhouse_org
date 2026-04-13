@@ -95,10 +95,12 @@ class SylvanEnsembleManager:
         meshes = [c for c in rig.children if c.type == 'MESH']
         if not meshes: return
 
+        # Force update to ensure matrix_world is correct before measurement
+        bpy.context.view_layer.update()
+
         import mathutils
         min_z, max_z = float('inf'), float('-inf')
         for m in meshes:
-            # Calculate world-space bounds manually to avoid view_layer.update()
             mw = m.matrix_world
             for corner in m.bound_box:
                 world_pt = mw @ mathutils.Vector(corner)
@@ -109,6 +111,7 @@ class SylvanEnsembleManager:
         if current_h > 0.001:
             scale_factor = target_height / current_h
             rig.scale *= scale_factor
+            bpy.context.view_layer.update()
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
@@ -145,18 +148,9 @@ class SylvanEnsembleManager:
                     resolved_objects[art_name_value]["rig"] = rig_obj
                 else:
                     print(f"DEBUG: Could not resolve rig for '{art_name_value}' from src '{original_rig_name}'.")
-
-        # Special handling for Root_Guardian (if not already handled by ensemble map)
-        if "Root_Guardian" in self.ensemble.values(): # It's in the ensemble
-            skeleton_obj = self.linked_objects_map.get("skeleton")
-            if skeleton_obj:
-                # Ensure Root_Guardian entry exists and set its mesh/rig to skeleton_obj
-                if "Root_Guardian" not in resolved_objects:
-                    resolved_objects["Root_Guardian"] = {}
-                resolved_objects["Root_Guardian"]["mesh"] = skeleton_obj
-                resolved_objects["Root_Guardian"]["rig"] = skeleton_obj
-            else:
-                print(f"ERROR: 'skeleton' object (for Root_Guardian) not found in linked_objects_map.")
+            elif art_name_value == "Root_Guardian":
+                # Root_Guardian is a special case where rig == mesh (skeleton object)
+                resolved_objects[art_name_value]["rig"] = resolved_objects[art_name_value].get("mesh")
 
         # --- Phase 2: Apply renames, parenting, and scaling using resolved objects ---
         for src_mesh_name_from_targets, art_name, sep in targets: # targets still has the original src names
@@ -191,12 +185,14 @@ class SylvanEnsembleManager:
 
             # Rename if necessary and if not already renamed
             if mesh and mesh.name != t_mesh_name: mesh.name = t_mesh_name
-            if rig and rig.name != t_rig_name: rig.name = t_rig_name
+            # Only rename rig if it's different from mesh to avoid overwriting .Body name
+            if rig and rig != mesh and rig.name != t_rig_name: rig.name = t_rig_name
             
             print(f"DEBUG: Renamed mesh from '{old_mesh_name}' to '{mesh.name}' and rig from '{old_rig_name}' to '{rig.name}'.")
 
             if mesh and mesh != rig:
                 mesh.parent = rig
+                mesh.matrix_parent_inverse = mathutils.Matrix.Identity(4)
                 mesh.location = (0, 0, 0)
                 mesh.rotation_euler = (0, 0, 0)
                 print(f"DEBUG: Parenting {mesh.name} to {rig.name}. Current parent: {mesh.parent}. Mesh local loc/rot reset.")
