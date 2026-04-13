@@ -21,19 +21,18 @@ def _safe_fbx_export(filepath, use_selection=True):
     props = bpy.ops.export_scene.fbx.get_rna_type().properties
     supported = {p.identifier for p in props}
 
-    kwargs = {
+    # Define a exhaustive list of potential parameters we want to set
+    potential_kwargs = {
         "filepath": filepath,
+        "use_selection": use_selection,
         "apply_unit_scale": False,
         "bake_anim": False,
         "path_mode": 'COPY',
         "embed_textures": False,
     }
 
-    # In some Blender 5.0 builds, 'use_selection' might be replaced or removed
-    if "use_selection" in supported:
-        kwargs["use_selection"] = use_selection
-    elif "selection_only" in supported: # Possible future name
-        kwargs["selection_only"] = use_selection
+    # Filter kwargs to only include those supported by the current Blender version
+    kwargs = {k: v for k, v in potential_kwargs.items() if k in supported}
 
     # Execute with supported args
     bpy.ops.export_scene.fbx(**kwargs)
