@@ -15,6 +15,30 @@ def _is_protagonist(art_name):
     return art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)
 
 
+def _safe_fbx_export(filepath, use_selection=True):
+    """Dynamic FBX export that respects Blender 5.0+ API changes."""
+    # Inspect properties to see what's supported
+    props = bpy.ops.export_scene.fbx.get_rna_type().properties
+    supported = {p.identifier for p in props}
+
+    kwargs = {
+        "filepath": filepath,
+        "apply_unit_scale": False,
+        "bake_anim": False,
+        "path_mode": 'COPY',
+        "embed_textures": False,
+    }
+
+    # In some Blender 5.0 builds, 'use_selection' might be replaced or removed
+    if "use_selection" in supported:
+        kwargs["use_selection"] = use_selection
+    elif "selection_only" in supported: # Possible future name
+        kwargs["selection_only"] = use_selection
+
+    # Execute with supported args
+    bpy.ops.export_scene.fbx(**kwargs)
+
+
 def extract_assets():
     print("\n" + "=" * 80)
     print("PHASE A: ASSET EXTRACTION (Sylvan Ensemble)")
@@ -28,9 +52,19 @@ def extract_assets():
     # 2. Link ensemble objects from production blend
     manager.link_ensemble()
 
+    # Special handling for Root_Guardian/skeleton if not found by exact name
+    if "skeleton" not in bpy.data.objects:
+        # Check if it was already renamed or exists as a substring
+        skel = next((o for o in bpy.data.objects if "skeleton" in o.name.lower()), None)
+        if skel:
+            print(f"  INFO: Found skeleton object as {skel.name!r}")
+            # Map it so the loop finds it
+            manager.ensemble[skel.name] = "Root_Guardian"
+
     # 3. Passive renaming only — no scaling or geometric modification
     print("ASSET_MANAGER: Renaming assets for export...")
-    for src_mesh, art_name in manager.ensemble.items():
+    # Root_Guardian case: skeleton might be both rig and mesh
+    for src_mesh, art_name in list(manager.ensemble.items()):
         mesh_obj = bpy.data.objects.get(src_mesh)
         if not mesh_obj:
             print(f"  SKIP (mesh not found): {src_mesh} -> {art_name}")
@@ -67,7 +101,9 @@ def extract_assets():
     for obj in bpy.data.objects:
         if not hasattr(obj.data, "materials"): continue
         for mat in obj.data.materials:
-            if not mat or not mat.use_nodes: continue
+            # Handle use_nodes deprecation in Blender 6.0 (pre-emptive)
+            use_nodes = getattr(mat, "use_nodes", True)
+            if not mat or not use_nodes: continue
             for node in mat.node_tree.nodes:
                 if node.type == 'TEX_IMAGE' and node.image:
                     src_path = bpy.path.abspath(node.image.filepath)
@@ -107,15 +143,7 @@ def extract_assets():
             bpy.context.view_layer.objects.active = rig
 
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
-            # Blender 5.0+ compatible export settings
-            bpy.ops.export_scene.fbx(
-                filepath=fbx_path,
-                use_selection=True,
-                apply_unit_scale=False,
-                bake_anim=False,
-                path_mode='COPY',
-                embed_textures=False,
-            )
+            _safe_fbx_export(fbx_path, use_selection=True)
             print(f"  SUCCESS: {art_name} -> {fbx_path}")
             exported.append(art_name)
 
@@ -134,14 +162,7 @@ def extract_assets():
             bpy.context.view_layer.objects.active = body
 
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
-            bpy.ops.export_scene.fbx(
-                filepath=fbx_path,
-                use_selection=True,
-                apply_unit_scale=False,
-                bake_anim=False,
-                path_mode='COPY',
-                embed_textures=False,
-            )
+            _safe_fbx_export(fbx_path, use_selection=True)
             print(f"  SUCCESS (rig-only): {art_name} -> {fbx_path}")
             exported.append(art_name)
 
