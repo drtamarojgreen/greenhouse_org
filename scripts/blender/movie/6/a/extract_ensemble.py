@@ -22,17 +22,25 @@ def _safe_fbx_export(filepath, use_selection=True):
     supported = {p.identifier for p in props}
 
     # Blender 5.0.1 internal bug: io_scene_fbx looks for 'use_space_transform'
-    # even if it's missing from RNA. We monkeypatch the operator class if needed.
-    if 'use_space_transform' not in supported:
-        try:
-            # Apply to bpy.types to ensure instances have the attribute
-            if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
-                bpy.types.EXPORT_SCENE_OT_fbx.use_space_transform = bpy.props.BoolProperty(
-                    name="Use Space Transform", default=False
-                )
-                print("  DEBUG: Monkeypatched bpy.types.EXPORT_SCENE_OT_fbx to resolve Blender 5.0 internal error.")
-        except Exception as e:
-            print(f"  WARNING: Failed to monkeypatch FBX operator: {e}")
+    # and 'files' even if they are missing from RNA.
+    # We apply a robust monkeypatch to the operator classes using simple values
+    # to avoid internal Python/C property lookup failures.
+    try:
+        import io_scene_fbx
+        for cls in (io_scene_fbx.EXPORT_SCENE_OT_fbx, bpy.types.EXPORT_SCENE_OT_fbx):
+            if hasattr(cls, "__annotations__"):
+                cls.__annotations__["use_space_transform"] = bpy.props.BoolProperty(name="Use Space Transform", default=False)
+            if not hasattr(cls, "use_space_transform"):
+                cls.use_space_transform = False
+
+        for cls in (io_scene_fbx.IMPORT_SCENE_OT_fbx, bpy.types.IMPORT_SCENE_OT_fbx):
+            if hasattr(cls, "__annotations__"):
+                cls.__annotations__["files"] = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
+            if not hasattr(cls, "files"):
+                cls.files = []
+        print("  DEBUG: Enhanced monkeypatch applied to FBX operators.")
+    except Exception as e:
+        print(f"  WARNING: Enhanced monkeypatch failed: {e}")
 
     # Define a exhaustive list of potential parameters we want to set
     potential_kwargs = {
@@ -84,16 +92,18 @@ def extract_assets():
     # 2. Link ensemble objects from production blend
     manager.link_ensemble()
 
-    # Special handling for Root_Guardian/skeleton if not found by exact name
-    # We check if 'skeleton' or 'Root_Guardian' exists (renaming might have happened)
-    root_guard_found = False
+    # Special handling for Root_Guardian/skeleton
+    # We search for any object representing Root_Guardian (skeleton or renamed)
+    root_guard_obj = None
     for obj in bpy.data.objects:
-        if obj.name == "skeleton" or obj.name == "Root_Guardian.Body" or "skeleton" in obj.name.lower():
-            print(f"  INFO: Found Root_Guardian/skeleton source as {obj.name!r}")
-            # Ensure it is in the manager's map for the loop
-            manager.ensemble[obj.name] = "Root_Guardian"
-            root_guard_found = True
+        if obj.name in ("skeleton", "Root_Guardian.Body", "Root_Guardian.Rig") or "skeleton" in obj.name.lower():
+            root_guard_obj = obj
             break
+
+    if root_guard_obj:
+        print(f"  INFO: Mapping {root_guard_obj.name!r} to 'Root_Guardian'")
+        # Ensure it's the primary entry in the ensemble map
+        manager.ensemble[root_guard_obj.name] = "Root_Guardian"
 
     # 3. Passive renaming only — no scaling or geometric modification
     print("ASSET_MANAGER: Renaming assets for export...")
@@ -155,7 +165,10 @@ def extract_assets():
     exported = []
     skipped  = []
 
-    for art_name in manager.ensemble.values():
+    # Get unique artistic names to avoid double-processing or double-skipping
+    unique_art_names = sorted(list(set(manager.ensemble.values())))
+
+    for art_name in unique_art_names:
         sep = "_" if _is_protagonist(art_name) else "."
         body_name = f"{art_name}{sep}Body"
         rig_name  = f"{art_name}{sep}Rig"

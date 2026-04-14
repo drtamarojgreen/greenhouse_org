@@ -86,6 +86,10 @@ class SylvanEnsembleManager:
         Prioritizes armature bones for characters with rigs to avoid mesh outliers (shards).
         """
         if not rig: return
+
+        # Reset scale to identity to ensure height measurement is of the baseline geometry
+        rig.scale = (1.0, 1.0, 1.0)
+
         # Ensure world matrices are up-to-date before height calculation
         bpy.context.view_layer.update()
 
@@ -120,8 +124,9 @@ class SylvanEnsembleManager:
 
                 if all_z:
                     all_z.sort()
-                    idx_min = int(len(all_z) * 0.01)
-                    idx_max = int(len(all_z) * 0.99)
+                    # Tighter percentile to filter aggressive shards
+                    idx_min = int(len(all_z) * 0.005)
+                    idx_max = int(len(all_z) * 0.995)
                     current_h = all_z[idx_max] - all_z[idx_min]
 
         if current_h > 0.001:
@@ -133,24 +138,32 @@ class SylvanEnsembleManager:
             for m in [o for o in rig.children_recursive if o.type == 'MESH']:
                 m.scale = (1.0, 1.0, 1.0)
 
+            # Additional safety: force scale on the rig object itself if it's also a mesh
+            if rig.type == 'MESH':
+                # Note: We don't force (1,1,1) on the rig object as it's the master scaler
+                pass
+
             # --- Grounding Logic ---
             # Recalculate height after scaling to find the new bottom
             bpy.context.view_layer.update()
 
             all_z = []
+            # Gather all vertices for accurate grounding
             meshes = [o for o in rig.children_recursive if o.type == 'MESH']
             if not meshes and rig.type == 'MESH': meshes = [rig]
 
             for m in meshes:
                 mw = m.matrix_world
-                # Using bound_box for fast grounding check
-                for co in m.bound_box:
-                    all_z.append((mw @ mathutils.Vector(co)).z)
+                # Percentile-based grounding to skip outliers
+                for v in m.data.vertices:
+                    all_z.append((mw @ v.co).z)
 
             if all_z:
-                z_min = min(all_z)
-                # Offset rig so bottom vertex is at scene floor (Z=0)
-                rig.location.z -= z_min
+                all_z.sort()
+                # Use 0.5% percentile for grounding floor to avoid "shard" artifacts
+                z_floor = all_z[int(len(all_z) * 0.005)]
+                # Offset rig so character is grounded at Z=0
+                rig.location.z -= z_floor
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
@@ -218,9 +231,12 @@ class SylvanEnsembleManager:
 
             if not is_protag:
                 target_h = 1.0
-                if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
-                elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
-                elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
+                if "Sylvan_Majesty" in art_name or "Radiant_Aura" in art_name:
+                    target_h = config.MAJESTIC_HEIGHT
+                elif "Verdant_Sprite" in art_name:
+                    target_h = config.SPRITE_HEIGHT
+                elif "Phoenix" in art_name:
+                    target_h = config.PHOENIX_HEIGHT
 
                 self.normalize_character_scale(rig, target_h)
 

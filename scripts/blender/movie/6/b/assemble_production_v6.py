@@ -107,13 +107,41 @@ def link_fbx_assets():
 
     coll = bpy.data.collections.get("6a_Assets")
 
+    # Blender 5.0.1 internal bug: io_scene_fbx looks for 'use_space_transform'
+    # and 'files' even if they are missing from RNA.
+    try:
+        import io_scene_fbx
+        for cls in (io_scene_fbx.EXPORT_SCENE_OT_fbx, bpy.types.EXPORT_SCENE_OT_fbx):
+            if hasattr(cls, "__annotations__"):
+                cls.__annotations__["use_space_transform"] = bpy.props.BoolProperty(name="Use Space Transform", default=False)
+            if not hasattr(cls, "use_space_transform"):
+                cls.use_space_transform = False
+
+        for cls in (io_scene_fbx.IMPORT_SCENE_OT_fbx, bpy.types.IMPORT_SCENE_OT_fbx):
+            if hasattr(cls, "__annotations__"):
+                cls.__annotations__["files"] = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
+            if not hasattr(cls, "files"):
+                cls.files = []
+        print("  DEBUG: Enhanced monkeypatch applied to FBX operators in Phase B.")
+    except Exception as e:
+        print(f"  WARNING: Enhanced monkeypatch failed in Phase B: {e}")
+
     for file in os.listdir(asset_dir):
         if file.endswith(".fbx"):
             path = os.path.join(asset_dir, file)
 
             # Capture objects before import
             pre_import = set(bpy.data.objects.keys())
-            bpy.ops.import_scene.fbx(filepath=path)
+
+            # Ensure filepath is absolute
+            abs_path = os.path.abspath(path)
+
+            try:
+                bpy.ops.import_scene.fbx(filepath=abs_path)
+            except Exception as e:
+                print(f"  ERROR: FBX Import failed for {file}: {e}")
+                continue
+
             post_import = set(bpy.data.objects.keys())
 
             new_objs = post_import - pre_import
