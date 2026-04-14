@@ -39,10 +39,12 @@ def setup_camera_rig_v6():
     """Builds standard production camera rig with paths."""
     import config
 
-    # 1. WIDE dynamic path
+    # 1. WIDE dynamic path: Slow arc-zoom for cinematic reveal
+    wide_base = mathutils.Vector(config.CAM_WIDE_POS)
     wide_points = [
-        (config.CAM_WIDE_POS[0], config.CAM_WIDE_POS[1], config.CAM_WIDE_POS[2]),
-        (config.CAM_WIDE_POS[0], config.CAM_WIDE_POS[1] + 2.0, config.CAM_WIDE_POS[2] + 1.0)
+        wide_base,
+        wide_base + mathutils.Vector((2.0, 2.0, 0.5)),
+        wide_base + mathutils.Vector((0.0, 4.0, 1.0))
     ]
     wide_path = create_camera_path("WIDE", wide_points)
 
@@ -50,11 +52,10 @@ def setup_camera_rig_v6():
     if wide_cam:
         setup_follow_path(wide_cam, wide_path, duration=config.TOTAL_FRAMES)
 
-    # 2. OTS target tracking
-    # OTS1 follows a small circle around its base position while tracking Herbaceous
+    # 2. OTS1: Breathing figure-8 motion
     ots1_base = mathutils.Vector(config.CAM_OTS1_POS)
     ots1_points = [
-        ots1_base + mathutils.Vector((math.sin(a), math.cos(a), 0)) * 0.5
+        ots1_base + mathutils.Vector((math.sin(a), math.sin(2*a), math.cos(a)*0.2)) * 0.8
         for a in [0, math.pi/2, math.pi, 3*math.pi/2, 2*math.pi]
     ]
     ots1_path = create_camera_path("OTS1", ots1_points)
@@ -62,5 +63,17 @@ def setup_camera_rig_v6():
     ots1_cam = bpy.data.objects.get("OTS1")
     if ots1_cam:
         setup_follow_path(ots1_cam, ots1_path, duration=config.TOTAL_FRAMES)
+
+    # 3. OTS2: Symmetric breathing figure-8 motion
+    ots2_base = mathutils.Vector(config.CAM_OTS2_POS)
+    ots2_points = [
+        ots2_base + mathutils.Vector((math.sin(a), -math.sin(2*a), math.cos(a)*0.2)) * 0.8
+        for a in [0, math.pi/2, math.pi, 3*math.pi/2, 2*math.pi]
+    ]
+    ots2_path = create_camera_path("OTS2", ots2_points)
+
+    ots2_cam = bpy.data.objects.get("OTS2")
+    if ots2_cam:
+        setup_follow_path(ots2_cam, ots2_path, duration=config.TOTAL_FRAMES)
 
     return True

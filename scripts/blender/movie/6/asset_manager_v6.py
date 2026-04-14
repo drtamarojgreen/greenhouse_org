@@ -89,6 +89,8 @@ class SylvanEnsembleManager:
 
         import mathutils
         all_z = []
+        # Ensure world-space coordinates are up to date (Point 142)
+        bpy.context.view_layer.update()
         for m in meshes:
             mw = m.matrix_world
             # Use vertices directly for more granular outlier detection than bound_box

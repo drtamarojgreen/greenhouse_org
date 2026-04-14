@@ -53,6 +53,7 @@ def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=No
         "talking": (apply_talking_arms, duration or 60),
         "dance": (apply_dance, duration or 600),
         "idle": (apply_idle_sway, duration or 120),
+        "spore_tag": (apply_spore_tag, duration or 120),
     }
     
     if tag in registry:
@@ -169,6 +170,33 @@ def apply_idle_sway(arm_obj, start_frame, duration=120):
         torso.rotation_euler[0] += math.sin(phase) * 0.02
         torso.rotation_euler[1] += math.cos(phase) * 0.01
         arm_obj.keyframe_insert(data_path=dp, frame=f)
+
+def apply_spore_tag(arm_obj, start_frame, duration=120):
+    """Playful 'dodge' motion for Spore Tag."""
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+
+    dp = f'pose.bones["{torso.name}"].location'
+    dr = f'pose.bones["{torso.name}"].rotation_euler'
+
+    # Initial state
+    arm_obj.keyframe_insert(data_path=dp, frame=start_frame)
+    arm_obj.keyframe_insert(data_path=dr, frame=start_frame)
+
+    mid = start_frame + (duration // 2)
+    end = start_frame + duration
+
+    # Sudden lean/dodge
+    torso.location[0] += 0.3
+    torso.rotation_euler[1] += math.radians(10)
+    arm_obj.keyframe_insert(data_path=dp, index=0, frame=mid)
+    arm_obj.keyframe_insert(data_path=dr, index=1, frame=mid)
+
+    # Return
+    torso.location[0] -= 0.3
+    torso.rotation_euler[1] -= math.radians(10)
+    arm_obj.keyframe_insert(data_path=dp, index=0, frame=end)
+    arm_obj.keyframe_insert(data_path=dr, index=1, frame=end)
 
 # ---------------------------------------------------------------------------
 # PROP ATTACHMENT

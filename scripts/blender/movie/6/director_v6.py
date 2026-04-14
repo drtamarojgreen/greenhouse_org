@@ -123,7 +123,7 @@ class SylvanDirector:
         if arbor: arbor.location = config.CHAR_ARBOR_POS
 
     def apply_scene_animations(self):
-        """Orchestrates varied animations across all characters."""
+        """Orchestrates varied animations across all characters, including storyline beats."""
         coll = bpy.data.collections.get(config.COLL_ASSETS)
         if not coll: return
 
@@ -134,16 +134,43 @@ class SylvanDirector:
         if herb:
             animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=config.TOTAL_FRAMES)
             animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
+            # Act IV Beat 4: Finale Dance
+            animation_library_v6.apply_animation_by_tag(herb, "dance", 3600, duration=600)
 
         if arbor:
             animation_library_v6.apply_animation_by_tag(arbor, "talking", 60, duration=config.TOTAL_FRAMES)
             animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
+            # Act IV Beat 4: Finale Dance
+            animation_library_v6.apply_animation_by_tag(arbor, "dance", 3600, duration=600)
 
-        # 2. Ensemble Spirits (Atmospheric Motion)
-        spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor]]
+        # 2. Key Spirits (Storyline Beats)
+        majesty = bpy.data.objects.get("Sylvan_Majesty.Rig") or bpy.data.objects.get("Sylvan_Majesty")
+        radiant = bpy.data.objects.get("Radiant_Aura.Rig") or bpy.data.objects.get("Radiant_Aura")
+
+        if majesty:
+            # Beat 1: The Arrival (manifests with idle sway)
+            animation_library_v6.apply_animation_by_tag(majesty, "idle", 1, duration=config.TOTAL_FRAMES)
+            # Spore Tag interaction at frame 1200
+            animation_library_v6.apply_animation_by_tag(majesty, "spore_tag", 1200)
+
+        if radiant:
+            # Beat 2: The Rite of Joy (Spirit Dance)
+            animation_library_v6.apply_animation_by_tag(radiant, "dance", 600, duration=1200)
+            # Mid-scene idle
+            animation_library_v6.apply_animation_by_tag(radiant, "idle", 1800, duration=1800)
+            # Finale
+            animation_library_v6.apply_animation_by_tag(radiant, "dance", 3600, duration=600)
+
+        # 3. Ensemble Spirits (Atmospheric Motion & Spore Tag)
+        spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor, majesty, radiant]]
         tags = ["dance", "nod", "shake", "idle"]
 
         for i, spirit in enumerate(spirits):
             tag = random.choice(tags)
             start = 1 + (i * 24)
             animation_library_v6.apply_animation_by_tag(spirit, tag, start, duration=config.TOTAL_FRAMES)
+
+            # Random Spore Tag interactions
+            tag_start = 1000 + (i * 400)
+            if tag_start < 3600:
+                animation_library_v6.apply_animation_by_tag(spirit, "spore_tag", tag_start)
