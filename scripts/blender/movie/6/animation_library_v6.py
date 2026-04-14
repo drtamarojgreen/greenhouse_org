@@ -40,31 +40,38 @@ def get_bone(arm_obj, name):
 # ---------------------------------------------------------------------------
 
 def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=None):
-    """Dispatcher to apply animations based on modular tags."""
+    """Dispatcher to apply animations based on modular tags, with looping for short actions."""
     full_tag = tag
     arg = None
     if ":" in tag:
         tag, arg = tag.split(":", 1)
     
     registry = {
-        "nod": (apply_nod, 24),
-        "shake": (apply_shake_head, 45),
-        "blink": (apply_blink, 6),
-        "talking": (apply_talking_arms, duration or 60),
+        "nod": (apply_nod, 40),
+        "shake": (apply_shake_head, 60),
+        "blink": (apply_blink, 10),
+        "talking": (apply_talking_arms, duration or 120),
         "dance": (apply_dance, duration or 600),
         "idle": (apply_idle_sway, duration or 120),
-        "spore_tag": (apply_spore_tag, duration or 120),
+        "spore_tag": (apply_spore_tag, 80),
     }
     
     if tag in registry:
         func, def_dur = registry[tag]
         dur = duration if duration is not None else def_dur
-        func(arm_obj, start_frame, duration=dur)
+
+        # If duration is long and action is short, loop it
+        if dur > def_dur * 2 and tag in ["nod", "shake", "blink", "spore_tag", "idle"]:
+            interval = def_dur * 3 # Add some space between loops
+            for f in range(start_frame, start_frame + dur - def_dur, interval):
+                func(arm_obj, f, duration=def_dur)
+        else:
+            func(arm_obj, start_frame, duration=dur)
         return True
     return False
 
 # ---------------------------------------------------------------------------
-# ANIMATION FUNCTIONS (REFACTORED FOR GET_BONE)
+# ANIMATION FUNCTIONS (REFACTORED FOR RELATIVE KEYFRAMING)
 # ---------------------------------------------------------------------------
 
 def apply_nod(arm_obj, start_frame, duration=24):
@@ -75,37 +82,26 @@ def apply_nod(arm_obj, start_frame, duration=24):
     mid_frame = start_frame + (duration // 2)
     end_frame = start_frame + duration
     
-    dp_h = f'pose.bones["{head.name}"].rotation_euler'
-    dp_n = f'pose.bones["{neck.name}"].rotation_euler'
-
-    # Keyframe initial
-    arm_obj.keyframe_insert(data_path=dp_h, frame=start_frame)
-    arm_obj.keyframe_insert(data_path=dp_n, frame=start_frame)
-
-    # Nod down
-    head.rotation_euler[0] += math.radians(15)
-    neck.rotation_euler[0] += math.radians(5)
-    arm_obj.keyframe_insert(data_path=dp_h, frame=mid_frame)
-    arm_obj.keyframe_insert(data_path=dp_n, frame=mid_frame)
-
-    # Return
-    head.rotation_euler[0] -= math.radians(15)
-    neck.rotation_euler[0] -= math.radians(5)
-    arm_obj.keyframe_insert(data_path=dp_h, frame=end_frame)
-    arm_obj.keyframe_insert(data_path=dp_n, frame=end_frame)
+    for b in [head, neck]:
+        b.rotation_mode = 'XYZ'
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=start_frame)
+        b.rotation_euler[0] += math.radians(15)
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=mid_frame)
+        b.rotation_euler[0] -= math.radians(15)
+        b.keyframe_insert(data_path="rotation_euler", index=0, frame=end_frame)
 
 def apply_shake_head(arm_obj, start_frame, duration=45):
     head = get_bone(arm_obj, "Head")
     if not head: return
     
-    dp = f'pose.bones["{head.name}"].rotation_euler'
-    arm_obj.keyframe_insert(data_path=dp, index=2, frame=start_frame)
+    head.rotation_mode = 'XYZ'
+    head.keyframe_insert(data_path="rotation_euler", index=2, frame=start_frame)
     
     cycle = duration // 3
     for i, offset in enumerate([15, -15, 0]):
         f = start_frame + (i + 1) * cycle
         head.rotation_euler[2] = math.radians(offset)
-        arm_obj.keyframe_insert(data_path=dp, index=2, frame=f)
+        head.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
 
 def apply_blink(arm_obj, start_frame, duration=6):
     # Spirits might not have eye meshes setup the same way as plants.
@@ -147,11 +143,11 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
         if arm:
             arm.rotation_mode = 'XYZ'
             arm.rotation_euler[0] = math.radians(-80)
-            arm.keyframe_insert(data_path=f'pose.bones["{arm.name}"].rotation_euler', frame=start_frame)
+            arm.keyframe_insert(data_path="rotation_euler", frame=start_frame)
         if elbow:
             elbow.rotation_mode = 'XYZ'
             elbow.rotation_euler[0] = math.radians(-40)
-            elbow.keyframe_insert(data_path=f'pose.bones["{elbow.name}"].rotation_euler', frame=start_frame)
+            elbow.keyframe_insert(data_path="rotation_euler", frame=start_frame)
 
     # 2. Expressive flutter
     curr = start_frame + 5
@@ -161,11 +157,11 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
             hand = bones.get(f"Hand.{s}")
             if arm:
                 arm.rotation_euler[0] += math.radians(random.uniform(-5, 5))
-                arm.keyframe_insert(data_path=f'pose.bones["{arm.name}"].rotation_euler', index=0, frame=curr)
+                arm.keyframe_insert(data_path="rotation_euler", index=0, frame=curr)
             if hand:
                 hand.rotation_mode = 'XYZ'
                 hand.rotation_euler[2] = math.radians(random.uniform(-20, 20))
-                hand.keyframe_insert(data_path=f'pose.bones["{hand.name}"].rotation_euler', index=2, frame=curr)
+                hand.keyframe_insert(data_path="rotation_euler", index=2, frame=curr)
         curr += random.randint(8, 15)
 
     # 3. Lower arms at end
@@ -173,7 +169,7 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
         arm = bones.get(f"Arm.{s}")
         if arm:
             arm.rotation_euler[0] = 0
-            arm.keyframe_insert(data_path=f'pose.bones["{arm.name}"].rotation_euler', frame=end_frame)
+            arm.keyframe_insert(data_path="rotation_euler", frame=end_frame)
 
 def apply_dance(arm_obj, start_frame, duration=600):
     """Rhythmic bobbing using get_bone."""
@@ -181,57 +177,51 @@ def apply_dance(arm_obj, start_frame, duration=600):
     hip = get_bone(arm_obj, "Tail") # Use Hips as secondary bob
     if not torso: return
     
-    dp_t = f'pose.bones["{torso.name}"].location'
-    
     for f in range(start_frame, start_frame + duration, 4):
         phase = (f - start_frame) * 0.1
         torso.location[2] = math.sin(phase) * 0.1
-        arm_obj.keyframe_insert(data_path=dp_t, index=2, frame=f)
+        torso.keyframe_insert(data_path="location", index=2, frame=f)
         
         if hip:
-            dp_h = f'pose.bones["{hip.name}"].location'
             hip.location[1] = math.cos(phase) * 0.05
-            arm_obj.keyframe_insert(data_path=dp_h, index=1, frame=f)
+            hip.keyframe_insert(data_path="location", index=1, frame=f)
 
 def apply_idle_sway(arm_obj, start_frame, duration=120):
     """Gentle breathing/sway motion."""
     torso = get_bone(arm_obj, "Torso")
     if not torso: return
 
-    dp = f'pose.bones["{torso.name}"].rotation_euler'
-
+    torso.rotation_mode = 'XYZ'
     for f in range(start_frame, start_frame + duration, 10):
         phase = (f - start_frame) * 0.05
-        torso.rotation_euler[0] += math.sin(phase) * 0.02
-        torso.rotation_euler[1] += math.cos(phase) * 0.01
-        arm_obj.keyframe_insert(data_path=dp, frame=f)
+        torso.rotation_euler[0] = math.sin(phase) * 0.02
+        torso.rotation_euler[1] = math.cos(phase) * 0.01
+        torso.keyframe_insert(data_path="rotation_euler", frame=f)
 
 def apply_spore_tag(arm_obj, start_frame, duration=120):
     """Playful 'dodge' motion for Spore Tag."""
     torso = get_bone(arm_obj, "Torso")
     if not torso: return
 
-    dp = f'pose.bones["{torso.name}"].location'
-    dr = f'pose.bones["{torso.name}"].rotation_euler'
-
+    torso.rotation_mode = 'XYZ'
     # Initial state
-    arm_obj.keyframe_insert(data_path=dp, frame=start_frame)
-    arm_obj.keyframe_insert(data_path=dr, frame=start_frame)
+    torso.keyframe_insert(data_path="location", frame=start_frame)
+    torso.keyframe_insert(data_path="rotation_euler", frame=start_frame)
 
     mid = start_frame + (duration // 2)
     end = start_frame + duration
 
     # Sudden lean/dodge
-    torso.location[0] += 0.3
-    torso.rotation_euler[1] += math.radians(10)
-    arm_obj.keyframe_insert(data_path=dp, index=0, frame=mid)
-    arm_obj.keyframe_insert(data_path=dr, index=1, frame=mid)
+    torso.location[0] = 0.3
+    torso.rotation_euler[1] = math.radians(10)
+    torso.keyframe_insert(data_path="location", index=0, frame=mid)
+    torso.keyframe_insert(data_path="rotation_euler", index=1, frame=mid)
 
     # Return
-    torso.location[0] -= 0.3
-    torso.rotation_euler[1] -= math.radians(10)
-    arm_obj.keyframe_insert(data_path=dp, index=0, frame=end)
-    arm_obj.keyframe_insert(data_path=dr, index=1, frame=end)
+    torso.location[0] = 0
+    torso.rotation_euler[1] = 0
+    torso.keyframe_insert(data_path="location", index=0, frame=end)
+    torso.keyframe_insert(data_path="rotation_euler", index=1, frame=end)
 
 # ---------------------------------------------------------------------------
 # PROP ATTACHMENT
