@@ -163,16 +163,16 @@ class SylvanDirector:
             con_h = herb.constraints.get("Gaze_Arbor") or herb.constraints.new('TRACK_TO')
             con_h.name = "Gaze_Arbor"
             con_h.target = f_arbor
-            con_h.track_axis = 'TRACK_NEGATIVE_Z'
-            con_h.up_axis = 'UP_Y'
+            con_h.track_axis = 'TRACK_NEGATIVE_Y' # Point face (-Y) at target
+            con_h.up_axis = 'UP_Z' # Keep head up (+Z)
             con_h.influence = 0.8
 
             # Arbor looks at Herbaceous's Focus
             con_a = arbor.constraints.get("Gaze_Herb") or arbor.constraints.new('TRACK_TO')
             con_a.name = "Gaze_Herb"
             con_a.target = f_herb
-            con_a.track_axis = 'TRACK_NEGATIVE_Z'
-            con_a.up_axis = 'UP_Y'
+            con_a.track_axis = 'TRACK_NEGATIVE_Y'
+            con_a.up_axis = 'UP_Z'
             con_a.influence = 0.8
 
         # Ensemble spirits look at the protagonists
@@ -189,8 +189,8 @@ class SylvanDirector:
                 con = s.constraints.get("Gaze_Center") or s.constraints.new('TRACK_TO')
                 con.name = "Gaze_Center"
                 con.target = midpoint
-                con.track_axis = 'TRACK_NEGATIVE_Z'
-                con.up_axis = 'UP_Y'
+                con.track_axis = 'TRACK_NEGATIVE_Y'
+                con.up_axis = 'UP_Z'
                 con.influence = 0.6
 
     def apply_scene_animations(self):

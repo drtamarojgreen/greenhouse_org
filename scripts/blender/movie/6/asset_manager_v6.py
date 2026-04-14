@@ -85,14 +85,21 @@ class SylvanEnsembleManager:
         """Calculates world-height from armature or mesh data and scales rig to match target."""
         if not rig: return
 
+        # Clear existing scale and rotation for clean measurement (Point 142)
+        old_scale = rig.scale.copy()
+        old_rot = rig.rotation_euler.copy()
+        rig.scale = (1, 1, 1)
+        rig.rotation_euler = (0, 0, 0)
+
         # Ensure world-space coordinates are up to date
         bpy.context.view_layer.update()
 
         current_h = 0
         # Strategy 1: Prioritize Armature Bone Height (stable, bypasses mesh shards)
         if rig.type == 'ARMATURE' and rig.data.bones:
-            z_vals = [ (rig.matrix_world @ b.head_local).z for b in rig.data.bones ] + \
-                     [ (rig.matrix_world @ b.tail_local).z for b in rig.data.bones ]
+            # We use local coordinates @ matrix_world (which is identity now)
+            # but to be safe we just use head_local.z
+            z_vals = [b.head_local.z for b in rig.data.bones] + [b.tail_local.z for b in rig.data.bones]
             current_h = max(z_vals) - min(z_vals)
             print(f"ASSET_MANAGER: Normalizing {rig.name} via Armature Height: {current_h:.2f}m")
 
@@ -114,8 +121,12 @@ class SylvanEnsembleManager:
         if current_h > 0.001:
             scale_factor = target_height / current_h
             # Clamp scale to prevent extreme distortions (e.g. 1000x scaling)
-            scale_factor = max(0.1, min(scale_factor, 10.0))
-            rig.scale *= scale_factor
+            scale_factor = max(0.01, min(scale_factor, 100.0))
+            rig.scale = (scale_factor, scale_factor, scale_factor)
+        else:
+            rig.scale = old_scale
+
+        rig.rotation_euler = old_rot
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
@@ -183,9 +194,12 @@ class SylvanEnsembleManager:
 
             if not is_protag:
                 target_h = 1.0
-                if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
-                elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
-                elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
+                if "Sylvan_Majesty" in art_name or "Radiant_Aura" in art_name:
+                    target_h = config.MAJESTIC_HEIGHT
+                elif "Verdant_Sprite" in art_name:
+                    target_h = config.SPRITE_HEIGHT
+                elif "Phoenix" in art_name:
+                    target_h = config.PHOENIX_HEIGHT
 
                 self.normalize_character_scale(rig, target_h)
 

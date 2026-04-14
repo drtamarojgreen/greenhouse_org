@@ -83,6 +83,13 @@ def extract_assets():
     print("PHASE A: ASSET EXTRACTION (Sylvan Ensemble)")
     print("=" * 80)
 
+    # Ensure FBX addon is enabled (Point 142)
+    try:
+        import addon_utils
+        addon_utils.enable("io_scene_fbx", default_set=True)
+    except Exception as e:
+        print(f"  WARNING: Failed to enable FBX addon: {e}")
+
     manager = SylvanEnsembleManager()
 
     # 1. Clean initialization
