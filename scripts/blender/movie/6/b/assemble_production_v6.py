@@ -9,24 +9,37 @@ import config
 
 def setup_cinematic_rig():
     """Step 2: Implementation of WIDE, OTS, and Static camera rigs."""
-    cameras = ["WIDE", "OTS1", "OTS2", "OTS_Static_1", "OTS_Static_2"]
     scene = bpy.context.scene
+    coll = bpy.data.collections.get("6b_Environment")
 
-    for cam_name in cameras:
+    ots_targets = {
+        "WIDE":         {"pos": config.CAM_WIDE_POS, "rot": (math.radians(90), 0, 0), "lens": 35},
+        "OTS1":         {"pos": config.CAM_OTS1_POS, "target": config.CHAR_HERBACEOUS_EYE, "lens": 50},
+        "OTS2":         {"pos": config.CAM_OTS2_POS, "target": config.CHAR_ARBOR_EYE, "lens": 50},
+        "OTS_Static_1": {"pos": config.CAM_OTS1_POS, "target": config.CHAR_HERBACEOUS_EYE, "lens": 50},
+        "OTS_Static_2": {"pos": config.CAM_OTS2_POS, "target": config.CHAR_ARBOR_EYE, "lens": 50},
+    }
+
+    for cam_name, data in ots_targets.items():
         if cam_name not in bpy.data.objects:
-            bpy.ops.object.camera_add()
-            cam = bpy.context.active_object
-            cam.name = cam_name
+            cam_data = bpy.data.cameras.new(cam_name)
+            cam = bpy.data.objects.new(cam_name, cam_data)
+            coll.objects.link(cam)
 
-            # Restore v5 Standard: 35mm, Clip End 1000
-            cam.data.lens = 35
-            cam.data.clip_end = 1000.0
+            cam.location = data["pos"]
+            cam_data.lens = data["lens"]
+            cam_data.clip_end = 2000.0 # Standard Scene 6 visibility
 
-            # Ensure WIDE is set as the active scene camera
+            if "target" in data:
+                import mathutils
+                vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
+                cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
+            elif "rot" in data:
+                cam.rotation_euler = data["rot"]
+
             if cam_name == "WIDE":
                 scene.camera = cam
 
-            # Implement Camera Curve Animation (Blender 5 feature)
             if "Static" not in cam_name:
                 setup_camera_path(cam)
 
@@ -50,32 +63,39 @@ def setup_camera_path(cam_obj):
 
 def setup_environmental_restoration():
     """Step 3: 1:1 restoration of ChromaBackdrop_Wide architecture."""
-    backdrop_name = "ChromaBackdrop_Wide"
-    if backdrop_name not in bpy.data.objects:
-        bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 15, 5))
-        bg = bpy.context.active_object
-        bg.name = backdrop_name
-        bg.rotation_euler[0] = math.radians(90)
+    import mathutils
+    coll = bpy.data.collections.get("6b_Environment")
 
-        # Assign Chroma material logic from v5 standards
-        mat_name = "ChromaKey_V6"
-        mat = bpy.data.materials.get(mat_name) or bpy.data.materials.new(name=mat_name)
-        mat.use_nodes = True
-        nodes = mat.node_tree.nodes
+    backdrops = {
+        "ChromaBackdrop_Wide": {"pos": (0, 50, 5),    "cam": (0.0, -8.0, 2.0)},
+        "ChromaBackdrop_OTS1": {"pos": (-50, -20, 5), "cam": (4.0, 3.0, 2.8)},
+        "ChromaBackdrop_OTS2": {"pos": (50, 20, 5),   "cam": (-4.0, -3.0, 2.8)},
+    }
 
-        # Clear default nodes for a clean shader setup
-        nodes.clear()
-        node_output = nodes.new(type='ShaderNodeOutputMaterial')
-        bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    mat_name = "ChromaKey_V6"
+    mat = bpy.data.materials.get(mat_name) or bpy.data.materials.new(name=mat_name)
+    mat.use_nodes = True
+    # Always clear and rebuild to ensure standards
+    mat.node_tree.nodes.clear()
+    nodes = mat.node_tree.nodes
+    node_output = nodes.new(type='ShaderNodeOutputMaterial')
+    bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    bsdf.inputs['Base Color'].default_value = (0.0, 1.0, 0.0, 1.0)
+    mat.node_tree.links.new(bsdf.outputs['BSDF'], node_output.inputs['Surface'])
 
-        # Set Base Color and link BSDF to Output
-        bsdf.inputs['Base Color'].default_value = (0.0, 1.0, 0.0, 1.0) # Pure Green
-        mat.node_tree.links.new(bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+    for name, data in backdrops.items():
+        if name not in bpy.data.objects:
+            bpy.ops.mesh.primitive_plane_add(size=1000, location=data["pos"])
+            bg = bpy.context.active_object
+            bg.name = name
 
-        if not bg.data.materials:
+            # Remove from scene collection and link to environment collection
+            for c in bg.users_collection: c.objects.unlink(bg)
+            coll.objects.link(bg)
+
+            vec = mathutils.Vector(data["cam"]) - mathutils.Vector(data["pos"])
+            bg.rotation_euler = vec.to_track_quat('Z', 'Y').to_euler()
             bg.data.materials.append(mat)
-        else:
-            bg.data.materials[0] = mat
 
 
 def link_fbx_assets():
@@ -85,10 +105,32 @@ def link_fbx_assets():
         print("WARNING: Asset directory missing. Run Phase A first.")
         return
 
+    coll = bpy.data.collections.get("6a_Assets")
+
     for file in os.listdir(asset_dir):
         if file.endswith(".fbx"):
             path = os.path.join(asset_dir, file)
+
+            # Capture objects before import
+            pre_import = set(bpy.data.objects.keys())
             bpy.ops.import_scene.fbx(filepath=path)
+            post_import = set(bpy.data.objects.keys())
+
+            new_objs = post_import - pre_import
+            for obj_name in new_objs:
+                obj = bpy.data.objects.get(obj_name)
+                if obj:
+                    # Link to asset collection
+                    for c in list(obj.users_collection): c.objects.unlink(obj)
+                    if obj.name not in coll.objects:
+                        coll.objects.link(obj)
+
+                    # Ensure all recursive children are also in the collection
+                    for child in obj.children_recursive:
+                        for c in list(child.users_collection): c.objects.unlink(child)
+                        if child.name not in coll.objects:
+                            coll.objects.link(child)
+
             print(f"PROD_ASSEMBLY: Linked {file}")
 
 def initialize_production():

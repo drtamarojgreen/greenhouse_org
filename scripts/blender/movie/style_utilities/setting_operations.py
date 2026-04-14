@@ -173,10 +173,29 @@ def get_principled_socket(mat_or_node, socket_name):
     if hasattr(mat_or_node, "node_tree"):
         node = mat_or_node.node_tree.nodes.get("Principled BSDF")
     if not node: return None
-    mapping = {'Specular': ['Specular', 'Specular IOR Level'], 'Transmission': ['Transmission', 'Transmission Weight'], 'Emission': ['Emission', 'Emission Color'], 'Emission Strength': ['Emission Strength']}
-    target_sockets = mapping.get(socket_name, [socket_name])
-    for s in target_sockets:
-        if s in node.inputs: return node.inputs[s]
+
+    # Pre-mapped standard aliases for Blender 4.0/5.0
+    mapping = {
+        'Specular': ['Specular IOR Level', 'Specular'],
+        'Transmission': ['Transmission Weight', 'Transmission'],
+        'Emission': ['Emission Color', 'Emission'],
+        'Emission Strength': ['Emission Strength'],
+        'Base Color': ['Base Color']
+    }
+
+    target_names = mapping.get(socket_name, [socket_name])
+
+    # 1. Direct and mapped lookup
+    for name in target_names:
+        if name in node.inputs: return node.inputs[name]
+
+    # 2. Case-insensitive fallback (Point 142)
+    match_name = socket_name.lower().replace("_", " ").replace("weight", "").strip()
+    for socket in node.inputs:
+        curr_name = socket.name.lower().replace("_", " ").replace("weight", "").strip()
+        if curr_name == match_name:
+            return socket
+
     return None
 
 def set_principled_socket(mat_or_node, socket_name, value, frame=None):

@@ -10,6 +10,15 @@ In the wake of the "Vegetative Groove," the Greenhouse undergoes a metaphysical 
 3.  **The Blessing** (Frames 1800-3000): The spirits interact with the `WaterCan` and `GardenHose`, imbuing them with glowing essence.
 4.  **Final Ascent** (Frames 3000-4200): All characters, including the full **Sylvan Ensemble**, perform a synchronized finale before the spirits fade back into the emerald glow.
 
+### Character Dynamics: The "Great Spore Tag"
+While Scene 6 is a witness to progress, the internal cognitive dynamics are represented by playful, G-rated interactions between the "Protagonist" thoughts (Herbaceous and Arbor) and "Antagonist" distractions (The Shadow Spirits).
+
+#### The Playful Conflict (Rated G):
+- **Bouncing Barbs**: Instead of mechanical combat, characters engage in "Spore Tag." Antagonists like **Shadow_Weaver** might toss "Gloom Puffs" (soft, slow-moving dark clouds) that represent minor anxieties. Protagonists dodge these with rhythmic, dance-like motions, turning the "conflict" into a display of cognitive flexibility.
+- **The Tickle Tussle**: When spirits get close, they perform "Leaf Tickles" or "Spore Dusting." If a protagonist is "hit," they simply glow a brighter shade of purple or green, symbolizing the absorption and regulation of the distraction rather than defeat.
+- **Horticultural Pranks**: A Sylvan spirit might playfully pull a `GardenHose` to spray glowing "Wisdom Water," or **Emerald_Sentinel** might stand in a way that "occludes" a target plant, forcing the protagonists to find a new perspective (camera angle shift).
+- **The Resolution**: By Frame 3600, all conflict transforms into a unified glow. The "Antagonists" are not banished but integrated into the ecosystem, symbolizing the acceptance and self-regulation of all mental states.
+
 ---
 
 ## Technical Implementation Plan (Movie v6)

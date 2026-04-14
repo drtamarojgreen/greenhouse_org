@@ -52,6 +52,7 @@ def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=No
         "blink": (apply_blink, 6),
         "talking": (apply_talking_arms, duration or 60),
         "dance": (apply_dance, duration or 600),
+        "idle": (apply_idle_sway, duration or 120),
     }
     
     if tag in registry:
@@ -121,7 +122,14 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
     hand_l = get_bone(arm_obj, "Hand.L")
     hand_r = get_bone(arm_obj, "Hand.R")
     if not hand_l or not hand_r: return
-    
+
+    if not arm_obj.animation_data:
+        arm_obj.animation_data_create()
+
+    # In Blender 4.0+, ensure we have an action
+    if not arm_obj.animation_data.action:
+        arm_obj.animation_data.action = bpy.data.actions.new(name=f"Action_{arm_obj.name}")
+
     dp_l = f'pose.bones["{hand_l.name}"].location'
     dp_r = f'pose.bones["{hand_r.name}"].location'
     
@@ -148,6 +156,19 @@ def apply_dance(arm_obj, start_frame, duration=600):
             dp_h = f'pose.bones["{hip.name}"].location'
             hip.location[1] = math.cos(phase) * 0.05
             arm_obj.keyframe_insert(data_path=dp_h, index=1, frame=f)
+
+def apply_idle_sway(arm_obj, start_frame, duration=120):
+    """Gentle breathing/sway motion."""
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+
+    dp = f'pose.bones["{torso.name}"].rotation_euler'
+
+    for f in range(start_frame, start_frame + duration, 10):
+        phase = (f - start_frame) * 0.05
+        torso.rotation_euler[0] += math.sin(phase) * 0.02
+        torso.rotation_euler[1] += math.cos(phase) * 0.01
+        arm_obj.keyframe_insert(data_path=dp, frame=f)
 
 # ---------------------------------------------------------------------------
 # PROP ATTACHMENT

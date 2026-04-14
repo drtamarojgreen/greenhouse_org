@@ -37,8 +37,8 @@ def setup_chroma_green_backdrop():
         return existing_wide
 
     planes = []
-    # Wide Angle Backdrop (Y=50)
-    bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 50, 5))
+    # Wide Angle Backdrop (Y=50) - Size 1000 for full coverage (Point 142)
+    bpy.ops.mesh.primitive_plane_add(size=1000, location=(0, 50, 5))
     bw = bpy.context.active_object
     bw.name = "ChromaBackdrop_Wide"
     # Match v5 camera for tracking
