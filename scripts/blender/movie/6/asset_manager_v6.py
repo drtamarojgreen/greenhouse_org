@@ -16,6 +16,7 @@ try:
 except ImportError:
     from . import config
 
+import animation_library_v6
 from plant_humanoid_v6 import create_plant_humanoid_v6
 
 
@@ -82,32 +83,48 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Calculates world-height from mesh data and scales rig to match target, filtering outliers."""
+        """Robustly scales rig using bone-to-bone height or percentile-based mesh filtering."""
         if not rig: return
-        meshes = [c for c in rig.children if c.type == 'MESH']
-        if not meshes: return
 
         # Trigger update to ensure world matrices are current (Point 142)
         bpy.context.view_layer.update()
 
-        import mathutils
-        all_z = []
-        for m in meshes:
-            mw = m.matrix_world
-            # Use vertices directly for more granular outlier detection than bound_box
-            for v in m.data.vertices:
-                all_z.append((mw @ v.co).z)
+        current_h = 0
 
-        if not all_z: return
-        all_z.sort()
+        # Method 1: Bone-to-Bone Height (Preferred for rigged spirits)
+        if rig.type == 'ARMATURE':
+            # Use animation library to resolve bones regardless of prefix
+            head = animation_library_v6.get_bone(rig, "Head")
+            foot_l = animation_library_v6.get_bone(rig, "Foot.L")
+            foot_r = animation_library_v6.get_bone(rig, "Foot.R")
 
-        # Simple robust height: 1st to 99th percentile to skip "shards"
-        idx_min = int(len(all_z) * 0.01)
-        idx_max = int(len(all_z) * 0.99)
-        min_z = all_z[idx_min]
-        max_z = all_z[idx_max]
+            if head and (foot_l or foot_r):
+                mw = rig.matrix_world
+                # Using head.matrix is local-to-armature; matrix_world transforms to global
+                h_z = (mw @ head.matrix.translation).z
+                f_z = (mw @ foot_l.matrix.translation).z if foot_l else (mw @ foot_r.matrix.translation).z
+                current_h = abs(h_z - f_z)
+                # Add 10% for cranium/sole height
+                current_h *= 1.1
 
-        current_h = max_z - min_z
+        # Method 2: Percentile-based Mesh Fallback (Fallback or non-Mixamo)
+        if current_h < 0.1:
+            meshes = [c for c in rig.children if c.type == 'MESH']
+            if rig.type == 'MESH': meshes.append(rig)
+
+            all_z = []
+            for m in meshes:
+                mw = m.matrix_world
+                for v in m.data.vertices:
+                    all_z.append((mw @ v.co).z)
+
+            if all_z:
+                all_z.sort()
+                # 1st to 99th percentile filters out "shards"
+                idx_min = int(len(all_z) * 0.01)
+                idx_max = int(len(all_z) * 0.99)
+                current_h = all_z[idx_max] - all_z[idx_min]
+
         if current_h > 0.001:
             scale_factor = target_height / current_h
             rig.scale *= scale_factor

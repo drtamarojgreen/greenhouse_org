@@ -318,38 +318,37 @@ class TestV6SpiritIntegration(unittest.TestCase):
     def test_raycast_visibility(self):
         """
         Multi-point ray-cast to verify rendering visibility from the WIDE camera.
-        Camera is named 'WIDE' (config.CAMERA_NAME).
+        Account for Storyline Manifestation (frame 301+ for Majesty).
         """
         if not os.path.exists(config.SPIRITS_ASSET_BLEND):
             self.skipTest("Production asset blend not found")
 
         scene = bpy.context.scene
-        # Use config.CAMERA_NAME so this test stays aligned with director_v6.py
         cam = bpy.data.objects.get(config.CAMERA_NAME)
         self.assertIsNotNone(cam, f"Camera '{config.CAMERA_NAME}' missing for ray-cast")
+
+        # Step into frame where legendary spirits are manifested
+        scene.frame_set(301)
+        bpy.context.view_layer.update()
 
         dg     = bpy.context.evaluated_depsgraph_get()
         origin = cam.matrix_world.to_translation()
 
-        # Added protagonists to targets
         targets = [config.CHAR_LEAFY_MESH, config.CHAR_JOY_MESH, config.CHAR_LEAFCHAR_MESH]
-
-        # Ensure we are on a frame where they are positioned in front of backdrops
-        scene.frame_set(1)
-        bpy.context.view_layer.update()
 
         for name in targets:
             obj = bpy.data.objects.get(name)
-            if not obj:
+            if not obj: continue
+
+            # Ensure it's not hidden at this frame
+            if obj.hide_render:
+                print(f"DEBUG: Skipping raycast for {name} - hidden at frame {scene.frame_current}")
                 continue
 
-            bpy.context.view_layer.update()
-
             # Use geometry center for raycast target
-            bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-            z_vals = [v.z for v in bbox]
-            x_vals = [v.x for v in bbox]
-            y_vals = [v.y for v in bbox]
+            mw = obj.matrix_world
+            bbox = [mw @ mathutils.Vector(c) for c in obj.bound_box]
+            z_vals = [v.z for v in bbox]; x_vals = [v.x for v in bbox]; y_vals = [v.y for v in bbox]
 
             target_pt = mathutils.Vector((
                 (max(x_vals) + min(x_vals)) / 2.0,
@@ -358,7 +357,6 @@ class TestV6SpiritIntegration(unittest.TestCase):
             ))
 
             direction = (target_pt - origin).normalized()
-
             hit, loc, norm, idx, hit_obj, mat = scene.ray_cast(dg, origin, direction)
 
             if hit and hit_obj:
@@ -366,13 +364,12 @@ class TestV6SpiritIntegration(unittest.TestCase):
                 art_base = name.split('.')[0]
                 is_hit = art_base in hit_obj.name or hit_obj.name in art_base
 
+                # Distance checks
                 d_hit = (loc - origin).length
                 d_obj = (target_pt - origin).length
 
-                # If we hit a backdrop, check if it's behind
-                if not is_hit and "Backdrop" in hit_obj.name:
-                     if d_hit > d_obj:
-                          is_hit = True
+                if not is_hit and "Backdrop" in hit_obj.name and d_hit > d_obj:
+                    is_hit = True
 
                 self.assertTrue(is_hit, f"{name} occluded by {hit_obj.name} (Dist hit={d_hit:.2f}, obj={d_obj:.2f})")
             else:

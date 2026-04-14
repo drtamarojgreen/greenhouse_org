@@ -20,20 +20,28 @@ def create_camera_path(name, points):
 
     return obj
 
-def setup_follow_path(cam_obj, path_obj, duration=100):
-    """Binds camera to path with Follow Path constraint."""
-    constraint = cam_obj.constraints.new(type='FOLLOW_PATH')
-    constraint.target = path_obj
-    constraint.use_fixed_location = True
+def setup_follow_path(cam_obj, path_obj, duration=100, track_target=None):
+    """Binds camera to path with Follow Path and optional Track To constraint."""
+    # 1. Follow Path
+    con_path = cam_obj.constraints.new(type='FOLLOW_PATH')
+    con_path.target = path_obj
+    con_path.use_fixed_location = True
 
     # Animate offset from 0 to 1
-    constraint.offset_factor = 0.0
-    constraint.keyframe_insert(data_path="offset_factor", frame=1)
+    con_path.offset_factor = 0.0
+    con_path.keyframe_insert(data_path="offset_factor", frame=1)
 
-    constraint.offset_factor = 1.0
-    constraint.keyframe_insert(data_path="offset_factor", frame=duration)
+    con_path.offset_factor = 1.0
+    con_path.keyframe_insert(data_path="offset_factor", frame=duration)
 
-    return constraint
+    # 2. Track To (Ensure camera faces target during motion)
+    if track_target:
+        con_track = cam_obj.constraints.new(type='TRACK_TO')
+        con_track.target = track_target
+        con_track.track_axis = 'TRACK_NEGATIVE_Z'
+        con_track.up_axis = 'UP_Y'
+
+    return con_path
 
 def setup_camera_rig_v6():
     """Builds standard production camera rig with paths."""
@@ -47,8 +55,9 @@ def setup_camera_rig_v6():
     wide_path = create_camera_path("WIDE", wide_points)
 
     wide_cam = bpy.data.objects.get("WIDE")
+    mid_target = bpy.data.objects.get(config.LIGHTING_MIDPOINT)
     if wide_cam:
-        setup_follow_path(wide_cam, wide_path, duration=config.TOTAL_FRAMES)
+        setup_follow_path(wide_cam, wide_path, duration=config.TOTAL_FRAMES, track_target=mid_target)
 
     # 2. OTS1 target tracking (Circular drift)
     ots1_base = mathutils.Vector(config.CAM_OTS1_POS)
@@ -59,8 +68,9 @@ def setup_camera_rig_v6():
     ots1_path = create_camera_path("OTS1", ots1_points)
 
     ots1_cam = bpy.data.objects.get("OTS1")
+    herb_target = bpy.data.objects.get(config.FOCUS_HERBACEOUS)
     if ots1_cam:
-        setup_follow_path(ots1_cam, ots1_path, duration=config.TOTAL_FRAMES)
+        setup_follow_path(ots1_cam, ots1_path, duration=config.TOTAL_FRAMES, track_target=herb_target)
 
     # 3. OTS2 dynamic path (Rising for Act IV climax)
     ots2_base = mathutils.Vector(config.CAM_OTS2_POS)
@@ -72,7 +82,8 @@ def setup_camera_rig_v6():
     ots2_path = create_camera_path("OTS2", ots2_points)
 
     ots2_cam = bpy.data.objects.get("OTS2")
+    arbor_target = bpy.data.objects.get(config.FOCUS_ARBOR)
     if ots2_cam:
-        setup_follow_path(ots2_cam, ots2_path, duration=config.TOTAL_FRAMES)
+        setup_follow_path(ots2_cam, ots2_path, duration=config.TOTAL_FRAMES, track_target=arbor_target)
 
     return True

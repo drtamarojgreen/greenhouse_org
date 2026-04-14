@@ -12,13 +12,17 @@ from asset_manager_v6 import SylvanEnsembleManager
 
 # Monkeypatch for Blender 5.0.1 FBX export bug (AttributeError: 'ExportFBX' object has no attribute 'use_space_transform')
 if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx"):
+    # Fix for RNA registration bug: ensure property exists both in annotations and as a class attribute
     if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
         try:
+            # Add to annotations for potential UI display
             bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(
                 name="Use Space Transform",
                 default=False
             )
-            print("  INFO: Applied monkeypatch for EXPORT_SCENE_OT_fbx.use_space_transform")
+            # Set as direct class attribute so execute() can always read it even if RNA fails
+            setattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform", False)
+            print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx.use_space_transform")
         except Exception as e:
             print(f"  WARNING: Failed to apply monkeypatch: {e}")
 
@@ -86,36 +90,39 @@ def extract_assets():
             # Map it so the loop finds it
             manager.ensemble[skel.name] = "Root_Guardian"
 
-    # 3. Passive renaming only — no scaling or geometric modification
-    print("ASSET_MANAGER: Renaming assets for export...")
-    # Root_Guardian case: skeleton might be both rig and mesh
+    # 3. Resolve and Rename assets for export
+    # CRITICAL: Resolve ALL objects first before renaming, to avoid losing references
+    # when an object serves as both rig and mesh (e.g., Root_Guardian).
+    print("ASSET_MANAGER: Resolving ensemble objects...")
+    resolved = [] # List of (mesh_obj, rig_obj, art_name)
+
     for src_mesh, art_name in list(manager.ensemble.items()):
         mesh_obj = bpy.data.objects.get(src_mesh)
         if not mesh_obj:
             print(f"  SKIP (mesh not found): {src_mesh} -> {art_name}")
             continue
 
-        sep = "_" if _is_protagonist(art_name) else "."
-        new_mesh_name = f"{art_name}{sep}Body"
-        mesh_obj.name = new_mesh_name
-        print(f"  Renamed mesh: {src_mesh!r} -> {new_mesh_name!r}")
-
-        # Rig: prefer explicit RIG_MAP_SRC entry, then fall back to find_armature
         src_rig = manager.rig_map.get(art_name)
         rig_obj = bpy.data.objects.get(src_rig) if src_rig else None
 
-        # For characters whose mesh IS the rig object (e.g. Root_Guardian / skeleton),
-        # find_armature() will return None on the mesh because the object is already an
-        # ARMATURE type.  In that case skip rig renaming — the mesh rename is sufficient.
         if rig_obj is None and mesh_obj.type != 'ARMATURE':
             rig_obj = mesh_obj.find_armature()
 
-        if rig_obj:
+        resolved.append((mesh_obj, rig_obj, art_name))
+
+    print("ASSET_MANAGER: Renaming resolved assets...")
+    for mesh_obj, rig_obj, art_name in resolved:
+        sep = "_" if _is_protagonist(art_name) else "."
+
+        # Handle Rig renaming first if it's separate
+        if rig_obj and rig_obj != mesh_obj:
             new_rig_name = f"{art_name}{sep}Rig"
             rig_obj.name = new_rig_name
-            print(f"  Renamed rig:  {src_rig or '(auto)'!r} -> {new_rig_name!r}")
-        else:
-            print(f"  INFO: No separate rig for {art_name!r} — skipping rig rename")
+
+        # Rename Mesh (or Rig-as-Mesh)
+        new_mesh_name = f"{art_name}{sep}Body"
+        mesh_obj.name = new_mesh_name
+        print(f"  Renamed {art_name}: Mesh->{mesh_obj.name}, Rig->{rig_obj.name if rig_obj else 'NONE'}")
 
     # 4. Texture Decoupling
     asset_dir = os.path.join(V6_DIR, "assets")

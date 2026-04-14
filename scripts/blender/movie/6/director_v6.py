@@ -33,6 +33,19 @@ class SylvanDirector:
         if coll.name not in self.scene.collection.children:
             self.scene.collection.children.link(coll)
 
+        # Create focal targets first
+        herb_foc = bpy.data.objects.new(config.FOCUS_HERBACEOUS, None)
+        herb_foc.location = config.CHAR_HERBACEOUS_EYE
+        coll.objects.link(herb_foc)
+
+        arbor_foc = bpy.data.objects.new(config.FOCUS_ARBOR, None)
+        arbor_foc.location = config.CHAR_ARBOR_EYE
+        coll.objects.link(arbor_foc)
+
+        mid_foc = bpy.data.objects.new(config.LIGHTING_MIDPOINT, None)
+        mid_foc.location = (0, 0, 2.2)
+        coll.objects.link(mid_foc)
+
         # 1. WIDE master (v5 standard)
         self._create_camera("WIDE", (0.0, -8.0, 2.0), (math.radians(90), 0, 0), coll, lens=35)
 
