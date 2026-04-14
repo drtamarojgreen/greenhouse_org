@@ -17,20 +17,31 @@ def _is_protagonist(art_name):
 
 def _safe_fbx_export(filepath, use_selection=True):
     """Dynamic FBX export that respects Blender 5.0+ API changes."""
+    # Ensure the operator is registered
+    if not hasattr(bpy.ops.export_scene, "fbx"):
+        print("  ERROR: FBX export operator not found.")
+        return False
+
     # Workaround for Blender 5.0.1 bug where 'use_space_transform' is expected by
     # the execute() method but might be missing from the RNA properties.
-    if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
-        try:
+    try:
+        if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
             bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(name="Use Space Transform", default=False)
-            # Force refresh of the operator
+            # Re-register to apply annotation changes
             bpy.utils.unregister_class(bpy.types.EXPORT_SCENE_OT_fbx)
             bpy.utils.register_class(bpy.types.EXPORT_SCENE_OT_fbx)
-        except:
-            pass
+    except Exception as e:
+        print(f"  INFO: FBX RNA workaround skipped: {e}")
 
     # Inspect properties to see what's supported
-    props = bpy.ops.export_scene.fbx.get_rna_type().properties
-    supported = {p.identifier for p in props}
+    supported = set()
+    try:
+        # Avoid direct get_rna_type if it might fail during unregister/register cycle
+        op_type = getattr(bpy.types, "EXPORT_SCENE_OT_fbx", None)
+        if op_type and hasattr(op_type, "bl_rna"):
+            supported = {p.identifier for p in op_type.bl_rna.properties}
+    except Exception as e:
+        print(f"  WARNING: RNA inspection failed for FBX operator: {e}")
 
     # Define a exhaustive list of potential parameters we want to set
     # Note: 'use_space_transform' is critical in some versions but missing in others

@@ -100,9 +100,9 @@ class SylvanEnsembleManager:
         if not all_z: return
         all_z.sort()
 
-        # Simple robust height: 1st to 99th percentile to skip "shards"
-        idx_min = int(len(all_z) * 0.01)
-        idx_max = int(len(all_z) * 0.99)
+        # Simple robust height: 5th to 95th percentile to skip extreme "shards"
+        idx_min = int(len(all_z) * 0.05)
+        idx_max = int(len(all_z) * 0.95)
         min_z = all_z[idx_min]
         max_z = all_z[idx_max]
 

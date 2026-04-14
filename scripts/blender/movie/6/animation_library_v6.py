@@ -120,25 +120,60 @@ def apply_blink(arm_obj, start_frame, duration=6):
             child.keyframe_insert(data_path="scale", index=2, frame=start_frame + duration)
 
 def apply_talking_arms(arm_obj, start_frame, duration=60):
-    hand_l = get_bone(arm_obj, "Hand.L")
-    hand_r = get_bone(arm_obj, "Hand.R")
-    if not hand_l or not hand_r: return
+    """Expressive arm movement during dialogue, loops if duration is long."""
+    # Find relevant bones
+    bones = {
+        "Arm.L": get_bone(arm_obj, "Arm.L"),
+        "Arm.R": get_bone(arm_obj, "Arm.R"),
+        "Elbow.L": get_bone(arm_obj, "Elbow.L"),
+        "Elbow.R": get_bone(arm_obj, "Elbow.R"),
+        "Hand.L": get_bone(arm_obj, "Hand.L"),
+        "Hand.R": get_bone(arm_obj, "Hand.R"),
+    }
+
+    if not any(bones.values()): return
 
     if not arm_obj.animation_data:
         arm_obj.animation_data_create()
-
-    # In Blender 4.0+, ensure we have an action
     if not arm_obj.animation_data.action:
         arm_obj.animation_data.action = bpy.data.actions.new(name=f"Action_{arm_obj.name}")
 
-    dp_l = f'pose.bones["{hand_l.name}"].location'
-    dp_r = f'pose.bones["{hand_r.name}"].location'
-    
-    for f in range(start_frame, start_frame + duration, 10):
-        hand_l.location[2] += random.uniform(-0.05, 0.05)
-        hand_r.location[2] += random.uniform(-0.05, 0.05)
-        arm_obj.keyframe_insert(data_path=dp_l, index=2, frame=f)
-        arm_obj.keyframe_insert(data_path=dp_r, index=2, frame=f)
+    end_frame = start_frame + duration
+
+    # 1. Raise arms at start
+    for s in ("L", "R"):
+        arm = bones.get(f"Arm.{s}")
+        elbow = bones.get(f"Elbow.{s}")
+        if arm:
+            arm.rotation_mode = 'XYZ'
+            arm.rotation_euler[0] = math.radians(-80)
+            arm.keyframe_insert(data_path=f'pose.bones["{arm.name}"].rotation_euler', frame=start_frame)
+        if elbow:
+            elbow.rotation_mode = 'XYZ'
+            elbow.rotation_euler[0] = math.radians(-40)
+            elbow.keyframe_insert(data_path=f'pose.bones["{elbow.name}"].rotation_euler', frame=start_frame)
+
+    # 2. Expressive flutter
+    curr = start_frame + 5
+    while curr < end_frame:
+        for s in ("L", "R"):
+            arm = bones.get(f"Arm.{s}")
+            hand = bones.get(f"Hand.{s}")
+            if arm:
+                arm.rotation_euler[0] += math.radians(random.uniform(-5, 5))
+                arm.keyframe_insert(data_path=f'pose.bones["{arm.name}"].rotation_euler', index=0, frame=curr)
+            if hand:
+                hand.rotation_mode = 'XYZ'
+                hand.rotation_euler[2] = math.radians(random.uniform(-20, 20))
+                hand.keyframe_insert(data_path=f'pose.bones["{hand.name}"].rotation_euler', index=2, frame=curr)
+        curr += random.randint(8, 15)
+
+    # 3. Lower arms at end
+    for s in ("L", "R"):
+        arm = bones.get(f"Arm.{s}")
+        if arm:
+            arm.rotation_euler[0] = 0
+            arm.keyframe_insert(data_path=f'pose.bones["{arm.name}"].rotation_euler', frame=end_frame)
 
 def apply_dance(arm_obj, start_frame, duration=600):
     """Rhythmic bobbing using get_bone."""

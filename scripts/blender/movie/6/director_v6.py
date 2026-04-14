@@ -45,6 +45,26 @@ class SylvanDirector:
         if "WIDE" in bpy.data.objects:
             self.scene.camera = bpy.data.objects["WIDE"]
 
+        self.setup_camera_markers()
+
+    def setup_camera_markers(self):
+        """Binds cameras to timeline markers for automatic switching during render."""
+        self.scene.timeline_markers.clear()
+
+        switches = [
+            (1,    "WIDE"),
+            (600,  "OTS1"),
+            (1800, "OTS2"),
+            (3000, "WIDE"),
+        ]
+
+        for frame, cam_name in switches:
+            cam = bpy.data.objects.get(cam_name)
+            if cam:
+                marker = self.scene.timeline_markers.new(f"Switch_{cam_name}", frame=frame)
+                marker.camera = cam
+                print(f"DIRECTOR: Camera switch to {cam_name} at frame {frame}")
+
     def _create_camera(self, name, pos, rot, coll, lens=35):
         """Creates (or reuses) a camera and links it into the given collection."""
         cam_data = bpy.data.cameras.get(name) or bpy.data.cameras.new(name)
@@ -122,6 +142,48 @@ class SylvanDirector:
         if herb: herb.location = config.CHAR_HERBACEOUS_POS
         if arbor: arbor.location = config.CHAR_ARBOR_POS
 
+        self.apply_gaze_interactions()
+
+    def apply_gaze_interactions(self):
+        """Adds Track To constraints so characters look at each other at key beats."""
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        arbor = bpy.data.objects.get(config.CHAR_ARBOR)
+
+        if herb and arbor:
+            # Herbaceous looks at Arbor
+            con_h = herb.constraints.get("Gaze_Arbor") or herb.constraints.new('TRACK_TO')
+            con_h.name = "Gaze_Arbor"
+            con_h.target = arbor
+            con_h.track_axis = 'TRACK_NEGATIVE_Z'
+            con_h.up_axis = 'UP_Y'
+            con_h.influence = 0.8
+
+            # Arbor looks at Herbaceous
+            con_a = arbor.constraints.get("Gaze_Herb") or arbor.constraints.new('TRACK_TO')
+            con_a.name = "Gaze_Herb"
+            con_a.target = herb
+            con_a.track_axis = 'TRACK_NEGATIVE_Z'
+            con_a.up_axis = 'UP_Y'
+            con_a.influence = 0.8
+
+        # Ensemble spirits look at the protagonists
+        coll = bpy.data.collections.get(config.COLL_ASSETS)
+        if coll:
+            midpoint = bpy.data.objects.get(config.LIGHTING_MIDPOINT)
+            if not midpoint:
+                midpoint = bpy.data.objects.new(config.LIGHTING_MIDPOINT, None)
+                bpy.context.scene.collection.objects.link(midpoint)
+                midpoint.location = (0, 0, 1.5)
+
+            spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor]]
+            for s in spirits:
+                con = s.constraints.get("Gaze_Center") or s.constraints.new('TRACK_TO')
+                con.name = "Gaze_Center"
+                con.target = midpoint
+                con.track_axis = 'TRACK_NEGATIVE_Z'
+                con.up_axis = 'UP_Y'
+                con.influence = 0.6
+
     def apply_scene_animations(self):
         """Orchestrates varied animations across all characters, including storyline beats."""
         coll = bpy.data.collections.get(config.COLL_ASSETS)
@@ -132,13 +194,14 @@ class SylvanDirector:
         arbor = bpy.data.objects.get(config.CHAR_ARBOR)
 
         if herb:
+            # Ensure the armature is actually used for animation calls
             animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=config.TOTAL_FRAMES)
             animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
             # Act IV Beat 4: Finale Dance
             animation_library_v6.apply_animation_by_tag(herb, "dance", 3600, duration=600)
 
         if arbor:
-            animation_library_v6.apply_animation_by_tag(arbor, "talking", 60, duration=config.TOTAL_FRAMES)
+            animation_library_v6.apply_animation_by_tag(arbor, "talking", 1, duration=config.TOTAL_FRAMES)
             animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
             # Act IV Beat 4: Finale Dance
             animation_library_v6.apply_animation_by_tag(arbor, "dance", 3600, duration=600)
