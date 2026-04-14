@@ -139,7 +139,16 @@ class SylvanDirector:
             animation_library_v6.apply_animation_by_tag(arbor, "talking", 60, duration=config.TOTAL_FRAMES)
             animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
 
-        # 2. Ensemble Spirits (Atmospheric Motion)
+        # 2. "Great Spore Tag" - Interactive Dynamics (Point 142/Storyline)
+        # Periodic interactions between protagonists and ensemble spirits
+        if herb and arbor:
+            for f in range(600, 3600, 1200): # Three major 'tag' beats
+                # Herbaceous dodges a 'Gloom Puff'
+                animation_library_v6.apply_animation_by_tag(herb, "dodge", f)
+                # Arbor reacts with a glow pulse
+                animation_library_v6.apply_animation_by_tag(arbor, "glow_reaction", f + 30)
+
+        # 3. Ensemble Spirits (Atmospheric Motion)
         spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor]]
         tags = ["dance", "nod", "shake", "idle"]
 

@@ -22,7 +22,7 @@ def _safe_fbx_export(filepath, use_selection=True):
     supported = {p.identifier for p in props}
 
     # Define a exhaustive list of potential parameters we want to set
-    # Note: 'use_space_transform' is critical in some versions but missing in others
+    # Note: 'use_space_transform' is bugged in some 5.0 versions (internal AttributeError)
     potential_kwargs = {
         "filepath": filepath,
         "use_selection": use_selection,
@@ -30,7 +30,6 @@ def _safe_fbx_export(filepath, use_selection=True):
         "bake_anim": False,
         "path_mode": 'COPY',
         "embed_textures": False,
-        "use_space_transform": False, # Explicitly include to satisfy internal checks
         "axis_forward": '-Z',
         "axis_up": 'Y',
     }

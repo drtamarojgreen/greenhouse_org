@@ -53,6 +53,8 @@ def apply_animation_by_tag(arm_obj, tag, start_frame, duration=None, prop_obj=No
         "talking": (apply_talking_arms, duration or 60),
         "dance": (apply_dance, duration or 600),
         "idle": (apply_idle_sway, duration or 120),
+        "dodge": (apply_dodge, duration or 30),
+        "glow_reaction": (apply_glow_reaction, duration or 60),
     }
     
     if tag in registry:
@@ -169,6 +171,37 @@ def apply_idle_sway(arm_obj, start_frame, duration=120):
         torso.rotation_euler[0] += math.sin(phase) * 0.02
         torso.rotation_euler[1] += math.cos(phase) * 0.01
         arm_obj.keyframe_insert(data_path=dp, frame=f)
+
+def apply_dodge(arm_obj, start_frame, duration=30):
+    """Quick lateral dodge representing cognitive flexibility."""
+    torso = get_bone(arm_obj, "Torso")
+    if not torso: return
+
+    dp = f'pose.bones["{torso.name}"].location'
+    mid = start_frame + (duration // 2)
+    end = start_frame + duration
+
+    # Start
+    arm_obj.keyframe_insert(data_path=dp, index=0, frame=start_frame)
+    # Dodge Left
+    torso.location[0] += 0.3
+    arm_obj.keyframe_insert(data_path=dp, index=0, frame=mid)
+    # Return
+    torso.location[0] -= 0.3
+    arm_obj.keyframe_insert(data_path=dp, index=0, frame=end)
+
+def apply_glow_reaction(arm_obj, start_frame, duration=60):
+    """Simulates a glow reaction by scaling eye/facial props or via emission if available."""
+    # Find eye objects parented to armature (recursive to handle nested props)
+    for child in arm_obj.children_recursive:
+        if "Eye" in child.name or "Lid" in child.name:
+            # Rhythmic pulse
+            for i in range(3):
+                f = start_frame + i * (duration // 3)
+                child.scale = (1.2, 1.2, 1.2)
+                child.keyframe_insert(data_path="scale", frame=f)
+                child.scale = (1.0, 1.0, 1.0)
+                child.keyframe_insert(data_path="scale", frame=f + (duration // 6))
 
 # ---------------------------------------------------------------------------
 # PROP ATTACHMENT

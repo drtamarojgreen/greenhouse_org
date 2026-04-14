@@ -84,7 +84,13 @@ class SylvanEnsembleManager:
     def normalize_character_scale(self, rig, target_height):
         """Calculates world-height from mesh data and scales rig to match target, filtering outliers."""
         if not rig: return
-        meshes = [c for c in rig.children if c.type == 'MESH']
+        # Ensure world matrices are up-to-date before height calculation
+        bpy.context.view_layer.update()
+
+        meshes = [o for o in rig.children_recursive if o.type == 'MESH']
+        if not meshes and rig.type == 'MESH':
+            meshes = [rig]
+
         if not meshes: return
 
         import mathutils
