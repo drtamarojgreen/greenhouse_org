@@ -122,6 +122,10 @@ def apply_blink(arm_obj, start_frame, duration=6):
 
 def apply_talking_arms(arm_obj, start_frame, duration=60):
     """Uses bone rotations (Euler) for talking to ensure visibility and constraint compliance."""
+    # Ensure all bones are XYZ mode for Euler animation (Point 142)
+    for pb in arm_obj.pose.bones:
+        pb.rotation_mode = 'XYZ'
+
     hand_l = get_bone(arm_obj, "Hand.L")
     hand_r = get_bone(arm_obj, "Hand.R")
     arm_l = get_bone(arm_obj, "Arm.L")

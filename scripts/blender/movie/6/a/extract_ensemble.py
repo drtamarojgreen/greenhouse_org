@@ -23,24 +23,34 @@ def _safe_fbx_export(filepath, use_selection=True):
 
     # Blender 5.0.1 internal bug: io_scene_fbx looks for 'use_space_transform'
     # and 'files' even if they are missing from RNA.
-    # We apply a robust monkeypatch to the operator classes using simple values
-    # to avoid internal Python/C property lookup failures.
-    try:
-        import io_scene_fbx
-        for cls in (io_scene_fbx.EXPORT_SCENE_OT_fbx, bpy.types.EXPORT_SCENE_OT_fbx):
-            if hasattr(cls, "__annotations__"):
-                cls.__annotations__["use_space_transform"] = bpy.props.BoolProperty(name="Use Space Transform", default=False)
-            if not hasattr(cls, "use_space_transform"):
-                cls.use_space_transform = False
+    def _patch_fbx_operators():
+        import bpy
+        # 1. Force addon load
+        bpy.ops.preferences.addon_enable(module="io_scene_fbx")
 
-        for cls in (io_scene_fbx.IMPORT_SCENE_OT_fbx, bpy.types.IMPORT_SCENE_OT_fbx):
-            if hasattr(cls, "__annotations__"):
-                cls.__annotations__["files"] = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
-            if not hasattr(cls, "files"):
-                cls.files = []
-        print("  DEBUG: Enhanced monkeypatch applied to FBX operators.")
-    except Exception as e:
-        print(f"  WARNING: Enhanced monkeypatch failed: {e}")
+        from bpy.props import BoolProperty, CollectionProperty
+        import io_scene_fbx
+
+        # Determine targets
+        targets = [bpy.types.EXPORT_SCENE_OT_fbx, bpy.types.IMPORT_SCENE_OT_fbx]
+        try:
+            import io_scene_fbx.export_fbx
+            targets.append(io_scene_fbx.export_fbx.EXPORT_SCENE_OT_fbx)
+        except: pass
+        try:
+            import io_scene_fbx.import_fbx
+            targets.append(io_scene_fbx.import_fbx.IMPORT_SCENE_OT_fbx)
+        except: pass
+
+        for cls in targets:
+            if "EXPORT" in cls.__name__ and not hasattr(cls, "use_space_transform"):
+                setattr(cls, "use_space_transform", BoolProperty(name="Use Space Transform", default=False))
+            if "IMPORT" in cls.__name__ and not hasattr(cls, "files"):
+                setattr(cls, "files", CollectionProperty(type=bpy.types.OperatorFileListElement))
+        print("  DEBUG: Comprehensive FBX monkeypatch applied.")
+
+    try: _patch_fbx_operators()
+    except Exception as e: print(f"  WARNING: Monkeypatch failed: {e}")
 
     # Define a exhaustive list of potential parameters we want to set
     potential_kwargs = {
@@ -92,18 +102,25 @@ def extract_assets():
     # 2. Link ensemble objects from production blend
     manager.link_ensemble()
 
-    # Special handling for Root_Guardian/skeleton
-    # We search for any object representing Root_Guardian (skeleton or renamed)
-    root_guard_obj = None
-    for obj in bpy.data.objects:
-        if obj.name in ("skeleton", "Root_Guardian.Body", "Root_Guardian.Rig") or "skeleton" in obj.name.lower():
-            root_guard_obj = obj
-            break
+    # Special handling for Root_Guardian/skeleton/shared rigs (Point 142)
+    # This character often fails discovery because its rig name 'skeleton'
+    # is common or already partially renamed.
+    found_root_src = None
+    # Priority 1: Exact 'skeleton' object
+    if "skeleton" in bpy.data.objects:
+        found_root_src = "skeleton"
+    # Priority 2: Renamed bodies or rigs
+    else:
+        for obj in bpy.data.objects:
+            if obj.name in ("Root_Guardian.Body", "Root_Guardian.Rig") or "skeleton" in obj.name.lower():
+                found_root_src = obj.name
+                break
 
-    if root_guard_obj:
-        print(f"  INFO: Mapping {root_guard_obj.name!r} to 'Root_Guardian'")
-        # Ensure it's the primary entry in the ensemble map
-        manager.ensemble[root_guard_obj.name] = "Root_Guardian"
+    if found_root_src:
+        print(f"  INFO: Mapping {found_root_src!r} to 'Root_Guardian'")
+        manager.ensemble[found_root_src] = "Root_Guardian"
+        # Force the rig map to align with this discovery
+        manager.rig_map["Root_Guardian"] = found_root_src
 
     # 3. Passive renaming only — no scaling or geometric modification
     print("ASSET_MANAGER: Renaming assets for export...")

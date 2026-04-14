@@ -131,17 +131,20 @@ class SylvanEnsembleManager:
 
         if current_h > 0.001:
             scale_factor = target_height / current_h
+            # Calculate final world scale needed
+            # (target / current) is the multiplier for the current absolute scale
+            old_rig_scale = rig.scale.copy()
             rig.scale *= scale_factor
 
             # Force mesh scale to (1,1,1) to avoid vertex displacement issues (Point 142)
-            # This ensures modifiers (like Displace) behave consistently.
+            # and scale Displacement modifier strength to keep textures consistent.
             for m in [o for o in rig.children_recursive if o.type == 'MESH']:
                 m.scale = (1.0, 1.0, 1.0)
-
-            # Additional safety: force scale on the rig object itself if it's also a mesh
-            if rig.type == 'MESH':
-                # Note: We don't force (1,1,1) on the rig object as it's the master scaler
-                pass
+                for mod in m.modifiers:
+                    if mod.type == 'DISPLACE':
+                        # Proportionally scale displacement so it doesn't look 'exploded'
+                        # on downscaled characters or 'flat' on upscaled ones.
+                        mod.strength *= scale_factor
 
             # --- Grounding Logic ---
             # Recalculate height after scaling to find the new bottom

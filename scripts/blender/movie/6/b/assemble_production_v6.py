@@ -109,22 +109,29 @@ def link_fbx_assets():
 
     # Blender 5.0.1 internal bug: io_scene_fbx looks for 'use_space_transform'
     # and 'files' even if they are missing from RNA.
-    try:
+    def _patch_fbx_operators():
+        import bpy
+        bpy.ops.preferences.addon_enable(module="io_scene_fbx")
+        from bpy.props import BoolProperty, CollectionProperty
         import io_scene_fbx
-        for cls in (io_scene_fbx.EXPORT_SCENE_OT_fbx, bpy.types.EXPORT_SCENE_OT_fbx):
-            if hasattr(cls, "__annotations__"):
-                cls.__annotations__["use_space_transform"] = bpy.props.BoolProperty(name="Use Space Transform", default=False)
-            if not hasattr(cls, "use_space_transform"):
-                cls.use_space_transform = False
+        targets = [bpy.types.EXPORT_SCENE_OT_fbx, bpy.types.IMPORT_SCENE_OT_fbx]
+        try:
+            import io_scene_fbx.export_fbx
+            targets.append(io_scene_fbx.export_fbx.EXPORT_SCENE_OT_fbx)
+        except: pass
+        try:
+            import io_scene_fbx.import_fbx
+            targets.append(io_scene_fbx.import_fbx.IMPORT_SCENE_OT_fbx)
+        except: pass
+        for cls in targets:
+            if "EXPORT" in cls.__name__ and not hasattr(cls, "use_space_transform"):
+                setattr(cls, "use_space_transform", BoolProperty(name="Use Space Transform", default=False))
+            if "IMPORT" in cls.__name__ and not hasattr(cls, "files"):
+                setattr(cls, "files", CollectionProperty(type=bpy.types.OperatorFileListElement))
+        print("  DEBUG: Comprehensive FBX monkeypatch applied in Phase B.")
 
-        for cls in (io_scene_fbx.IMPORT_SCENE_OT_fbx, bpy.types.IMPORT_SCENE_OT_fbx):
-            if hasattr(cls, "__annotations__"):
-                cls.__annotations__["files"] = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
-            if not hasattr(cls, "files"):
-                cls.files = []
-        print("  DEBUG: Enhanced monkeypatch applied to FBX operators in Phase B.")
-    except Exception as e:
-        print(f"  WARNING: Enhanced monkeypatch failed in Phase B: {e}")
+    try: _patch_fbx_operators()
+    except Exception as e: print(f"  WARNING: Monkeypatch failed in Phase B: {e}")
 
     for file in os.listdir(asset_dir):
         if file.endswith(".fbx"):
