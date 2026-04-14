@@ -82,33 +82,39 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Calculates world-height from mesh data and scales rig to match target, filtering outliers."""
+        """Calculates world-height from armature or mesh data and scales rig to match target."""
         if not rig: return
-        meshes = [c for c in rig.children if c.type == 'MESH']
-        if not meshes: return
 
-        import mathutils
-        all_z = []
-        # Ensure world-space coordinates are up to date (Point 142)
+        # Ensure world-space coordinates are up to date
         bpy.context.view_layer.update()
-        for m in meshes:
-            mw = m.matrix_world
-            # Use vertices directly for more granular outlier detection than bound_box
-            for v in m.data.vertices:
-                all_z.append((mw @ v.co).z)
 
-        if not all_z: return
-        all_z.sort()
+        current_h = 0
+        # Strategy 1: Prioritize Armature Bone Height (stable, bypasses mesh shards)
+        if rig.type == 'ARMATURE' and rig.data.bones:
+            z_vals = [ (rig.matrix_world @ b.head_local).z for b in rig.data.bones ] + \
+                     [ (rig.matrix_world @ b.tail_local).z for b in rig.data.bones ]
+            current_h = max(z_vals) - min(z_vals)
+            print(f"ASSET_MANAGER: Normalizing {rig.name} via Armature Height: {current_h:.2f}m")
 
-        # Simple robust height: 5th to 95th percentile to skip extreme "shards"
-        idx_min = int(len(all_z) * 0.05)
-        idx_max = int(len(all_z) * 0.95)
-        min_z = all_z[idx_min]
-        max_z = all_z[idx_max]
+        # Strategy 2: Fallback to Robust Mesh Height (filtered)
+        if current_h < 0.1:
+            meshes = [c for c in rig.children_recursive if c.type == 'MESH']
+            all_z = []
+            for m in meshes:
+                mw = m.matrix_world
+                all_z.extend([(mw @ v.co).z for v in m.data.vertices])
 
-        current_h = max_z - min_z
+            if all_z:
+                all_z.sort()
+                # 5th to 95th percentile filtering
+                idx_min, idx_max = int(len(all_z)*0.05), int(len(all_z)*0.95)
+                current_h = all_z[idx_max] - all_z[idx_min]
+                print(f"ASSET_MANAGER: Normalizing {rig.name} via Filtered Mesh Height: {current_h:.2f}m")
+
         if current_h > 0.001:
             scale_factor = target_height / current_h
+            # Clamp scale to prevent extreme distortions (e.g. 1000x scaling)
+            scale_factor = max(0.1, min(scale_factor, 10.0))
             rig.scale *= scale_factor
 
     def renormalize_objects(self):

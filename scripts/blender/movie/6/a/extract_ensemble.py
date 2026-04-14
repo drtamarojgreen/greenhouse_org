@@ -62,18 +62,19 @@ def _safe_fbx_export(filepath, use_selection=True):
 
     # Execute with supported args, wrapped in try-except for internal addon errors
     try:
+        print(f"  DEBUG: Exporting with args: {list(kwargs.keys())}")
         bpy.ops.export_scene.fbx(**kwargs)
         return True
     except Exception as e:
         print(f"  WARNING: FBX Export failed for {os.path.basename(filepath)}: {e}")
         # Try a second time with absolute minimal args if it failed
-        if "filepath" in kwargs:
-            print("  Retrying with minimal arguments...")
-            try:
-                bpy.ops.export_scene.fbx(filepath=filepath)
-                return True
-            except:
-                print("  Minimal export failed.")
+        print("  Retrying with absolute minimal arguments...")
+        try:
+            # We must use at least filepath
+            bpy.ops.export_scene.fbx(filepath=filepath)
+            return True
+        except Exception as e2:
+            print(f"  CRITICAL: Minimal export failed: {e2}")
     return False
 
 

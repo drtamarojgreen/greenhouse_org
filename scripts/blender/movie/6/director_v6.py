@@ -111,11 +111,11 @@ class SylvanDirector:
 
         for i, rig in enumerate(spirits):
             angle = (i / max(num - 1, 1)) * math.pi * 0.95 - math.pi * 0.475
-            dist  = 12.0 + (i % 2) * 3.5 # Increased distance to prevent occlusion
+            dist  = 12.0 + (i % 2) * 5.5 # Further increased distance to prevent backdrop occlusion
 
             rig.location = (
                 math.sin(angle) * dist,
-                6.0 + math.cos(angle) * 4.0,
+                8.0 + math.cos(angle) * 4.0, # Pushed further back from the camera
                 0.0,
             )
 
@@ -145,23 +145,32 @@ class SylvanDirector:
         self.apply_gaze_interactions()
 
     def apply_gaze_interactions(self):
-        """Adds Track To constraints so characters look at each other at key beats."""
+        """Adds Track To constraints via non-cyclic Focus empties."""
         herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
         arbor = bpy.data.objects.get(config.CHAR_ARBOR)
 
+        # Create persistent focus targets to break dependency cycles
+        f_herb = bpy.data.objects.get(config.FOCUS_HERBACEOUS) or bpy.data.objects.new(config.FOCUS_HERBACEOUS, None)
+        f_arbor = bpy.data.objects.get(config.FOCUS_ARBOR) or bpy.data.objects.new(config.FOCUS_ARBOR, None)
+
+        for f, pos in [(f_herb, config.CHAR_HERBACEOUS_EYE), (f_arbor, config.CHAR_ARBOR_EYE)]:
+            if f.name not in self.scene.collection.objects:
+                self.scene.collection.objects.link(f)
+            f.location = pos
+
         if herb and arbor:
-            # Herbaceous looks at Arbor
+            # Herbaceous looks at Arbor's Focus
             con_h = herb.constraints.get("Gaze_Arbor") or herb.constraints.new('TRACK_TO')
             con_h.name = "Gaze_Arbor"
-            con_h.target = arbor
+            con_h.target = f_arbor
             con_h.track_axis = 'TRACK_NEGATIVE_Z'
             con_h.up_axis = 'UP_Y'
             con_h.influence = 0.8
 
-            # Arbor looks at Herbaceous
+            # Arbor looks at Herbaceous's Focus
             con_a = arbor.constraints.get("Gaze_Herb") or arbor.constraints.new('TRACK_TO')
             con_a.name = "Gaze_Herb"
-            con_a.target = herb
+            con_a.target = f_herb
             con_a.track_axis = 'TRACK_NEGATIVE_Z'
             con_a.up_axis = 'UP_Y'
             con_a.influence = 0.8
