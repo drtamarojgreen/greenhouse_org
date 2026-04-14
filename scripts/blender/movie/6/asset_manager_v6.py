@@ -82,35 +82,48 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Calculates world-height from mesh data and scales rig to match target, filtering outliers."""
+        """Calculates world-height and scales rig to match target.
+        Prioritizes armature bones for characters with rigs to avoid mesh outliers (shards).
+        """
         if not rig: return
         # Ensure world matrices are up-to-date before height calculation
         bpy.context.view_layer.update()
 
-        meshes = [o for o in rig.children_recursive if o.type == 'MESH']
-        if not meshes and rig.type == 'MESH':
-            meshes = [rig]
+        current_h = 0.0
 
-        if not meshes: return
+        # Preference 1: Armature Bone Height (Head-to-Foot distance)
+        if rig.type == 'ARMATURE':
+            import mathutils
+            # Use pose bones for evaluated world locations
+            # Filter bones to those likely representing the main body height
+            main_bones = [b for b in rig.pose.bones if any(k in b.name.lower() for k in ["head", "neck", "spine", "hips", "foot", "toe", "leg", "knee"])]
+            if main_bones:
+                all_z = []
+                for b in main_bones:
+                    # Bone head/tail are in local space, convert to world
+                    all_z.append((rig.matrix_world @ b.head).z)
+                    all_z.append((rig.matrix_world @ b.tail).z)
+                current_h = max(all_z) - min(all_z)
 
-        import mathutils
-        all_z = []
-        for m in meshes:
-            mw = m.matrix_world
-            # Use vertices directly for more granular outlier detection than bound_box
-            for v in m.data.vertices:
-                all_z.append((mw @ v.co).z)
+        # Preference 2: Mesh Vertex Percentile Height (if rig height failed or no rig)
+        if current_h < 0.001:
+            meshes = [o for o in rig.children_recursive if o.type == 'MESH']
+            if not meshes and rig.type == 'MESH':
+                meshes = [rig]
 
-        if not all_z: return
-        all_z.sort()
+            if meshes:
+                all_z = []
+                for m in meshes:
+                    mw = m.matrix_world
+                    for v in m.data.vertices:
+                        all_z.append((mw @ v.co).z)
 
-        # Simple robust height: 1st to 99th percentile to skip "shards"
-        idx_min = int(len(all_z) * 0.01)
-        idx_max = int(len(all_z) * 0.99)
-        min_z = all_z[idx_min]
-        max_z = all_z[idx_max]
+                if all_z:
+                    all_z.sort()
+                    idx_min = int(len(all_z) * 0.01)
+                    idx_max = int(len(all_z) * 0.99)
+                    current_h = all_z[idx_max] - all_z[idx_min]
 
-        current_h = max_z - min_z
         if current_h > 0.001:
             scale_factor = target_height / current_h
             rig.scale *= scale_factor

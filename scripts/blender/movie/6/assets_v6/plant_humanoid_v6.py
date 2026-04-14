@@ -558,6 +558,9 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
 
     # 1. Armature
     arm_obj = _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h)
+    # Ensure all pose bones are XYZ Euler for procedural animation (Point 142)
+    for pb in arm_obj.pose.bones:
+        pb.rotation_mode = 'XYZ'
 
     # 2. Mesh
     mesh_obj = _create_v6_mesh(name, arm_obj, height_scale, head_r, torso_h, neck_h)

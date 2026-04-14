@@ -135,28 +135,31 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
     dp_l = f'pose.bones["{hand_l.name}"].location'
     dp_r = f'pose.bones["{hand_r.name}"].location'
     
-    for f in range(start_frame, start_frame + duration, 10):
-        hand_l.location[2] += random.uniform(-0.05, 0.05)
-        hand_r.location[2] += random.uniform(-0.05, 0.05)
+    # Use deterministic sine waves for talking to ensure visible, rhythmic performance
+    for f in range(start_frame, start_frame + duration + 1, 5):
+        phase = (f - start_frame) * 0.2
+        hand_l.location[2] = math.sin(phase) * 0.05
+        hand_r.location[2] = math.cos(phase) * 0.05
         arm_obj.keyframe_insert(data_path=dp_l, index=2, frame=f)
         arm_obj.keyframe_insert(data_path=dp_r, index=2, frame=f)
 
 def apply_dance(arm_obj, start_frame, duration=600):
     """Rhythmic bobbing using get_bone."""
     torso = get_bone(arm_obj, "Torso")
-    hip = get_bone(arm_obj, "Tail") # Use Hips as secondary bob
+    hip = get_bone(arm_obj, "Tail") or get_bone(arm_obj, "Hips")
     if not torso: return
     
     dp_t = f'pose.bones["{torso.name}"].location'
     
-    for f in range(start_frame, start_frame + duration, 4):
+    # Rhythmic bobbing (Deterministic)
+    for f in range(start_frame, start_frame + duration + 1, 4):
         phase = (f - start_frame) * 0.1
-        torso.location[2] = math.sin(phase) * 0.1
+        torso.location[2] = math.sin(phase) * 0.15
         arm_obj.keyframe_insert(data_path=dp_t, index=2, frame=f)
         
         if hip:
             dp_h = f'pose.bones["{hip.name}"].location'
-            hip.location[1] = math.cos(phase) * 0.05
+            hip.location[1] = math.cos(phase) * 0.08
             arm_obj.keyframe_insert(data_path=dp_h, index=1, frame=f)
 
 def apply_idle_sway(arm_obj, start_frame, duration=120):
