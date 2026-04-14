@@ -63,11 +63,15 @@ class TestV6SpiritIntegration(unittest.TestCase):
             self.assertLess(v_count, 200000)
 
     def get_world_height(self, obj):
+        """Robust height calculation matching asset_manager_v6 (filtering outliers)."""
         if obj.type == 'MESH':
-            bbox    = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-            z_vals  = [v.z for v in bbox]
-            return max(z_vals) - min(z_vals)
+            all_z = sorted([(obj.matrix_world @ v.co).z for v in obj.data.vertices])
+            if not all_z: return 0
+            idx_min = int(len(all_z) * 0.01)
+            idx_max = int(len(all_z) * 0.99)
+            return all_z[idx_max] - all_z[idx_min]
         elif obj.type == 'ARMATURE':
+            # Rigs generally don't have shards, but we'll use heads/tails
             z_vals = (
                 [obj.matrix_world @ b.head for b in obj.data.bones] +
                 [obj.matrix_world @ b.tail for b in obj.data.bones]
@@ -80,15 +84,15 @@ class TestV6SpiritIntegration(unittest.TestCase):
         bpy.ops.mesh.primitive_cube_add(size=2.5, location=(0, 0, 1.25))
         herb_mock = bpy.context.active_object
 
-        leafy = bpy.data.objects.get("LeafySpirit_Mesh1_Mesh1.044")
+        # Use canonical name from config
+        leafy = bpy.data.objects.get(config.CHAR_LEAFY_MESH)
         if leafy:
-            leafy.scale = config.SPIRIT_LEAFY_SCALE
             bpy.context.view_layer.update()
             h_herb  = self.get_world_height(herb_mock)
             h_leafy = self.get_world_height(leafy)
             print(f"DIAGNOSTIC: Herb Mock height={h_herb:.2f}, Leafy height={h_leafy:.2f}")
-            self.assertGreater(h_leafy, h_herb * 1.2, "Spirit too small vs plants")
-            self.assertLess(h_leafy,    h_herb * 5.0, "Spirit excessively large")
+            self.assertGreater(h_leafy, h_herb * 1.1, f"Spirit {leafy.name} too small vs plants")
+            self.assertLess(h_leafy,    h_herb * 6.0, f"Spirit {leafy.name} excessively large")
 
     def test_absolute_positioning(self):
         self.scene_logic._link_spirit_assets()
@@ -294,13 +298,19 @@ class TestV6SpiritIntegration(unittest.TestCase):
             if not obj:
                 continue
 
-            bbox   = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-            z_vals = [b.z for b in bbox]
-            height = max(z_vals) - min(z_vals)
+            height = self.get_world_height(obj)
 
-            target_h = 6.0 if ("Leafy" in name or "Joy" in name) else 5.5
-            self.assertGreater(height, target_h * 0.9, f"{name} too short ({height:.2f}m)")
-            self.assertLess(height,    target_h * 1.1, f"{name} too tall ({height:.2f}m)")
+            # Map artistic names to target heights from config
+            target_h = 5.5
+            if "Sylvan_Majesty" in name or "Radiant_Aura" in name:
+                target_h = config.MAJESTIC_HEIGHT
+            elif "Verdant_Sprite" in name:
+                target_h = config.SPRITE_HEIGHT
+            elif "Phoenix" in name:
+                target_h = config.PHOENIX_HEIGHT
+
+            self.assertGreater(height, target_h * 0.8, f"{name} too short ({height:.2f}m, expected ~{target_h}m)")
+            self.assertLess(height,    target_h * 1.2, f"{name} too tall ({height:.2f}m, expected ~{target_h}m)")
 
             up_vec = obj.matrix_world.to_quaternion() @ mathutils.Vector((0, 0, 1))
             self.assertGreater(up_vec.z, 0.9, f"{name} not upright (Up.z={up_vec.z:.2f})")

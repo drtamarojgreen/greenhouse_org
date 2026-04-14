@@ -87,6 +87,9 @@ class SylvanEnsembleManager:
         meshes = [c for c in rig.children if c.type == 'MESH']
         if not meshes: return
 
+        # Trigger update to ensure world matrices are current (Point 142)
+        bpy.context.view_layer.update()
+
         import mathutils
         all_z = []
         for m in meshes:
@@ -174,10 +177,14 @@ class SylvanEnsembleManager:
             is_protag = any(p in rig.name or p in art_name for p in protags)
 
             if not is_protag:
-                target_h = 1.0
-                if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
-                elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
-                elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
+                # Default to sprite height for generic spirits
+                target_h = config.SPRITE_HEIGHT
+                if "Sylvan_Majesty" in art_name or "Radiant_Aura" in art_name:
+                    target_h = config.MAJESTIC_HEIGHT
+                elif "Verdant_Sprite" in art_name:
+                    target_h = config.SPRITE_HEIGHT
+                elif "Phoenix" in art_name:
+                    target_h = config.PHOENIX_HEIGHT
 
                 self.normalize_character_scale(rig, target_h)
 

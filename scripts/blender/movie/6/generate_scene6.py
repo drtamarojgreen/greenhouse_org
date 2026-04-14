@@ -20,6 +20,13 @@ import director_v6
 import camera_rig_v6
 import chroma_green_setup
 
+# Ensure assets_v6 is in path for props_v6
+ASSETS_V6_DIR = os.path.join(V6_DIR, "assets_v6")
+if ASSETS_V6_DIR not in sys.path:
+    sys.path.append(ASSETS_V6_DIR)
+
+from props_v6 import create_water_can_v6, create_garden_hose_v6
+
 def standardize_ensemble_heights():
     """No-op shim."""
     print("ASSET_MANAGER: Normalizing Ensemble Heights [SKIPPED]")
@@ -53,6 +60,11 @@ def generate_full_scene_v6():
 
     plant_humanoid_v6.create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
     plant_humanoid_v6.create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
+
+    # 2b. Prop Generation
+    # Position props on the ground between the characters
+    create_water_can_v6("WaterCan", (0.0, -0.4, 0.0))
+    create_garden_hose_v6("GardenHose", (0.0, 0.4, 0.0))
 
     am.link_ensemble()
     am.renormalize_objects()

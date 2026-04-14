@@ -10,6 +10,18 @@ if V6_DIR not in sys.path:
 import config
 from asset_manager_v6 import SylvanEnsembleManager
 
+# Monkeypatch for Blender 5.0.1 FBX export bug (AttributeError: 'ExportFBX' object has no attribute 'use_space_transform')
+if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx"):
+    if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
+        try:
+            bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(
+                name="Use Space Transform",
+                default=False
+            )
+            print("  INFO: Applied monkeypatch for EXPORT_SCENE_OT_fbx.use_space_transform")
+        except Exception as e:
+            print(f"  WARNING: Failed to apply monkeypatch: {e}")
+
 
 def _is_protagonist(art_name):
     return art_name in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR)

@@ -50,8 +50,7 @@ def setup_camera_rig_v6():
     if wide_cam:
         setup_follow_path(wide_cam, wide_path, duration=config.TOTAL_FRAMES)
 
-    # 2. OTS target tracking
-    # OTS1 follows a small circle around its base position while tracking Herbaceous
+    # 2. OTS1 target tracking (Circular drift)
     ots1_base = mathutils.Vector(config.CAM_OTS1_POS)
     ots1_points = [
         ots1_base + mathutils.Vector((math.sin(a), math.cos(a), 0)) * 0.5
@@ -62,5 +61,18 @@ def setup_camera_rig_v6():
     ots1_cam = bpy.data.objects.get("OTS1")
     if ots1_cam:
         setup_follow_path(ots1_cam, ots1_path, duration=config.TOTAL_FRAMES)
+
+    # 3. OTS2 dynamic path (Rising for Act IV climax)
+    ots2_base = mathutils.Vector(config.CAM_OTS2_POS)
+    ots2_points = [
+        ots2_base,
+        ots2_base + mathutils.Vector((0, 0, 3.0)), # Rise to see Radiant_Aura dance
+        ots2_base + mathutils.Vector((2.0, 2.0, 4.0)) # Side sweep for finale
+    ]
+    ots2_path = create_camera_path("OTS2", ots2_points)
+
+    ots2_cam = bpy.data.objects.get("OTS2")
+    if ots2_cam:
+        setup_follow_path(ots2_cam, ots2_path, duration=config.TOTAL_FRAMES)
 
     return True
