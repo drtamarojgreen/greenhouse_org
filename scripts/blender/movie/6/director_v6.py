@@ -45,6 +45,20 @@ class SylvanDirector:
         if "WIDE" in bpy.data.objects:
             self.scene.camera = bpy.data.objects["WIDE"]
 
+        # Timeline Markers for Camera Switching (Point 142/Storyline Beats)
+        self.scene.timeline_markers.clear()
+        cam_beats = [
+            (1, "WIDE"),
+            (600, "OTS1"),
+            (1800, "OTS2"),
+            (3000, "WIDE")
+        ]
+        for frame, cam_name in cam_beats:
+            cam_obj = bpy.data.objects.get(cam_name)
+            if cam_obj:
+                marker = self.scene.timeline_markers.new(cam_name, frame=frame)
+                marker.camera = cam_obj
+
     def _create_camera(self, name, pos, rot, coll, lens=35):
         """Creates (or reuses) a camera and links it into the given collection."""
         cam_data = bpy.data.cameras.get(name) or bpy.data.cameras.new(name)

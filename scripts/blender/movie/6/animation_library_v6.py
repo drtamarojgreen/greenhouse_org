@@ -121,8 +121,12 @@ def apply_blink(arm_obj, start_frame, duration=6):
             child.keyframe_insert(data_path="scale", index=2, frame=start_frame + duration)
 
 def apply_talking_arms(arm_obj, start_frame, duration=60):
+    """Uses bone rotations (Euler) for talking to ensure visibility and constraint compliance."""
     hand_l = get_bone(arm_obj, "Hand.L")
     hand_r = get_bone(arm_obj, "Hand.R")
+    arm_l = get_bone(arm_obj, "Arm.L")
+    arm_r = get_bone(arm_obj, "Arm.R")
+
     if not hand_l or not hand_r: return
 
     if not arm_obj.animation_data:
@@ -132,16 +136,20 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
     if not arm_obj.animation_data.action:
         arm_obj.animation_data.action = bpy.data.actions.new(name=f"Action_{arm_obj.name}")
 
-    dp_l = f'pose.bones["{hand_l.name}"].location'
-    dp_r = f'pose.bones["{hand_r.name}"].location'
-    
-    # Use deterministic sine waves for talking to ensure visible, rhythmic performance
-    for f in range(start_frame, start_frame + duration + 1, 5):
-        phase = (f - start_frame) * 0.2
-        hand_l.location[2] = math.sin(phase) * 0.05
-        hand_r.location[2] = math.cos(phase) * 0.05
-        arm_obj.keyframe_insert(data_path=dp_l, index=2, frame=f)
-        arm_obj.keyframe_insert(data_path=dp_r, index=2, frame=f)
+    # Helper to insert rotation keyframes
+    def key_rot(bone, axis, val, frame):
+        bone.rotation_euler[axis] = val
+        arm_obj.keyframe_insert(data_path=f'pose.bones["{bone.name}"].rotation_euler', index=axis, frame=frame)
+
+    # Use deterministic sine waves for rotations ( Euler XYZ )
+    for f in range(start_frame, start_frame + duration + 1, 10):
+        phase = (f - start_frame) * 0.15
+        # Rhythmic arm sway
+        if arm_l: key_rot(arm_l, 0, math.radians(-30 + math.sin(phase) * 10), f)
+        if arm_r: key_rot(arm_r, 0, math.radians(-30 + math.cos(phase) * 10), f)
+        # Wrist/Hand flicker
+        key_rot(hand_l, 2, math.sin(phase * 1.5) * 0.2, f)
+        key_rot(hand_r, 2, math.cos(phase * 1.5) * 0.2, f)
 
 def apply_dance(arm_obj, start_frame, duration=600):
     """Rhythmic bobbing using get_bone."""

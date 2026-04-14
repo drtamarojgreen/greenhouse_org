@@ -128,6 +128,30 @@ class SylvanEnsembleManager:
             scale_factor = target_height / current_h
             rig.scale *= scale_factor
 
+            # Force mesh scale to (1,1,1) to avoid vertex displacement issues (Point 142)
+            # This ensures modifiers (like Displace) behave consistently.
+            for m in [o for o in rig.children_recursive if o.type == 'MESH']:
+                m.scale = (1.0, 1.0, 1.0)
+
+            # --- Grounding Logic ---
+            # Recalculate height after scaling to find the new bottom
+            bpy.context.view_layer.update()
+
+            all_z = []
+            meshes = [o for o in rig.children_recursive if o.type == 'MESH']
+            if not meshes and rig.type == 'MESH': meshes = [rig]
+
+            for m in meshes:
+                mw = m.matrix_world
+                # Using bound_box for fast grounding check
+                for co in m.bound_box:
+                    all_z.append((mw @ mathutils.Vector(co)).z)
+
+            if all_z:
+                z_min = min(all_z)
+                # Offset rig so bottom vertex is at scene floor (Z=0)
+                rig.location.z -= z_min
+
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
         coll = bpy.data.collections.get(self.collection_name)

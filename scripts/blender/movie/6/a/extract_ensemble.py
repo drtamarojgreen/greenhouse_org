@@ -23,19 +23,16 @@ def _safe_fbx_export(filepath, use_selection=True):
 
     # Blender 5.0.1 internal bug: io_scene_fbx looks for 'use_space_transform'
     # even if it's missing from RNA. We monkeypatch the operator class if needed.
-    # Note: This is a surgical intervention for the headless production environment.
     if 'use_space_transform' not in supported:
         try:
-            # We don't actually need to set it on the instance, but the class
-            # definition for the operator to satisfy the internal check.
-            from io_scene_fbx import EXPORT_SCENE_OT_fbx
-            if not hasattr(EXPORT_SCENE_OT_fbx, "use_space_transform"):
-                # Define a dummy property to prevent AttributeError
-                # We use a simple boolean as the exporter expects a bool-like value
-                EXPORT_SCENE_OT_fbx.use_space_transform = False
-                print("  DEBUG: Monkeypatched FBX operator to resolve Blender 5.0 internal error.")
-        except ImportError:
-            pass
+            # Apply to bpy.types to ensure instances have the attribute
+            if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
+                bpy.types.EXPORT_SCENE_OT_fbx.use_space_transform = bpy.props.BoolProperty(
+                    name="Use Space Transform", default=False
+                )
+                print("  DEBUG: Monkeypatched bpy.types.EXPORT_SCENE_OT_fbx to resolve Blender 5.0 internal error.")
+        except Exception as e:
+            print(f"  WARNING: Failed to monkeypatch FBX operator: {e}")
 
     # Define a exhaustive list of potential parameters we want to set
     potential_kwargs = {
@@ -63,7 +60,11 @@ def _safe_fbx_export(filepath, use_selection=True):
         if "filepath" in kwargs:
             print("  Retrying with minimal arguments...")
             try:
-                bpy.ops.export_scene.fbx(filepath=filepath, use_selection=use_selection)
+                # Filter keywords for retry too
+                retry_kwargs = {"filepath": filepath}
+                if "use_selection" in supported:
+                    retry_kwargs["use_selection"] = use_selection
+                bpy.ops.export_scene.fbx(**retry_kwargs)
                 return True
             except Exception as e2:
                 print(f"  Minimal export failed: {e2}")
