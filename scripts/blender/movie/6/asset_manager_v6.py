@@ -112,9 +112,19 @@ class SylvanEnsembleManager:
         current_h = all_z[idx_max] - all_z[idx_min]
 
         if current_h > 0.01:
+            # Detection logic for 100x unit scale discrepancy (Point 142)
+            # If current height is extremely high (>100m) but target is low (<10m),
+            # or vice versa, it indicates a cm vs m mismatch in the source FBX.
+            if current_h > 100.0 and target_height < 10.0:
+                print(f"ASSET_MANAGER: Unit scale discrepancy detected for {rig.name} ({current_h:.2f}m). Correcting...")
+                current_h /= 100.0
+            elif current_h < 0.1 and target_height > 1.0:
+                print(f"ASSET_MANAGER: Unit scale discrepancy detected (small) for {rig.name}. Correcting...")
+                current_h *= 100.0
+
             scale_factor = target_height / current_h
             # Clamp to prevent extreme distortions
-            scale_factor = max(0.05, min(scale_factor, 50.0))
+            scale_factor = max(0.05, min(scale_factor, 100.0))
             rig.scale = (scale_factor, scale_factor, scale_factor)
             print(f"ASSET_MANAGER: Normalized {rig.name} (Height: {current_h:.2f}m -> {target_height}m, Scale: {scale_factor:.2f})")
 
@@ -124,10 +134,23 @@ class SylvanEnsembleManager:
             rig.location.z -= min_z
 
             # Clear scale keyframes to prevent animation overrides (Point 142)
+            # Utilizing Blender 5.0 Channel Bag API via style_utilities
             if rig.animation_data and rig.animation_data.action:
-                for fcurve in rig.animation_data.action.fcurves:
-                    if "scale" in fcurve.data_path:
-                        rig.animation_data.action.fcurves.remove(fcurve)
+                try:
+                    from style_utilities.fcurves_operations import get_action_curves
+                    curves = get_action_curves(rig.animation_data.action, obj=rig)
+                    for fc in curves:
+                        if "scale" in fc.data_path:
+                            try:
+                                # Use the actual FCurve from the proxy
+                                # In 5.0, fc._target is the FCurve inside a ChannelBag
+                                bag = fc._target.id_data
+                                if hasattr(bag, "fcurves"):
+                                    bag.fcurves.remove(fc._target)
+                            except: pass
+                except ImportError:
+                    # Minimal fallback if style_utilities not available
+                    pass
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""

@@ -583,6 +583,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
         self.assertIsNotNone(cam.animation_data.action, "Camera has no action")
 
         fcurves = get_action_curves(cam.animation_data.action, obj=cam)
+        # In 5.0 constraints might have their own path prefix
         con_fcurve = next((f for f in fcurves if "offset_factor" in f.data_path), None)
         self.assertIsNotNone(con_fcurve, "Animation missing for camera path offset")
         self.assertGreaterEqual(len(con_fcurve.keyframe_points), 2)

@@ -145,11 +145,23 @@ class SylvanDirector:
         self.apply_gaze_interactions()
 
     def apply_gaze_interactions(self):
-        """Adds Track To constraints via non-cyclic Focus empties."""
+        """Adds Track To constraints via non-cyclic Focus empties, clearing legacy ones first."""
         herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
         arbor = bpy.data.objects.get(config.CHAR_ARBOR)
 
-        # Create persistent focus targets to break dependency cycles
+        # 1. Clear legacy 'Track To' to ensure no cyclic dependencies persist (Point 142)
+        all_chars = [herb, arbor]
+        coll = bpy.data.collections.get(config.COLL_ASSETS)
+        if coll:
+            all_chars.extend([o for o in coll.objects if o.type == 'ARMATURE'])
+
+        for char in all_chars:
+            if not char: continue
+            for con in list(char.constraints):
+                if con.type == 'TRACK_TO':
+                    char.constraints.remove(con)
+
+        # 2. Create persistent focus targets to break dependency cycles
         f_herb = bpy.data.objects.get(config.FOCUS_HERBACEOUS) or bpy.data.objects.new(config.FOCUS_HERBACEOUS, None)
         f_arbor = bpy.data.objects.get(config.FOCUS_ARBOR) or bpy.data.objects.new(config.FOCUS_ARBOR, None)
 

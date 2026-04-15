@@ -136,6 +136,8 @@ def apply_blink(arm_obj, start_frame, duration=6):
 
 def apply_talking_arms(arm_obj, start_frame, duration=60):
     """Expressive arm movement during dialogue, loops if duration is long."""
+    if duration <= 0: duration = 120 # Safety default
+
     # Find relevant bones
     bones = {
         "Arm.L": get_bone(arm_obj, "Arm.L"),
@@ -170,6 +172,9 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
 
     # 2. Expressive flutter
     curr = start_frame + 5
+    # Ensure at least one loop for short durations
+    if end_frame - start_frame < 10: end_frame = start_frame + 20
+
     while curr < end_frame:
         for s in ("L", "R"):
             arm = bones.get(f"Arm.{s}")
