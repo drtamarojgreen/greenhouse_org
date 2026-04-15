@@ -82,32 +82,74 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Calculates world-height from mesh data and scales rig to match target, filtering outliers."""
+        """Calculates world-height and scales rig to match target.
+        Prioritizes armature bones for characters with rigs to avoid mesh outliers (shards).
+        """
         if not rig: return
-        meshes = [c for c in rig.children if c.type == 'MESH']
-        if not meshes: return
 
-        import mathutils
-        all_z = []
-        for m in meshes:
-            mw = m.matrix_world
-            # Use vertices directly for more granular outlier detection than bound_box
-            for v in m.data.vertices:
-                all_z.append((mw @ v.co).z)
+        # Reset scale to identity and clear parent inverse to ensure measurement is baseline
+        rig.scale = (1.0, 1.0, 1.0)
+        if rig.parent:
+            rig.matrix_parent_inverse = mathutils.Matrix.Identity(4)
 
-        if not all_z: return
-        all_z.sort()
+        # Ensure world matrices are up-to-date before height calculation
+        bpy.context.view_layer.update()
 
-        # Simple robust height: 1st to 99th percentile to skip "shards"
-        idx_min = int(len(all_z) * 0.01)
-        idx_max = int(len(all_z) * 0.99)
-        min_z = all_z[idx_min]
-        max_z = all_z[idx_max]
+        current_h = 0.0
 
-        current_h = max_z - min_z
+        # Preference 1: Armature Bone Height (Head-to-Foot distance)
+        if rig.type == 'ARMATURE':
+            import mathutils
+            main_bones = [b for b in rig.pose.bones if any(k in b.name.lower() for k in ["head", "neck", "spine", "hips", "foot", "toe", "leg", "knee"])]
+            if main_bones:
+                all_z = []
+                for b in main_bones:
+                    all_z.append((rig.matrix_world @ b.head).z)
+                    all_z.append((rig.matrix_world @ b.tail).z)
+                current_h = max(all_z) - min(all_z)
+
+        # Preference 2: Mesh Vertex Percentile Height (if rig height failed or no rig)
+        if current_h < 0.001:
+            meshes = [o for o in rig.children_recursive if o.type == 'MESH']
+            if not meshes and rig.type == 'MESH': meshes = [rig]
+            if meshes:
+                all_z = []
+                for m in meshes:
+                    mw = m.matrix_world
+                    for v in m.data.vertices:
+                        all_z.append((mw @ v.co).z)
+                if all_z:
+                    all_z.sort()
+                    # 99.5% percentile filter to skip aggressive "shard" artifacts
+                    idx_min = int(len(all_z) * 0.005)
+                    idx_max = int(len(all_z) * 0.995)
+                    current_h = all_z[idx_max] - all_z[idx_min]
+
         if current_h > 0.001:
             scale_factor = target_height / current_h
             rig.scale *= scale_factor
+
+            # Force mesh child scale to identity and proportionally scale Displacement strength.
+            for m in [o for o in rig.children_recursive if o.type == 'MESH']:
+                m.scale = (1.0, 1.0, 1.0)
+                for mod in m.modifiers:
+                    if mod.type == 'DISPLACE':
+                        mod.strength *= scale_factor
+
+            # --- Grounding Logic ---
+            bpy.context.view_layer.update()
+            all_z = []
+            meshes = [o for o in rig.children_recursive if o.type == 'MESH']
+            if not meshes and rig.type == 'MESH': meshes = [rig]
+            for m in meshes:
+                mw = m.matrix_world
+                for v in m.data.vertices:
+                    all_z.append((mw @ v.co).z)
+            if all_z:
+                all_z.sort()
+                # 0.5% percentile for grounding floor to skip loose stray vertices
+                z_floor = all_z[int(len(all_z) * 0.005)]
+                rig.location.z -= z_floor
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
@@ -175,9 +217,12 @@ class SylvanEnsembleManager:
 
             if not is_protag:
                 target_h = 1.0
-                if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
-                elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
-                elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
+                if "Sylvan_Majesty" in art_name or "Radiant_Aura" in art_name:
+                    target_h = config.MAJESTIC_HEIGHT
+                elif "Verdant_Sprite" in art_name:
+                    target_h = config.SPRITE_HEIGHT
+                elif "Phoenix" in art_name:
+                    target_h = config.PHOENIX_HEIGHT
 
                 self.normalize_character_scale(rig, target_h)
 

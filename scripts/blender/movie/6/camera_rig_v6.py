@@ -39,10 +39,12 @@ def setup_camera_rig_v6():
     """Builds standard production camera rig with paths."""
     import config
 
-    # 1. WIDE dynamic path
+    # 1. WIDE dynamic path (Reflects Storyline Beats: Arrival, Dance, Blessing, Ascent)
     wide_points = [
-        (config.CAM_WIDE_POS[0], config.CAM_WIDE_POS[1], config.CAM_WIDE_POS[2]),
-        (config.CAM_WIDE_POS[0], config.CAM_WIDE_POS[1] + 2.0, config.CAM_WIDE_POS[2] + 1.0)
+        (config.CAM_WIDE_POS[0], config.CAM_WIDE_POS[1], config.CAM_WIDE_POS[2]),       # Frame 1: Arrival
+        (config.CAM_WIDE_POS[0] + 5.0, config.CAM_WIDE_POS[1] + 2.0, config.CAM_WIDE_POS[2] + 2.0), # Frame 1000: Dance
+        (config.CAM_WIDE_POS[0] - 5.0, config.CAM_WIDE_POS[1] + 4.0, config.CAM_WIDE_POS[2] + 4.0), # Frame 2000: Blessing
+        (config.CAM_WIDE_POS[0], config.CAM_WIDE_POS[1] + 6.0, config.CAM_WIDE_POS[2] + 6.0)        # Frame 3000+: Ascent
     ]
     wide_path = create_camera_path("WIDE", wide_points)
 

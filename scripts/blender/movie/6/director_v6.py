@@ -45,6 +45,20 @@ class SylvanDirector:
         if "WIDE" in bpy.data.objects:
             self.scene.camera = bpy.data.objects["WIDE"]
 
+        # Timeline Markers for Camera Switching (Point 142/Storyline Beats)
+        self.scene.timeline_markers.clear()
+        cam_beats = [
+            (1, "WIDE"),
+            (600, "OTS1"),
+            (1800, "OTS2"),
+            (3000, "WIDE")
+        ]
+        for frame, cam_name in cam_beats:
+            cam_obj = bpy.data.objects.get(cam_name)
+            if cam_obj:
+                marker = self.scene.timeline_markers.new(cam_name, frame=frame)
+                marker.camera = cam_obj
+
     def _create_camera(self, name, pos, rot, coll, lens=35):
         """Creates (or reuses) a camera and links it into the given collection."""
         cam_data = bpy.data.cameras.get(name) or bpy.data.cameras.new(name)
@@ -139,7 +153,16 @@ class SylvanDirector:
             animation_library_v6.apply_animation_by_tag(arbor, "talking", 60, duration=config.TOTAL_FRAMES)
             animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
 
-        # 2. Ensemble Spirits (Atmospheric Motion)
+        # 2. "Great Spore Tag" - Interactive Dynamics (Point 142/Storyline)
+        # Periodic interactions between protagonists and ensemble spirits
+        if herb and arbor:
+            for f in range(600, 3600, 1200): # Three major 'tag' beats
+                # Herbaceous dodges a 'Gloom Puff'
+                animation_library_v6.apply_animation_by_tag(herb, "dodge", f)
+                # Arbor reacts with a glow pulse
+                animation_library_v6.apply_animation_by_tag(arbor, "glow_reaction", f + 30)
+
+        # 3. Ensemble Spirits (Atmospheric Motion)
         spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor]]
         tags = ["dance", "nod", "shake", "idle"]
 
