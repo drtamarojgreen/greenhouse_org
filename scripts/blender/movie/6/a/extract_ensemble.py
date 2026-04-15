@@ -12,19 +12,26 @@ from asset_manager_v6 import SylvanEnsembleManager
 
 # Monkeypatch for Blender 5.0.1 FBX export bug (AttributeError: 'ExportFBX' object has no attribute 'use_space_transform')
 if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx"):
-    # Fix for RNA registration bug: ensure property exists both in annotations and as a class attribute
     if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
         try:
-            # Add to annotations for potential UI display
-            bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(
-                name="Use Space Transform",
-                default=False
-            )
-            # Set as direct class attribute so execute() can always read it even if RNA fails
+            bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(name="Use Space Transform", default=False)
             setattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform", False)
             print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx.use_space_transform")
         except Exception as e:
-            print(f"  WARNING: Failed to apply monkeypatch: {e}")
+            print(f"  WARNING: Failed to apply export monkeypatch: {e}")
+
+# Monkeypatch for Blender 5.0.1 FBX import bug (AttributeError: 'ImportFBX' object has no attribute 'files')
+if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx"):
+    if not hasattr(bpy.types.IMPORT_SCENE_OT_fbx, "files"):
+        try:
+            bpy.types.IMPORT_SCENE_OT_fbx.__annotations__["files"] = bpy.props.CollectionProperty(
+                type=bpy.types.OperatorFileListElement,
+                options={'HIDDEN', 'SKIP_SAVE'}
+            )
+            setattr(bpy.types.IMPORT_SCENE_OT_fbx, "files", [])
+            print("  INFO: Applied robust monkeypatch for IMPORT_SCENE_OT_fbx.files")
+        except Exception as e:
+            print(f"  WARNING: Failed to apply import monkeypatch: {e}")
 
 
 def _is_protagonist(art_name):
@@ -81,48 +88,76 @@ def extract_assets():
     # 2. Link ensemble objects from production blend
     manager.link_ensemble()
 
-    # Special handling for Root_Guardian/skeleton if not found by exact name
-    if "skeleton" not in bpy.data.objects:
-        # Check if it was already renamed or exists as a substring
-        skel = next((o for o in bpy.data.objects if "skeleton" in o.name.lower()), None)
-        if skel:
-            print(f"  INFO: Found skeleton object as {skel.name!r}")
-            # Map it so the loop finds it
-            manager.ensemble[skel.name] = "Root_Guardian"
-
     # 3. Resolve and Rename assets for export
-    # CRITICAL: Resolve ALL objects first before renaming, to avoid losing references
-    # when an object serves as both rig and mesh (e.g., Root_Guardian).
-    print("ASSET_MANAGER: Resolving ensemble objects...")
-    resolved = [] # List of (mesh_obj, rig_obj, art_name)
+    # CRITICAL: Use the source_name custom property for unambiguous resolution
+    print("ASSET_MANAGER: Resolving ensemble objects by source_name...")
 
-    for src_mesh, art_name in list(manager.ensemble.items()):
-        mesh_obj = bpy.data.objects.get(src_mesh)
-        if not mesh_obj:
-            print(f"  SKIP (mesh not found): {src_mesh} -> {art_name}")
-            continue
+    # Store references by art_name
+    resolved_map = {} # art_name -> {'mesh': obj, 'rig': obj}
 
-        src_rig = manager.rig_map.get(art_name)
-        rig_obj = bpy.data.objects.get(src_rig) if src_rig else None
+    for art_name in set(list(manager.ensemble.values()) + list(manager.rig_map.keys())):
+        resolved_map[art_name] = {'mesh': None, 'rig': None}
 
-        if rig_obj is None and mesh_obj.type != 'ARMATURE':
-            rig_obj = mesh_obj.find_armature()
+        # Find mesh for this character
+        src_mesh_names = [k for k, v in manager.ensemble.items() if v == art_name]
+        for obj in bpy.data.objects:
+            if obj.get("source_name") in src_mesh_names:
+                resolved_map[art_name]['mesh'] = obj
+                break
 
-        resolved.append((mesh_obj, rig_obj, art_name))
+        # Find rig for this character
+        src_rig_name = manager.rig_map.get(art_name)
+        if src_rig_name:
+            for obj in bpy.data.objects:
+                if obj.get("source_name") == src_rig_name:
+                    resolved_map[art_name]['rig'] = obj
+                    break
+
+        # Fallback rig search
+        if resolved_map[art_name]['rig'] is None and resolved_map[art_name]['mesh']:
+            m = resolved_map[art_name]['mesh']
+            if m.type == 'ARMATURE':
+                resolved_map[art_name]['rig'] = m
+            else:
+                resolved_map[art_name]['rig'] = m.find_armature()
 
     print("ASSET_MANAGER: Renaming resolved assets...")
-    for mesh_obj, rig_obj, art_name in resolved:
+    processed_objs = set()
+    # Order matters: protagonists first (optional)
+    sorted_names = sorted(resolved_map.keys(), key=lambda n: n in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR), reverse=True)
+
+    for art_name in sorted_names:
+        objs = resolved_map[art_name]
         sep = "_" if _is_protagonist(art_name) else "."
 
-        # Handle Rig renaming first if it's separate
-        if rig_obj and rig_obj != mesh_obj:
-            new_rig_name = f"{art_name}{sep}Rig"
-            rig_obj.name = new_rig_name
+        rig = objs['rig']
+        mesh = objs['mesh']
 
-        # Rename Mesh (or Rig-as-Mesh)
-        new_mesh_name = f"{art_name}{sep}Body"
-        mesh_obj.name = new_mesh_name
-        print(f"  Renamed {art_name}: Mesh->{mesh_obj.name}, Rig->{rig_obj.name if rig_obj else 'NONE'}")
+        if not rig and not mesh: continue
+
+        # Rig Duplication for shared rigs
+        if rig and rig in processed_objs:
+            # Shared rig (e.g., 'skeleton')
+            new_rig = rig.copy()
+            new_rig.data = rig.data.copy()
+            bpy.context.scene.collection.objects.link(new_rig)
+            rig = new_rig
+            objs['rig'] = rig
+
+            # Update Armature modifier on mesh
+            if mesh:
+                arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
+                if arm_mod: arm_mod.object = rig
+
+        if rig:
+            rig.name = f"{art_name}{sep}Rig"
+            processed_objs.add(rig)
+
+        if mesh and mesh not in processed_objs:
+            mesh.name = f"{art_name}{sep}Body"
+            processed_objs.add(mesh)
+
+        print(f"  Resolved {art_name}: Mesh->{mesh.name if mesh else 'NONE'}, Rig->{rig.name if rig else 'NONE'}")
 
     # 4. Texture Decoupling
     asset_dir = os.path.join(V6_DIR, "assets")
@@ -153,15 +188,11 @@ def extract_assets():
     exported = []
     skipped  = []
 
-    for art_name in manager.ensemble.values():
-        sep = "_" if _is_protagonist(art_name) else "."
-        body_name = f"{art_name}{sep}Body"
-        rig_name  = f"{art_name}{sep}Rig"
+    for art_name, objs in resolved_map.items():
+        body = objs['mesh']
+        rig  = objs['rig']
 
-        body = bpy.data.objects.get(body_name)
-        rig  = bpy.data.objects.get(rig_name)
-
-        if body and rig:
+        if body and rig and body != rig:
             bpy.ops.object.select_all(action='DESELECT')
             body.select_set(True)
             rig.select_set(True)
@@ -181,10 +212,6 @@ def extract_assets():
 
         elif body and body.type == 'ARMATURE':
             # Character whose mesh object IS the armature (e.g. Root_Guardian)
-            # Ensure the object is named with the .Body suffix for the Phase B renormalize_objects
-            original_name = body.name
-            body.name = f"{art_name}.Body"
-
             bpy.ops.object.select_all(action='DESELECT')
             body.select_set(True)
             # Select all recursive children

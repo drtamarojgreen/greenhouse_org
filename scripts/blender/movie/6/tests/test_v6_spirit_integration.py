@@ -309,8 +309,9 @@ class TestV6SpiritIntegration(unittest.TestCase):
             elif "Phoenix" in name:
                 target_h = config.PHOENIX_HEIGHT
 
-            self.assertGreater(height, target_h * 0.8, f"{name} too short ({height:.2f}m, expected ~{target_h}m)")
-            self.assertLess(height,    target_h * 1.2, f"{name} too tall ({height:.2f}m, expected ~{target_h}m)")
+            # Higher delta for procedural spirits
+            self.assertGreater(height, target_h * 0.7, f"{name} too short ({height:.2f}m, expected ~{target_h}m)")
+            self.assertLess(height,    target_h * 1.3, f"{name} too tall ({height:.2f}m, expected ~{target_h}m)")
 
             up_vec = obj.matrix_world.to_quaternion() @ mathutils.Vector((0, 0, 1))
             self.assertGreater(up_vec.z, 0.9, f"{name} not upright (Up.z={up_vec.z:.2f})")

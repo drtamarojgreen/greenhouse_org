@@ -130,9 +130,17 @@ class SylvanEnsembleManager:
             rig.scale *= scale_factor
 
     def renormalize_objects(self):
-        """Syncs spirit meshes to rigs."""
+        """Syncs spirit meshes to rigs and resets parent inverses."""
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
+
+        # Ensure all meshes parented to rigs have Identity parent inverse to prevent scaling artifacts
+        import mathutils
+        for obj in coll.objects:
+            if obj.type == 'MESH' and obj.parent and obj.parent.type == 'ARMATURE':
+                obj.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+                obj.location = (0, 0, 0)
+                obj.rotation_euler = (0, 0, 0)
 
         targets = []
         for src, art in self.ensemble.items():

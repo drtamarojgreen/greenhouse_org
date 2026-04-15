@@ -7,6 +7,19 @@ V6_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(V6_DIR)
 import config
 
+# Monkeypatch for Blender 5.0.1 FBX import bug (AttributeError: 'ImportFBX' object has no attribute 'files')
+if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx"):
+    if not hasattr(bpy.types.IMPORT_SCENE_OT_fbx, "files"):
+        try:
+            bpy.types.IMPORT_SCENE_OT_fbx.__annotations__["files"] = bpy.props.CollectionProperty(
+                type=bpy.types.OperatorFileListElement,
+                options={'HIDDEN', 'SKIP_SAVE'}
+            )
+            setattr(bpy.types.IMPORT_SCENE_OT_fbx, "files", [])
+            print("  INFO: Applied robust monkeypatch for IMPORT_SCENE_OT_fbx.files")
+        except Exception as e:
+            print(f"  WARNING: Failed to apply import monkeypatch: {e}")
+
 def setup_cinematic_rig():
     """Step 2: Implementation of WIDE, OTS, and Static camera rigs."""
     scene = bpy.context.scene
@@ -30,6 +43,7 @@ def setup_cinematic_rig():
             cam_data.lens = data["lens"]
             cam_data.clip_end = 2000.0 # Standard Scene 6 visibility
 
+            # Initial rotation
             if "target" in data:
                 import mathutils
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
@@ -41,17 +55,29 @@ def setup_cinematic_rig():
                 scene.camera = cam
 
             if "Static" not in cam_name:
-                setup_camera_path(cam)
+                # Resolve target object for TRACK_TO
+                track_obj = None
+                if "OTS1" in cam_name: track_obj = bpy.data.objects.get(config.FOCUS_HERBACEOUS)
+                elif "OTS2" in cam_name: track_obj = bpy.data.objects.get(config.FOCUS_ARBOR)
+                elif "WIDE" in cam_name: track_obj = bpy.data.objects.get(config.LIGHTING_MIDPOINT)
 
-def setup_camera_path(cam_obj):
-    """Creates a Bezier curve and constrains the camera to it."""
+                setup_camera_path(cam, track_target=track_obj)
+
+def setup_camera_path(cam_obj, track_target=None):
+    """Creates a Bezier curve and constrains the camera to it with tracking."""
     bpy.ops.curve.primitive_bezier_curve_add(radius=5.0)
     curve = bpy.context.active_object
     curve.name = f"Path_{cam_obj.name}"
 
-    con = cam_obj.constraints.new(type='FOLLOW_PATH')
-    con.target = curve
-    con.use_curve_follow = True # Orient camera along the curve
+    con_path = cam_obj.constraints.new(type='FOLLOW_PATH')
+    con_path.target = curve
+    con_path.use_curve_follow = False # TRACK_TO will handle orientation
+
+    if track_target:
+        con_track = cam_obj.constraints.new(type='TRACK_TO')
+        con_track.target = track_target
+        con_track.track_axis = 'TRACK_NEGATIVE_Z'
+        con_track.up_axis = 'UP_Y'
 
     # Animate the path to make the camera move along it
     # This operator adds keyframes to the constraint's offset_factor
