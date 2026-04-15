@@ -42,8 +42,9 @@ class TestProtagonistAnimations(unittest.TestCase):
         # Check for keyframes on the Head or Arms to verify movement
         # Herbaceous has 'talking' (Frame 1), 'nod' (Frame 120), 'dance' (Frame 3000)
         action = herb.animation_data.action
+        curves = get_action_curves(action, obj=herb)
 
-        has_movement = len(action.fcurves) > 0
+        has_movement = len(curves) > 0
         self.assertTrue(has_movement, "No animation curves found for Herbaceous")
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx"):
                 type=bpy.types.OperatorFileListElement,
                 options={'HIDDEN', 'SKIP_SAVE'}
             )
+            # Use class attribute for execution safety
             setattr(bpy.types.IMPORT_SCENE_OT_fbx, "files", [])
             print("  INFO: Applied robust monkeypatch for IMPORT_SCENE_OT_fbx.files")
         except Exception as e:
@@ -137,9 +138,12 @@ def extract_assets():
 
         # Rig Duplication for shared rigs
         if rig and rig in processed_objs:
-            # Shared rig (e.g., 'skeleton')
+            # Shared rig (e.g., 'skeleton' used by Phoenix_Herald and Root_Guardian)
             new_rig = rig.copy()
             new_rig.data = rig.data.copy()
+            # Inherit source_name for resolution
+            if rig.get("source_name"): new_rig["source_name"] = rig["source_name"]
+
             bpy.context.scene.collection.objects.link(new_rig)
             rig = new_rig
             objs['rig'] = rig
@@ -227,8 +231,8 @@ def extract_assets():
 
         else:
             msg = []
-            if not body: msg.append(f"body '{body_name}' missing")
-            if not rig:  msg.append(f"rig '{rig_name}' missing")
+            if not body: msg.append(f"body missing")
+            if not rig:  msg.append(f"rig missing")
             print(f"  SKIP: {art_name} — {', '.join(msg)}")
             skipped.append(art_name)
 

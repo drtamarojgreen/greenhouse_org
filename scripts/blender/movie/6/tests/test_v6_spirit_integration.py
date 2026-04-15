@@ -64,20 +64,30 @@ class TestV6SpiritIntegration(unittest.TestCase):
 
     def get_world_height(self, obj):
         """Robust height calculation matching asset_manager_v6 (filtering outliers)."""
-        if obj.type == 'MESH':
-            all_z = sorted([(obj.matrix_world @ v.co).z for v in obj.data.vertices])
-            if not all_z: return 0
-            idx_min = int(len(all_z) * 0.01)
-            idx_max = int(len(all_z) * 0.99)
-            return all_z[idx_max] - all_z[idx_min]
-        elif obj.type == 'ARMATURE':
-            # Rigs generally don't have shards, but we'll use heads/tails
-            z_vals = (
-                [obj.matrix_world @ b.head for b in obj.data.bones] +
-                [obj.matrix_world @ b.tail for b in obj.data.bones]
-            )
-            return max(v.z for v in z_vals) - min(v.z for v in z_vals)
-        return 0
+        bpy.context.view_layer.update()
+        if obj.type == 'ARMATURE':
+            head = get_bone(obj, "Head")
+            foot = get_bone(obj, "Foot.L") or get_bone(obj, "Foot.R")
+            if head and foot:
+                mw = obj.matrix_world
+                h_z = (mw @ head.head).z
+                f_z = (mw @ foot.head).z
+                return abs(h_z - f_z) * 1.15
+
+        # Fallback to mesh
+        mesh = obj if obj.type == 'MESH' else next((c for c in obj.children if c.type == 'MESH'), None)
+        if mesh:
+            all_z = sorted([(mesh.matrix_world @ v.co).z for v in mesh.data.vertices])
+            if all_z:
+                idx_min = int(len(all_z) * 0.005)
+                idx_max = int(len(all_z) * 0.995)
+                h = all_z[idx_max] - all_z[idx_min]
+                if h > 0.1: return h
+
+        # Final fallback to bounding box
+        bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
+        z_vals = [v.z for v in bbox]
+        return max(z_vals) - min(z_vals)
 
     def test_character_scales(self):
         self.scene_logic._link_spirit_assets()

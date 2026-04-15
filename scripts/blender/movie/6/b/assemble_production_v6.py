@@ -20,6 +20,16 @@ if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx"):
         except Exception as e:
             print(f"  WARNING: Failed to apply import monkeypatch: {e}")
 
+# Monkeypatch for Blender 5.0.1 FBX export bug
+if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx"):
+    if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
+        try:
+            bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(name="Use Space Transform", default=False)
+            setattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform", False)
+            print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx.use_space_transform")
+        except Exception as e:
+            print(f"  WARNING: Failed to apply export monkeypatch: {e}")
+
 def setup_cinematic_rig():
     """Step 2: Implementation of WIDE, OTS, and Static camera rigs."""
     scene = bpy.context.scene
@@ -82,7 +92,7 @@ def setup_camera_path(cam_obj, track_target=None):
     # Animate the path to make the camera move along it
     # This operator adds keyframes to the constraint's offset_factor
     bpy.context.view_layer.objects.active = cam_obj # Make camera active for the operator
-    bpy.ops.constraint.followpath_path_animate(constraint=con.name, owner='OBJECT')
+    bpy.ops.constraint.followpath_path_animate(constraint=con_path.name, owner='OBJECT')
 
     print(f"PROD_ASSEMBLY: Curve animation established for {cam_obj.name}")
 

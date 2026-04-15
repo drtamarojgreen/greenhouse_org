@@ -99,13 +99,16 @@ class SylvanEnsembleManager:
             foot_r = animation_library_v6.get_bone(rig, "Foot.R")
 
             if head and (foot_l or foot_r):
+                # Ensure world matrices are up to date
+                bpy.context.view_layer.update()
+
+                # Using PoseBone.head world position is most accurate for measurements
                 mw = rig.matrix_world
-                # Using head.matrix is local-to-armature; matrix_world transforms to global
-                h_z = (mw @ head.matrix.translation).z
-                f_z = (mw @ foot_l.matrix.translation).z if foot_l else (mw @ foot_r.matrix.translation).z
+                h_z = (mw @ head.head).z
+                f_z = (mw @ foot_l.head).z if foot_l else (mw @ foot_r.head).z
                 current_h = abs(h_z - f_z)
-                # Add 10% for cranium/sole height
-                current_h *= 1.1
+                # Add 15% for top of head and bottom of feet coverage
+                current_h *= 1.15
 
         # Method 2: Percentile-based Mesh Fallback (Fallback or non-Mixamo)
         if current_h < 0.1:
