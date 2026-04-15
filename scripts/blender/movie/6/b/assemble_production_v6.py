@@ -107,7 +107,7 @@ def link_fbx_assets():
 
     coll = bpy.data.collections.get("6a_Assets")
 
-    # Blender 5.0.1 internal bug: io_scene_fbx looks for 'use_space_transform'
+    # Blender 5.1/5.0 internal bug: io_scene_fbx looks for 'use_space_transform'
     # and 'files' even if they are missing from RNA.
     def _patch_fbx_operators():
         import bpy
@@ -115,24 +115,24 @@ def link_fbx_assets():
         except: pass
         from bpy.props import BoolProperty, CollectionProperty
         import io_scene_fbx
-        targets = []
-        for op in ["EXPORT_SCENE_OT_fbx", "IMPORT_SCENE_OT_fbx"]:
-            if hasattr(bpy.types, op): targets.append(getattr(bpy.types, op))
-        try:
-            import io_scene_fbx.export_fbx
-            targets.append(io_scene_fbx.export_fbx.EXPORT_SCENE_OT_fbx)
-        except: pass
-        try:
-            import io_scene_fbx.import_fbx
-            targets.append(io_scene_fbx.import_fbx.IMPORT_SCENE_OT_fbx)
-        except: pass
-        for cls in targets:
-            name = cls.__name__.upper()
-            if "EXPORT" in name and not hasattr(cls, "use_space_transform"):
-                cls.use_space_transform = BoolProperty(name="Use Space Transform", default=False)
-            if "IMPORT" in name and not hasattr(cls, "files"):
-                cls.files = CollectionProperty(type=bpy.types.OperatorFileListElement)
-        print("  DEBUG: High-level FBX monkeypatch applied in Phase B.")
+        target_classes = set()
+        for op_id in ["EXPORT_SCENE_OT_fbx", "IMPORT_SCENE_OT_fbx"]:
+            if hasattr(bpy.types, op_id): target_classes.add(getattr(bpy.types, op_id))
+        import inspect
+        for name, obj in inspect.getmembers(io_scene_fbx):
+            if inspect.ismodule(obj):
+                for sub_name, sub_obj in inspect.getmembers(obj):
+                    if inspect.isclass(sub_obj) and ("EXPORT" in sub_name or "IMPORT" in sub_name) and "FBX" in sub_name:
+                        target_classes.add(sub_obj)
+            elif inspect.isclass(obj) and ("EXPORT" in name or "IMPORT" in name) and "FBX" in name:
+                target_classes.add(obj)
+        for cls in target_classes:
+            cname = cls.__name__.upper()
+            if "EXPORT" in cname and not hasattr(cls, "use_space_transform"):
+                setattr(cls, "use_space_transform", BoolProperty(name="Use Space Transform", default=False))
+            if "IMPORT" in cname and not hasattr(cls, "files"):
+                setattr(cls, "files", CollectionProperty(type=bpy.types.OperatorFileListElement))
+        print("  DEBUG: Comprehensive FBX monkeypatch applied in Phase B.")
 
     try: _patch_fbx_operators()
     except Exception as e: print(f"  WARNING: Monkeypatch failed in Phase B: {e}")
