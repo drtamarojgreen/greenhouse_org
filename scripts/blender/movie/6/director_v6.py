@@ -111,11 +111,11 @@ class SylvanDirector:
 
         for i, rig in enumerate(spirits):
             angle = (i / max(num - 1, 1)) * math.pi * 0.95 - math.pi * 0.475
-            dist  = 12.0 + (i % 2) * 5.5 # Further increased distance to prevent backdrop occlusion
+            dist  = 18.0 + (i % 2) * 6.5 # Increased distance to prevent backdrop occlusion (Point 142)
 
             rig.location = (
                 math.sin(angle) * dist,
-                8.0 + math.cos(angle) * 4.0, # Pushed further back from the camera
+                10.0 + math.cos(angle) * 5.0, # Pushed further back from the camera
                 0.0,
             )
 

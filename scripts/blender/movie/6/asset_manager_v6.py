@@ -82,51 +82,52 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Calculates world-height from armature or mesh data and scales rig to match target."""
+        """Calculates world-height from mesh data and scales rig to match target, bypassing shards."""
         if not rig: return
 
-        # Clear existing scale and rotation for clean measurement (Point 142)
-        old_scale = rig.scale.copy()
-        old_rot = rig.rotation_euler.copy()
+        # Ensure clean state for measurement
         rig.scale = (1, 1, 1)
         rig.rotation_euler = (0, 0, 0)
 
-        # Ensure world-space coordinates are up to date
+        # Force all mesh children to standard scale (resolves procedural stretching)
+        for child in rig.children_recursive:
+            if child.type == 'MESH':
+                child.scale = (1, 1, 1)
+
         bpy.context.view_layer.update()
 
-        current_h = 0
-        # Strategy 1: Prioritize Armature Bone Height (stable, bypasses mesh shards)
-        if rig.type == 'ARMATURE' and rig.data.bones:
-            # We use local coordinates @ matrix_world (which is identity now)
-            # but to be safe we just use head_local.z
-            z_vals = [b.head_local.z for b in rig.data.bones] + [b.tail_local.z for b in rig.data.bones]
-            current_h = max(z_vals) - min(z_vals)
-            print(f"ASSET_MANAGER: Normalizing {rig.name} via Armature Height: {current_h:.2f}m")
+        # 1. Collect all evaluated Z-coordinates
+        all_z = []
+        meshes = [c for c in rig.children_recursive if c.type == 'MESH']
+        for m in meshes:
+            mw = m.matrix_world
+            all_z.extend([(mw @ v.co).z for v in m.data.vertices])
 
-        # Strategy 2: Fallback to Robust Mesh Height (filtered)
-        if current_h < 0.1:
-            meshes = [c for c in rig.children_recursive if c.type == 'MESH']
-            all_z = []
-            for m in meshes:
-                mw = m.matrix_world
-                all_z.extend([(mw @ v.co).z for v in m.data.vertices])
+        if not all_z: return
+        all_z.sort()
 
-            if all_z:
-                all_z.sort()
-                # 5th to 95th percentile filtering
-                idx_min, idx_max = int(len(all_z)*0.05), int(len(all_z)*0.95)
-                current_h = all_z[idx_max] - all_z[idx_min]
-                print(f"ASSET_MANAGER: Normalizing {rig.name} via Filtered Mesh Height: {current_h:.2f}m")
+        # 2. 5th-95th percentile filtering to bypass procedural "shards" (800m+ outliers)
+        idx_min = int(len(all_z) * 0.05)
+        idx_max = int(len(all_z) * 0.95)
+        current_h = all_z[idx_max] - all_z[idx_min]
 
-        if current_h > 0.001:
+        if current_h > 0.01:
             scale_factor = target_height / current_h
-            # Clamp scale to prevent extreme distortions (e.g. 1000x scaling)
-            scale_factor = max(0.01, min(scale_factor, 100.0))
+            # Clamp to prevent extreme distortions
+            scale_factor = max(0.05, min(scale_factor, 50.0))
             rig.scale = (scale_factor, scale_factor, scale_factor)
-        else:
-            rig.scale = old_scale
+            print(f"ASSET_MANAGER: Normalized {rig.name} (Height: {current_h:.2f}m -> {target_height}m, Scale: {scale_factor:.2f})")
 
-        rig.rotation_euler = old_rot
+            # Grounding: Ensure feet are at Z=0
+            bpy.context.view_layer.update()
+            min_z = all_z[idx_min] * scale_factor
+            rig.location.z -= min_z
+
+            # Clear scale keyframes to prevent animation overrides (Point 142)
+            if rig.animation_data and rig.animation_data.action:
+                for fcurve in rig.animation_data.action.fcurves:
+                    if "scale" in fcurve.data_path:
+                        rig.animation_data.action.fcurves.remove(fcurve)
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
@@ -198,8 +199,14 @@ class SylvanEnsembleManager:
                     target_h = config.MAJESTIC_HEIGHT
                 elif "Verdant_Sprite" in art_name:
                     target_h = config.SPRITE_HEIGHT
+                elif "Shadow_Weaver" in art_name:
+                    target_h = config.SCRIBE_HEIGHT
+                elif "Emerald_Sentinel" in art_name:
+                    target_h = config.SENTINEL_HEIGHT
                 elif "Phoenix" in art_name:
                     target_h = config.PHOENIX_HEIGHT
+                elif "Root_Guardian" in art_name:
+                    target_h = config.GUARDIAN_HEIGHT
 
                 self.normalize_character_scale(rig, target_h)
 

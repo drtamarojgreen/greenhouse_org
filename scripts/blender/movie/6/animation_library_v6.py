@@ -8,14 +8,22 @@ import mathutils
 # ---------------------------------------------------------------------------
 
 BONE_NAME_MAP = {
-    "Head": "mixamorig:Head",
-    "Neck": "mixamorig:Neck",
-    "Torso": "mixamorig:Spine2",
-    "Tail": "mixamorig:Hips",
-    "Hand.L": "mixamorig:LeftHand",
-    "Hand.R": "mixamorig:RightHand",
-    "Foot.L": "mixamorig:LeftFoot",
-    "Foot.R": "mixamorig:RightFoot"
+    "Head":    "mixamorig:Head",
+    "Neck":    "mixamorig:Neck",
+    "Torso":   "mixamorig:Spine2",
+    "Tail":    "mixamorig:Hips",
+    "Hand.L":  "mixamorig:LeftHand",
+    "Hand.R":  "mixamorig:RightHand",
+    "Foot.L":  "mixamorig:LeftFoot",
+    "Foot.R":  "mixamorig:RightFoot",
+    "Arm.L":   "mixamorig:LeftArm",
+    "Arm.R":   "mixamorig:RightArm",
+    "Elbow.L": "mixamorig:LeftForeArm",
+    "Elbow.R": "mixamorig:RightForeArm",
+    "Leg.L":   "mixamorig:LeftUpLeg",
+    "Leg.R":   "mixamorig:RightUpLeg",
+    "Knee.L":  "mixamorig:LeftLeg",
+    "Knee.R":  "mixamorig:RightLeg"
 }
 
 def get_bone(arm_obj, name):
@@ -32,8 +40,19 @@ def get_bone(arm_obj, name):
         bone = arm_obj.pose.bones.get(mapped_name)
         if bone: return bone
     
-    # 3. Try automatic prefixing
-    return arm_obj.pose.bones.get(f"mixamorig:{name}")
+    # 3. Try automatic prefixing / alternate forms
+    alt_name = name.replace(".", "") # e.g. Hand.L -> HandL
+    fallbacks = [
+        f"mixamorig:{name}",
+        f"mixamorig:{alt_name}",
+        name.replace(".L", "_L").replace(".R", "_R"),
+        name.replace(".L", "L").replace(".R", "R")
+    ]
+    for fb in fallbacks:
+        bone = arm_obj.pose.bones.get(fb)
+        if bone: return bone
+
+    return None
 
 # ---------------------------------------------------------------------------
 # MODULAR ANIMATION REGISTRY
