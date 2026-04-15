@@ -151,6 +151,14 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
         # Rhythmic arm sway
         if arm_l: key_rot(arm_l, 0, math.radians(-30 + math.sin(phase) * 10), f)
         if arm_r: key_rot(arm_r, 0, math.radians(-30 + math.cos(phase) * 10), f)
+
+        # Expressive Head Motion (Point 142)
+        # Adds nodding and swaying to ensure the sphere head animates expressively.
+        head = get_bone(arm_obj, "Head")
+        neck = get_bone(arm_obj, "Neck")
+        if head: key_rot(head, 0, math.sin(phase * 0.8) * 0.1, f) # Nodding
+        if neck: key_rot(neck, 2, math.cos(phase * 0.5) * 0.05, f) # Swaying
+
         # Wrist/Hand flicker
         key_rot(hand_l, 2, math.sin(phase * 1.5) * 0.2, f)
         key_rot(hand_r, 2, math.cos(phase * 1.5) * 0.2, f)

@@ -111,10 +111,13 @@ def link_fbx_assets():
     # and 'files' even if they are missing from RNA.
     def _patch_fbx_operators():
         import bpy
-        bpy.ops.preferences.addon_enable(module="io_scene_fbx")
+        try: bpy.ops.preferences.addon_enable(module="io_scene_fbx")
+        except: pass
         from bpy.props import BoolProperty, CollectionProperty
         import io_scene_fbx
-        targets = [bpy.types.EXPORT_SCENE_OT_fbx, bpy.types.IMPORT_SCENE_OT_fbx]
+        targets = []
+        for op in ["EXPORT_SCENE_OT_fbx", "IMPORT_SCENE_OT_fbx"]:
+            if hasattr(bpy.types, op): targets.append(getattr(bpy.types, op))
         try:
             import io_scene_fbx.export_fbx
             targets.append(io_scene_fbx.export_fbx.EXPORT_SCENE_OT_fbx)
@@ -124,11 +127,12 @@ def link_fbx_assets():
             targets.append(io_scene_fbx.import_fbx.IMPORT_SCENE_OT_fbx)
         except: pass
         for cls in targets:
-            if "EXPORT" in cls.__name__ and not hasattr(cls, "use_space_transform"):
-                setattr(cls, "use_space_transform", BoolProperty(name="Use Space Transform", default=False))
-            if "IMPORT" in cls.__name__ and not hasattr(cls, "files"):
-                setattr(cls, "files", CollectionProperty(type=bpy.types.OperatorFileListElement))
-        print("  DEBUG: Comprehensive FBX monkeypatch applied in Phase B.")
+            name = cls.__name__.upper()
+            if "EXPORT" in name and not hasattr(cls, "use_space_transform"):
+                cls.use_space_transform = BoolProperty(name="Use Space Transform", default=False)
+            if "IMPORT" in name and not hasattr(cls, "files"):
+                cls.files = CollectionProperty(type=bpy.types.OperatorFileListElement)
+        print("  DEBUG: High-level FBX monkeypatch applied in Phase B.")
 
     try: _patch_fbx_operators()
     except Exception as e: print(f"  WARNING: Monkeypatch failed in Phase B: {e}")

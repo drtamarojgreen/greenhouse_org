@@ -87,8 +87,10 @@ class SylvanEnsembleManager:
         """
         if not rig: return
 
-        # Reset scale to identity to ensure height measurement is of the baseline geometry
+        # Reset scale to identity and clear parent inverse to ensure measurement is baseline
         rig.scale = (1.0, 1.0, 1.0)
+        if rig.parent:
+            rig.matrix_parent_inverse = mathutils.Matrix.Identity(4)
 
         # Ensure world matrices are up-to-date before height calculation
         bpy.context.view_layer.update()
@@ -98,13 +100,10 @@ class SylvanEnsembleManager:
         # Preference 1: Armature Bone Height (Head-to-Foot distance)
         if rig.type == 'ARMATURE':
             import mathutils
-            # Use pose bones for evaluated world locations
-            # Filter bones to those likely representing the main body height
             main_bones = [b for b in rig.pose.bones if any(k in b.name.lower() for k in ["head", "neck", "spine", "hips", "foot", "toe", "leg", "knee"])]
             if main_bones:
                 all_z = []
                 for b in main_bones:
-                    # Bone head/tail are in local space, convert to world
                     all_z.append((rig.matrix_world @ b.head).z)
                     all_z.append((rig.matrix_world @ b.tail).z)
                 current_h = max(all_z) - min(all_z)
@@ -112,60 +111,44 @@ class SylvanEnsembleManager:
         # Preference 2: Mesh Vertex Percentile Height (if rig height failed or no rig)
         if current_h < 0.001:
             meshes = [o for o in rig.children_recursive if o.type == 'MESH']
-            if not meshes and rig.type == 'MESH':
-                meshes = [rig]
-
+            if not meshes and rig.type == 'MESH': meshes = [rig]
             if meshes:
                 all_z = []
                 for m in meshes:
                     mw = m.matrix_world
                     for v in m.data.vertices:
                         all_z.append((mw @ v.co).z)
-
                 if all_z:
                     all_z.sort()
-                    # Tighter percentile to filter aggressive shards
+                    # 99.5% percentile filter to skip aggressive "shard" artifacts
                     idx_min = int(len(all_z) * 0.005)
                     idx_max = int(len(all_z) * 0.995)
                     current_h = all_z[idx_max] - all_z[idx_min]
 
         if current_h > 0.001:
             scale_factor = target_height / current_h
-            # Calculate final world scale needed
-            # (target / current) is the multiplier for the current absolute scale
-            old_rig_scale = rig.scale.copy()
             rig.scale *= scale_factor
 
-            # Force mesh scale to (1,1,1) to avoid vertex displacement issues (Point 142)
-            # and scale Displacement modifier strength to keep textures consistent.
+            # Force mesh child scale to identity and proportionally scale Displacement strength.
             for m in [o for o in rig.children_recursive if o.type == 'MESH']:
                 m.scale = (1.0, 1.0, 1.0)
                 for mod in m.modifiers:
                     if mod.type == 'DISPLACE':
-                        # Proportionally scale displacement so it doesn't look 'exploded'
-                        # on downscaled characters or 'flat' on upscaled ones.
                         mod.strength *= scale_factor
 
             # --- Grounding Logic ---
-            # Recalculate height after scaling to find the new bottom
             bpy.context.view_layer.update()
-
             all_z = []
-            # Gather all vertices for accurate grounding
             meshes = [o for o in rig.children_recursive if o.type == 'MESH']
             if not meshes and rig.type == 'MESH': meshes = [rig]
-
             for m in meshes:
                 mw = m.matrix_world
-                # Percentile-based grounding to skip outliers
                 for v in m.data.vertices:
                     all_z.append((mw @ v.co).z)
-
             if all_z:
                 all_z.sort()
-                # Use 0.5% percentile for grounding floor to avoid "shard" artifacts
+                # 0.5% percentile for grounding floor to skip loose stray vertices
                 z_floor = all_z[int(len(all_z) * 0.005)]
-                # Offset rig so character is grounded at Z=0
                 rig.location.z -= z_floor
 
     def renormalize_objects(self):
