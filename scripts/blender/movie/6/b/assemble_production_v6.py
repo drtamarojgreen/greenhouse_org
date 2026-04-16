@@ -7,28 +7,24 @@ V6_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(V6_DIR)
 import config
 
-# Monkeypatch for Blender 5.0.1 FBX import bug (AttributeError: 'ImportFBX' object has no attribute 'files')
-if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx"):
-    if not hasattr(bpy.types.IMPORT_SCENE_OT_fbx, "files"):
-        try:
-            bpy.types.IMPORT_SCENE_OT_fbx.__annotations__["files"] = bpy.props.CollectionProperty(
-                type=bpy.types.OperatorFileListElement,
-                options={'HIDDEN', 'SKIP_SAVE'}
-            )
-            setattr(bpy.types.IMPORT_SCENE_OT_fbx, "files", [])
-            print("  INFO: Applied robust monkeypatch for IMPORT_SCENE_OT_fbx.files")
-        except Exception as e:
-            print(f"  WARNING: Failed to apply import monkeypatch: {e}")
-
-# Monkeypatch for Blender 5.0.1 FBX export bug
+# Monkeypatch for Blender 5.0.1 FBX operator bugs
 if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx"):
-    if not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
-        try:
-            bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(name="Use Space Transform", default=False)
-            setattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform", False)
+    try:
+        if "use_space_transform" not in bpy.types.EXPORT_SCENE_OT_fbx.__annotations__:
+            bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(
+                name="Use Space Transform", default=False)
             print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx.use_space_transform")
-        except Exception as e:
-            print(f"  WARNING: Failed to apply export monkeypatch: {e}")
+    except Exception as e:
+        print(f"  WARNING: Failed to apply export monkeypatch: {e}")
+
+if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx"):
+    try:
+        if "files" not in bpy.types.IMPORT_SCENE_OT_fbx.__annotations__:
+            bpy.types.IMPORT_SCENE_OT_fbx.__annotations__["files"] = bpy.props.CollectionProperty(
+                type=bpy.types.OperatorFileListElement, options={'HIDDEN', 'SKIP_SAVE'})
+            print("  INFO: Applied robust monkeypatch for IMPORT_SCENE_OT_fbx.files")
+    except Exception as e:
+        print(f"  WARNING: Failed to apply import monkeypatch: {e}")
 
 def setup_cinematic_rig():
     """Step 2: Implementation of WIDE, OTS, and Static camera rigs."""

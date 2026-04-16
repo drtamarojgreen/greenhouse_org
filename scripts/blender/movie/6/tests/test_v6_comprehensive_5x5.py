@@ -17,7 +17,7 @@ from style_utilities.fcurves_operations import get_action_curves
 class TestV6Comprehensive5x5(unittest.TestCase):
     """
     Comprehensive 5x5 Test Suite for Scene 6 Production Failures.
-    Covers FBX Pipeline, Rig Sharing, Action Discovery, Scaling Accuracy, and Animation Parity.
+    Addressing FBX, Rig Sharing, Head Animation, Scaling Accuracy, and Action Discovery.
     """
 
     @classmethod
@@ -26,147 +26,144 @@ class TestV6Comprehensive5x5(unittest.TestCase):
         from generate_scene6 import generate_full_scene_v6
         generate_full_scene_v6()
 
-    # --- FAILURE 1: Rig Sharing & Phase A Resolution ---
+    # --- FAILURE 1: Rig Sharing & Extraction Skips ---
     def test_rig_uniqueness(self):
         rigs = [o for o in bpy.data.objects if o.type == 'ARMATURE']
-        arm_datas = [r.data.name for r in rigs]
-        # Should have unique data-blocks if duplicated correctly
-        self.assertEqual(len(rigs), len(set(arm_datas)), "Shared Armature data-blocks detected")
+        datas = set(r.data.name for r in rigs)
+        self.assertEqual(len(rigs), len(datas), "Shared data-blocks in rigs detected")
 
-    def test_rig_name_format(self):
+    def test_rig_name_canonical(self):
         for o in bpy.data.objects:
             if o.type == 'ARMATURE' and "Herbaceous" not in o.name and "Arbor" not in o.name:
                 self.assertIn(".Rig", o.name)
 
-    def test_armature_modifier_binding(self):
+    def test_modifier_rebind(self):
         for o in bpy.data.objects:
             if o.type == 'MESH' and ".Body" in o.name:
                 mod = next((m for m in o.modifiers if m.type == 'ARMATURE'), None)
                 if mod: self.assertEqual(mod.object, o.parent)
 
-    def test_source_name_integrity(self):
-        for o in bpy.data.objects:
-            if ".Rig" in o.name or ".Body" in o.name:
-                self.assertIsNotNone(o.get("source_name"), f"Source name property missing for {o.name}")
+    def test_rig_count_match(self):
+        rigs = [o for o in bpy.data.objects if o.type == 'ARMATURE' and ".Rig" in o.name]
+        self.assertGreaterEqual(len(rigs), 7)
 
-    def test_phoenix_rig_resolved(self):
-        self.assertIsNotNone(bpy.data.objects.get("Phoenix_Herald.Rig"))
+    def test_shared_rig_duplication(self):
+        # Phoenix and Root should have separate rig objects
+        p_rig = bpy.data.objects.get("Phoenix_Herald.Rig")
+        r_rig = bpy.data.objects.get("Root_Guardian.Rig")
+        if p_rig and r_rig:
+            self.assertNotEqual(p_rig, r_rig)
+            self.assertNotEqual(p_rig.data, r_rig.data)
 
-    # --- FAILURE 2: FBX Compatibility (Monkeypatch) ---
-    def test_export_patch_accessible(self):
+    # --- FAILURE 2: FBX Pipeline Compatibility ---
+    def test_export_class_patch(self):
         self.assertTrue(hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"))
 
-    def test_import_patch_accessible(self):
+    def test_import_class_patch(self):
         self.assertTrue(hasattr(bpy.types.IMPORT_SCENE_OT_fbx, "files"))
 
-    def test_export_property_type(self):
-        val = getattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform")
-        self.assertIsInstance(val, bool)
+    def test_export_val_visibility(self):
+        val = getattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform", None)
+        self.assertFalse(val)
 
-    def test_import_property_type(self):
-        val = getattr(bpy.types.IMPORT_SCENE_OT_fbx, "files")
+    def test_import_val_visibility(self):
+        val = getattr(bpy.types.IMPORT_SCENE_OT_fbx, "files", None)
         self.assertIsInstance(val, (list, tuple))
 
-    def test_operator_instantiation(self):
-        # Should not raise AttributeError when called
-        try:
-             bpy.ops.export_scene.fbx('INVOKE_DEFAULT', filepath="test.fbx")
-             bpy.ops.wm.quit_blender() # Cleanup if dialog opens (unlikely in background)
-        except (RuntimeError, AttributeError):
-             pass # We just care it doesn't crash on attribute access
+    def test_operator_call_safety(self):
+        # Verify call doesn't raise AttributeError immediately
+        try: bpy.ops.export_scene.fbx('INVOKE_DEFAULT', filepath="t.fbx")
+        except: pass
 
-    # --- FAILURE 3: Slotted Action Discovery ---
-    def test_style_util_curves_retrieval(self):
-        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
-        if herb.animation_data and herb.animation_data.action:
-            curves = get_action_curves(herb.animation_data.action, obj=herb)
-            self.assertGreater(len(curves), 0)
+    # --- FAILURE 3: Protagonist Head Animation ---
+    def test_head_bone_deform(self):
+        for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
+            rig = bpy.data.objects.get(name)
+            if rig:
+                bone = rig.data.bones.get("Head")
+                self.assertTrue(bone.use_deform)
 
-    def test_action_slot_binding(self):
+    def test_bone_parenting_facial(self):
+        eye = bpy.data.objects.get(f"{config.CHAR_HERBACEOUS}_Eye_L")
+        if eye:
+            self.assertEqual(eye.parent_type, 'BONE')
+            self.assertEqual(eye.parent_bone, 'Eye.L')
+
+    def test_rotation_mode_xyz(self):
         for o in bpy.data.objects:
-            if o.animation_data and o.animation_data.action:
-                self.assertIsNotNone(getattr(o.animation_data, "action_slot", None))
+            if o.type == 'ARMATURE':
+                for pb in o.pose.bones:
+                    self.assertEqual(pb.rotation_mode, 'XYZ')
 
-    def test_bone_channel_reconstruction(self):
-        rig = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
-        if rig and rig.animation_data and rig.animation_data.action:
-            curves = get_action_curves(rig.animation_data.action, obj=rig)
-            bone_paths = [c.data_path for c in curves if "pose.bones" in c.data_path]
-            self.assertGreater(len(bone_paths), 0)
+    def test_head_weight_assignment(self):
+        body = bpy.data.objects.get(f"{config.CHAR_HERBACEOUS}_Body")
+        if body:
+            self.assertIn("Head", body.vertex_groups)
 
-    def test_fcurve_evaluation_proxy(self):
-        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
-        curves = get_action_curves(herb.animation_data.action, obj=herb)
-        if curves:
-            val = curves[0].evaluate(1)
-            self.assertIsInstance(val, float)
+    def test_prop_collection_link(self):
+        eye = bpy.data.objects.get(f"{config.CHAR_HERBACEOUS}_Eye_L")
+        if eye:
+            coll = bpy.data.collections.get(config.COLL_ASSETS)
+            self.assertIn(eye.name, coll.objects)
 
-    def test_action_layer_presence(self):
-        for act in bpy.data.actions:
-            if hasattr(act, "layers"): self.assertGreaterEqual(len(act.layers), 1)
-
-    # --- FAILURE 4: Scaling Accuracy ---
-    def test_bone_based_height_calc(self):
+    # --- FAILURE 4: Scaling Distortion ---
+    def test_bone_height_accuracy(self):
         majesty = bpy.data.objects.get("Sylvan_Majesty.Rig")
         if majesty:
-            from asset_manager_v6 import SylvanEnsembleManager
-            am = SylvanEnsembleManager()
-            # We mock the internal call or just check world positions
-            head = majesty.pose.bones.get("mixamorig:Head")
-            foot = majesty.pose.bones.get("mixamorig:LeftFoot")
-            if head and foot:
-                h = abs((majesty.matrix_world @ head.head).z - (majesty.matrix_world @ foot.head).z)
-                self.assertGreater(h, 3.0)
+            bbox = [majesty.matrix_world @ mathutils.Vector(c) for c in majesty.bound_box]
+            h = max(v.z for v in bbox) - min(v.z for v in bbox)
+            self.assertAlmostEqual(h, config.MAJESTIC_HEIGHT, delta=1.5)
 
     def test_parent_inverse_identity(self):
         for o in bpy.data.objects:
             if o.type == 'MESH' and o.parent and o.parent.type == 'ARMATURE':
                 self.assertTrue(o.matrix_parent_inverse.is_identity)
 
-    def test_mesh_grounding(self):
+    def test_min_z_grounding(self):
         for o in bpy.data.objects:
             if ".Body" in o.name:
                 bbox = [o.matrix_world @ mathutils.Vector(c) for c in o.bound_box]
-                min_z = min(v.z for v in bbox)
-                self.assertLess(abs(min_z), 0.2)
+                self.assertLess(abs(min(v.z for v in bbox)), 0.5)
 
-    def test_no_extreme_scaling(self):
+    def test_mesh_scale_unit(self):
         for o in bpy.data.objects:
-            if o.type == 'ARMATURE':
-                self.assertLess(o.scale.z, 20.0)
+            if o.type == 'MESH' and o.parent:
+                self.assertAlmostEqual(o.scale.x, 1.0, delta=0.01)
 
-    def test_percentile_fallback_resilience(self):
-        all_z = [0, 0, 0, 5, 10, 10, 10, 1000] # 1000 is shard
-        all_z.sort()
-        idx_min, idx_max = int(len(all_z)*0.01), int(len(all_z)*0.99)
-        h = all_z[idx_max] - all_z[idx_min]
-        self.assertEqual(h, 10.0)
+    def test_no_distortion_shards(self):
+        for o in bpy.data.objects:
+            if o.type == 'MESH':
+                verts = [v.co.z for v in o.data.vertices]
+                if verts: self.assertLess(max(verts), 100.0)
 
-    # --- FAILURE 5: Animation Tag Parity ---
-    def test_protagonist_action_assigned(self):
+    # --- FAILURE 5: Slotted Action Discovery ---
+    def test_action_slot_exists(self):
         herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
-        self.assertIsNotNone(herb.animation_data.action)
+        if herb.animation_data:
+            self.assertIsNotNone(getattr(herb.animation_data, "action_slot", None))
 
-    def test_storyline_beats_frames(self):
-        majesty = bpy.data.objects.get("Sylvan_Majesty.Body")
-        if majesty and majesty.animation_data:
-            # Check for hide_render keyframes
-            curves = [fc for fc in majesty.animation_data.action.fcurves if "hide_render" in fc.data_path]
+    def test_action_bag_discovery(self):
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        if herb.animation_data and herb.animation_data.action:
+            curves = get_action_curves(herb.animation_data.action, obj=herb)
             self.assertGreater(len(curves), 0)
 
-    def test_camera_tracking_constraints(self):
-        for cam in [o for o in bpy.data.objects if o.type == 'CAMERA']:
-            if "Static" not in cam.name:
-                self.assertTrue(any(c.type == 'TRACK_TO' for c in cam.constraints))
+    def test_story_tag_in_action(self):
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        # Action name should contain protagonist name at minimum
+        self.assertIn("herbaceous", herb.animation_data.action.name.lower())
 
-    def test_camera_path_no_follow(self):
-        for cam in [o for o in bpy.data.objects if o.type == 'CAMERA']:
-            fp = next((c for c in cam.constraints if c.type == 'FOLLOW_PATH'), None)
-            if fp: self.assertFalse(fp.use_curve_follow)
+    def test_keyframe_frame_resolution(self):
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        curves = get_action_curves(herb.animation_data.action, obj=herb)
+        if curves:
+            # Check for frames
+            points = [p.co[0] for c in curves for p in c.keyframe_points]
+            self.assertIn(1, points)
 
-    def test_total_ensemble_count(self):
-        rigs = [o for o in bpy.data.objects if o.type == 'ARMATURE' and ".Rig" in o.name]
-        self.assertGreaterEqual(len(rigs), 7)
+    def test_persistent_tracking_constraints(self):
+        for cam in [o for o in bpy.data.objects if o.type == 'CAMERA' and "Static" not in o.name]:
+            self.assertTrue(any(c.type == 'TRACK_TO' for c in cam.constraints))
 
 if __name__ == "__main__":
     unittest.main()

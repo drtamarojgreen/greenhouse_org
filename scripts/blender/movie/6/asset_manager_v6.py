@@ -83,7 +83,7 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Robustly scales rig using bone-to-bone height or percentile-based mesh filtering."""
+        """Robustly scales rig using bone-to-bone height or robust percentile-based mesh filtering."""
         if not rig: return
 
         # Trigger update to ensure world matrices are current (Point 142)
@@ -93,27 +93,29 @@ class SylvanEnsembleManager:
 
         # Method 1: Bone-to-Bone Height (Preferred for rigged spirits)
         if rig.type == 'ARMATURE':
-            # Use animation library to resolve bones regardless of prefix
             head = animation_library_v6.get_bone(rig, "Head")
             foot_l = animation_library_v6.get_bone(rig, "Foot.L")
             foot_r = animation_library_v6.get_bone(rig, "Foot.R")
 
             if head and (foot_l or foot_r):
-                # Ensure world matrices are up to date
-                bpy.context.view_layer.update()
-
-                # Using PoseBone.head world position is most accurate for measurements
+                # Using PoseBone.head (local) transformed by matrix_world
                 mw = rig.matrix_world
                 h_z = (mw @ head.head).z
                 f_z = (mw @ foot_l.head).z if foot_l else (mw @ foot_r.head).z
                 current_h = abs(h_z - f_z)
-                # Add 15% for top of head and bottom of feet coverage
+                # Standard adjustment: bone-to-bone covers approx 85% of total height
                 current_h *= 1.15
 
-        # Method 2: Percentile-based Mesh Fallback (Fallback or non-Mixamo)
-        if current_h < 0.1:
+        # Method 2: Robust Percentile-based Mesh Fallback (Fallback or non-Mixamo)
+        # Also use this if Method 1 resulted in a height that's way off (e.g. tiny bones)
+        if current_h < 0.1 or current_h > 100.0:
+            # Aggregate all vertices from rig's children or the object itself
             meshes = [c for c in rig.children if c.type == 'MESH']
             if rig.type == 'MESH': meshes.append(rig)
+            # Recursively find meshes (for Sylvan_Majesty where body might be deep)
+            for child in rig.children_recursive:
+                if child.type == 'MESH' and child not in meshes:
+                    meshes.append(child)
 
             all_z = []
             for m in meshes:
@@ -123,9 +125,9 @@ class SylvanEnsembleManager:
 
             if all_z:
                 all_z.sort()
-                # 1st to 99th percentile filters out "shards"
-                idx_min = int(len(all_z) * 0.01)
-                idx_max = int(len(all_z) * 0.99)
+                # Use 0.5% - 99.5% to filter out extreme "shards" while keeping volume
+                idx_min = int(len(all_z) * 0.005)
+                idx_max = int(len(all_z) * 0.995)
                 current_h = all_z[idx_max] - all_z[idx_min]
 
         if current_h > 0.001:
@@ -139,24 +141,30 @@ class SylvanEnsembleManager:
 
         # Ensure all meshes parented to rigs have Identity parent inverse to prevent scaling artifacts
         import mathutils
-        for obj in coll.objects:
+        for obj in list(coll.objects):
             if obj.type == 'MESH' and obj.parent and obj.parent.type == 'ARMATURE':
+                # Force Identity matrix and reset local transforms to 0,0,0
                 obj.matrix_parent_inverse = mathutils.Matrix.Identity(4)
                 obj.location = (0, 0, 0)
                 obj.rotation_euler = (0, 0, 0)
+                obj.scale = (1, 1, 1)
 
         targets = []
-        for src, art in self.ensemble.items():
-             targets.append((src, art, "."))
-        # Root_Guardian has "skeleton" as both mesh and rig.
-        # This prevents it being added twice.
+        # Pre-populate map with all artistic names and their source components
+        resolved_objects = {} # art_name -> {"mesh": obj, "rig": obj}
+
+        for src_mesh, art_name in self.ensemble.items():
+            if art_name not in resolved_objects:
+                resolved_objects[art_name] = {"mesh": None, "rig": None}
+            targets.append((src_mesh, art_name, "."))
+
+        # Root_Guardian special handling in targets
         if "Root_Guardian" not in self.ensemble.values():
-             targets.append(("skeleton", "Root_Guardian", "."))
+            resolved_objects["Root_Guardian"] = {"mesh": None, "rig": None}
+            targets.append(("skeleton", "Root_Guardian", "."))
 
         # --- Phase 1: Resolve all original objects from the map to avoid renaming conflicts ---
-        resolved_objects = {} # Map art_name -> {"mesh": obj, "rig": obj}
         for src_mesh_name_key, art_name_value in self.ensemble.items():
-            resolved_objects[art_name_value] = {}
             # Resolve mesh object
             mesh_obj = self.linked_objects_map.get(src_mesh_name_key)
             if mesh_obj:
@@ -169,15 +177,14 @@ class SylvanEnsembleManager:
                 if rig_obj:
                     resolved_objects[art_name_value]["rig"] = rig_obj
 
-        # Special handling for Root_Guardian (if not already handled by ensemble map)
-        if "Root_Guardian" in self.ensemble.values(): # It's in the ensemble
-            skeleton_obj = self.linked_objects_map.get("skeleton")
-            if skeleton_obj:
-                # Ensure Root_Guardian entry exists and set its mesh/rig to skeleton_obj
-                if "Root_Guardian" not in resolved_objects:
-                    resolved_objects["Root_Guardian"] = {}
-                resolved_objects["Root_Guardian"]["mesh"] = skeleton_obj
-                resolved_objects["Root_Guardian"]["rig"] = skeleton_obj
+        # Special handling for Root_Guardian resolution
+        skeleton_obj = self.linked_objects_map.get("skeleton")
+        if skeleton_obj:
+            if "Root_Guardian" in resolved_objects:
+                if not resolved_objects["Root_Guardian"]["mesh"]:
+                    resolved_objects["Root_Guardian"]["mesh"] = skeleton_obj
+                if not resolved_objects["Root_Guardian"]["rig"]:
+                    resolved_objects["Root_Guardian"]["rig"] = skeleton_obj
 
         # --- Phase 2: Apply renames, parenting, and scaling using resolved objects ---
         for src_mesh_name_from_targets, art_name, sep in targets: # targets still has the original src names
@@ -197,7 +204,8 @@ class SylvanEnsembleManager:
             if rig.name != t_rig_name: rig.name = t_rig_name
 
             if mesh != rig:
-                mesh.parent = rig
+                if mesh.parent != rig:
+                    mesh.parent = rig
                 mesh.location = (0, 0, 0)
                 mesh.rotation_euler = (0, 0, 0)
 

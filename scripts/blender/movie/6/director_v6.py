@@ -58,12 +58,26 @@ class SylvanDirector:
         }
 
         for name, data in ots_targets.items():
-            self._create_camera(name, data["pos"], (0,0,0), coll, lens=50)
-            cam = bpy.data.objects.get(name)
+            cam = self._create_camera(name, data["pos"], (0,0,0), coll, lens=50)
             if cam:
+                # Align initial rotation
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
                 cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
-        
+
+                # Add persistent Track To constraint for dynamic shots
+                # This aligns with the assembly logic and ensures focus during path animation.
+                if "Static" not in name:
+                    target_obj = None
+                    if "OTS1" in name: target_obj = bpy.data.objects.get(config.FOCUS_HERBACEOUS)
+                    elif "OTS2" in name: target_obj = bpy.data.objects.get(config.FOCUS_ARBOR)
+                    elif "WIDE" in name: target_obj = bpy.data.objects.get(config.LIGHTING_MIDPOINT)
+
+                    if target_obj:
+                        con = cam.constraints.new(type='TRACK_TO')
+                        con.target = target_obj
+                        con.track_axis = 'TRACK_NEGATIVE_Z'
+                        con.up_axis = 'UP_Y'
+
         # Set Active Camera
         if "WIDE" in bpy.data.objects:
             self.scene.camera = bpy.data.objects["WIDE"]
@@ -138,12 +152,29 @@ class SylvanDirector:
     # ------------------------------------------------------------------
 
     def position_protagonists(self):
-        """Places Herbaceous and Arbor at v5-standard production coordinates."""
-        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS + ".Body") or bpy.data.objects.get(config.CHAR_HERBACEOUS)
-        arbor = bpy.data.objects.get(config.CHAR_ARBOR + ".Body") or bpy.data.objects.get(config.CHAR_ARBOR)
+        """Places Herbaceous and Arbor at v5-standard production coordinates.
+        CRITICAL: Moves the Armature Rig, not just the mesh, to keep components synchronized.
+        """
+        herb_rig = bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        arbor_rig = bpy.data.objects.get(config.CHAR_ARBOR)
         
-        if herb: herb.location = config.CHAR_HERBACEOUS_POS
-        if arbor: arbor.location = config.CHAR_ARBOR_POS
+        if herb_rig:
+            herb_rig.location = config.CHAR_HERBACEOUS_POS
+            # Reset world matrix to identity to prevent double transforms if already parented
+            herb_rig.matrix_world = mathutils.Matrix.Identity(4)
+            herb_rig.location = config.CHAR_HERBACEOUS_POS
+
+        if arbor_rig:
+            arbor_rig.location = config.CHAR_ARBOR_POS
+            arbor_rig.matrix_world = mathutils.Matrix.Identity(4)
+            arbor_rig.location = config.CHAR_ARBOR_POS
+
+        # Ensure meshes are at origin relative to their parents
+        for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
+            body = bpy.data.objects.get(f"{name}_Body")
+            if body:
+                body.location = (0, 0, 0)
+                body.rotation_euler = (0, 0, 0)
 
     def apply_scene_animations(self):
         """Orchestrates Act IV storyline beats and varied animations."""
@@ -155,13 +186,13 @@ class SylvanDirector:
         arbor = bpy.data.objects.get(config.CHAR_ARBOR)
 
         if herb:
-            animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=config.TOTAL_FRAMES)
+            animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=3000)
             animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
             # Final Ascent synchronized finale (3000-4200)
             animation_library_v6.apply_animation_by_tag(herb, "dance", 3000, duration=1200)
 
         if arbor:
-            animation_library_v6.apply_animation_by_tag(arbor, "talking", 60, duration=config.TOTAL_FRAMES)
+            animation_library_v6.apply_animation_by_tag(arbor, "talking", 1, duration=2999)
             animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
             # Final Ascent synchronized finale (3000-4200)
             animation_library_v6.apply_animation_by_tag(arbor, "dance", 3000, duration=1200)
@@ -173,7 +204,7 @@ class SylvanDirector:
         if majesty:
             # Act IV Beat 1: The Arrival (0-600)
             # Control mesh visibility for the "Arrival" effect
-            for child in majesty.children:
+            for child in majesty.children_recursive:
                 if child.type == 'MESH':
                     child.hide_render = True
                     child.keyframe_insert(data_path="hide_render", frame=1)
@@ -209,7 +240,7 @@ class SylvanDirector:
         weaver = next((o for o in coll.objects if "Shadow_Weaver" in o.name and o.type == 'ARMATURE'), None)
         if weaver:
             # Playful "Gloom Puffs" interactions - represented by shake and movement
-            animation_library_v6.apply_animation_by_tag(weaver, "shake", 100, duration=500)
+            animation_library_v6.apply_animation_by_tag(weaver, "shake", 1, duration=599)
             animation_library_v6.apply_animation_by_tag(weaver, "dance", 600, duration=2400)
             # Synchronized finale
             animation_library_v6.apply_animation_by_tag(weaver, "dance", 3000, duration=1200)
@@ -220,7 +251,9 @@ class SylvanDirector:
 
         for i, spirit in enumerate(spirits):
             tag = random.choice(tags)
-            start = 1 + (i * 24)
-            animation_library_v6.apply_animation_by_tag(spirit, tag, start, duration=config.TOTAL_FRAMES)
+            start = 1
+            # Duration should cover until the finale starts
+            mid_duration = 2999
+            animation_library_v6.apply_animation_by_tag(spirit, tag, start, duration=mid_duration)
             # Synchronized finale for everyone
             animation_library_v6.apply_animation_by_tag(spirit, "dance", 3000, duration=1200)
