@@ -82,32 +82,75 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Calculates world-height from mesh data and scales rig to match target, filtering outliers."""
+        """Calculates world-height from mesh data and scales rig to match target, bypassing shards."""
         if not rig: return
-        meshes = [c for c in rig.children if c.type == 'MESH']
-        if not meshes: return
 
-        import mathutils
+        # Ensure clean state for measurement
+        rig.scale = (1, 1, 1)
+        rig.rotation_euler = (0, 0, 0)
+
+        # Force all mesh children to standard scale (resolves procedural stretching)
+        for child in rig.children_recursive:
+            if child.type == 'MESH':
+                child.scale = (1, 1, 1)
+
+        bpy.context.view_layer.update()
+
+        # 1. Collect all evaluated Z-coordinates
         all_z = []
+        meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         for m in meshes:
             mw = m.matrix_world
-            # Use vertices directly for more granular outlier detection than bound_box
-            for v in m.data.vertices:
-                all_z.append((mw @ v.co).z)
+            all_z.extend([(mw @ v.co).z for v in m.data.vertices])
 
         if not all_z: return
         all_z.sort()
 
-        # Simple robust height: 1st to 99th percentile to skip "shards"
-        idx_min = int(len(all_z) * 0.01)
-        idx_max = int(len(all_z) * 0.99)
-        min_z = all_z[idx_min]
-        max_z = all_z[idx_max]
+        # 2. 5th-95th percentile filtering to bypass procedural "shards" (800m+ outliers)
+        idx_min = int(len(all_z) * 0.05)
+        idx_max = int(len(all_z) * 0.95)
+        current_h = all_z[idx_max] - all_z[idx_min]
 
-        current_h = max_z - min_z
-        if current_h > 0.001:
+        if current_h > 0.01:
+            # Detection logic for 100x unit scale discrepancy (Point 142)
+            # If current height is extremely high (>100m) but target is low (<10m),
+            # or vice versa, it indicates a cm vs m mismatch in the source FBX.
+            if current_h > 100.0 and target_height < 10.0:
+                print(f"ASSET_MANAGER: Unit scale discrepancy detected for {rig.name} ({current_h:.2f}m). Correcting...")
+                current_h /= 100.0
+            elif current_h < 0.1 and target_height > 1.0:
+                print(f"ASSET_MANAGER: Unit scale discrepancy detected (small) for {rig.name}. Correcting...")
+                current_h *= 100.0
+
             scale_factor = target_height / current_h
-            rig.scale *= scale_factor
+            # Clamp to prevent extreme distortions
+            scale_factor = max(0.05, min(scale_factor, 100.0))
+            rig.scale = (scale_factor, scale_factor, scale_factor)
+            print(f"ASSET_MANAGER: Normalized {rig.name} (Height: {current_h:.2f}m -> {target_height}m, Scale: {scale_factor:.2f})")
+
+            # Grounding: Ensure feet are at Z=0
+            bpy.context.view_layer.update()
+            min_z = all_z[idx_min] * scale_factor
+            rig.location.z -= min_z
+
+            # Clear scale keyframes to prevent animation overrides (Point 142)
+            # Utilizing Blender 5.0 Channel Bag API via style_utilities
+            if rig.animation_data and rig.animation_data.action:
+                try:
+                    from style_utilities.fcurves_operations import get_action_curves
+                    curves = get_action_curves(rig.animation_data.action, obj=rig)
+                    for fc in curves:
+                        if "scale" in fc.data_path:
+                            try:
+                                # Use the actual FCurve from the proxy
+                                # In 5.0, fc._target is the FCurve inside a ChannelBag
+                                bag = fc._target.id_data
+                                if hasattr(bag, "fcurves"):
+                                    bag.fcurves.remove(fc._target)
+                            except: pass
+                except ImportError:
+                    # Minimal fallback if style_utilities not available
+                    pass
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs."""
@@ -175,9 +218,18 @@ class SylvanEnsembleManager:
 
             if not is_protag:
                 target_h = 1.0
-                if "Sylvan_Majesty" in art_name: target_h = config.MAJESTIC_HEIGHT
-                elif "Verdant_Sprite" in art_name: target_h = config.SPRITE_HEIGHT
-                elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
+                if "Sylvan_Majesty" in art_name or "Radiant_Aura" in art_name:
+                    target_h = config.MAJESTIC_HEIGHT
+                elif "Verdant_Sprite" in art_name:
+                    target_h = config.SPRITE_HEIGHT
+                elif "Shadow_Weaver" in art_name:
+                    target_h = config.SCRIBE_HEIGHT
+                elif "Emerald_Sentinel" in art_name:
+                    target_h = config.SENTINEL_HEIGHT
+                elif "Phoenix" in art_name:
+                    target_h = config.PHOENIX_HEIGHT
+                elif "Root_Guardian" in art_name:
+                    target_h = config.GUARDIAN_HEIGHT
 
                 self.normalize_character_scale(rig, target_h)
 

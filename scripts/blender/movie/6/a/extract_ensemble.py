@@ -17,9 +17,23 @@ def _is_protagonist(art_name):
 
 def _safe_fbx_export(filepath, use_selection=True):
     """Dynamic FBX export that respects Blender 5.0+ API changes."""
-    # Inspect properties to see what's supported
-    props = bpy.ops.export_scene.fbx.get_rna_type().properties
-    supported = {p.identifier for p in props}
+    # 1. Ensure the operator is registered
+    if not hasattr(bpy.ops.export_scene, "fbx"):
+        print("  ERROR: FBX export operator not found.")
+        return False
+
+    # 2. Inspect properties to see what's supported (Safe RNA inspection)
+    supported = set()
+    try:
+        op_type = getattr(bpy.types, "EXPORT_SCENE_OT_fbx", None)
+        if op_type and hasattr(op_type, "bl_rna"):
+            supported = {p.identifier for p in op_type.bl_rna.properties}
+    except Exception as e:
+        print(f"  WARNING: RNA inspection failed for FBX operator: {e}")
+
+    # 3. Handle Blender 5.0.1 environment bug (missing use_space_transform in RNA but required by execute)
+    # We attempt to use it only if it's in the RNA or if we're in a fallback situation.
+    is_v5_0_1 = bpy.app.version == (5, 0, 1)
 
     # Define a exhaustive list of potential parameters we want to set
     # Note: 'use_space_transform' is critical in some versions but missing in others
@@ -38,24 +52,41 @@ def _safe_fbx_export(filepath, use_selection=True):
     # Filter kwargs to only include those supported by the current Blender version
     kwargs = {k: v for k, v in potential_kwargs.items() if k in supported}
 
+    # If in 5.0.1 and use_space_transform is not in RNA, we don't add it to kwargs
+    # to avoid ArgumentErrors, but we remain aware that the execute() might fail internally.
+
     # Execute with supported args, wrapped in try-except for internal addon errors
     try:
+        print(f"  DEBUG: Exporting {os.path.basename(filepath)} with supported args: {list(kwargs.keys())}")
         bpy.ops.export_scene.fbx(**kwargs)
+        return True
     except Exception as e:
         print(f"  WARNING: FBX Export failed for {os.path.basename(filepath)}: {e}")
-        # Try a second time with absolute minimal args if it failed
-        if "filepath" in kwargs:
-            print("  Retrying with minimal arguments...")
-            try:
-                bpy.ops.export_scene.fbx(filepath=filepath)
-            except:
-                print("  Minimal export failed.")
+        # Fallback Strategy: Absolute minimal arguments
+        print("  FALLBACK: Retrying with absolute minimal arguments...")
+        try:
+            bpy.ops.export_scene.fbx(filepath=filepath, use_selection=use_selection)
+            return True
+        except Exception as e2:
+            print(f"  CRITICAL: Minimal export failed for {os.path.basename(filepath)}: {e2}")
+
+    return False
 
 
 def extract_assets():
     print("\n" + "=" * 80)
     print("PHASE A: ASSET EXTRACTION (Sylvan Ensemble)")
     print("=" * 80)
+
+    # Ensure FBX addon is enabled (Point 142)
+    try:
+        import addon_utils
+        # Prefer wm.addon_enable for more persistent activation in some builds
+        if not hasattr(bpy.ops.export_scene, "fbx"):
+            bpy.ops.wm.addon_enable(module="io_scene_fbx")
+        addon_utils.enable("io_scene_fbx", default_set=True)
+    except Exception as e:
+        print(f"  WARNING: Failed to enable FBX addon: {e}")
 
     manager = SylvanEnsembleManager()
 
@@ -77,6 +108,15 @@ def extract_assets():
     # 3. Passive renaming only — no scaling or geometric modification
     print("ASSET_MANAGER: Renaming assets for export...")
     # Root_Guardian case: skeleton might be both rig and mesh
+    # Update manager ensemble to account for existing renamed objects
+    for obj in bpy.data.objects:
+        for src_name, art_name in list(manager.ensemble.items()):
+            if obj.name == f"{art_name}.Body" or obj.name == f"{art_name}_Body":
+                # Already renamed, map the new name as a source to keep the loop happy
+                manager.ensemble[obj.name] = art_name
+            elif obj.name == "skeleton" or "skeleton" in obj.name.lower():
+                manager.ensemble[obj.name] = "Root_Guardian"
+
     for src_mesh, art_name in list(manager.ensemble.items()):
         mesh_obj = bpy.data.objects.get(src_mesh)
         if not mesh_obj:
@@ -156,9 +196,11 @@ def extract_assets():
             bpy.context.view_layer.objects.active = rig
 
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
-            _safe_fbx_export(fbx_path, use_selection=True)
-            print(f"  SUCCESS: {art_name} -> {fbx_path}")
-            exported.append(art_name)
+            if _safe_fbx_export(fbx_path, use_selection=True):
+                print(f"  SUCCESS: {art_name} -> {fbx_path}")
+                exported.append(art_name)
+            else:
+                print(f"  FAILED: {art_name} export failed.")
 
         elif body and body.type == 'ARMATURE':
             # Character whose mesh object IS the armature (e.g. Root_Guardian)
@@ -175,9 +217,11 @@ def extract_assets():
             bpy.context.view_layer.objects.active = body
 
             fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
-            _safe_fbx_export(fbx_path, use_selection=True)
-            print(f"  SUCCESS (rig-only): {art_name} -> {fbx_path}")
-            exported.append(art_name)
+            if _safe_fbx_export(fbx_path, use_selection=True):
+                print(f"  SUCCESS (rig-only): {art_name} -> {fbx_path}")
+                exported.append(art_name)
+            else:
+                print(f"  FAILED (rig-only): {art_name} export failed.")
 
         else:
             msg = []

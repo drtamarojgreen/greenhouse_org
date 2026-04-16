@@ -45,6 +45,26 @@ class SylvanDirector:
         if "WIDE" in bpy.data.objects:
             self.scene.camera = bpy.data.objects["WIDE"]
 
+        self.setup_camera_markers()
+
+    def setup_camera_markers(self):
+        """Binds cameras to timeline markers for automatic switching during render."""
+        self.scene.timeline_markers.clear()
+
+        switches = [
+            (1,    "WIDE"),
+            (600,  "OTS1"),
+            (1800, "OTS2"),
+            (3000, "WIDE"),
+        ]
+
+        for frame, cam_name in switches:
+            cam = bpy.data.objects.get(cam_name)
+            if cam:
+                marker = self.scene.timeline_markers.new(f"Switch_{cam_name}", frame=frame)
+                marker.camera = cam
+                print(f"DIRECTOR: Camera switch to {cam_name} at frame {frame}")
+
     def _create_camera(self, name, pos, rot, coll, lens=35):
         """Creates (or reuses) a camera and links it into the given collection."""
         cam_data = bpy.data.cameras.get(name) or bpy.data.cameras.new(name)
@@ -91,11 +111,11 @@ class SylvanDirector:
 
         for i, rig in enumerate(spirits):
             angle = (i / max(num - 1, 1)) * math.pi * 0.95 - math.pi * 0.475
-            dist  = 12.0 + (i % 2) * 3.5 # Increased distance to prevent occlusion
+            dist  = 18.0 + (i % 2) * 6.5 # Increased distance to prevent backdrop occlusion (Point 142)
 
             rig.location = (
                 math.sin(angle) * dist,
-                6.0 + math.cos(angle) * 4.0,
+                10.0 + math.cos(angle) * 5.0, # Pushed further back from the camera
                 0.0,
             )
 
@@ -122,8 +142,71 @@ class SylvanDirector:
         if herb: herb.location = config.CHAR_HERBACEOUS_POS
         if arbor: arbor.location = config.CHAR_ARBOR_POS
 
+        self.apply_gaze_interactions()
+
+    def apply_gaze_interactions(self):
+        """Adds Track To constraints via non-cyclic Focus empties, clearing legacy ones first."""
+        herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
+        arbor = bpy.data.objects.get(config.CHAR_ARBOR)
+
+        # 1. Clear legacy 'Track To' to ensure no cyclic dependencies persist (Point 142)
+        all_chars = [herb, arbor]
+        coll = bpy.data.collections.get(config.COLL_ASSETS)
+        if coll:
+            all_chars.extend([o for o in coll.objects if o.type == 'ARMATURE'])
+
+        for char in all_chars:
+            if not char: continue
+            for con in list(char.constraints):
+                if con.type == 'TRACK_TO':
+                    char.constraints.remove(con)
+
+        # 2. Create persistent focus targets to break dependency cycles
+        f_herb = bpy.data.objects.get(config.FOCUS_HERBACEOUS) or bpy.data.objects.new(config.FOCUS_HERBACEOUS, None)
+        f_arbor = bpy.data.objects.get(config.FOCUS_ARBOR) or bpy.data.objects.new(config.FOCUS_ARBOR, None)
+
+        for f, pos in [(f_herb, config.CHAR_HERBACEOUS_EYE), (f_arbor, config.CHAR_ARBOR_EYE)]:
+            if f.name not in self.scene.collection.objects:
+                self.scene.collection.objects.link(f)
+            f.location = pos
+
+        if herb and arbor:
+            # Herbaceous looks at Arbor's Focus
+            con_h = herb.constraints.get("Gaze_Arbor") or herb.constraints.new('TRACK_TO')
+            con_h.name = "Gaze_Arbor"
+            con_h.target = f_arbor
+            con_h.track_axis = 'TRACK_NEGATIVE_Y' # Point face (-Y) at target
+            con_h.up_axis = 'UP_Z' # Keep head up (+Z)
+            con_h.influence = 0.8
+
+            # Arbor looks at Herbaceous's Focus
+            con_a = arbor.constraints.get("Gaze_Herb") or arbor.constraints.new('TRACK_TO')
+            con_a.name = "Gaze_Herb"
+            con_a.target = f_herb
+            con_a.track_axis = 'TRACK_NEGATIVE_Y'
+            con_a.up_axis = 'UP_Z'
+            con_a.influence = 0.8
+
+        # Ensemble spirits look at the protagonists
+        coll = bpy.data.collections.get(config.COLL_ASSETS)
+        if coll:
+            midpoint = bpy.data.objects.get(config.LIGHTING_MIDPOINT)
+            if not midpoint:
+                midpoint = bpy.data.objects.new(config.LIGHTING_MIDPOINT, None)
+                bpy.context.scene.collection.objects.link(midpoint)
+                midpoint.location = (0, 0, 1.5)
+
+            spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor]]
+            for s in spirits:
+                con = s.constraints.get("Gaze_Center") or s.constraints.new('TRACK_TO')
+                con.name = "Gaze_Center"
+                con.target = midpoint
+                con.track_axis = 'TRACK_NEGATIVE_Y'
+                con.up_axis = 'UP_Z'
+                con.influence = 0.6
+
     def apply_scene_animations(self):
-        """Orchestrates varied animations across all characters."""
+        """Orchestrates varied animations across all characters, including storyline beats."""
         coll = bpy.data.collections.get(config.COLL_ASSETS)
         if not coll: return
 
@@ -132,18 +215,46 @@ class SylvanDirector:
         arbor = bpy.data.objects.get(config.CHAR_ARBOR)
 
         if herb:
+            # Ensure the armature is actually used for animation calls
             animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=config.TOTAL_FRAMES)
             animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
+            # Act IV Beat 4: Finale Dance
+            animation_library_v6.apply_animation_by_tag(herb, "dance", 3600, duration=600)
 
         if arbor:
-            animation_library_v6.apply_animation_by_tag(arbor, "talking", 60, duration=config.TOTAL_FRAMES)
+            animation_library_v6.apply_animation_by_tag(arbor, "talking", 1, duration=config.TOTAL_FRAMES)
             animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
+            # Act IV Beat 4: Finale Dance
+            animation_library_v6.apply_animation_by_tag(arbor, "dance", 3600, duration=600)
 
-        # 2. Ensemble Spirits (Atmospheric Motion)
-        spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor]]
+        # 2. Key Spirits (Storyline Beats)
+        majesty = bpy.data.objects.get("Sylvan_Majesty.Rig") or bpy.data.objects.get("Sylvan_Majesty")
+        radiant = bpy.data.objects.get("Radiant_Aura.Rig") or bpy.data.objects.get("Radiant_Aura")
+
+        if majesty:
+            # Beat 1: The Arrival (manifests with idle sway)
+            animation_library_v6.apply_animation_by_tag(majesty, "idle", 1, duration=config.TOTAL_FRAMES)
+            # Spore Tag interaction at frame 1200
+            animation_library_v6.apply_animation_by_tag(majesty, "spore_tag", 1200)
+
+        if radiant:
+            # Beat 2: The Rite of Joy (Spirit Dance)
+            animation_library_v6.apply_animation_by_tag(radiant, "dance", 600, duration=1200)
+            # Mid-scene idle
+            animation_library_v6.apply_animation_by_tag(radiant, "idle", 1800, duration=1800)
+            # Finale
+            animation_library_v6.apply_animation_by_tag(radiant, "dance", 3600, duration=600)
+
+        # 3. Ensemble Spirits (Atmospheric Motion & Spore Tag)
+        spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor, majesty, radiant]]
         tags = ["dance", "nod", "shake", "idle"]
 
         for i, spirit in enumerate(spirits):
             tag = random.choice(tags)
             start = 1 + (i * 24)
             animation_library_v6.apply_animation_by_tag(spirit, tag, start, duration=config.TOTAL_FRAMES)
+
+            # Random Spore Tag interactions
+            tag_start = 1000 + (i * 400)
+            if tag_start < 3600:
+                animation_library_v6.apply_animation_by_tag(spirit, "spore_tag", tag_start)
