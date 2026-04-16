@@ -7,13 +7,15 @@ V6_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(V6_DIR)
 import config
 
-# Monkeypatch for Blender 5.0.1 FBX operator bugs
+# Monkeypatch for Blender 5.1 FBX operator bugs
 if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx"):
     try:
-        if "use_space_transform" not in bpy.types.EXPORT_SCENE_OT_fbx.__annotations__:
-            bpy.types.EXPORT_SCENE_OT_fbx.__annotations__["use_space_transform"] = bpy.props.BoolProperty(
-                name="Use Space Transform", default=False)
-            print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx.use_space_transform")
+        op_cls = bpy.types.EXPORT_SCENE_OT_fbx
+        for prop_name in ["use_space_transform", "apply_unit_scale", "use_selection"]:
+            if not hasattr(op_cls, prop_name):
+                op_cls.__annotations__[prop_name] = bpy.props.BoolProperty(name=prop_name, default=True if "selection" in prop_name else False)
+                setattr(op_cls, prop_name, True if "selection" in prop_name else False)
+        print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx")
     except Exception as e:
         print(f"  WARNING: Failed to apply export monkeypatch: {e}")
 

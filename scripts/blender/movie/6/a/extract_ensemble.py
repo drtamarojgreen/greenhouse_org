@@ -10,17 +10,17 @@ if V6_DIR not in sys.path:
 import config
 from asset_manager_v6 import SylvanEnsembleManager
 
-# Monkeypatch for Blender 5.0.1 FBX operator bugs
+# Monkeypatch for Blender 5.1 FBX operator bugs
 def _apply_fbx_patches():
     if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx"):
         try:
             op_cls = bpy.types.EXPORT_SCENE_OT_fbx
-            if "use_space_transform" not in op_cls.__annotations__:
-                op_cls.__annotations__["use_space_transform"] = bpy.props.BoolProperty(
-                    name="Use Space Transform", default=False)
-            if not hasattr(op_cls, "use_space_transform"):
-                setattr(op_cls, "use_space_transform", False)
-                print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx.use_space_transform")
+            # Blender 5.1 might have changed property registration
+            for prop_name in ["use_space_transform", "apply_unit_scale", "use_selection"]:
+                if not hasattr(op_cls, prop_name):
+                    op_cls.__annotations__[prop_name] = bpy.props.BoolProperty(name=prop_name, default=True if "selection" in prop_name else False)
+                    setattr(op_cls, prop_name, True if "selection" in prop_name else False)
+            print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx")
         except Exception as e:
             print(f"  WARNING: Failed to apply export monkeypatch: {e}")
 
@@ -116,8 +116,11 @@ def extract_assets():
 
         if objs['rig'] is None:
             # Special case: rig might be the same object as mesh (e.g. Root_Guardian)
-            if art_name == "Root_Guardian" and objs['mesh'] and objs['mesh'].type == 'ARMATURE':
-                objs['rig'] = objs['mesh']
+            if art_name == "Root_Guardian":
+                skel = bpy.data.objects.get("skeleton")
+                if skel:
+                    objs['mesh'] = skel
+                    objs['rig'] = skel
             else:
                 src_rig = manager.rig_map.get(art_name)
                 if src_rig:
@@ -186,6 +189,11 @@ def extract_assets():
         body = objs['mesh']
         rig  = objs['rig']
         fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
+
+        # Explicitly ensure Root_Guardian is selected if it's the skeleton
+        if art_name == "Root_Guardian" and not body and not rig:
+             skel = bpy.data.objects.get("Root_Guardian.Rig") or bpy.data.objects.get("Root_Guardian.Body")
+             if skel: body = skel; rig = skel
 
         if body and rig and body != rig:
             bpy.ops.object.select_all(action='DESELECT')

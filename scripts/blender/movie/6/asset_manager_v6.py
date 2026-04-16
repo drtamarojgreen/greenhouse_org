@@ -107,28 +107,33 @@ class SylvanEnsembleManager:
                 current_h *= 1.15
 
         # Method 2: Robust Percentile-based Mesh Fallback (Fallback or non-Mixamo)
-        # Also use this if Method 1 resulted in a height that's way off (e.g. tiny bones)
-        if current_h < 0.1 or current_h > 100.0:
-            # Aggregate all vertices from rig's children or the object itself
-            meshes = [c for c in rig.children if c.type == 'MESH']
-            if rig.type == 'MESH': meshes.append(rig)
-            # Recursively find meshes (for Sylvan_Majesty where body might be deep)
-            for child in rig.children_recursive:
-                if child.type == 'MESH' and child not in meshes:
-                    meshes.append(child)
+        # We also calculate this and take the MAX of bone-height vs mesh-height
+        # to ensure large head-props (majestic horns/branches) are accounted for.
 
-            all_z = []
-            for m in meshes:
-                mw = m.matrix_world
-                for v in m.data.vertices:
-                    all_z.append((mw @ v.co).z)
+        # Aggregate all vertices from rig's children or the object itself
+        meshes = [c for c in rig.children if c.type == 'MESH']
+        if rig.type == 'MESH': meshes.append(rig)
+        # Recursively find meshes (for Sylvan_Majesty where body might be deep)
+        for child in rig.children_recursive:
+            if child.type == 'MESH' and child not in meshes:
+                meshes.append(child)
 
-            if all_z:
-                all_z.sort()
-                # Use 0.5% - 99.5% to filter out extreme "shards" while keeping volume
-                idx_min = int(len(all_z) * 0.005)
-                idx_max = int(len(all_z) * 0.995)
-                current_h = all_z[idx_max] - all_z[idx_min]
+        mesh_h = 0
+        all_z = []
+        for m in meshes:
+            mw = m.matrix_world
+            for v in m.data.vertices:
+                all_z.append((mw @ v.co).z)
+
+        if all_z:
+            all_z.sort()
+            # Use 0.5% - 99.5% to filter out extreme "shards" while keeping volume
+            idx_min = int(len(all_z) * 0.005)
+            idx_max = int(len(all_z) * 0.995)
+            mesh_h = all_z[idx_max] - all_z[idx_min]
+
+        if mesh_h > current_h:
+            current_h = mesh_h
 
         if current_h > 0.001:
             scale_factor = target_height / current_h

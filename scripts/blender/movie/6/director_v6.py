@@ -64,20 +64,6 @@ class SylvanDirector:
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
                 cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
 
-                # Add persistent Track To constraint for dynamic shots
-                # This aligns with the assembly logic and ensures focus during path animation.
-                if "Static" not in name:
-                    target_obj = None
-                    if "OTS1" in name: target_obj = bpy.data.objects.get(config.FOCUS_HERBACEOUS)
-                    elif "OTS2" in name: target_obj = bpy.data.objects.get(config.FOCUS_ARBOR)
-                    elif "WIDE" in name: target_obj = bpy.data.objects.get(config.LIGHTING_MIDPOINT)
-
-                    if target_obj:
-                        con = cam.constraints.new(type='TRACK_TO')
-                        con.target = target_obj
-                        con.track_axis = 'TRACK_NEGATIVE_Z'
-                        con.up_axis = 'UP_Y'
-
         # Set Active Camera
         if "WIDE" in bpy.data.objects:
             self.scene.camera = bpy.data.objects["WIDE"]
@@ -150,6 +136,76 @@ class SylvanDirector:
     # ------------------------------------------------------------------
     # PROTAGONIST PLACEMENT
     # ------------------------------------------------------------------
+
+    def setup_camera_paths(self):
+        """Creates Bezier paths for each production camera matching Act IV beats."""
+        # 1. WIDE Path (Slow cinematic drift)
+        wide_pts = [
+            (0.0, -16.0, 4.0),
+            (0.0, -14.0, 5.0)
+        ]
+        self._create_path_animation("WIDE", wide_pts, config.LIGHTING_MIDPOINT)
+
+        # 2. OTS1 Path (Focus Herbaceous - Orbital tension)
+        ots1_pts = [
+            (config.CAM_OTS1_POS[0],     config.CAM_OTS1_POS[1],     config.CAM_OTS1_POS[2]),
+            (config.CAM_OTS1_POS[0] - 2, config.CAM_OTS1_POS[1] + 2, config.CAM_OTS1_POS[2] + 1)
+        ]
+        self._create_path_animation("OTS1", ots1_pts, config.FOCUS_HERBACEOUS)
+
+        # 3. OTS2 Path (Focus Arbor - Rising climax)
+        ots2_pts = [
+            (config.CAM_OTS2_POS[0],     config.CAM_OTS2_POS[1],     config.CAM_OTS2_POS[2]),
+            (config.CAM_OTS2_POS[0] + 2, config.CAM_OTS2_POS[1] - 2, config.CAM_OTS2_POS[2] + 2)
+        ]
+        self._create_path_animation("OTS2", ots2_pts, config.FOCUS_ARBOR)
+
+    def _create_path_animation(self, cam_name, points, target_name):
+        """Internal helper to bind a camera to a new curve path."""
+        cam = bpy.data.objects.get(cam_name)
+        target = bpy.data.objects.get(target_name) if isinstance(target_name, str) else target_name
+        if not cam: return
+
+        # 1. Create Curve
+        curve_data = bpy.data.curves.new(name=f"Path_{cam_name}", type='CURVE')
+        curve_data.dimensions = '3D'
+        curve_obj = bpy.data.objects.new(f"Path_{cam_name}", curve_data)
+
+        coll = bpy.data.collections.get(config.COLL_CAMERAS)
+        if coll: coll.objects.link(curve_obj)
+        else: bpy.context.scene.collection.objects.link(curve_obj)
+
+        spline = curve_data.splines.new('BEZIER')
+        spline.bezier_points.add(len(points) - 1)
+        for i, pt in enumerate(points):
+            spline.bezier_points[i].co = pt
+            spline.bezier_points[i].handle_left_type = 'AUTO'
+            spline.bezier_points[i].handle_right_type = 'AUTO'
+
+        # 2. Add Follow Path
+        con = cam.constraints.new(type='FOLLOW_PATH')
+        con.target = curve_obj
+        con.use_fixed_location = True
+
+        # Animate offset factor using standard keyframes
+        con.offset_factor = 0.0
+        con.keyframe_insert(data_path="offset_factor", frame=1)
+        con.offset_factor = 1.0
+        con.keyframe_insert(data_path="offset_factor", frame=config.TOTAL_FRAMES)
+
+        # 3. Add Zoom-In Effect (Lens Animation)
+        # Start at base lens (from setup_cinematics) and zoom in slightly (+15mm)
+        base_lens = cam.data.lens
+        cam.data.keyframe_insert(data_path="lens", frame=1)
+        cam.data.lens = base_lens + 15.0
+        cam.data.keyframe_insert(data_path="lens", frame=config.TOTAL_FRAMES)
+
+        # 4. Add Track To
+        if target:
+            tcon = cam.constraints.new(type='TRACK_TO')
+            tcon.target = target
+            tcon.track_axis = 'TRACK_NEGATIVE_Z'
+            tcon.up_axis = 'UP_Y'
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at v5-standard production coordinates.
