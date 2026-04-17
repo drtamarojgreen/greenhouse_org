@@ -119,7 +119,7 @@ def setup_environmental_restoration():
 
     for name, data in backdrops.items():
         if name not in bpy.data.objects:
-            bpy.ops.mesh.primitive_plane_add(size=1000, location=data["pos"])
+            bpy.ops.mesh.primitive_plane_add(size=100, location=data["pos"])
             bg = bpy.context.active_object
             bg.name = name
 

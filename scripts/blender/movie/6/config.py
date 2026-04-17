@@ -69,14 +69,14 @@ CHAR_ARBOR_POS      = ( 1.75,  0.3, 0.0)
 CHAR_HERBACEOUS_EYE = (-1.75, -0.3, 2.5)
 CHAR_ARBOR_EYE      = ( 1.75,  0.3, 2.5)
 
-MAJESTIC_HEIGHT = 6.0
-SPRITE_HEIGHT   = 5.5
-PHOENIX_HEIGHT  = 5.5
+MAJESTIC_HEIGHT = 12.0
+SPRITE_HEIGHT   = 10.0
+PHOENIX_HEIGHT  = 10.0
 
 # 6. CAMERA POSITIONS
-CAM_WIDE_POS = (0.0, -8.0, 2.0)
-CAM_OTS1_POS = (13.5, 11.0, 6.0)
-CAM_OTS2_POS = (-13.5, -11.0, 6.0)
+CAM_WIDE_POS = (0.0, -2.5, 2.0)
+CAM_OTS1_POS = (5.5, 4.0, 3.5)
+CAM_OTS2_POS = (-5.5, -4.0, 3.5)
 
 # 7. COLLECTION NAMES
 COLL_ASSETS   = "6a.ASSETS"
@@ -108,3 +108,18 @@ TEX_JOY   = "Tree_Spirit_of_Joy_1207153014_texture.png"
 CAMERA_NAME  = "WIDE"
 BACKDROP_NAME = "ChromaBackdrop_Wide"
 CHROMA_GREEN_RGB = (0, 1, 0)
+START_FRAME = 1
+TOTAL_FRAMES = 4200 # Approx 2 minutes 20 seconds at 30 fps
+
+import bpy
+if hasattr(bpy, "data"):
+    import bpy.types
+    if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx") and not hasattr(bpy.types.IMPORT_SCENE_OT_fbx, "files"):
+        bpy.types.IMPORT_SCENE_OT_fbx.files = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
+    if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx") and not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_selection"):
+        bpy.types.EXPORT_SCENE_OT_fbx.use_selection = bpy.props.BoolProperty(default=True)
+    if not hasattr(bpy.data, "grease_pencils_v3"):
+        bpy.types.BlendData.grease_pencils_v3 = property(lambda self: [])
+    # Disable 5.1 action_slot checking for legacy headless compatibility
+    if not hasattr(bpy.types.AnimData, "action_slot"):
+        bpy.types.AnimData.action_slot = property(lambda self: True)

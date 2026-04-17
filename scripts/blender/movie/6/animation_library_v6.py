@@ -121,8 +121,9 @@ def apply_blink(arm_obj, start_frame, duration=6):
 def apply_talking_arms(arm_obj, start_frame, duration=60):
     hand_l = get_bone(arm_obj, "Hand.L")
     hand_r = get_bone(arm_obj, "Hand.R")
-    if not hand_l or not hand_r: return
-
+    lip_u = get_bone(arm_obj, "Lip.Upper")
+    lip_l = get_bone(arm_obj, "Lip.Lower")
+    
     if not arm_obj.animation_data:
         arm_obj.animation_data_create()
 
@@ -130,14 +131,48 @@ def apply_talking_arms(arm_obj, start_frame, duration=60):
     if not arm_obj.animation_data.action:
         arm_obj.animation_data.action = bpy.data.actions.new(name=f"Action_{arm_obj.name}")
 
-    dp_l = f'pose.bones["{hand_l.name}"].location'
-    dp_r = f'pose.bones["{hand_r.name}"].location'
-    
-    for f in range(start_frame, start_frame + duration, 10):
-        hand_l.location[2] += random.uniform(-0.05, 0.05)
-        hand_r.location[2] += random.uniform(-0.05, 0.05)
-        arm_obj.keyframe_insert(data_path=dp_l, index=2, frame=f)
-        arm_obj.keyframe_insert(data_path=dp_r, index=2, frame=f)
+    if hand_l and hand_r:
+        dp_l = f'pose.bones["{hand_l.name}"].location'
+        dp_r = f'pose.bones["{hand_r.name}"].location'
+        elbow_l = get_bone(arm_obj, "Elbow.L")
+        elbow_r = get_bone(arm_obj, "Elbow.R")
+        knee_l = get_bone(arm_obj, "Knee.L")
+        knee_r = get_bone(arm_obj, "Knee.R")
+
+        for f in range(start_frame, start_frame + duration, 10):
+            hand_l.location[2] += random.uniform(-0.05, 0.05)
+            hand_r.location[2] += random.uniform(-0.05, 0.05)
+            arm_obj.keyframe_insert(data_path=dp_l, index=2, frame=f)
+            arm_obj.keyframe_insert(data_path=dp_r, index=2, frame=f)
+            
+            # Animate elbows with rotation for bending
+            if elbow_l:
+                elbow_l.rotation_mode = 'XYZ'
+                elbow_l.rotation_euler[0] = random.uniform(-0.4, 0.2)
+                arm_obj.keyframe_insert(data_path=f'pose.bones["{elbow_l.name}"].rotation_euler', index=0, frame=f)
+            if elbow_r:
+                elbow_r.rotation_mode = 'XYZ'
+                elbow_r.rotation_euler[0] = random.uniform(-0.4, 0.2)
+                arm_obj.keyframe_insert(data_path=f'pose.bones["{elbow_r.name}"].rotation_euler', index=0, frame=f)
+
+            # Animate knees
+            if knee_l:
+                knee_l.rotation_mode = 'XYZ'
+                knee_l.rotation_euler[0] = random.uniform(-0.2, 0.2)
+                arm_obj.keyframe_insert(data_path=f'pose.bones["{knee_l.name}"].rotation_euler', index=0, frame=f)
+            if knee_r:
+                knee_r.rotation_mode = 'XYZ'
+                knee_r.rotation_euler[0] = random.uniform(-0.2, 0.2)
+                arm_obj.keyframe_insert(data_path=f'pose.bones["{knee_r.name}"].rotation_euler', index=0, frame=f)
+
+    if lip_u and lip_l:
+        dp_u = f'pose.bones["{lip_u.name}"].location'
+        dp_l_bone = f'pose.bones["{lip_l.name}"].location'
+        for f in range(start_frame, start_frame + duration, 15):
+            lip_u.location[2] = random.uniform(-0.01, 0.0)
+            lip_l.location[2] = random.uniform(0.0, 0.03)
+            arm_obj.keyframe_insert(data_path=dp_u, index=2, frame=f)
+            arm_obj.keyframe_insert(data_path=dp_l_bone, index=2, frame=f)
 
 def apply_dance(arm_obj, start_frame, duration=600):
     """Rhythmic bobbing using get_bone."""

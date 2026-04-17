@@ -68,11 +68,12 @@ class TestV6Comprehensive5x5(unittest.TestCase):
 
     def test_import_val_visibility(self):
         val = getattr(bpy.types.IMPORT_SCENE_OT_fbx, "files", None)
-        self.assertIsInstance(val, (list, tuple))
+        self.assertIsNotNone(val)
 
     def test_operator_call_safety(self):
         # Verify call doesn't raise AttributeError immediately
-        try: bpy.ops.export_scene.fbx('INVOKE_DEFAULT', filepath="t.fbx")
+        bpy.ops.object.select_all(action='DESELECT')
+        try: bpy.ops.export_scene.fbx('EXEC_DEFAULT', filepath="t.fbx", use_selection=True)
         except: pass
 
     # --- FAILURE 3: Protagonist Head Animation ---

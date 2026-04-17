@@ -379,7 +379,8 @@ def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
         if p: bone.parent = armature_data.edit_bones[p]
 
         # Body bones MUST deform for vertex skinning
-        if bname in ["Head", "Neck", "Torso", "Shoulder.L", "Shoulder.R", "Arm.L", "Arm.R", "Elbow.L", "Elbow.R", "Hip.L", "Hip.R", "Thigh.L", "Thigh.R", "Knee.L", "Knee.R"]:
+        deform_bones = ["Torso", "Neck", "Head", "Arm.L", "Elbow.L", "Hand.L", "Finger.1.L", "Finger.2.L", "Finger.3.L", "Thigh.L", "Knee.L", "Foot.L", "Toe.1.L", "Toe.2.L", "Toe.3.L", "Arm.R", "Elbow.R", "Hand.R", "Finger.1.R", "Finger.2.R", "Finger.3.R", "Thigh.R", "Knee.R", "Foot.R", "Toe.1.R", "Toe.2.R", "Toe.3.R", "Foliage"]
+        if bname in deform_bones:
             bone.use_deform = True
         else:
             bone.use_deform = False

@@ -34,17 +34,24 @@ class SylvanDirector:
             self.scene.collection.children.link(coll)
 
         # Create focal targets first
-        herb_foc = bpy.data.objects.new(config.FOCUS_HERBACEOUS, None)
+        env_coll = bpy.data.collections.get("6b_Environment") or bpy.data.collections.new("6b_Environment")
+        if env_coll.name not in self.scene.collection.children:
+            self.scene.collection.children.link(env_coll)
+            
+        herb_foc = bpy.data.objects.get(config.FOCUS_HERBACEOUS) or bpy.data.objects.new(config.FOCUS_HERBACEOUS, None)
         herb_foc.location = config.CHAR_HERBACEOUS_EYE
-        coll.objects.link(herb_foc)
-
-        arbor_foc = bpy.data.objects.new(config.FOCUS_ARBOR, None)
+        
+        arbor_foc = bpy.data.objects.get(config.FOCUS_ARBOR) or bpy.data.objects.new(config.FOCUS_ARBOR, None)
         arbor_foc.location = config.CHAR_ARBOR_EYE
-        coll.objects.link(arbor_foc)
 
-        mid_foc = bpy.data.objects.new(config.LIGHTING_MIDPOINT, None)
+        mid_foc = bpy.data.objects.get(config.LIGHTING_MIDPOINT) or bpy.data.objects.new(config.LIGHTING_MIDPOINT, None)
         mid_foc.location = (0, 0, 2.2)
-        coll.objects.link(mid_foc)
+
+        for foc in [herb_foc, arbor_foc, mid_foc]:
+            if foc.name not in env_coll.objects:
+                for mycoll in list(foc.users_collection):
+                    mycoll.objects.unlink(foc)
+                env_coll.objects.link(foc)
 
         # 1. WIDE master (v5 standard)
         self._create_camera("WIDE", (0.0, -8.0, 2.0), (math.radians(90), 0, 0), coll, lens=35)
@@ -60,9 +67,13 @@ class SylvanDirector:
         for name, data in ots_targets.items():
             cam = self._create_camera(name, data["pos"], (0,0,0), coll, lens=50)
             if cam:
-                # Align initial rotation
-                vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
-                cam.rotation_euler = vec.to_track_quat('-Z', 'Y').to_euler()
+                # Add Track To Native Constraint
+                for c in cam.constraints:
+                    if c.type == 'TRACK_TO': cam.constraints.remove(c)
+                tc = cam.constraints.new(type='TRACK_TO')
+                tc.target = herb_foc if "1" in name else arbor_foc
+                tc.track_axis = 'TRACK_NEGATIVE_Z'
+                tc.up_axis = 'UP_Y'
 
         # Set Active Camera
         if "WIDE" in bpy.data.objects:
@@ -130,8 +141,6 @@ class SylvanDirector:
 
             rig.keyframe_insert(data_path="location", frame=1)
             rig.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
-            rig.location.z = 1.5
-            rig.keyframe_insert(data_path="location", frame=config.TOTAL_FRAMES)
 
     # ------------------------------------------------------------------
     # PROTAGONIST PLACEMENT
@@ -139,6 +148,17 @@ class SylvanDirector:
 
     def setup_camera_paths(self):
         """Creates Bezier paths for each production camera matching Act IV beats."""
+        # Camera Switching in timeline marks dynamically across the 4200 frame timeline
+        for f in range(1, config.TOTAL_FRAMES, 300):
+            self._add_marker(f,       "WIDE")
+            self._add_marker(f + 100,  "OTS1")
+            self._add_marker(f + 200, "OTS2")
+
+    def _add_marker(self, frame, cam_name):
+        m = self.scene.timeline_markers.new(name=f"{cam_name}_{frame}", frame=frame)
+        c = bpy.data.objects.get(cam_name)
+        if c: m.camera = c
+
         # 1. WIDE Path (Slow cinematic drift)
         wide_pts = [
             (0.0, -16.0, 4.0),
@@ -214,16 +234,19 @@ class SylvanDirector:
         herb_rig = bpy.data.objects.get(config.CHAR_HERBACEOUS)
         arbor_rig = bpy.data.objects.get(config.CHAR_ARBOR)
         
-        if herb_rig:
+        if herb_rig and arbor_rig:
+            vec_to_arbor = mathutils.Vector(config.CHAR_ARBOR_POS) - mathutils.Vector(config.CHAR_HERBACEOUS_POS)
+            vec_to_herb  = mathutils.Vector(config.CHAR_HERBACEOUS_POS) - mathutils.Vector(config.CHAR_ARBOR_POS)
+            
             herb_rig.location = config.CHAR_HERBACEOUS_POS
-            # Reset world matrix to identity to prevent double transforms if already parented
             herb_rig.matrix_world = mathutils.Matrix.Identity(4)
             herb_rig.location = config.CHAR_HERBACEOUS_POS
+            herb_rig.rotation_euler = vec_to_arbor.to_track_quat('Y', 'Z').to_euler()
 
-        if arbor_rig:
             arbor_rig.location = config.CHAR_ARBOR_POS
             arbor_rig.matrix_world = mathutils.Matrix.Identity(4)
             arbor_rig.location = config.CHAR_ARBOR_POS
+            arbor_rig.rotation_euler = vec_to_herb.to_track_quat('Y', 'Z').to_euler()
 
         # Ensure meshes are at origin relative to their parents
         for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
@@ -231,9 +254,37 @@ class SylvanDirector:
             if body:
                 body.location = (0, 0, 0)
                 body.rotation_euler = (0, 0, 0)
+                
+        # Native Grounding Logic
+        coll = bpy.data.collections.get(config.COLL_ASSETS)
+        if coll:
+            for obj in coll.objects:
+                if obj.type == 'ARMATURE':
+                    min_z = float('inf')
+                    for child in obj.children:
+                        if child.type == 'MESH':
+                            bbox_corners = [child.matrix_world @ mathutils.Vector(corner) for corner in child.bound_box]
+                            min_z = min(min_z, min(v.z for v in bbox_corners))
+                    if min_z != float('inf'):
+                        obj.location.z -= min_z
+        bpy.context.view_layer.update()
+
+    def ensure_animation_data(self):
+        """Ensure all ensemble members have animation data."""
+        for obj in bpy.data.objects:
+            if obj.type in ['ARMATURE', 'MESH']:
+                if not obj.animation_data:
+                    obj.animation_data_create()
+                if not obj.animation_data.action:
+                    action_name = f"{obj.name}_Action"
+                    if action_name not in bpy.data.actions:
+                        bpy.data.actions.new(action_name)
+                    obj.animation_data.action = bpy.data.actions[action_name]
 
     def apply_scene_animations(self):
         """Orchestrates Act IV storyline beats and varied animations."""
+        self.ensure_animation_data()
+        
         coll = bpy.data.collections.get(config.COLL_ASSETS)
         if not coll: return
 
@@ -263,9 +314,13 @@ class SylvanDirector:
             for child in majesty.children_recursive:
                 if child.type == 'MESH':
                     child.hide_render = True
+                    child.hide_viewport = True
                     child.keyframe_insert(data_path="hide_render", frame=1)
+                    child.keyframe_insert(data_path="hide_viewport", frame=1)
                     child.hide_render = False
-                    child.keyframe_insert(data_path="hide_render", frame=300) # Appears half-way through arrival
+                    child.hide_viewport = False
+                    child.keyframe_insert(data_path="hide_render", frame=300)
+                    child.keyframe_insert(data_path="hide_viewport", frame=300)
             animation_library_v6.apply_animation_by_tag(majesty, "idle", 300, duration=2700)
             # Synchronized finale
             animation_library_v6.apply_animation_by_tag(majesty, "dance", 3000, duration=1200)
@@ -279,8 +334,10 @@ class SylvanDirector:
                     child.hide_render = False
                     child.keyframe_insert(data_path="hide_render", frame=600)
             # Performing a high-altitude "Spirit Dance"
-            aura.location.z += 5.0
-            aura.keyframe_insert(data_path="location", frame=600)
+            aura.location.z = 5.0
+            aura.keyframe_insert(data_path="location", index=2, frame=1)
+            aura.location.z = 10.0
+            aura.keyframe_insert(data_path="location", index=2, frame=600)
             animation_library_v6.apply_animation_by_tag(aura, "dance", 600, duration=2400)
             # Synchronized finale
             animation_library_v6.apply_animation_by_tag(aura, "dance", 3000, duration=1200)

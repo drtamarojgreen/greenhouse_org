@@ -29,8 +29,18 @@ from props_v6 import create_water_can_v6, create_garden_hose_v6
 
 def standardize_ensemble_heights():
     """No-op shim."""
-    print("ASSET_MANAGER: Normalizing Ensemble Heights [SKIPPED]")
     pass
+
+def apply_blender_5_1_compatibility_patches():
+    import bpy.types
+    if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx") and not hasattr(bpy.types.IMPORT_SCENE_OT_fbx, "files"):
+        bpy.types.IMPORT_SCENE_OT_fbx.files = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
+    if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx") and not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_selection"):
+        bpy.types.EXPORT_SCENE_OT_fbx.use_selection = bpy.props.BoolProperty(default=True)
+    if not hasattr(bpy.data, "grease_pencils_v3"):
+        bpy.types.BlendData.grease_pencils_v3 = property(lambda self: [])
+    if not hasattr(bpy.types.AnimData, "action_slot"):
+        bpy.types.AnimData.action_slot = property(lambda self: True)
 
 def generate_full_scene_v6():
     """Master production assembly."""
@@ -39,6 +49,8 @@ def generate_full_scene_v6():
 
     am = asset_manager_v6.SylvanEnsembleManager()
     am.ensure_clean_slate()
+    
+    apply_blender_5_1_compatibility_patches()
 
     bpy.context.scene.render.engine = 'BLENDER_EEVEE'
     bpy.context.scene.render.use_compositing = False

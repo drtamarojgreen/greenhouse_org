@@ -137,22 +137,50 @@ class SylvanEnsembleManager:
 
         if current_h > 0.001:
             scale_factor = target_height / current_h
-            rig.scale *= scale_factor
+            import mathutils
+
+            mesh_mws = {}
+            for m in meshes:
+                mesh_mws[m] = m.matrix_world.copy()
+                m.parent = None
+                m.matrix_world = mesh_mws[m]
+
+            rig.scale = (rig.scale.x * scale_factor, rig.scale.y * scale_factor, rig.scale.z * scale_factor)
+            bpy.context.view_layer.objects.active = rig
+            for obj in bpy.context.selected_objects: obj.select_set(False)
+            rig.select_set(True)
+            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+            rig.select_set(False)
+
+            for m in meshes:
+                bpy.context.view_layer.objects.active = m
+                m.scale = (m.scale.x * scale_factor, m.scale.y * scale_factor, m.scale.z * scale_factor)
+                m.select_set(True)
+                bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+                m.select_set(False)
+                
+            for m in meshes:
+                m.parent = rig
+                m.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+                m.matrix_basis = rig.matrix_world.inverted() @ m.matrix_world
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs and resets parent inverses."""
         coll = bpy.data.collections.get(self.collection_name)
         if not coll: return
 
-        # Ensure all meshes parented to rigs have Identity parent inverse to prevent scaling artifacts
+        # Ensure all meshes parented to rigs have Identity parent inverse to prevent visual scale/offset fracturing
         import mathutils
-        for obj in list(coll.objects):
+        for obj in list(bpy.data.objects):
             if obj.type == 'MESH' and obj.parent and obj.parent.type == 'ARMATURE':
-                # Force Identity matrix and reset local transforms to 0,0,0
-                obj.matrix_parent_inverse = mathutils.Matrix.Identity(4)
-                obj.location = (0, 0, 0)
-                obj.rotation_euler = (0, 0, 0)
-                obj.scale = (1, 1, 1)
+                if not obj.matrix_parent_inverse.is_identity:
+                    mw = obj.matrix_world.copy()
+                    obj.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+                    obj.matrix_basis = obj.parent.matrix_world.inverted() @ mw
+                
+            if obj.type == 'ARMATURE':
+                for pb in obj.pose.bones:
+                    pb.rotation_mode = 'XYZ'
 
         targets = []
         # Pre-populate map with all artistic names and their source components
@@ -221,7 +249,7 @@ class SylvanEnsembleManager:
                 # Default to sprite height for generic spirits
                 target_h = config.SPRITE_HEIGHT
                 if "Sylvan_Majesty" in art_name or "Radiant_Aura" in art_name:
-                    target_h = config.MAJESTIC_HEIGHT
+                    target_h = config.MAJESTIC_HEIGHT - 2.0
                 elif "Verdant_Sprite" in art_name:
                     target_h = config.SPRITE_HEIGHT
                 elif "Phoenix" in art_name:
@@ -229,7 +257,7 @@ class SylvanEnsembleManager:
 
                 self.normalize_character_scale(rig, target_h)
 
-            if mesh.type == 'MESH':
+            if mesh and mesh.type == 'MESH':
                 arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
                 arm_mod.object = rig
 
