@@ -101,9 +101,9 @@ def setup_environmental_restoration():
     coll = bpy.data.collections.get("6b_Environment")
 
     backdrops = {
-        "ChromaBackdrop_Wide": {"pos": (0, 50, 5),    "cam": (0.0, -8.0, 2.0)},
-        "ChromaBackdrop_OTS1": {"pos": (-50, -20, 5), "cam": (4.0, 3.0, 2.8)},
-        "ChromaBackdrop_OTS2": {"pos": (50, 20, 5),   "cam": (-4.0, -3.0, 2.8)},
+        "ChromaBackdrop_Wide": {"pos": config.BACKDROP_WIDE_POS, "cam": config.CAM_WIDE_TRACK_REF},
+        "ChromaBackdrop_OTS1": {"pos": config.BACKDROP_OTS1_POS, "cam": config.CAM_OTS1_TRACK_REF},
+        "ChromaBackdrop_OTS2": {"pos": config.BACKDROP_OTS2_POS, "cam": config.CAM_OTS2_TRACK_REF},
     }
 
     mat_name = "ChromaKey_V6"

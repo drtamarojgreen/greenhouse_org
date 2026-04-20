@@ -7,6 +7,7 @@ import os
 import mathutils
 import math
 import json
+import config
 
 def setup_chroma_green_backdrop():
     """
@@ -32,36 +33,33 @@ def setup_chroma_green_backdrop():
     except: pass
 
     # 2. Backdrop Geometry
-    existing_wide = bpy.data.objects.get("ChromaBackdrop_Wide")
+    existing_wide = bpy.data.objects.get("chroma_backdrop_wide")
     if existing_wide:
         return existing_wide
 
     planes = []
-    # Wide Angle Backdrop (Y=150)
-    bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 150, 5))
+    # Wide Angle Backdrop
+    bpy.ops.mesh.primitive_plane_add(size=200, location=config.BACKDROP_WIDE_POS)
     bw = bpy.context.active_object
-    bw.name = "ChromaBackdrop_Wide"
-    # Match v5 camera for tracking
-    cam_wide_loc = mathutils.Vector((0.0, -8.0, 2.0))
-    vec_wide = cam_wide_loc - mathutils.Vector((0, 150, 5))
+    bw.name = "chroma_backdrop_wide"
+    # Match tracking reference
+    vec_wide = mathutils.Vector(config.CAM_WIDE_TRACK_REF) - mathutils.Vector(config.BACKDROP_WIDE_POS)
     bw.rotation_euler = vec_wide.to_track_quat('Z', 'Y').to_euler()
     planes.append(bw)
 
     # OTS1 Backdrop
-    bpy.ops.mesh.primitive_plane_add(size=200, location=(-150, -60, 5))
+    bpy.ops.mesh.primitive_plane_add(size=200, location=config.BACKDROP_OTS1_POS)
     bo1 = bpy.context.active_object
-    bo1.name = "ChromaBackdrop_OTS1"
-    cam_ots1_loc = mathutils.Vector((4.0, 3.0, 2.8))
-    vec_o1 = cam_ots1_loc - mathutils.Vector((-150, -60, 5))
+    bo1.name = "chroma_backdrop_ots1"
+    vec_o1 = mathutils.Vector(config.CAM_OTS1_TRACK_REF) - mathutils.Vector(config.BACKDROP_OTS1_POS)
     bo1.rotation_euler = vec_o1.to_track_quat('Z', 'Y').to_euler()
     planes.append(bo1)
 
     # OTS2 Backdrop
-    bpy.ops.mesh.primitive_plane_add(size=200, location=(150, 60, 5))
+    bpy.ops.mesh.primitive_plane_add(size=200, location=config.BACKDROP_OTS2_POS)
     bo2 = bpy.context.active_object
-    bo2.name = "ChromaBackdrop_OTS2"
-    cam_ots2_loc = mathutils.Vector((-4.0, -3.0, 2.8))
-    vec_o2 = cam_ots2_loc - mathutils.Vector((150, 60, 5))
+    bo2.name = "chroma_backdrop_ots2"
+    vec_o2 = mathutils.Vector(config.CAM_OTS2_TRACK_REF) - mathutils.Vector(config.BACKDROP_OTS2_POS)
     bo2.rotation_euler = vec_o2.to_track_quat('Z', 'Y').to_euler()
     planes.append(bo2)
 

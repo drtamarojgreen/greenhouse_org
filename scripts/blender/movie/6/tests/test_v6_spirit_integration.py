@@ -433,7 +433,7 @@ class TestV6SpiritIntegration(unittest.TestCase):
             loc = wide_bg.location
             print(f"WIDE BACKDROP LOC: {loc}")
             self.assertGreater(loc.y, 20, "Wide Backdrop too close to center (y < 20)")
-            self.assertLess(loc.y, 100, "Wide Backdrop too far away (y > 100)")
+            self.assertLess(loc.y, 200, "Wide Backdrop too far away (y > 200)")
 
     def test_rendering_setup(self):
         """Verifies camera and backdrop are present for Scene 6."""

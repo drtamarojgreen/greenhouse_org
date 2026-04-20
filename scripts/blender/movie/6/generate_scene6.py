@@ -83,9 +83,13 @@ def generate_full_scene_v6():
 
     dv6 = director_v6.SylvanDirector()
     dv6.setup_cinematics() # Build standard 3-camera rig
-    dv6.setup_camera_paths() # Build dynamic paths for Act IV
     dv6.position_protagonists()
     dv6.compose_ensemble()
+
+    # Force dependency graph update after character movement but before path creation
+    bpy.context.view_layer.update()
+
+    dv6.setup_camera_paths() # Build dynamic paths for Act IV
 
     # Trigger character animations
     dv6.apply_scene_animations()

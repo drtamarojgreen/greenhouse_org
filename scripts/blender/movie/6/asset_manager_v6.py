@@ -17,6 +17,7 @@ except ImportError:
     from . import config
 
 import animation_library_v6
+import asset_normalization_functions
 from plant_humanoid_v6 import create_plant_humanoid_v6
 
 
@@ -83,86 +84,39 @@ class SylvanEnsembleManager:
         create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
 
     def normalize_character_scale(self, rig, target_height):
-        """Robustly scales rig using bone-to-bone height or robust percentile-based mesh filtering."""
+        """Unified Parent-First Scaling: Scales the Rig and lets parented meshes follow."""
         if not rig: return
-
-        # Trigger update to ensure world matrices are current (Point 142)
         bpy.context.view_layer.update()
 
-        current_h = 0
+        # 1. Measure height using density metrics
+        strategy = getattr(config, "HEIGHT_MEASURE_STRATEGY", "DENSITY")
+        metrics = asset_normalization_functions.get_normalization_metrics(rig, strategy=strategy)
+        if not metrics: return
+        
+        current_h = metrics['height']
+        if current_h < 0.001: return
+        
+        scale_factor = target_height / current_h
+        
+        # 2. Scale Rig Object (Parent-First)
+        # Because meshes are already parented at (0,0,0) local in execute_density_origin_reset,
+        # scaling the rig will scale the meshes correctly from the feet.
+        rig.scale = (rig.scale.x * scale_factor, rig.scale.y * scale_factor, rig.scale.z * scale_factor)
+        
+        # Apply scale to rig data for posing stability
+        bpy.context.view_layer.objects.active = rig
+        rig.select_set(True)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        rig.select_set(False)
 
-        # Method 1: Bone-to-Bone Height (Preferred for rigged spirits)
-        if rig.type == 'ARMATURE':
-            head = animation_library_v6.get_bone(rig, "Head")
-            foot_l = animation_library_v6.get_bone(rig, "Foot.L")
-            foot_r = animation_library_v6.get_bone(rig, "Foot.R")
-
-            if head and (foot_l or foot_r):
-                # Using PoseBone.head (local) transformed by matrix_world
-                mw = rig.matrix_world
-                h_z = (mw @ head.head).z
-                f_z = (mw @ foot_l.head).z if foot_l else (mw @ foot_r.head).z
-                current_h = abs(h_z - f_z)
-                # Standard adjustment: bone-to-bone covers approx 85% of total height
-                current_h *= 1.15
-
-        # Method 2: Robust Percentile-based Mesh Fallback (Fallback or non-Mixamo)
-        # We also calculate this and take the MAX of bone-height vs mesh-height
-        # to ensure large head-props (majestic horns/branches) are accounted for.
-
-        # Aggregate all vertices from rig's children or the object itself
-        meshes = [c for c in rig.children if c.type == 'MESH']
-        if rig.type == 'MESH': meshes.append(rig)
-        # Recursively find meshes (for Sylvan_Majesty where body might be deep)
-        for child in rig.children_recursive:
-            if child.type == 'MESH' and child not in meshes:
-                meshes.append(child)
-
-        mesh_h = 0
-        all_z = []
-        for m in meshes:
-            mw = m.matrix_world
-            for v in m.data.vertices:
-                all_z.append((mw @ v.co).z)
-
-        if all_z:
-            all_z.sort()
-            # Use 0.5% - 99.5% to filter out extreme "shards" while keeping volume
-            idx_min = int(len(all_z) * 0.005)
-            idx_max = int(len(all_z) * 0.995)
-            mesh_h = all_z[idx_max] - all_z[idx_min]
-
-        if mesh_h > current_h:
-            current_h = mesh_h
-
-        if current_h > 0.001:
-            scale_factor = target_height / current_h
-            import mathutils
-
-            mesh_mws = {}
-            for m in meshes:
-                mesh_mws[m] = m.matrix_world.copy()
-                m.parent = None
-                m.matrix_world = mesh_mws[m]
-
-            rig.scale = (rig.scale.x * scale_factor, rig.scale.y * scale_factor, rig.scale.z * scale_factor)
-            bpy.context.view_layer.objects.active = rig
-            for obj in bpy.context.selected_objects: obj.select_set(False)
-            rig.select_set(True)
-            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-            rig.select_set(False)
-
-            for m in meshes:
-                bpy.context.view_layer.objects.active = m
-                m.scale = (m.scale.x * scale_factor, m.scale.y * scale_factor, m.scale.z * scale_factor)
-                m.select_set(True)
-                bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-                m.select_set(False)
-                
-            for m in meshes:
-                m.parent = rig
-                m.matrix_parent_inverse = mathutils.Matrix.Identity(4)
-                m.matrix_basis = rig.matrix_world.inverted() @ m.matrix_world
+        # 3. Explicit Final Grounding
+        # Re-verify ground after scale just in case pivot wasn't exactly at 0
+        bpy.context.view_layer.update()
+        new_metrics = asset_normalization_functions.get_normalization_metrics(rig, strategy=strategy)
+        if new_metrics:
+            rig.location.z -= new_metrics['ground_z']
+            
+        bpy.context.view_layer.update()
 
     def renormalize_objects(self):
         """Syncs spirit meshes to rigs and resets parent inverses."""
@@ -246,10 +200,15 @@ class SylvanEnsembleManager:
             is_protag = any(p in rig.name or p in art_name for p in protags)
 
             if not is_protag:
+                # 1. PRIORITY PASS: Absolute Origin Reset (Must happen before any scale/grounding)
+                if getattr(config, "ENABLE_ORIGIN_RESET", False):
+                    asset_normalization_functions.execute_density_origin_reset(rig)
+
+                # 2. NORMALIZATION PASS: Scaling (Now targeting centered geometry)
                 # Default to sprite height for generic spirits
                 target_h = config.SPRITE_HEIGHT
                 if "Sylvan_Majesty" in art_name or "Radiant_Aura" in art_name:
-                    target_h = config.MAJESTIC_HEIGHT - 2.0
+                    target_h = config.MAJESTIC_HEIGHT
                 elif "Verdant_Sprite" in art_name:
                     target_h = config.SPRITE_HEIGHT
                 elif "Phoenix" in art_name:
@@ -257,9 +216,38 @@ class SylvanEnsembleManager:
 
                 self.normalize_character_scale(rig, target_h)
 
+                # 3. CLEANUP PASS: Statistical Culling
+                if getattr(config, "ENABLE_STATISTICAL_CULLING", False):
+                    asset_normalization_functions.execute_balanced_culling(rig, config)
+
             if mesh and mesh.type == 'MESH':
                 arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
                 arm_mod.object = rig
+                
+                # Apply Weight Polishing to ensure fluid animation and fix distortion
+                self.polish_weights(mesh, rig)
+
+    def polish_weights(self, mesh, rig):
+        """Procedurally refines vertex weights to prevent distortion and ensure fluidity."""
+        if not mesh or mesh.type != 'MESH': return
+
+        # Set active and selected for operators
+        bpy.context.view_layer.objects.active = mesh
+        mesh.select_set(True)
+        
+        # 1. Normalize All Weights: Ensure total weight per vertex = 1.0
+        # This prevents 'fighting' weights that cause spidery stretching.
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
+            
+            # 2. Iterative Smooth: Requires WEIGHT_PAINT mode to poll reliably in some versions
+            bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
+            bpy.ops.object.vertex_group_smooth(group_select_mode='ALL', factor=0.5, repeat=2)
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except Exception as e:
+            print(f"WARNING: Could not polish weights for {mesh.name}: {e}")
+            if mesh.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
 
     def repair_materials(self):
         """Ensures spirit materials are linked (minimal logic)."""

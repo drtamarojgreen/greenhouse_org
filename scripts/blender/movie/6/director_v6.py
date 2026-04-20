@@ -53,19 +53,19 @@ class SylvanDirector:
                     mycoll.objects.unlink(foc)
                 env_coll.objects.link(foc)
 
-        # 1. WIDE master (v5 standard)
-        self._create_camera("WIDE", (0.0, -8.0, 2.0), (math.radians(90), 0, 0), coll, lens=35)
+        # 1. Wide master (v5 standard)
+        self._create_camera("Wide", (0.0, -8.0, 2.0), (math.radians(90), 0, 0), coll, lens=config.LENS_WIDE)
 
-        # 2. OTS rigs (v5 targets: Herbaceous eye level at (-1.75, -0.3, 2.5), Arbor at (1.75, 0.3, 2.5))
+        # 2. Ots rigs (v5 targets: Herbaceous eye level at (-1.75, -0.3, 2.5), Arbor at (1.75, 0.3, 2.5))
         ots_targets = {
-            "OTS1":         {"pos": ( 13.5,  11.0, 6.0), "target": (-1.75, -0.3, 2.5)},
-            "OTS2":         {"pos": (-13.5, -11.0, 6.0), "target": ( 1.75,  0.3, 2.5)},
-            "OTS_Static_1": {"pos": ( 13.5,  11.0, 6.0), "target": (-1.75, -0.3, 2.5)},
-            "OTS_Static_2": {"pos": (-13.5, -11.0, 6.0), "target": ( 1.75,  0.3, 2.5)},
+            "Ots1":         {"pos": ( 13.5,  11.0, 6.0), "target": config.CHAR_HERBACEOUS_EYE},
+            "Ots2":         {"pos": (-13.5, -11.0, 6.0), "target": config.CHAR_ARBOR_EYE},
+            "Ots_Static_1": {"pos": ( 13.5,  11.0, 6.0), "target": config.CHAR_HERBACEOUS_EYE},
+            "Ots_Static_2": {"pos": (-13.5, -11.0, 6.0), "target": config.CHAR_ARBOR_EYE},
         }
 
         for name, data in ots_targets.items():
-            cam = self._create_camera(name, data["pos"], (0,0,0), coll, lens=50)
+            cam = self._create_camera(name, data["pos"], (0,0,0), coll, lens=config.LENS_OTS)
             if cam:
                 # Add Track To Native Constraint
                 for c in cam.constraints:
@@ -75,9 +75,16 @@ class SylvanDirector:
                 tc.track_axis = 'TRACK_NEGATIVE_Z'
                 tc.up_axis = 'UP_Y'
 
+        # 3. Antag rigs (Improved lateral alignment for backdrop coverage)
+        # 135mm lens provides tight cinematic portraits with guaranteed backdrop coverage
+        self._create_camera("Antag1", config.CAM_ANTAG1_POS, (0,0,0), coll, lens=config.LENS_ANTAG)
+        self._create_camera("Antag2", config.CAM_ANTAG2_POS, (0,0,0), coll, lens=config.LENS_ANTAG)
+        self._create_camera("Antag3", config.CAM_ANTAG3_POS, (0,0,0), coll, lens=config.LENS_ANTAG)
+        self._create_camera("Antag4", config.CAM_ANTAG4_POS, (0,0,0), coll, lens=config.LENS_ANTAG)
+
         # Set Active Camera
-        if "WIDE" in bpy.data.objects:
-            self.scene.camera = bpy.data.objects["WIDE"]
+        if "Wide" in bpy.data.objects:
+            self.scene.camera = bpy.data.objects["Wide"]
 
     def _create_camera(self, name, pos, rot, coll, lens=35):
         """Creates (or reuses) a camera and links it into the given collection."""
@@ -94,7 +101,7 @@ class SylvanDirector:
         obj.parent         = None
 
         # Ensure full environment visibility (Point 142)
-        cam_data.clip_end = 2000.0
+        cam_data.clip_end = getattr(config, "CAM_CLIP_END", 2000.0)
 
         if obj.name not in coll.objects:
             coll.objects.link(obj)
@@ -124,20 +131,20 @@ class SylvanDirector:
             return
 
         for i, rig in enumerate(spirits):
-            angle = (i / max(num - 1, 1)) * math.pi * 0.95 - math.pi * 0.475
-            dist  = 12.0 + (i % 2) * 3.5 # Increased distance to prevent occlusion
+            angle = (i / max(num - 1, 1)) * math.pi * config.ENSEMBLE_FAN_WIDTH - math.pi * (config.ENSEMBLE_FAN_WIDTH / 2)
+            dist  = config.ENSEMBLE_FAN_DIST + (i % 2) * config.ENSEMBLE_VAR_DIST # Increased distance to prevent occlusion
 
             rig.location = (
                 math.sin(angle) * dist,
-                6.0 + math.cos(angle) * 4.0,
+                config.ENSEMBLE_CENTER_Y + math.cos(angle) * 4.0,
                 0.0,
             )
 
-            # Correct orientation: Face the origin/protagonists
+            # Reorientation: Face the Wide Camera instead of the center
             # Import offset fix: characters are faced to their right (90 deg Z)
-            # We subtract 90 deg (pi/2) to compensate, then add the angle to face center
-            # Fine-tuned for Scene 6:
-            rig.rotation_euler[2] = (math.pi + angle) + (math.pi / 2)
+            wide_pos = mathutils.Vector(config.CAM_WIDE_POS)
+            vec_to_wide = wide_pos - rig.location
+            rig.rotation_euler[2] = vec_to_wide.to_track_quat('Y', 'Z').to_euler().z + (math.pi / 2)
 
             rig.keyframe_insert(data_path="location", frame=1)
             rig.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
@@ -148,39 +155,195 @@ class SylvanDirector:
 
     def setup_camera_paths(self):
         """Creates Bezier paths for each production camera matching Act IV beats."""
-        # Camera Switching in timeline marks dynamically across the 4200 frame timeline
-        for f in range(1, config.TOTAL_FRAMES, 300):
-            self._add_marker(f,       "WIDE")
-            self._add_marker(f + 100,  "OTS1")
-            self._add_marker(f + 200, "OTS2")
+        # 1. WIDE Path (grounded entrance perspective)
+        mid_foc = bpy.data.objects.get(config.LIGHTING_MIDPOINT)
 
-    def _add_marker(self, frame, cam_name):
-        m = self.scene.timeline_markers.new(name=f"{cam_name}_{frame}", frame=frame)
-        c = bpy.data.objects.get(cam_name)
-        if c: m.camera = c
-
-        # 1. WIDE Path (Slow cinematic drift)
+        # 1. Wide Path (Diagnostic Pop-Out)
+        # Sequence: Start -> Far (F12) -> Return Start (F15)
         wide_pts = [
-            (0.0, -16.0, 4.0),
-            (0.0, -14.0, 5.0)
+            config.CAM_WIDE_POS,
+            config.CAM_WIDE_FAR_POS,
+            config.CAM_WIDE_POS
         ]
-        self._create_path_animation("WIDE", wide_pts, config.LIGHTING_MIDPOINT)
+        self._create_path_animation("Wide", wide_pts, mid_foc, end_frame=12)
 
-        # 2. OTS1 Path (Focus Herbaceous - Orbital tension)
+        # 2. Ots1 Path (Focus Herbaceous - orbital tension)
         ots1_pts = [
             (config.CAM_OTS1_POS[0],     config.CAM_OTS1_POS[1],     config.CAM_OTS1_POS[2]),
-            (config.CAM_OTS1_POS[0] - 2, config.CAM_OTS1_POS[1] + 2, config.CAM_OTS1_POS[2] + 1)
+            (config.CAM_OTS1_POS[0] + 2.5, config.CAM_OTS1_POS[1] + 2.5, config.CAM_OTS1_POS[2] + 0.3)
         ]
-        self._create_path_animation("OTS1", ots1_pts, config.FOCUS_HERBACEOUS)
+        self._create_path_animation("Ots1", ots1_pts, config.FOCUS_HERBACEOUS)
 
-        # 3. OTS2 Path (Focus Arbor - Rising climax)
+        # 3. Ots2 Path (Focus Arbor - rising climax)
         ots2_pts = [
             (config.CAM_OTS2_POS[0],     config.CAM_OTS2_POS[1],     config.CAM_OTS2_POS[2]),
-            (config.CAM_OTS2_POS[0] + 2, config.CAM_OTS2_POS[1] - 2, config.CAM_OTS2_POS[2] + 2)
+            (config.CAM_OTS2_POS[0] - 2.5, config.CAM_OTS2_POS[1] - 2.5, config.CAM_OTS2_POS[2] + 0.3)
         ]
-        self._create_path_animation("OTS2", ots2_pts, config.FOCUS_ARBOR)
+        self._create_path_animation("Ots2", ots2_pts, config.FOCUS_ARBOR)
 
-    def _create_path_animation(self, cam_name, points, target_name):
+        # 4. Antagonist Paths (Explicitly defined in config with Dynamic Framing)
+        antag_map = {
+            "Antag1": {"rig": config.SPIRIT_ANTAGONISTS[0] + ".Rig", "focus": config.FOCUS_ANTAG1},
+            "Antag2": {"rig": config.SPIRIT_ANTAGONISTS[1] + ".Rig", "focus": config.FOCUS_ANTAG2},
+            "Antag3": {"rig": config.SPIRIT_ANTAGONISTS[2] + ".Rig", "focus": config.FOCUS_ANTAG3},
+            "Antag4": {"rig": config.SPIRIT_ANTAGONISTS[3] + ".Rig", "focus": config.FOCUS_ANTAG4}
+        }
+
+        import asset_normalization_functions
+        for cam_name, data in antag_map.items():
+            rig = bpy.data.objects.get(data["rig"])
+            
+            # Default framing constants
+            # Use Sentence_case access text (e.g. CAM_Antag1_POS)
+            base_pos = mathutils.Vector(getattr(config, f"CAM_{cam_name.upper()}_POS", (0,-5,2)))
+            
+            # Apply dynamic offset: Scale the vector from character to camera
+            dist_mult = getattr(config, "ANTAG_GLOBAL_OFFSET", 3.0)
+            foc = bpy.data.objects.get(data["focus"])
+            if foc:
+                # Use Matrix World to account for characters moved into ensemble fan
+                foc_world = foc.matrix_world.translation
+                vec_to_camera = base_pos - foc_world
+                dynamic_pos = foc_world + (vec_to_camera * dist_mult)
+            else:
+                dynamic_pos = base_pos
+
+            cam_pts = [
+                dynamic_pos,
+                (dynamic_pos[0] * 1.1, dynamic_pos[1] + 1.0, dynamic_pos[2] + 0.3) # Subtle drift
+            ]
+            self._create_path_animation(cam_name, cam_pts, data["focus"])
+
+        # 5. Cinematic Sequencing
+        self._apply_camera_sequencing()
+
+    def _apply_camera_sequencing(self):
+        """Bind specific cameras using the 40/30/30 distribution mix logic."""
+        self.scene.timeline_markers.clear()
+        
+        # 1. Diagnostic Start (Frames 1-3)
+        diags = {1: "Wide", 2: "Ots1", 3: "Ots2"}
+        for f, name in diags.items():
+            cam_obj = bpy.data.objects.get(name)
+            if cam_obj:
+                m = self.scene.timeline_markers.new(f"Diag_{name}", frame=f)
+                m.camera = cam_obj
+
+        # 2. Character Debug Cycle (Frames 4-10)
+        # Sequence: Synchronized with config.SPIRIT_ANTAGONISTS for diagnostic parity
+        debug_chars = config.SPIRIT_ANTAGONISTS + ["Phoenix_Herald", "Golden_Phoenix"]
+        
+        # Create a dynamic diagnostic camera focus if not exists (lower_case)
+        diag_focus = bpy.data.objects.get("diag_focus") or bpy.data.objects.new("diag_focus", None)
+        if "SETTINGS.ENVIRONMENT" in bpy.data.collections:
+            if diag_focus.name not in bpy.data.collections["SETTINGS.ENVIRONMENT"].objects:
+                bpy.data.collections["SETTINGS.ENVIRONMENT"].objects.link(diag_focus)
+        
+        antag_cam1 = bpy.data.objects.get("Antag1")
+        if antag_cam1:
+            # Override Track-To for diagnostic frames
+            for c in antag_cam1.constraints:
+                if c.type == 'TRACK_TO': antag_cam1.constraints.remove(c)
+            tc = antag_cam1.constraints.new(type='TRACK_TO')
+            tc.target = diag_focus
+            tc.track_axis = 'TRACK_NEGATIVE_Z'
+            tc.up_axis = 'UP_Y'
+            
+            for i, name in enumerate(debug_chars):
+                f = 4 + i
+                char_obj = bpy.data.objects.get(f"{name}.Rig") or bpy.data.objects.get(name)
+                if char_obj:
+                    # Snap focus to character head
+                    diag_focus.location = char_obj.location + mathutils.Vector((0, 0, 2.2))
+                    diag_focus.keyframe_insert(data_path="location", frame=f)
+                    
+                    # Ensure Antag1 is active for this frame
+                    m = self.scene.timeline_markers.new(f"Debug_{name}", frame=f)
+                    m.camera = antag_cam1
+        
+        # 3. Actual Movie Sequence (Frame 11 onwards)
+        frame = 11
+        total = getattr(config, "TOTAL_FRAMES", 4200)
+        
+        # 2a. Initial Wide block (500 frames)
+        wide_cam = bpy.data.objects.get("Wide")
+        if wide_cam:
+            m = self.scene.timeline_markers.new("Movie_Start_Wide", frame=frame)
+            m.camera = wide_cam
+            frame += 500
+
+        # 2b. Cycle mix
+        ots_cams = ["Ots1", "Ots2"]
+        antag_cams = ["Antag1", "Antag2", "Antag3", "Antag4"]
+        
+        cycle_count = 0
+        while frame < total:
+            # Alternating Pattern: OTS (200) -> ANTAG (100) -> WIDE (250 to keep 40%)
+            
+            # OTS segment (200 frames)
+            name = ots_cams[cycle_count % 2]
+            cam_obj = bpy.data.objects.get(name)
+            if cam_obj:
+                m = self.scene.timeline_markers.new(f"Shot_OTS_{frame}", frame=frame)
+                m.camera = cam_obj
+            frame += 200
+            
+            # ANTAG segment (100 frames)
+            name = antag_cams[cycle_count % 4]
+            cam_obj = bpy.data.objects.get(name)
+            if cam_obj:
+                m = self.scene.timeline_markers.new(f"Shot_ANTAG_{frame}", frame=frame)
+                m.camera = cam_obj
+            frame += 100
+            
+            # Wide segment (250 frames)
+            cam_obj = bpy.data.objects.get("Wide")
+            if cam_obj:
+                m = self.scene.timeline_markers.new(f"Shot_Wide_{frame}", frame=frame)
+                m.camera = cam_obj
+            frame += 250
+            
+            cycle_count += 1
+
+    def _setup_antagonist_focus_targets(self):
+        """Places focus empties on designated antagonist characters."""
+        env_coll = bpy.data.collections.get("6b_Environment")
+        if not env_coll: return
+
+        antag_map = {
+            config.FOCUS_ANTAG1: config.SPIRIT_ANTAGONISTS[0] + ".Rig",
+            config.FOCUS_ANTAG2: config.SPIRIT_ANTAGONISTS[1] + ".Rig",
+            config.FOCUS_ANTAG3: config.SPIRIT_ANTAGONISTS[2] + ".Rig",
+            config.FOCUS_ANTAG4: config.SPIRIT_ANTAGONISTS[3] + ".Rig"
+        }
+
+        for focus_name, rig_name in antag_map.items():
+            rig = bpy.data.objects.get(rig_name)
+            if not rig: continue
+
+            # Create or get focus empty
+            foc = bpy.data.objects.get(focus_name) or bpy.data.objects.new(focus_name, None)
+            if foc.name not in env_coll.objects:
+                env_coll.objects.link(foc)
+            
+            # Position at configured eye-level offset
+            foc.parent = rig
+            foc.location = (0, 0, getattr(config, "EYE_FOCAL_OFFSET", 2.2))
+            
+            # Ensure cameras track these new targets
+            # Map focus name (e.g. focus_antag3) to camera name (Antag3)
+            cam_num = "".join(filter(str.isdigit, focus_name))
+            cam_name = f"Antag{cam_num}"
+            cam = bpy.data.objects.get(cam_name)
+            if cam:
+                for c in cam.constraints:
+                    if c.type == 'TRACK_TO': cam.constraints.remove(c)
+                tc = cam.constraints.new(type='TRACK_TO')
+                tc.target = foc
+                tc.track_axis = 'TRACK_NEGATIVE_Z'
+                tc.up_axis = 'UP_Y'
+
+    def _create_path_animation(self, cam_name, points, target_name, end_frame=None):
         """Internal helper to bind a camera to a new curve path."""
         cam = bpy.data.objects.get(cam_name)
         target = bpy.data.objects.get(target_name) if isinstance(target_name, str) else target_name
@@ -203,6 +366,8 @@ class SylvanDirector:
             spline.bezier_points[i].handle_right_type = 'AUTO'
 
         # 2. Add Follow Path
+        # Clear local location so it snaps exactly to curve evaluation
+        cam.location = (0, 0, 0)
         con = cam.constraints.new(type='FOLLOW_PATH')
         con.target = curve_obj
         con.use_fixed_location = True
@@ -210,8 +375,18 @@ class SylvanDirector:
         # Animate offset factor using standard keyframes
         con.offset_factor = 0.0
         con.keyframe_insert(data_path="offset_factor", frame=1)
-        con.offset_factor = 1.0
-        con.keyframe_insert(data_path="offset_factor", frame=config.TOTAL_FRAMES)
+        
+        if len(points) > 2 and end_frame:
+            # Multi-point path (e.g. Start -> Far -> Start)
+            mid_frame = end_frame
+            con.offset_factor = 0.5
+            con.keyframe_insert(data_path="offset_factor", frame=mid_frame)
+            
+            con.offset_factor = 1.0
+            con.keyframe_insert(data_path="offset_factor", frame=mid_frame + 3) # Fast return
+        else:
+            con.offset_factor = 1.0
+            con.keyframe_insert(data_path="offset_factor", frame=end_frame if end_frame else config.TOTAL_FRAMES)
 
         # 3. Add Zoom-In Effect (Lens Animation)
         # Start at base lens (from setup_cinematics) and zoom in slightly (+15mm)
@@ -222,10 +397,13 @@ class SylvanDirector:
 
         # 4. Add Track To
         if target:
-            tcon = cam.constraints.new(type='TRACK_TO')
-            tcon.target = target
-            tcon.track_axis = 'TRACK_NEGATIVE_Z'
-            tcon.up_axis = 'UP_Y'
+            # Resolve string names into actual objects if necessary
+            target_obj = bpy.data.objects.get(target) if isinstance(target, str) else target
+            if target_obj:
+                tcon = cam.constraints.new(type='TRACK_TO')
+                tcon.target = target_obj
+                tcon.track_axis = 'TRACK_NEGATIVE_Z'
+                tcon.up_axis = 'UP_Y'
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at v5-standard production coordinates.
@@ -239,16 +417,18 @@ class SylvanDirector:
             vec_to_herb  = mathutils.Vector(config.CHAR_HERBACEOUS_POS) - mathutils.Vector(config.CHAR_ARBOR_POS)
             
             herb_rig.location = config.CHAR_HERBACEOUS_POS
-            herb_rig.matrix_world = mathutils.Matrix.Identity(4)
-            herb_rig.location = config.CHAR_HERBACEOUS_POS
             herb_rig.rotation_euler = vec_to_arbor.to_track_quat('Y', 'Z').to_euler()
+            herb_rig.rotation_euler.z += math.pi # Flip to face target (compensating for rig forward basis)
 
-            arbor_rig.location = config.CHAR_ARBOR_POS
-            arbor_rig.matrix_world = mathutils.Matrix.Identity(4)
             arbor_rig.location = config.CHAR_ARBOR_POS
             arbor_rig.rotation_euler = vec_to_herb.to_track_quat('Y', 'Z').to_euler()
+            arbor_rig.rotation_euler.z += math.pi # Flip to face target
 
         # Ensure meshes are at origin relative to their parents
+        # Finalize focus targets for antagonists
+        self._setup_antagonist_focus_targets()
+
+        # Final keyframing for protagonists
         for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
             body = bpy.data.objects.get(f"{name}_Body")
             if body:
