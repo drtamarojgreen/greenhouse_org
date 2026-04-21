@@ -1,0 +1,113 @@
+{
+  "production": {
+    "title": "Movie 7: Modular Mindscapes",
+    "total_frames": 4200,
+    "start_frame": 1,
+    "fps": 24
+  },
+  "paths": {
+    "equipment_dir": "/home/tamarojgreen/Documents/Movie_Equipment/",
+    "assets_blend": "MHD2_animation133.blend",
+    "protagonist_blend": "MHD2_characters_v5.blend",
+    "output_dir": "scripts/blender/movie/7/assets/"
+  },
+  "collections": {
+    "assets": "7a.ASSETS",
+    "environment": "7b.ENVIRONMENT",
+    "cameras": "SETTINGS.CAMERAS"
+  },
+  "ensemble": {
+    "entities": [
+      {
+        "id": "Sylvan_Majesty",
+        "source_mesh": "Mesh1_Mesh1.044",
+        "source_rig": "Armature.002",
+        "target_height": 12.0,
+        "tags": ["legendary", "forest"]
+      },
+      {
+        "id": "Radiant_Aura",
+        "source_mesh": "Mesh1_Mesh1.001",
+        "source_rig": "Armature.004",
+        "target_height": 12.0,
+        "tags": ["legendary", "spirit"]
+      },
+      {
+        "id": "Verdant_Sprite",
+        "source_mesh": "Mesh1_Mesh1.006",
+        "source_rig": "Armature.001",
+        "target_height": 10.0,
+        "tags": ["ensemble", "spirit"]
+      }
+    ],
+    "protagonists": [
+      {
+        "id": "Herbaceous",
+        "source_mesh": "Herbaceous_V5_Body",
+        "source_rig": "Herbaceous_V5_Rig",
+        "default_pos": [-1.75, -0.3, 0.0],
+        "eye_offset": 2.5
+      },
+      {
+        "id": "Arbor",
+        "source_mesh": "Arbor_V5_Body",
+        "source_rig": "Arbor_V5_Rig",
+        "default_pos": [1.75, 0.3, 0.0],
+        "eye_offset": 2.5
+      }
+    ]
+  },
+  "environment": {
+    "floor_size": 40,
+    "backdrops": [
+      {
+        "id": "Wide",
+        "pos": [0.0, 20.0, 7.5],
+        "rot": [90, 0, 0],
+        "track_ref": [0.0, 0.0, 2.0]
+      },
+      {
+        "id": "OTS1",
+        "pos": [-20.0, 0.0, 7.5],
+        "rot": [90, 0, 90],
+        "track_ref": [1.75, -0.3, 2.5]
+      }
+    ]
+  },
+  "cinematics": {
+    "cameras": [
+      {
+        "id": "Wide",
+        "type": "WIDE",
+        "pos": [0.0, -8.0, 2.0],
+        "lens": 35.0,
+        "clip_end": 2000.0
+      },
+      {
+        "id": "OTS1",
+        "type": "OTS",
+        "pos": [13.5, 11.0, 6.0],
+        "target": "Herbaceous",
+        "lens": 50.0
+      }
+    ],
+    "active_camera": "Wide"
+  },
+  "lighting": {
+    "rim": {
+      "energy": 1200.0,
+      "color": [1.0, 0.9, 0.8],
+      "angle": 40
+    },
+    "key": {
+      "energy": 1000.0,
+      "color": [0.95, 1.0, 1.0],
+      "angle": 45
+    }
+  },
+  "normalization": {
+    "strategy": "DENSITY",
+    "enable_culling": true,
+    "enable_origin_reset": true
+  }
+}
