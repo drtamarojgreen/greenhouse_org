@@ -1,10 +1,7 @@
 import bpy
 import mathutils
 import os
-try:
-    import config
-except ImportError:
-    from . import config
+import config
 
 class AssetManager:
     """Abstract Asset Manager synchronized with Movie 6 standards."""

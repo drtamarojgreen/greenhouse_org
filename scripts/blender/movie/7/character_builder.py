@@ -1,13 +1,8 @@
 import bpy
 import os
-try:
-    from config import config
-    from registry import registry
-    import components
-except ImportError:
-    from .config import config
-    from .registry import registry
-    from . import components
+import config
+import registry
+import components
 
 class Character:
     """Modular, strictly OO Character."""
@@ -17,10 +12,10 @@ class Character:
         self.rig = None
         self.mesh = None
         c_cfg = cfg.get("components", {})
-        self.modeler = self._resolve(registry.get_modeling, c_cfg.get("modeling"))
-        self.rigger = self._resolve(registry.get_rigging, c_cfg.get("rigging"))
-        self.shader = self._resolve(registry.get_shading, c_cfg.get("shading"))
-        self.animator = self._resolve(registry.get_animation, c_cfg.get("animation"))
+        self.modeler = self._resolve(registry.registry.get_modeling, c_cfg.get("modeling"))
+        self.rigger = self._resolve(registry.registry.get_rigging, c_cfg.get("rigging"))
+        self.shader = self._resolve(registry.registry.get_shading, c_cfg.get("shading"))
+        self.animator = self._resolve(registry.registry.get_animation, c_cfg.get("animation"))
 
     def _resolve(self, registry_func, name):
         cls = registry_func(name) if name else None
@@ -35,7 +30,6 @@ class DynamicCharacter(Character):
     def build(self, manager):
         params = self.cfg.get("parameters", {})
         if self.rigger: self.rig = self.rigger.build_rig(self.char_id, params)
-        # Pass rig to modeler so it can parent facial props correctly
         if self.modeler: self.mesh = self.modeler.build_mesh(self.char_id, params, rig=self.rig)
         if self.mesh and self.rig:
             self.mesh.parent = self.rig
@@ -47,7 +41,7 @@ class DynamicCharacter(Character):
 class MeshCharacter(Character):
     def build(self, manager):
         targets = [t for t in [self.cfg.get("source_mesh"), self.cfg.get("source_rig")] if t]
-        objs = manager.link_assets(config.assets_blend, targets)
+        objs = manager.link_assets(config.config.assets_blend, targets)
         for obj in objs:
             if obj.type == 'ARMATURE': self.rig = obj; manager.apply_standard_renaming(obj, self.char_id, is_rig=True)
             elif obj.type == 'MESH': self.mesh = obj; manager.apply_standard_renaming(obj, self.char_id, is_rig=False)

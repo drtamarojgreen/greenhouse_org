@@ -47,7 +47,6 @@ class PlantModeler(Modeler):
         for p in parts: p.add_to_bmesh(bm, dlayer, mesh_obj)
         HeadSphere(hr, (0,0,hcz), "Head").add_to_bmesh(bm, dlayer, mesh_obj)
 
-        # Foliage Cluster logic integrated directly
         f_cfg = params.get("foliage", {}); h_vg = mesh_obj.vertex_groups.get("Head")
         for i in range(f_cfg.get("density", 50)):
             angle = (i/f_cfg.get("density", 50))*math.pi*2; tilt = random.uniform(0.2, 0.8)
@@ -58,7 +57,9 @@ class PlantModeler(Modeler):
                 for v in b_ret['verts']: v[dlayer][h_vg.index] = 1.0
 
         bm.to_mesh(mesh_data); bm.free()
-        if rig: self._create_facial_props(char_id, mesh_obj, rig)
+        if rig:
+            mesh_obj.parent = rig
+            self._create_facial_props(char_id, mesh_obj, rig)
         return mesh_obj
 
     def _create_facial_props(self, char_id, body_mesh, rig):
@@ -88,4 +89,4 @@ class PlantModeler(Modeler):
             o.parent, o.parent_type, o.parent_bone, o.location = rig, 'BONE', "Head", (0.18, -0.38, 0.08)
             bm = bmesh.new(); bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.015); bm.to_mesh(m); bm.free()
 
-registry.register_modeling("PlantModeler", PlantModeler)
+registry.registry.register_modeling("PlantModeler", PlantModeler)

@@ -1,19 +1,16 @@
 import bpy
 import math
 try:
-    from rigging.base import Rigger, RigStructure
+    from base import Rigger, RigStructure
     from registry import registry
 except ImportError:
-    from .base import Rigger, RigStructure
+    from ..base import Rigger, RigStructure
     from ..registry import registry
 
 class PlantRigStructure(RigStructure):
     def __init__(self, char_id, th, hr, nh):
-        super().__init__(char_id)
-        hcz = th + nh + hr
-        self.add_bone("Torso", (0,0,0), (0,0,th))
-        self.add_bone("Neck", (0,0,th), (0,0,th+nh), parent="Torso")
-        self.add_bone("Head", (0,0,th+nh), (0,0,th+nh+hr*2), parent="Neck")
+        super().__init__(char_id); hcz = th + nh + hr
+        self.add_bone("Torso", (0,0,0), (0,0,th)); self.add_bone("Neck", (0,0,th), (0,0,th+nh), parent="Torso"); self.add_bone("Head", (0,0,th+nh), (0,0,th+nh+hr*2), parent="Neck")
         for side, sx in [("L", 1), ("R", -1)]:
             self.add_bone(f"Arm.{side}", (0.4*sx, 0, th*0.9), (0.4*sx, 0, th*0.9-0.4), parent="Torso")
             self.add_bone(f"Elbow.{side}", (0.4*sx, 0, th*0.9-0.4), (0.4*sx, 0, th*0.9-0.8), parent=f"Arm.{side}")
@@ -32,9 +29,7 @@ class PlantRigStructure(RigStructure):
 
 class PlantRigger(Rigger):
     def build_rig(self, char_id, params):
-        dims = params.get("dimensions", {})
-        th, hr, nh = dims.get("torso_h", 1.5), dims.get("head_r", 0.4), dims.get("neck_h", 0.2)
-        struct = PlantRigStructure(char_id, th, hr, nh)
-        return struct.build()
+        dims = params.get("dimensions", {}); th, hr, nh = dims.get("torso_h", 1.5), dims.get("head_r", 0.4), dims.get("neck_h", 0.2)
+        return PlantRigStructure(char_id, th, hr, nh).build()
 
-registry.register_rigging("PlantRigger", PlantRigger)
+registry.registry.register_rigging("PlantRigger", PlantRigger)
