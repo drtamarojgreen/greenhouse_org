@@ -20,6 +20,7 @@
     "entities": [
       {
         "id": "Sylvan_Majesty",
+        "type": "MESH",
         "source_mesh": "Mesh1_Mesh1.044",
         "source_rig": "Armature.002",
         "target_height": 12.0,
@@ -27,6 +28,7 @@
       },
       {
         "id": "Radiant_Aura",
+        "type": "MESH",
         "source_mesh": "Mesh1_Mesh1.001",
         "source_rig": "Armature.004",
         "target_height": 12.0,
@@ -34,24 +36,31 @@
       },
       {
         "id": "Verdant_Sprite",
+        "type": "MESH",
         "source_mesh": "Mesh1_Mesh1.006",
         "source_rig": "Armature.001",
         "target_height": 10.0,
         "tags": ["ensemble", "spirit"]
-      }
-    ],
-    "protagonists": [
+      },
       {
         "id": "Herbaceous",
-        "source_mesh": "Herbaceous_V5_Body",
-        "source_rig": "Herbaceous_V5_Rig",
+        "type": "DYNAMIC",
+        "builder": "PlantHumanoid",
+        "parameters": {
+          "bark_color": [0.1, 0.15, 0.05],
+          "leaf_color": [0.6, 0.4, 0.8]
+        },
         "default_pos": [-1.75, -0.3, 0.0],
         "eye_offset": 2.5
       },
       {
         "id": "Arbor",
-        "source_mesh": "Arbor_V5_Body",
-        "source_rig": "Arbor_V5_Rig",
+        "type": "DYNAMIC",
+        "builder": "PlantHumanoid",
+        "parameters": {
+          "bark_color": [0.2, 0.12, 0.08],
+          "leaf_color": [0.2, 0.6, 0.1]
+        },
         "default_pos": [1.75, 0.3, 0.0],
         "eye_offset": 2.5
       }
