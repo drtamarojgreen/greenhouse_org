@@ -12,7 +12,7 @@ from registry import registry
 import components
 
 class Character:
-    """Modular, strictly OO Character."""
+    """Modular, strictly OO Character with robust component resolution."""
     def __init__(self, char_id, cfg):
         self.char_id = char_id
         self.cfg = cfg
@@ -20,14 +20,22 @@ class Character:
         self.mesh = None
 
         c_cfg = cfg.get("components", {})
-        self.modeler = self._resolve(registry.get_modeling, c_cfg.get("modeling"))
-        self.rigger = self._resolve(registry.get_rigging, c_cfg.get("rigging"))
-        self.shader = self._resolve(registry.get_shading, c_cfg.get("shading"))
-        self.animator = self._resolve(registry.get_animation, c_cfg.get("animation"))
+        self.modeler = self._resolve(registry.get_modeling, c_cfg.get("modeling"), "Modeling")
+        self.rigger = self._resolve(registry.get_rigging, c_cfg.get("rigging"), "Rigging")
+        self.shader = self._resolve(registry.get_shading, c_cfg.get("shading"), "Shading")
+        self.animator = self._resolve(registry.get_animation, c_cfg.get("animation"), "Animation")
 
-    def _resolve(self, registry_func, name):
-        cls = registry_func(name) if name else None
-        return cls() if cls else None
+    def _resolve(self, registry_func, name, type_label):
+        if not name: return None
+        cls = registry_func(name)
+        if not cls:
+            print(f"ERROR: Could not resolve {type_label} component '{name}' for character '{self.char_id}'")
+            return None
+        try:
+            return cls()
+        except Exception as e:
+            print(f"ERROR: Failed to instantiate {type_label} component '{name}' for '{self.char_id}': {e}")
+            return None
 
     def build(self, manager): raise NotImplementedError()
 
@@ -59,4 +67,6 @@ class MeshCharacter(Character):
 class CharacterBuilder:
     @staticmethod
     def create(char_id, cfg):
-        return DynamicCharacter(char_id, cfg) if cfg.get("type") == "DYNAMIC" else MeshCharacter(char_id, cfg)
+        ctype = cfg.get("type", "MESH")
+        if ctype == "DYNAMIC": return DynamicCharacter(char_id, cfg)
+        return MeshCharacter(char_id, cfg)
