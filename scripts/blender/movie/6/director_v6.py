@@ -81,6 +81,9 @@ class SylvanDirector:
         self._create_camera("Antag2", config.CAM_ANTAG2_POS, (0,0,0), coll, lens=config.LENS_ANTAG)
         self._create_camera("Antag3", config.CAM_ANTAG3_POS, (0,0,0), coll, lens=config.LENS_ANTAG)
         self._create_camera("Antag4", config.CAM_ANTAG4_POS, (0,0,0), coll, lens=config.LENS_ANTAG)
+        
+        # 4. Exterior Master (v6 extended)
+        self._create_camera("Exterior", config.CAM_EXTERIOR_PATH[1], (0,0,0), coll, lens=50.0)
 
         # Set Active Camera
         if "Wide" in bpy.data.objects:
@@ -214,96 +217,100 @@ class SylvanDirector:
             ]
             self._create_path_animation(cam_name, cam_pts, data["focus"])
 
+        # 5. Exterior Path — 3-point move used for intro (F1-3) and outro (F4151-4200)
+        ext_foc = bpy.data.objects.get("focus_exterior") or bpy.data.objects.new("focus_exterior", None)
+        if "6b_Environment" in bpy.data.collections:
+            if ext_foc.name not in bpy.data.collections["6b_Environment"].objects:
+                bpy.data.collections["6b_Environment"].objects.link(ext_foc)
+        ext_foc.location = (0, 0, 5)  # Central landmark (greenhouse centroid)
+
+        # Intro sweep: F1-3
+        self._create_path_animation("Exterior", config.CAM_EXTERIOR_PATH, ext_foc, end_frame=3)
+        # Outro sweep: F4151-4200 — repeat the same 3-point arc
+        self._create_path_animation("Exterior", config.CAM_EXTERIOR_PATH, ext_foc,
+                                    start_frame=4151, end_frame=4200)
+
         # 5. Cinematic Sequencing
         self._apply_camera_sequencing()
 
     def _apply_camera_sequencing(self):
-        """Bind specific cameras using the 40/30/30 distribution mix logic."""
+        """Production timeline:
+          F1   – F3   : Exterior camera intro sweep
+          F4   – F4150: Main body — Wide / OTS / Antag cycling
+          F4151– F4200: Exterior camera outro sweep
+        """
         self.scene.timeline_markers.clear()
-        
-        # 1. Diagnostic Start (Frames 1-3)
-        diags = {1: "Wide", 2: "Ots1", 3: "Ots2"}
-        for f, name in diags.items():
-            cam_obj = bpy.data.objects.get(name)
-            if cam_obj:
-                m = self.scene.timeline_markers.new(f"Diag_{name}", frame=f)
-                m.camera = cam_obj
+        total       = getattr(config, "TOTAL_FRAMES", 4200)
+        outro_start = total - 50   # F4151
 
-        # 2. Character Debug Cycle (Frames 4-10)
-        # Sequence: Synchronized with config.SPIRIT_ANTAGONISTS for diagnostic parity
-        debug_chars = config.SPIRIT_ANTAGONISTS + ["Phoenix_Herald", "Golden_Phoenix"]
-        
-        # Create a dynamic diagnostic camera focus if not exists (lower_case)
-        diag_focus = bpy.data.objects.get("diag_focus") or bpy.data.objects.new("diag_focus", None)
-        if "SETTINGS.ENVIRONMENT" in bpy.data.collections:
-            if diag_focus.name not in bpy.data.collections["SETTINGS.ENVIRONMENT"].objects:
-                bpy.data.collections["SETTINGS.ENVIRONMENT"].objects.link(diag_focus)
-        
-        antag_cam1 = bpy.data.objects.get("Antag1")
-        if antag_cam1:
-            # Override Track-To for diagnostic frames
-            for c in antag_cam1.constraints:
-                if c.type == 'TRACK_TO': antag_cam1.constraints.remove(c)
-            tc = antag_cam1.constraints.new(type='TRACK_TO')
-            tc.target = diag_focus
-            tc.track_axis = 'TRACK_NEGATIVE_Z'
-            tc.up_axis = 'UP_Y'
-            
-            for i, name in enumerate(debug_chars):
-                f = 4 + i
-                char_obj = bpy.data.objects.get(f"{name}.Rig") or bpy.data.objects.get(name)
-                if char_obj:
-                    # Snap focus to character head
-                    diag_focus.location = char_obj.location + mathutils.Vector((0, 0, 2.2))
-                    diag_focus.keyframe_insert(data_path="location", frame=f)
-                    
-                    # Ensure Antag1 is active for this frame
-                    m = self.scene.timeline_markers.new(f"Debug_{name}", frame=f)
-                    m.camera = antag_cam1
-        
-        # 3. Actual Movie Sequence (Frame 11 onwards)
-        frame = 11
-        total = getattr(config, "TOTAL_FRAMES", 4200)
-        
-        # 2a. Initial Wide block (500 frames)
+        # ── INTRO: Exterior sweep F1-3 ───────────────────────────────────────
+        ext_cam = bpy.data.objects.get("Exterior")
+        if ext_cam:
+            for f in range(1, 4):
+                m = self.scene.timeline_markers.new(f"Exterior_Intro_{f}", frame=f)
+                m.camera = ext_cam
+
+        # ── MAIN BODY: F4 – F4150 ────────────────────────────────────────────
+        frame       = 4
+        ots_cams    = ["Ots1", "Ots2"]
+        antag_cams  = ["Antag1", "Antag2", "Antag3", "Antag4"]
+        cycle_count = 0
+
+        # Open with a Wide establishing shot (500 frames)
         wide_cam = bpy.data.objects.get("Wide")
         if wide_cam:
-            m = self.scene.timeline_markers.new("Movie_Start_Wide", frame=frame)
+            m = self.scene.timeline_markers.new("Main_Wide_Open", frame=frame)
             m.camera = wide_cam
             frame += 500
 
-        # 2b. Cycle mix
-        ots_cams = ["Ots1", "Ots2"]
-        antag_cams = ["Antag1", "Antag2", "Antag3", "Antag4"]
-        
-        cycle_count = 0
-        while frame < total:
-            # Alternating Pattern: OTS (200) -> ANTAG (100) -> WIDE (250 to keep 40%)
-            
-            # OTS segment (200 frames)
-            name = ots_cams[cycle_count % 2]
+        # Alternating OTS → ANTAG → WIDE cycle until the outro window
+        while frame < outro_start:
+            remaining = outro_start - frame
+
+            # OTS (200 frames)
+            if remaining <= 0:
+                break
+            name    = ots_cams[cycle_count % 2]
             cam_obj = bpy.data.objects.get(name)
             if cam_obj:
                 m = self.scene.timeline_markers.new(f"Shot_OTS_{frame}", frame=frame)
                 m.camera = cam_obj
-            frame += 200
-            
-            # ANTAG segment (100 frames)
-            name = antag_cams[cycle_count % 4]
+            frame += min(200, remaining)
+
+            remaining = outro_start - frame
+
+            # ANTAG (100 frames)
+            if remaining <= 0:
+                break
+            name    = antag_cams[cycle_count % 4]
             cam_obj = bpy.data.objects.get(name)
             if cam_obj:
-                m = self.scene.timeline_markers.new(f"Shot_ANTAG_{frame}", frame=frame)
+                m = self.scene.timeline_markers.new(f"Shot_Antag_{frame}", frame=frame)
                 m.camera = cam_obj
-            frame += 100
-            
-            # Wide segment (250 frames)
+            frame += min(100, remaining)
+
+            remaining = outro_start - frame
+
+            # WIDE (250 frames)
+            if remaining <= 0:
+                break
             cam_obj = bpy.data.objects.get("Wide")
             if cam_obj:
                 m = self.scene.timeline_markers.new(f"Shot_Wide_{frame}", frame=frame)
                 m.camera = cam_obj
-            frame += 250
-            
+            frame += min(250, remaining)
+
             cycle_count += 1
+
+        # ── OUTRO: Exterior sweep F4151-4200 ─────────────────────────────────
+        if ext_cam:
+            m = self.scene.timeline_markers.new("Exterior_Outro", frame=outro_start)
+            m.camera = ext_cam
+
+        # Ensure scene end frame is correct
+        self.scene.frame_end = total
+        self.scene.frame_start = 1
+        print(f"Sequencing complete: {len(self.scene.timeline_markers)} markers, {total} frames.")
 
     def _setup_antagonist_focus_targets(self):
         """Places focus empties on designated antagonist characters."""
@@ -343,67 +350,68 @@ class SylvanDirector:
                 tc.track_axis = 'TRACK_NEGATIVE_Z'
                 tc.up_axis = 'UP_Y'
 
-    def _create_path_animation(self, cam_name, points, target_name, end_frame=None):
-        """Internal helper to bind a camera to a new curve path."""
+    def _create_path_animation(self, cam_name, points, target_name,
+                               end_frame=None, start_frame=1):
+        """Internal helper to bind a camera to a new curve path.
+
+        start_frame / end_frame define the keyframe window for the path sweep.
+        Multiple calls for the same camera append additional keyframes on the
+        existing Follow Path constraint so the camera re-uses the same curve.
+        """
         cam = bpy.data.objects.get(cam_name)
         target = bpy.data.objects.get(target_name) if isinstance(target_name, str) else target_name
         if not cam: return
 
-        # 1. Create Curve
-        curve_data = bpy.data.curves.new(name=f"Path_{cam_name}", type='CURVE')
-        curve_data.dimensions = '3D'
-        curve_obj = bpy.data.objects.new(f"Path_{cam_name}", curve_data)
+        # Resolve end_frame default
+        if not end_frame:
+            end_frame = getattr(config, "TOTAL_FRAMES", 4200)
 
-        coll = bpy.data.collections.get(config.COLL_CAMERAS)
-        if coll: coll.objects.link(curve_obj)
-        else: bpy.context.scene.collection.objects.link(curve_obj)
+        # --- Curve (create once per cam_name; reuse if it already exists) ---
+        path_name  = f"Path_{cam_name}"
+        curve_obj  = bpy.data.objects.get(path_name)
+        if not curve_obj:
+            curve_data = bpy.data.curves.new(name=path_name, type='CURVE')
+            curve_data.dimensions = '3D'
+            curve_obj = bpy.data.objects.new(path_name, curve_data)
+            coll = bpy.data.collections.get(config.COLL_CAMERAS)
+            if coll: coll.objects.link(curve_obj)
+            else:    bpy.context.scene.collection.objects.link(curve_obj)
 
-        spline = curve_data.splines.new('BEZIER')
-        spline.bezier_points.add(len(points) - 1)
-        for i, pt in enumerate(points):
-            spline.bezier_points[i].co = pt
-            spline.bezier_points[i].handle_left_type = 'AUTO'
-            spline.bezier_points[i].handle_right_type = 'AUTO'
+            spline = curve_data.splines.new('BEZIER')
+            spline.bezier_points.add(len(points) - 1)
+            for i, pt in enumerate(points):
+                spline.bezier_points[i].co = pt
+                spline.bezier_points[i].handle_left_type = 'AUTO'
+                spline.bezier_points[i].handle_right_type = 'AUTO'
 
-        # 2. Add Follow Path
-        # Clear local location so it snaps exactly to curve evaluation
-        cam.location = (0, 0, 0)
-        con = cam.constraints.new(type='FOLLOW_PATH')
-        con.target = curve_obj
-        con.use_fixed_location = True
+        # --- Follow Path constraint (create once, reuse after) ---
+        con = next((c for c in cam.constraints if c.type == 'FOLLOW_PATH'), None)
+        if not con:
+            cam.location = (0, 0, 0)
+            con = cam.constraints.new(type='FOLLOW_PATH')
+            con.target = curve_obj
+            con.use_fixed_location = True
 
-        # Animate offset factor using standard keyframes
+        # --- Keyframe the sweep across [start_frame .. end_frame] ---
         con.offset_factor = 0.0
-        con.keyframe_insert(data_path="offset_factor", frame=1)
-        
-        if len(points) > 2 and end_frame:
-            # Multi-point path (e.g. Start -> Far -> Start)
-            mid_frame = end_frame
+        con.keyframe_insert(data_path="offset_factor", frame=start_frame)
+        if len(points) > 2:
+            mid_frame = (start_frame + end_frame) // 2
             con.offset_factor = 0.5
             con.keyframe_insert(data_path="offset_factor", frame=mid_frame)
-            
-            con.offset_factor = 1.0
-            con.keyframe_insert(data_path="offset_factor", frame=mid_frame + 3) # Fast return
-        else:
-            con.offset_factor = 1.0
-            con.keyframe_insert(data_path="offset_factor", frame=end_frame if end_frame else config.TOTAL_FRAMES)
+        con.offset_factor = 1.0
+        con.keyframe_insert(data_path="offset_factor", frame=end_frame)
 
-        # 3. Add Zoom-In Effect (Lens Animation)
-        # Start at base lens (from setup_cinematics) and zoom in slightly (+15mm)
-        base_lens = cam.data.lens
-        cam.data.keyframe_insert(data_path="lens", frame=1)
-        cam.data.lens = base_lens + 15.0
-        cam.data.keyframe_insert(data_path="lens", frame=config.TOTAL_FRAMES)
-
-        # 4. Add Track To
+        # --- Track To ---
         if target:
-            # Resolve string names into actual objects if necessary
             target_obj = bpy.data.objects.get(target) if isinstance(target, str) else target
             if target_obj:
-                tcon = cam.constraints.new(type='TRACK_TO')
-                tcon.target = target_obj
-                tcon.track_axis = 'TRACK_NEGATIVE_Z'
-                tcon.up_axis = 'UP_Y'
+                if not any(c.type == 'TRACK_TO' for c in cam.constraints):
+                    tcon = cam.constraints.new(type='TRACK_TO')
+                    tcon.target = target_obj
+                    tcon.track_axis = 'TRACK_NEGATIVE_Z'
+                    tcon.up_axis = 'UP_Y'
+
 
     def position_protagonists(self):
         """Places Herbaceous and Arbor at v5-standard production coordinates.
