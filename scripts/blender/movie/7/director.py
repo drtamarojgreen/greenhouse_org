@@ -4,18 +4,16 @@ import mathutils
 from .config import config
 
 class Director:
-    """Abstract Director synchronized with Movie 6 standards."""
+    """Abstract Director for Movie 7, implementing Movie 6 cinematic standards."""
 
     def __init__(self):
         self.coll_cameras = config.coll_cameras
         self.coll_env = config.coll_environment
 
     def setup_cameras(self):
-        """Standardized camera setup from modular configuration."""
+        """Standardized camera setup with tracking and path constraints."""
         coll = self._ensure_collection(self.coll_cameras)
-        camera_configs = config.get("cinematics.cameras", [])
-
-        for cam_cfg in camera_configs:
+        for cam_cfg in config.get("cinematics.cameras", []):
             cam_id = cam_cfg["id"]
             cam_data = bpy.data.cameras.new(cam_id)
             cam_data.lens = cam_cfg.get("lens", 35.0)
@@ -23,14 +21,11 @@ class Director:
 
             cam_obj = bpy.data.objects.get(cam_id) or bpy.data.objects.new(cam_id, cam_data)
             cam_obj.location = cam_cfg["pos"]
-            if cam_obj.name not in coll.objects:
-                coll.objects.link(cam_obj)
+            if cam_obj.name not in coll.objects: coll.objects.link(cam_obj)
 
-            # Setup Track To if target defined
             target_id = cam_cfg.get("target")
             if target_id:
-                # We expect targets to be defined as focus objects or characters
-                target_obj = bpy.data.objects.get(f"focus_{target_id.lower()}") or bpy.data.objects.get(f"{target_id}.Rig")
+                target_obj = bpy.data.objects.get(f"{target_id}.Rig") or bpy.data.objects.get(f"focus_{target_id.lower()}")
                 if target_obj:
                     con = next((c for c in cam_obj.constraints if c.type == 'TRACK_TO'), None) or cam_obj.constraints.new(type='TRACK_TO')
                     con.target = target_obj
@@ -41,44 +36,46 @@ class Director:
                 bpy.context.scene.camera = cam_obj
 
     def setup_lighting(self):
-        """Standardized lighting setup from modular configuration."""
+        """Adds 3-point lighting rigs defined in configuration."""
         coll = self._ensure_collection(self.coll_env)
-        lighting_cfg = config.get("lighting", {})
-
-        for light_id, cfg in lighting_cfg.items():
+        for light_id, cfg in config.get("lighting", {}).items():
             light_data = bpy.data.lights.new(name=light_id, type='SUN')
             light_data.energy = cfg.get("energy", 1.0)
             light_data.color = cfg.get("color", (1.0, 1.0, 1.0))
-
             light_obj = bpy.data.objects.get(light_id) or bpy.data.objects.new(name=light_id, object_data=light_data)
-            if light_obj.name not in coll.objects:
-                coll.objects.link(light_obj)
-
-            # Rotation based on angle (elevation, tilt, azimuth)
-            # Defaulting to SUN_ROT_DEGREES pattern if angle is simplified
+            if light_obj.name not in coll.objects: coll.objects.link(light_obj)
             angle = cfg.get("angle", 45)
             light_obj.rotation_euler = (math.radians(angle), 0, math.radians(-40))
+
+    def setup_environment(self):
+        """Restores the chroma-key environment using the 3-plane architecture."""
+        coll = self._ensure_collection(self.coll_env)
+        for bd in config.get("environment.backdrops", []):
+            bd_name = f"Backdrop_{bd['id']}"
+            if bd_name not in bpy.data.objects:
+                bpy.ops.mesh.primitive_plane_add(size=config.get("environment.floor_size", 40), location=bd["pos"])
+                plane = bpy.context.active_object
+                plane.name = bd_name
+                for c in plane.users_collection: c.objects.unlink(plane)
+                coll.objects.link(plane)
+                plane.rotation_euler = [math.radians(r) for r in bd["rot"]]
+
+    def apply_fan_layout(self, characters, center_y=6.0, fan_dist=12.0, fan_width=0.95):
+        """Cinematically positions characters in a fan arrangement (Movie 6 Parity)."""
+        num = len(characters)
+        if num == 0: return
+        for i, char in enumerate(characters):
+            if not char.rig: continue
+            angle = (i / max(num - 1, 1)) * math.pi * fan_width - math.pi * (fan_width / 2)
+            dist = fan_dist + (i % 2) * 3.5
+            char.rig.location = (math.sin(angle) * dist, center_y + math.cos(angle) * 4.0, 0.0)
+            # Face wide camera
+            wide_pos = mathutils.Vector(config.get("cinematics.cameras[0].pos", (0,-8,2)))
+            vec = wide_pos - char.rig.location
+            char.rig.rotation_euler[2] = vec.to_track_quat('Y', 'Z').to_euler().z + (math.pi / 2)
 
     def _ensure_collection(self, name):
         coll = bpy.data.collections.get(name) or bpy.data.collections.new(name)
         if coll.name not in bpy.context.scene.collection.children:
             bpy.context.scene.collection.children.link(coll)
         return coll
-
-    def setup_environment(self):
-        """Standardized environment restoration matching Movie 6 architecture."""
-        coll = self._ensure_collection(self.coll_env)
-        backdrops = config.get("environment.backdrops", [])
-
-        for bd in backdrops:
-            bd_name = f"Backdrop_{bd['id']}"
-            if bd_name not in bpy.data.objects:
-                bpy.ops.mesh.primitive_plane_add(size=config.get("environment.floor_size", 40), location=bd["pos"])
-                plane = bpy.context.active_object
-                plane.name = bd_name
-
-                # Unlink from default and link to env collection
-                for c in plane.users_collection: c.objects.unlink(plane)
-                coll.objects.link(plane)
-
-                plane.rotation_euler = [math.radians(r) for r in bd["rot"]]
