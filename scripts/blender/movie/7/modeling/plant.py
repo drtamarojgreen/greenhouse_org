@@ -11,7 +11,7 @@ M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M7_ROOT not in sys.path:
     sys.path.insert(0, M7_ROOT)
 
-import base
+from base import Modeler
 from registry import registry
 
 class OrganicPart:
@@ -35,7 +35,7 @@ class HeadSphere:
         ret = bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=self.radius, matrix=mathutils.Matrix.Translation(self.location))
         for v in ret['verts']: v[dlayer][vg.index] = 1.0; v.smooth = True
 
-class PlantModeler(base.Modeler):
+class PlantModeler(Modeler):
     def build_mesh(self, char_id, params, rig=None):
         mesh_data = bpy.data.meshes.new(f"{char_id}_MeshData")
         mesh_obj = bpy.data.objects.new(f"{char_id}.Body", mesh_data); bpy.context.scene.collection.objects.link(mesh_obj)

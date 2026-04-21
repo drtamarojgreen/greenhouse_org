@@ -8,10 +8,10 @@ M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M7_ROOT not in sys.path:
     sys.path.insert(0, M7_ROOT)
 
-import base
+from base import Rigger, RigStructure
 from registry import registry
 
-class PlantRigStructure(base.RigStructure):
+class PlantRigStructure(RigStructure):
     def __init__(self, char_id, th, hr, nh):
         super().__init__(char_id); hcz = th + nh + hr
         self.add_bone("Torso", (0,0,0), (0,0,th)); self.add_bone("Neck", (0,0,th), (0,0,th+nh), parent="Torso")
@@ -32,9 +32,9 @@ class PlantRigStructure(base.RigStructure):
         self.add_bone("Lip.Lower", (0, -hr*0.95, hcz-hr*0.24), (0, -hr*1.05, hcz-hr*0.24), parent="Head", use_deform=False)
         self.add_bone("Chin", (0, -hr*0.38, hcz-hr*0.8), (0, -hr*0.38, hcz-hr*0.9), parent="Head", use_deform=False)
 
-class PlantRigger(base.Rigger):
+class PlantRigger(Rigger):
     def build_rig(self, char_id, params):
         dims = params.get("dimensions", {}); th, hr, nh = dims.get("torso_h", 1.5), dims.get("head_r", 0.4), dims.get("neck_h", 0.2)
         return PlantRigStructure(char_id, th, hr, nh).build()
 
-registry.registry.register_rigging("PlantRigger", PlantRigger)
+registry.register_rigging("PlantRigger", PlantRigger)

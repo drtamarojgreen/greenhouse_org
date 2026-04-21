@@ -8,7 +8,7 @@ if M7_ROOT not in sys.path:
     sys.path.insert(0, M7_ROOT)
 
 import config
-import registry
+from registry import registry
 import components
 
 class Character:
@@ -20,10 +20,10 @@ class Character:
         self.mesh = None
 
         c_cfg = cfg.get("components", {})
-        self.modeler = self._resolve(registry.registry.get_modeling, c_cfg.get("modeling"))
-        self.rigger = self._resolve(registry.registry.get_rigging, c_cfg.get("rigging"))
-        self.shader = self._resolve(registry.registry.get_shading, c_cfg.get("shading"))
-        self.animator = self._resolve(registry.registry.get_animation, c_cfg.get("animation"))
+        self.modeler = self._resolve(registry.get_modeling, c_cfg.get("modeling"))
+        self.rigger = self._resolve(registry.get_rigging, c_cfg.get("rigging"))
+        self.shader = self._resolve(registry.get_shading, c_cfg.get("shading"))
+        self.animator = self._resolve(registry.get_animation, c_cfg.get("animation"))
 
     def _resolve(self, registry_func, name):
         cls = registry_func(name) if name else None
