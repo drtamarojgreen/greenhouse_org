@@ -1,0 +1,40 @@
+{
+  "production": { "title": "Movie 7", "total_frames": 4200, "start_frame": 1 },
+  "paths": {
+    "equipment_dir": "/home/tamarojgreen/Documents/Movie_Equipment/",
+    "assets_blend": "MHD2_animation133.blend",
+    "output_dir": "scripts/blender/movie/7/assets/"
+  },
+  "collections": { "assets": "7a.ASSETS", "environment": "7b.ENVIRONMENT", "cameras": "SETTINGS.CAMERAS" },
+  "ensemble": {
+    "entities": [
+      {
+        "id": "Herbaceous",
+        "type": "DYNAMIC",
+        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator" },
+        "parameters": {
+          "dimensions": { "torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2 },
+          "materials": { "bark_color": [0.1, 0.15, 0.05], "leaf_color": [0.6, 0.4, 0.8] },
+          "foliage": { "density": 50 }
+        },
+        "default_pos": [-1.75, -0.3, 0.0],
+        "target_height": 1.0
+      },
+      {
+        "id": "Arbor",
+        "type": "DYNAMIC",
+        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator" },
+        "parameters": {
+          "dimensions": { "torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2 },
+          "materials": { "bark_color": [0.2, 0.12, 0.08], "leaf_color": [0.2, 0.6, 0.1] },
+          "foliage": { "density": 50 }
+        },
+        "default_pos": [1.75, 0.3, 0.0],
+        "target_height": 1.0
+      }
+    ]
+  },
+  "environment": { "floor_size": 40, "backdrops": [ { "id": "Wide", "pos": [0, 20, 7.5], "rot": [90, 0, 0] } ] },
+  "cinematics": { "cameras": [ { "id": "Wide", "pos": [0, -8, 2], "lens": 35 } ], "active_camera": "Wide" },
+  "normalization": { "strategy": "DENSITY", "enable_culling": true, "enable_origin_reset": true }
+}
