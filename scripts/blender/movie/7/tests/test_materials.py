@@ -3,7 +3,9 @@ import bpy
 import os
 import sys
 
-M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+M7_ROOT = os.path.dirname(TEST_DIR)
+
 if M7_ROOT not in sys.path: sys.path.insert(0, M7_ROOT)
 
 from asset_manager import AssetManager

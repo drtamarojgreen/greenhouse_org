@@ -3,12 +3,16 @@ import bmesh
 import mathutils
 import math
 import random
-try:
-    from base import Modeler
-    from registry import registry
-except ImportError:
-    from ..base import Modeler
-    from ..registry import registry
+import os
+import sys
+
+# Ensure Movie 7 root is in sys.path
+M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M7_ROOT not in sys.path:
+    sys.path.insert(0, M7_ROOT)
+
+import base
+from registry import registry
 
 class OrganicPart:
     def __init__(self, rad1, rad2, h, loc, bname, mid_scale=1.0, rot=(0,0,0)):
@@ -31,7 +35,7 @@ class HeadSphere:
         ret = bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=self.radius, matrix=mathutils.Matrix.Translation(self.location))
         for v in ret['verts']: v[dlayer][vg.index] = 1.0; v.smooth = True
 
-class PlantModeler(Modeler):
+class PlantModeler(base.Modeler):
     def build_mesh(self, char_id, params, rig=None):
         mesh_data = bpy.data.meshes.new(f"{char_id}_MeshData")
         mesh_obj = bpy.data.objects.new(f"{char_id}.Body", mesh_data); bpy.context.scene.collection.objects.link(mesh_obj)
@@ -89,4 +93,4 @@ class PlantModeler(Modeler):
             o.parent, o.parent_type, o.parent_bone, o.location = rig, 'BONE', "Head", (0.18, -0.38, 0.08)
             bm = bmesh.new(); bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.015); bm.to_mesh(m); bm.free()
 
-registry.registry.register_modeling("PlantModeler", PlantModeler)
+registry.register_modeling("PlantModeler", PlantModeler)

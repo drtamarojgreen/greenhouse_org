@@ -3,7 +3,9 @@ import bpy
 import os
 import sys
 
-M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+M7_ROOT = os.path.dirname(TEST_DIR)
+
 if M7_ROOT not in sys.path: sys.path.insert(0, M7_ROOT)
 
 from asset_manager import AssetManager
@@ -17,6 +19,7 @@ class TestMovie7AnimationPresence(unittest.TestCase):
         """Ensures animation data and actions are initialized."""
         cfg = {"id": "Arbor", "type": "DYNAMIC", "components": {"modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator"}}
         char = CharacterBuilder.create("Arbor", cfg); char.build(self.manager)
+
         char.animator.apply_action(char.rig, "talking", 1, {"duration": 10})
         self.assertIsNotNone(char.rig.animation_data)
         self.assertIsNotNone(char.rig.animation_data.action)

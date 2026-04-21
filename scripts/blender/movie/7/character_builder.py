@@ -1,5 +1,12 @@
 import bpy
 import os
+import sys
+
+# Ensure Movie 7 root is in sys.path
+M7_ROOT = os.path.dirname(os.path.abspath(__file__))
+if M7_ROOT not in sys.path:
+    sys.path.insert(0, M7_ROOT)
+
 import config
 import registry
 import components
@@ -11,6 +18,7 @@ class Character:
         self.cfg = cfg
         self.rig = None
         self.mesh = None
+
         c_cfg = cfg.get("components", {})
         self.modeler = self._resolve(registry.registry.get_modeling, c_cfg.get("modeling"))
         self.rigger = self._resolve(registry.registry.get_rigging, c_cfg.get("rigging"))

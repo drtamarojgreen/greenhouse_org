@@ -1,6 +1,6 @@
 import bpy
 import math
-from .config import config
+import config
 
 class AnimationHandler:
     """Modular Animation Handler with robust procedural application logic."""

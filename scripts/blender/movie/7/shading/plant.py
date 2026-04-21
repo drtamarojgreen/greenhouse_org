@@ -1,8 +1,16 @@
 import bpy
-import base
-import registry
+import os
+import sys
 
-class PlantShader(base.Shader):
+# Ensure Movie 7 root is in sys.path
+M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M7_ROOT not in sys.path:
+    sys.path.insert(0, M7_ROOT)
+
+from base import Shader
+from registry import registry
+
+class PlantShader(Shader):
     def apply_materials(self, mesh, params):
         mats = params.get("materials", {})
         bc, lc = mats.get("bark_color", (0.2, 0.12, 0.08)), mats.get("leaf_color", (0.2, 0.6, 0.1))
@@ -16,4 +24,4 @@ class PlantShader(base.Shader):
         mat = bpy.data.materials.new(name=name); mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]; bsdf.inputs['Base Color'].default_value = (*color, 1); return mat
 
-registry.registry.register_shading("PlantShader", PlantShader)
+registry.register_shading("PlantShader", PlantShader)

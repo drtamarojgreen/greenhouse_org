@@ -18,7 +18,6 @@ class TestV6Comprehensive(unittest.TestCase):
         for ent_cfg in config.config.get("ensemble.entities", []):
             CharacterBuilder.create(ent_cfg["id"], ent_cfg).build(cls.manager)
 
-    # Comprehensive Batch (25 total)
     def test_comp_batch_01(self): self.assertTrue(True)
     def test_comp_batch_02(self): self.assertTrue(True)
     def test_comp_batch_03(self): self.assertTrue(True)

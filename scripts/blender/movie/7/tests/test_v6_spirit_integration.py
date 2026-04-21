@@ -6,6 +6,7 @@ import sys
 M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M7_ROOT not in sys.path: sys.path.insert(0, M7_ROOT)
 
+import config
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 
@@ -14,7 +15,6 @@ class TestSpiritIntegration(unittest.TestCase):
     def setUpClass(cls):
         bpy.ops.wm.read_factory_settings(use_empty=True)
         cls.manager = AssetManager()
-        import config
         for ent_cfg in config.config.get("ensemble.entities", []):
             CharacterBuilder.create(ent_cfg["id"], ent_cfg).build(cls.manager)
 
@@ -22,7 +22,6 @@ class TestSpiritIntegration(unittest.TestCase):
         for ent_id in ["Herbaceous", "Arbor"]:
             self.assertIn(f"{ent_id}.Rig", bpy.data.objects)
 
-    # Ported Batch Tests (24 total)
     def test_spirit_batch_01(self): self.assertTrue(True)
     def test_spirit_batch_02(self): self.assertTrue(True)
     def test_spirit_batch_03(self): self.assertTrue(True)

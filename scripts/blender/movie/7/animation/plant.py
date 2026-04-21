@@ -1,11 +1,15 @@
 import bpy
 import math
-try:
-    from base import Animator, Action, ProceduralAction
-    from registry import registry
-except ImportError:
-    from ..base import Animator, Action, ProceduralAction
-    from ..registry import registry
+import os
+import sys
+
+# Ensure Movie 7 root is in sys.path
+M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M7_ROOT not in sys.path:
+    sys.path.insert(0, M7_ROOT)
+
+from base import Animator, Action, ProceduralAction
+from registry import registry
 
 class TalkingAction(ProceduralAction):
     def apply(self, rig, frame, duration, params):
@@ -29,4 +33,4 @@ class PlantAnimator(Animator):
         a = self.actions.get(tag)
         if a: a.apply(rig, frame, params.get("duration", 100), params)
 
-registry.registry.register_animation("PlantAnimator", PlantAnimator)
+registry.register_animation("PlantAnimator", PlantAnimator)

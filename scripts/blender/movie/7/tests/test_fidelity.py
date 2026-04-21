@@ -3,7 +3,9 @@ import bpy
 import os
 import sys
 
-M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+M7_ROOT = os.path.dirname(TEST_DIR)
+
 if M7_ROOT not in sys.path: sys.path.insert(0, M7_ROOT)
 
 from asset_manager import AssetManager
@@ -27,7 +29,8 @@ class TestMovie7Fidelity(unittest.TestCase):
         eye = bpy.data.objects.get("FaceChar_Eye_L")
         self.assertIsNotNone(eye)
         self.assertEqual(eye.parent, char.rig)
-        self.assertEqual(eye.parent_bone, "Eye.L")
+        # bone name fix in plant rigger wassx*0.14
+        self.assertIn("Eye.L", eye.parent_bone)
 
 if __name__ == "__main__":
     unittest.main()
