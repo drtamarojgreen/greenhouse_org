@@ -1,8 +1,20 @@
 import bpy
 import os
-from ..config import config
-from ..asset_manager import AssetManager
-from ..character_builder import CharacterBuilder
+import sys
+
+# Ensure parent directory is in path for direct execution
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
+
+try:
+    from config import config
+    from asset_manager import AssetManager
+    from character_builder import CharacterBuilder
+except ImportError:
+    from ..config import config
+    from ..asset_manager import AssetManager
+    from ..character_builder import CharacterBuilder
 
 def run_extraction():
     print("PHASE A: OO MODULAR ASSET EXTRACTION")
