@@ -7,6 +7,27 @@ V6_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(V6_DIR)
 import config
 
+# Monkeypatch for Blender 5.1 FBX operator bugs
+if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx"):
+    try:
+        op_cls = bpy.types.EXPORT_SCENE_OT_fbx
+        for prop_name in ["use_space_transform", "apply_unit_scale", "use_selection"]:
+            if not hasattr(op_cls, prop_name):
+                op_cls.__annotations__[prop_name] = bpy.props.BoolProperty(name=prop_name, default=True if "selection" in prop_name else False)
+                setattr(op_cls, prop_name, True if "selection" in prop_name else False)
+        print("  INFO: Applied robust monkeypatch for EXPORT_SCENE_OT_fbx")
+    except Exception as e:
+        print(f"  WARNING: Failed to apply export monkeypatch: {e}")
+
+if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx"):
+    try:
+        if "files" not in bpy.types.IMPORT_SCENE_OT_fbx.__annotations__:
+            bpy.types.IMPORT_SCENE_OT_fbx.__annotations__["files"] = bpy.props.CollectionProperty(
+                type=bpy.types.OperatorFileListElement, options={'HIDDEN', 'SKIP_SAVE'})
+            print("  INFO: Applied robust monkeypatch for IMPORT_SCENE_OT_fbx.files")
+    except Exception as e:
+        print(f"  WARNING: Failed to apply import monkeypatch: {e}")
+
 def setup_cinematic_rig():
     """Step 2: Implementation of WIDE, OTS, and Static camera rigs."""
     scene = bpy.context.scene
@@ -30,6 +51,7 @@ def setup_cinematic_rig():
             cam_data.lens = data["lens"]
             cam_data.clip_end = 2000.0 # Standard Scene 6 visibility
 
+            # Initial rotation
             if "target" in data:
                 import mathutils
                 vec = mathutils.Vector(data["target"]) - mathutils.Vector(data["pos"])
@@ -41,22 +63,34 @@ def setup_cinematic_rig():
                 scene.camera = cam
 
             if "Static" not in cam_name:
-                setup_camera_path(cam)
+                # Resolve target object for TRACK_TO
+                track_obj = None
+                if "OTS1" in cam_name: track_obj = bpy.data.objects.get(config.FOCUS_HERBACEOUS)
+                elif "OTS2" in cam_name: track_obj = bpy.data.objects.get(config.FOCUS_ARBOR)
+                elif "WIDE" in cam_name: track_obj = bpy.data.objects.get(config.LIGHTING_MIDPOINT)
 
-def setup_camera_path(cam_obj):
-    """Creates a Bezier curve and constrains the camera to it."""
+                setup_camera_path(cam, track_target=track_obj)
+
+def setup_camera_path(cam_obj, track_target=None):
+    """Creates a Bezier curve and constrains the camera to it with tracking."""
     bpy.ops.curve.primitive_bezier_curve_add(radius=5.0)
     curve = bpy.context.active_object
     curve.name = f"Path_{cam_obj.name}"
 
-    con = cam_obj.constraints.new(type='FOLLOW_PATH')
-    con.target = curve
-    con.use_curve_follow = True # Orient camera along the curve
+    con_path = cam_obj.constraints.new(type='FOLLOW_PATH')
+    con_path.target = curve
+    con_path.use_curve_follow = False # TRACK_TO will handle orientation
+
+    if track_target:
+        con_track = cam_obj.constraints.new(type='TRACK_TO')
+        con_track.target = track_target
+        con_track.track_axis = 'TRACK_NEGATIVE_Z'
+        con_track.up_axis = 'UP_Y'
 
     # Animate the path to make the camera move along it
     # This operator adds keyframes to the constraint's offset_factor
     bpy.context.view_layer.objects.active = cam_obj # Make camera active for the operator
-    bpy.ops.constraint.followpath_path_animate(constraint=con.name, owner='OBJECT')
+    bpy.ops.constraint.followpath_path_animate(constraint=con_path.name, owner='OBJECT')
 
     print(f"PROD_ASSEMBLY: Curve animation established for {cam_obj.name}")
 
@@ -67,9 +101,9 @@ def setup_environmental_restoration():
     coll = bpy.data.collections.get("6b_Environment")
 
     backdrops = {
-        "ChromaBackdrop_Wide": {"pos": (0, 50, 5),    "cam": (0.0, -8.0, 2.0)},
-        "ChromaBackdrop_OTS1": {"pos": (-50, -20, 5), "cam": (4.0, 3.0, 2.8)},
-        "ChromaBackdrop_OTS2": {"pos": (50, 20, 5),   "cam": (-4.0, -3.0, 2.8)},
+        "ChromaBackdrop_Wide": {"pos": config.BACKDROP_WIDE_POS, "cam": config.CAM_WIDE_TRACK_REF},
+        "ChromaBackdrop_OTS1": {"pos": config.BACKDROP_OTS1_POS, "cam": config.CAM_OTS1_TRACK_REF},
+        "ChromaBackdrop_OTS2": {"pos": config.BACKDROP_OTS2_POS, "cam": config.CAM_OTS2_TRACK_REF},
     }
 
     mat_name = "ChromaKey_V6"
@@ -85,7 +119,7 @@ def setup_environmental_restoration():
 
     for name, data in backdrops.items():
         if name not in bpy.data.objects:
-            bpy.ops.mesh.primitive_plane_add(size=1000, location=data["pos"])
+            bpy.ops.mesh.primitive_plane_add(size=100, location=data["pos"])
             bg = bpy.context.active_object
             bg.name = name
 

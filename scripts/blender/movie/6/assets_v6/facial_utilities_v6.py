@@ -18,14 +18,20 @@ def _ensure_in_collection(obj):
             bpy.context.scene.collection.objects.link(obj)
 
 def _create_facial_primitive(name, armature, bone_name, type='SPHERE', radius=1.0, depth=1.0, segments=16):
-    """Creates a base mesh object parented to a bone."""
+    """Creates a base mesh object parented to a bone.
+    Uses robust bone parenting to ensure it follows animation regardless of skinning.
+    """
     mesh_data = bpy.data.meshes.new(f"{name}_Mesh")
     obj = bpy.data.objects.new(name, mesh_data)
     _ensure_in_collection(obj)
 
+    # Robust Bone Parenting
     obj.parent = armature
     obj.parent_type = 'BONE'
     obj.parent_bone = bone_name
+
+    # Reset Visual Inverse to ensure it stays at bone location
+    # Note: bone.head is relative to armature.
     obj.location = (0, 0, 0)
 
     bm = bmesh.new()

@@ -378,8 +378,11 @@ def _create_v6_armature(name, location, height_scale, head_r, torso_h, neck_h):
         if bname == "Head": bone.roll = math.radians(180)
         if p: bone.parent = armature_data.edit_bones[p]
 
-        # Non-body bones should not deform the main mesh
-        if any(x in bname for x in ["Ear", "Eye", "Eyelid", "Eyebrow", "Nose", "Lip", "Finger", "Toe", "Shoulder", "Hip"]):
+        # Body bones MUST deform for vertex skinning
+        deform_bones = ["Torso", "Neck", "Head", "Arm.L", "Elbow.L", "Hand.L", "Finger.1.L", "Finger.2.L", "Finger.3.L", "Thigh.L", "Knee.L", "Foot.L", "Toe.1.L", "Toe.2.L", "Toe.3.L", "Arm.R", "Elbow.R", "Hand.R", "Finger.1.R", "Finger.2.R", "Finger.3.R", "Thigh.R", "Knee.R", "Foot.R", "Toe.1.R", "Toe.2.R", "Toe.3.R", "Foliage"]
+        if bname in deform_bones:
+            bone.use_deform = True
+        else:
             bone.use_deform = False
 
     for bname, (h, t, p_name, btype) in facial_defs.items():
@@ -439,6 +442,7 @@ def _create_v6_mesh(name, armature_obj, height_scale, head_r, torso_h, neck_h):
     ret_head = bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
     head_vg = mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")
     for v in ret_head['verts']:
+        # Explicit weighting for Head bone
         v[dlayer][head_vg.index] = 1.0
         for face in v.link_faces:
             face.smooth = True
@@ -568,9 +572,14 @@ def create_plant_humanoid_v6(name, location, height_scale=1.0, seed=None):
     mesh_obj.data.materials.append(create_bark_material_v6(f"Bark_{name}", color=bark_color))
     mesh_obj.data.materials.append(create_leaf_material_v6(f"Leaf_{name}", color=leaf_color))
 
-    # 4. A-Pose
+    # 4. Rig Configuration (A-Pose & Rotation Mode)
     bpy.context.view_layer.objects.active = arm_obj
     bpy.ops.object.mode_set(mode='POSE')
+
+    # Force XYZ for ALL bones to ensure Euler animation parity
+    for pb in arm_obj.pose.bones:
+        pb.rotation_mode = 'XYZ'
+
     for side in ("L", "R"):
         mult = 1 if side == "L" else -1
         if f"Arm.{side}" in arm_obj.pose.bones:
