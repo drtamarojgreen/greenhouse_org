@@ -24,13 +24,13 @@ class TestMovie7OOCharacters(unittest.TestCase):
         char_mesh = CharacterBuilder.create("MeshChar", mesh_cfg)
         self.assertIsInstance(char_mesh, MeshCharacter)
 
-        dynamic_cfg = {"type": "DYNAMIC", "builder": "PlantHumanoid"}
+        dynamic_cfg = {"type": "DYNAMIC", "builder": "ProceduralCharacter"}
         char_dyn = CharacterBuilder.create("DynChar", dynamic_cfg)
         self.assertIsInstance(char_dyn, DynamicCharacter)
 
     def test_dynamic_character_build(self):
         """Verifies that a dynamic character builds its rig and mesh."""
-        dynamic_cfg = {"type": "DYNAMIC", "builder": "PlantHumanoid"}
+        dynamic_cfg = {"type": "DYNAMIC", "builder": "ProceduralCharacter"}
         char = CharacterBuilder.create("DynChar", dynamic_cfg)
         char.build(self.manager)
 

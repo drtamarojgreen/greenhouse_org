@@ -5,7 +5,7 @@ import os
 from .config import config
 
 class AssetManager:
-    """Abstract Asset Manager for modular movie production."""
+    """Abstract Asset Manager synchronized with Movie 6 standards."""
 
     def __init__(self):
         self.coll_assets = config.coll_assets
@@ -17,7 +17,7 @@ class AssetManager:
         return coll
 
     def clear_scene(self):
-        """Purges data-blocks for a clean slate."""
+        """Purges data-blocks for a reproducible clean start."""
         for obj in list(bpy.data.objects):
             try:
                 bpy.data.objects.remove(obj, do_unlink=True)
@@ -45,7 +45,8 @@ class AssetManager:
         imported_objs = []
         for obj in data_to.objects:
             if obj:
-                coll.objects.link(obj)
+                if obj.name not in coll.objects:
+                    coll.objects.link(obj)
                 imported_objs.append(obj)
                 for child in obj.children_recursive:
                     if child.name not in coll.objects:
@@ -53,22 +54,22 @@ class AssetManager:
         return imported_objs
 
     def normalize_character(self, rig, target_height):
-        """Comprehensive normalization: Origin Reset, Scaling, and Culling."""
+        """Comprehensive normalization matching Movie 6 standards."""
         if not rig or rig.type != 'ARMATURE': return
 
-        # 1. Origin Reset
+        # 1. Parent-First Origin Reset
         if config.get("normalization.enable_origin_reset", True):
             self.execute_origin_reset(rig)
 
         # 2. Scaling
         self.normalize_scale(rig, target_height)
 
-        # 3. Statistical Culling
+        # 3. Statistical Balanced Culling
         if config.get("normalization.enable_culling", True):
             self.execute_balanced_culling(rig)
 
     def execute_origin_reset(self, rig):
-        """Snaps rig and parented meshes to True Ground."""
+        """Standard Movie 6 Origin Reset logic."""
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         rig.location = (0, 0, 0)
         rig.rotation_euler = (0, 0, 0)
@@ -88,7 +89,7 @@ class AssetManager:
         bpy.context.view_layer.update()
 
     def normalize_scale(self, rig, target_height):
-        """Scales the rig so the character reaches the target height."""
+        """Standard Movie 6 Scaling logic."""
         bpy.context.view_layer.update()
         metrics = self._get_metrics(rig)
         if not metrics or metrics['height'] < 0.001: return
@@ -107,7 +108,7 @@ class AssetManager:
         bpy.context.view_layer.update()
 
     def execute_balanced_culling(self, rig):
-        """Removes spidery vertex outliers."""
+        """Standard Movie 6 Balanced Culling logic."""
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         irw = rig.matrix_world.inverted()
 
@@ -142,7 +143,7 @@ class AssetManager:
             mesh.data.update()
 
     def _get_metrics(self, rig):
-        """Calculates height and ground Z using density clustering."""
+        """Density-based height and ground measurement (Movie 6 standard)."""
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         all_z = []
         for m in meshes:

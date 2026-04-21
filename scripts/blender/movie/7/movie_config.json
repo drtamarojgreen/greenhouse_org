@@ -45,24 +45,48 @@
       {
         "id": "Herbaceous",
         "type": "DYNAMIC",
-        "builder": "PlantHumanoid",
+        "builder": "ProceduralCharacter",
         "parameters": {
-          "bark_color": [0.1, 0.15, 0.05],
-          "leaf_color": [0.6, 0.4, 0.8]
+          "dimensions": {
+            "torso_h": 1.5,
+            "head_r": 0.4,
+            "neck_h": 0.2
+          },
+          "materials": {
+            "bark_color": [0.1, 0.15, 0.05],
+            "leaf_color": [0.6, 0.4, 0.8]
+          },
+          "foliage": {
+            "density": 20,
+            "leaf_size": 0.3
+          }
         },
         "default_pos": [-1.75, -0.3, 0.0],
-        "eye_offset": 2.5
+        "eye_offset": 2.5,
+        "target_height": 1.0
       },
       {
         "id": "Arbor",
         "type": "DYNAMIC",
-        "builder": "PlantHumanoid",
+        "builder": "ProceduralCharacter",
         "parameters": {
-          "bark_color": [0.2, 0.12, 0.08],
-          "leaf_color": [0.2, 0.6, 0.1]
+          "dimensions": {
+            "torso_h": 1.5,
+            "head_r": 0.4,
+            "neck_h": 0.2
+          },
+          "materials": {
+            "bark_color": [0.2, 0.12, 0.08],
+            "leaf_color": [0.2, 0.6, 0.1]
+          },
+          "foliage": {
+            "density": 20,
+            "leaf_size": 0.3
+          }
         },
         "default_pos": [1.75, 0.3, 0.0],
-        "eye_offset": 2.5
+        "eye_offset": 2.5,
+        "target_height": 1.0
       }
     ]
   },
@@ -80,6 +104,12 @@
         "pos": [-20.0, 0.0, 7.5],
         "rot": [90, 0, 90],
         "track_ref": [1.75, -0.3, 2.5]
+      },
+      {
+        "id": "OTS2",
+        "pos": [20.0, 0.0, 7.5],
+        "rot": [90, 0, -90],
+        "track_ref": [-1.75, 0.3, 2.5]
       }
     ]
   },
@@ -98,6 +128,13 @@
         "pos": [13.5, 11.0, 6.0],
         "target": "Herbaceous",
         "lens": 50.0
+      },
+      {
+        "id": "OTS2",
+        "type": "OTS",
+        "pos": [-13.5, -11.0, 6.0],
+        "target": "Arbor",
+        "lens": 50.0
       }
     ],
     "active_camera": "Wide"
@@ -112,6 +149,11 @@
       "energy": 1000.0,
       "color": [0.95, 1.0, 1.0],
       "angle": 45
+    },
+    "leg": {
+      "energy": 500.0,
+      "color": [1.0, 1.0, 0.95],
+      "angle": 50
     }
   },
   "normalization": {

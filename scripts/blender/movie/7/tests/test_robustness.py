@@ -22,7 +22,7 @@ class TestMovie7Robustness(unittest.TestCase):
 
     def test_normalization_scaling(self):
         """Verifies that normalization correctly scales a character."""
-        cfg = {"type": "DYNAMIC", "builder": "PlantHumanoid", "target_height": 5.0}
+        cfg = {"type": "DYNAMIC", "builder": "ProceduralCharacter", "target_height": 5.0}
         char = CharacterBuilder.create("TestChar", cfg)
         char.build(self.manager)
 
@@ -34,7 +34,7 @@ class TestMovie7Robustness(unittest.TestCase):
 
     def test_procedural_animation(self):
         """Verifies that procedural animation generates keyframes."""
-        cfg = {"type": "DYNAMIC", "builder": "PlantHumanoid"}
+        cfg = {"type": "DYNAMIC", "builder": "ProceduralCharacter"}
         char = CharacterBuilder.create("AnimChar", cfg)
         char.build(self.manager)
 
