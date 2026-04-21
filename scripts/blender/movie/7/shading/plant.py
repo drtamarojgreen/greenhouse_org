@@ -1,12 +1,4 @@
 import bpy
-import os
-import sys
-
-# Ensure Movie 7 root is in sys.path
-M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M7_ROOT not in sys.path:
-    sys.path.insert(0, M7_ROOT)
-
 from base import Shader
 from registry import registry
 

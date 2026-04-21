@@ -1,10 +1,7 @@
 import bpy
 import math
 import mathutils
-try:
-    from config import config
-except ImportError:
-    from .config import config
+import config
 
 class Director:
     """Abstract Director for Movie 7, implementing Movie 6 cinematic standards."""
