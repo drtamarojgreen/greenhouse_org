@@ -44,9 +44,15 @@ class TestMovie7RigIntegrity(unittest.TestCase):
         for pb in char.rig.pose.bones:
             self.assertEqual(pb.rotation_mode, 'XYZ', f"Bone {pb.name} is not in XYZ mode.")
 
-    def test_rig_batch_1(self): self.assertTrue(True)
-    def test_rig_batch_2(self): self.assertTrue(True)
-    def test_rig_batch_3(self): self.assertTrue(True)
+    def test_deform_flags(self):
+        """Verifies use_deform flags are correctly set from config."""
+        from config import config
+        cfg = config.get_character_config("Herbaceous")
+        char = CharacterBuilder.create("Herbaceous", cfg)
+        char.build(self.manager)
+
+        self.assertTrue(char.rig.data.bones["Torso"].use_deform)
+        self.assertFalse(char.rig.data.bones["Eye.L"].use_deform)
 
 if __name__ == "__main__":
     unittest.main()

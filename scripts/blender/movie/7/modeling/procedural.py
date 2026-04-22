@@ -14,16 +14,11 @@ import base
 from registry import registry
 
 class ProceduralModeler(base.Modeler):
-    """Universal Modeler that builds mesh from structure data."""
+    """Truly Universal Modeler that builds mesh and props from structure data."""
 
     def build_mesh(self, char_id, params, rig=None):
-        # We use structure provided in params, fallback to None if not present
+        # 1. Use params for structure, decouple from singleton config
         structure = params.get("structure", {})
-        if not structure:
-             # Look for character config if not in params directly
-             import config
-             char_cfg = config.config.get_character_config(char_id)
-             if char_cfg: structure = char_cfg.get("structure", {})
 
         mesh_data = bpy.data.meshes.new(f"{char_id}_MeshData")
         mesh_obj = bpy.data.objects.new(f"{char_id}.Body", mesh_data)
@@ -32,14 +27,18 @@ class ProceduralModeler(base.Modeler):
         bm = bmesh.new()
         dlayer = bm.verts.layers.deform.verify()
 
+        # Build main geometry
         for geo in structure.get("geometry", []):
             self._add_part(bm, dlayer, mesh_obj, geo)
 
         bm.to_mesh(mesh_data)
         bm.free()
 
+        # 2. Build props (attachments)
         if rig:
             mesh_obj.parent = rig
+            for prop in structure.get("props", []):
+                self._add_prop(char_id, rig, prop)
 
         return mesh_obj
 
@@ -74,5 +73,40 @@ class ProceduralModeler(base.Modeler):
 
         for f in bm.faces:
             f.smooth = True
+
+    def _add_prop(self, char_id, rig, prop):
+        name = prop["name"]
+        bone = prop["bone"]
+        gtype = prop["type"]
+        params = prop["params"]
+
+        m = bpy.data.meshes.new(f"{char_id}_{name}")
+        o = bpy.data.objects.new(f"{char_id}_{name}", m)
+        bpy.context.scene.collection.objects.link(o)
+
+        o.parent = rig
+        o.parent_type = 'BONE'
+        o.parent_bone = bone
+        o.location = (0, 0, 0)
+
+        bm = bmesh.new()
+        matrix = mathutils.Matrix.Identity(4)
+        if "scale" in prop:
+            matrix @= mathutils.Matrix.Diagonal((*prop["scale"], 1))
+        if "rot" in prop:
+            matrix @= mathutils.Euler(prop["rot"]).to_matrix().to_4x4()
+
+        if gtype == "SPHERE":
+            bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=params[0], matrix=matrix)
+        elif gtype == "CONE":
+            bmesh.ops.create_cone(bm, cap_ends=True, segments=16, radius1=params[0], radius2=0, depth=params[0]*4, matrix=matrix)
+        elif gtype == "CUBE":
+            bmesh.ops.create_cube(bm, size=params[0], matrix=matrix)
+
+        bm.to_mesh(m)
+        bm.free()
+        for f in m.polygons: f.use_smooth = True
+
+        o["material_id"] = prop.get("material", "primary")
 
 registry.register_modeling("ProceduralModeler", ProceduralModeler)

@@ -1,31 +1,45 @@
 import unittest
+import bpy
 import os
 import sys
 
-M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M7_ROOT not in sys.path: sys.path.insert(0, M7_ROOT)
+# Standard Path setup for tests
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+M7_ROOT = os.path.dirname(TEST_DIR)
+
+if M7_ROOT not in sys.path:
+    sys.path.insert(0, M7_ROOT)
+
+from asset_manager import AssetManager
+from character_builder import CharacterBuilder
+import components
 
 class TestMovie7Fidelity(unittest.TestCase):
-    def test_f_batch_1(self): self.assertTrue(True)
-    def test_f_batch_2(self): self.assertTrue(True)
-    def test_f_batch_3(self): self.assertTrue(True)
-    def test_f_batch_4(self): self.assertTrue(True)
-    def test_f_batch_5(self): self.assertTrue(True)
-    def test_f_batch_6(self): self.assertTrue(True)
-    def test_f_batch_7(self): self.assertTrue(True)
-    def test_f_batch_8(self): self.assertTrue(True)
-    def test_f_batch_9(self): self.assertTrue(True)
-    def test_f_batch_10(self): self.assertTrue(True)
-    def test_f_batch_11(self): self.assertTrue(True)
-    def test_f_batch_12(self): self.assertTrue(True)
-    def test_f_batch_13(self): self.assertTrue(True)
-    def test_f_batch_14(self): self.assertTrue(True)
-    def test_f_batch_15(self): self.assertTrue(True)
-    def test_f_batch_16(self): self.assertTrue(True)
-    def test_f_batch_17(self): self.assertTrue(True)
-    def test_f_batch_18(self): self.assertTrue(True)
-    def test_f_batch_19(self): self.assertTrue(True)
-    def test_f_batch_20(self): self.assertTrue(True)
+    def setUp(self):
+        components.initialize_registry()
+        self.manager = AssetManager(); self.manager.clear_scene()
+
+    def test_mesh_smoothness(self):
+        """Verifies that all generated faces are set to smooth."""
+        from config import config
+        cfg = config.get_character_config("Herbaceous")
+        char = CharacterBuilder.create("Herbaceous", cfg)
+        char.build(self.manager)
+
+        for poly in char.mesh.data.polygons:
+            self.assertTrue(poly.use_smooth)
+
+    def test_prop_attachment_fidelity(self):
+        """Verifies that props are correctly parented to bones."""
+        from config import config
+        cfg = config.get_character_config("Herbaceous")
+        char = CharacterBuilder.create("Herbaceous", cfg)
+        char.build(self.manager)
+
+        eyes = [o for o in char.rig.children if "Eye" in o.name]
+        for eye in eyes:
+            self.assertEqual(eye.parent_type, 'BONE')
+            self.assertIn("Eye", eye.parent_bone)
 
 if __name__ == "__main__":
     unittest.main()

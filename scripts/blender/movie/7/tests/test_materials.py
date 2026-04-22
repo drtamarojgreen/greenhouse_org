@@ -28,8 +28,8 @@ class TestMovie7Materials(unittest.TestCase):
 
         # Check that mesh data has materials
         self.assertGreater(len(char.mesh.data.materials), 0)
-        bark_found = any("Bark" in m.name for m in char.mesh.data.materials if m)
-        self.assertTrue(bark_found)
+        primary_found = any("primary" in m.name for m in char.mesh.data.materials if m)
+        self.assertTrue(primary_found)
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,31 +3,29 @@ from base import Shader
 from registry import registry
 
 class UniversalShader(Shader):
-    """Universal Shader that applies materials based on character parameters."""
+    """Truly Universal Shader that builds materials from config data."""
 
     def apply_materials(self, mesh, params):
-        mats = params.get("materials", {})
+        # 1. Resolve and create all materials defined in config
+        mats_cfg = params.get("materials", {})
+        materials = {}
+        for mat_id, cfg in mats_cfg.items():
+            materials[mat_id] = self._create_material(f"{mesh.name}_{mat_id}", cfg.get("color", (1,1,1)))
 
-        # We define standard material slots based on common needs
-        bark_color = mats.get("bark_color", (0.2, 0.12, 0.08))
-        leaf_color = mats.get("leaf_color", (0.2, 0.6, 0.1))
-        iris_color = mats.get("iris_color", (0.36, 0.24, 0.62))
+        # 2. Assign primary material to the main body
+        # We assume the first material in config or 'primary' is the body material
+        primary_mat = materials.get("primary")
+        if primary_mat:
+            mesh.data.materials.append(primary_mat)
 
-        bark_mat = self._create_material(f"Bark_{mesh.name}", bark_color)
-        leaf_mat = self._create_material(f"Leaf_{mesh.name}", leaf_color)
-        iris_mat = self._create_material(f"Iris_{mesh.name}", iris_color)
-
-        mesh.data.materials.append(bark_mat)
-        mesh.data.materials.append(leaf_mat)
-
-        # Generic part-to-material mapping logic
+        # 3. Assign materials to props based on metadata
         if mesh.parent and mesh.parent.type == 'ARMATURE':
             for child in mesh.parent.children:
                 if child == mesh: continue
-                if "Eye" in child.name:
-                    child.data.materials.append(iris_mat)
-                else:
-                    child.data.materials.append(bark_mat)
+                mat_id = child.get("material_id", "primary")
+                mat = materials.get(mat_id)
+                if mat:
+                    child.data.materials.append(mat)
 
     def _create_material(self, name, color):
         mat = bpy.data.materials.new(name=name)

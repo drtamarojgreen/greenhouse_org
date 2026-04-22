@@ -15,12 +15,8 @@ class ProceduralRigger(base.Rigger):
     """Universal Rigger that builds armature from structure data."""
 
     def build_rig(self, char_id, params):
+        # 1. Use structure from params, decouple from singleton config
         structure = params.get("structure", {})
-        if not structure:
-             import config
-             char_cfg = config.config.get_character_config(char_id)
-             if char_cfg: structure = char_cfg.get("structure", {})
-
         rig_data = structure.get("rig", {})
 
         rig_struct = RigStructure(char_id)

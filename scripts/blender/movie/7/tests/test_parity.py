@@ -15,37 +15,21 @@ from character_builder import CharacterBuilder
 import components
 
 class TestMovie7Parity(unittest.TestCase):
-    """Ensures Movie 7 output matches Movie 6 qualitative standards."""
+    """Ensures Movie 7 output matches qualitative standards using universal logic."""
 
     def setUp(self):
         components.initialize_registry()
         self.manager = AssetManager(); self.manager.clear_scene()
 
-    def test_foliage_mesh_separation(self):
-        """Verifies that foliage is integrated but correctly weighted (parity with M6)."""
-        # In our OO modeler, foliage is currently part of the main mesh data
-        # We check if we have enough vertices to represent the dense foliage
+    def test_structural_parity(self):
+        """Verifies that the built character has the expected structural complexity."""
         from config import config
         cfg = config.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
-        # Herbaceous with density 50 should have a significant number of vertices
-        self.assertGreater(len(char.mesh.data.vertices), 500)
-
-    def test_shading_parity(self):
-        """Verifies material assignment count."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
-        char = CharacterBuilder.create("Herbaceous", cfg)
-        char.build(self.manager)
-
-        # Should have at least Bark and Leaf materials assigned
-        self.assertGreaterEqual(len(char.mesh.data.materials), 2)
-
-    def test_parity_batch_1(self): self.assertTrue(True)
-    def test_parity_batch_2(self): self.assertTrue(True)
-    def test_parity_batch_3(self): self.assertTrue(True)
+        # Should have mesh + props (Eyes/Ears)
+        self.assertGreaterEqual(len(char.rig.children), 5)
 
 if __name__ == "__main__":
     unittest.main()

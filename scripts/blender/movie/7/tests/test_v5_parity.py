@@ -1,31 +1,35 @@
 import unittest
+import bpy
 import os
 import sys
 
-M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M7_ROOT not in sys.path: sys.path.insert(0, M7_ROOT)
+# Standard Path setup for tests
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+M7_ROOT = os.path.dirname(TEST_DIR)
+
+if M7_ROOT not in sys.path:
+    sys.path.insert(0, M7_ROOT)
+
+from asset_manager import AssetManager
+from character_builder import CharacterBuilder
+import components
 
 class TestMovie7V5Parity(unittest.TestCase):
-    def test_p_batch_1(self): self.assertTrue(True)
-    def test_p_batch_2(self): self.assertTrue(True)
-    def test_p_batch_3(self): self.assertTrue(True)
-    def test_p_batch_4(self): self.assertTrue(True)
-    def test_p_batch_5(self): self.assertTrue(True)
-    def test_p_batch_6(self): self.assertTrue(True)
-    def test_p_batch_7(self): self.assertTrue(True)
-    def test_p_batch_8(self): self.assertTrue(True)
-    def test_p_batch_9(self): self.assertTrue(True)
-    def test_p_batch_10(self): self.assertTrue(True)
-    def test_p_batch_11(self): self.assertTrue(True)
-    def test_p_batch_12(self): self.assertTrue(True)
-    def test_p_batch_13(self): self.assertTrue(True)
-    def test_p_batch_14(self): self.assertTrue(True)
-    def test_p_batch_15(self): self.assertTrue(True)
-    def test_p_batch_16(self): self.assertTrue(True)
-    def test_p_batch_17(self): self.assertTrue(True)
-    def test_p_batch_18(self): self.assertTrue(True)
-    def test_p_batch_19(self): self.assertTrue(True)
-    def test_p_batch_20(self): self.assertTrue(True)
+    def setUp(self):
+        components.initialize_registry()
+        self.manager = AssetManager(); self.manager.clear_scene()
+
+    def test_vertex_group_naming_parity(self):
+        """Verifies that vertex groups match bone names (standard for V5/V6 parity)."""
+        from config import config
+        cfg = config.get_character_config("Herbaceous")
+        char = CharacterBuilder.create("Herbaceous", cfg)
+        char.build(self.manager)
+
+        vg_names = {vg.name for vg in char.mesh.vertex_groups}
+        for bone in char.rig.data.bones:
+            if bone.use_deform:
+                self.assertIn(bone.name, vg_names)
 
 if __name__ == "__main__":
     unittest.main()
