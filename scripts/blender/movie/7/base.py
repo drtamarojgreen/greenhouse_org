@@ -1,13 +1,25 @@
 class Modeler:
+    def validate_params(self, params):
+        """Optional validation of modeling parameters."""
+        pass
     def build_mesh(self, char_id, params, rig=None): raise NotImplementedError()
 
 class Rigger:
+    def validate_params(self, params):
+        """Optional validation of rigging parameters."""
+        pass
     def build_rig(self, char_id, params): raise NotImplementedError()
 
 class Shader:
+    def validate_params(self, params):
+        """Optional validation of shading parameters."""
+        pass
     def apply_materials(self, mesh, params): raise NotImplementedError()
 
 class Animator:
+    def validate_params(self, params):
+        """Optional validation of animation parameters."""
+        pass
     def apply_action(self, rig, tag, frame, params): raise NotImplementedError()
 
 class Action:

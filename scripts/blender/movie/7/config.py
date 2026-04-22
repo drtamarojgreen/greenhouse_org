@@ -61,5 +61,12 @@ class MovieConfig:
     def coll_cameras(self):
         return self.get("collections.cameras", "SETTINGS.CAMERAS")
 
+    def get_character_config(self, char_id):
+        entities = self.get("ensemble.entities", [])
+        for e in entities:
+            if e["id"] == char_id:
+                return e
+        return None
+
 # Singleton instance for easy access
 config = MovieConfig()

@@ -8,11 +8,13 @@ if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
 import config
+import components
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 
 def run_extraction():
     print("PHASE A: OO MODULAR ASSET EXTRACTION")
+    components.initialize_registry()
     manager = AssetManager(); manager.clear_scene()
     entities = config.config.get("ensemble.entities", [])
     output_dir = config.config.output_dir
@@ -25,7 +27,10 @@ def run_extraction():
         bpy.ops.object.select_all(action='DESELECT')
         if char.rig: char.rig.select_set(True)
         if char.mesh: char.mesh.select_set(True)
-        for c in (char.rig.children_recursive if char.rig else []): c.select_set(True)
+        # Select children for export
+        if char.rig:
+            for c in char.rig.children_recursive: c.select_set(True)
+
         if char.rig or char.mesh:
             try:
                 bpy.ops.export_scene.fbx(filepath=fbx_path, use_selection=True)

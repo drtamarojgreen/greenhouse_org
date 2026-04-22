@@ -11,11 +11,39 @@
       {
         "id": "Herbaceous",
         "type": "DYNAMIC",
-        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator" },
+        "components": {
+          "modeling": "ProceduralModeler",
+          "rigging": "ProceduralRigger",
+          "shading": "UniversalShader",
+          "animation": "ProceduralAnimator"
+        },
+        "structure": {
+          "geometry": [
+            { "name": "Torso", "type": "CONE", "params": [0.5, 0.25, 1.5], "loc": [0,0,0.75], "mid_scale": 1.2, "segments": 24 },
+            { "name": "Neck", "type": "CONE", "params": [0.15, 0.12, 0.2], "loc": [0,0,1.6], "segments": 24 },
+            { "name": "Head", "type": "SPHERE", "params": [0.4], "loc": [0,0,2.1], "segments": 32 }
+          ],
+          "limbs": [
+            { "side": "L", "sx": 1, "arm_loc": [0.4, 0, 1.35], "leg_loc": [0.25, 0, 0.1] },
+            { "side": "R", "sx": -1, "arm_loc": [-0.4, 0, 1.35], "leg_loc": [-0.25, 0, 0.1] }
+          ],
+          "rig": {
+            "bones": [
+              { "name": "Torso", "head": [0,0,0], "tail": [0,0,1.5], "deform": true },
+              { "name": "Neck", "head": [0,0,1.5], "tail": [0,0,1.7], "parent": "Torso", "deform": true },
+              { "name": "Head", "head": [0,0,1.7], "tail": [0,0,2.5], "parent": "Neck", "deform": true }
+            ]
+          }
+        },
         "parameters": {
-          "dimensions": { "torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2 },
-          "materials": { "bark_color": [0.1, 0.15, 0.05], "leaf_color": [0.6, 0.4, 0.8] },
-          "foliage": { "density": 50 }
+          "materials": {
+            "bark_color": [0.1, 0.15, 0.05], "leaf_color": [0.6, 0.4, 0.8],
+            "iris_color": [0.36, 0.24, 0.62]
+          },
+          "animation": {
+            "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
+            "idle": { "bone": "Torso", "freq": 0.1, "amp": 0.02 }
+          }
         },
         "default_pos": [-1.75, -0.3, 0.0],
         "target_height": 1.0
@@ -23,11 +51,39 @@
       {
         "id": "Arbor",
         "type": "DYNAMIC",
-        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator" },
+        "components": {
+          "modeling": "ProceduralModeler",
+          "rigging": "ProceduralRigger",
+          "shading": "UniversalShader",
+          "animation": "ProceduralAnimator"
+        },
+        "structure": {
+          "geometry": [
+            { "name": "Torso", "type": "CONE", "params": [0.5, 0.25, 1.5], "loc": [0,0,0.75], "mid_scale": 1.2, "segments": 24 },
+            { "name": "Neck", "type": "CONE", "params": [0.15, 0.12, 0.2], "loc": [0,0,1.6], "segments": 24 },
+            { "name": "Head", "type": "SPHERE", "params": [0.4], "loc": [0,0,2.1], "segments": 32 }
+          ],
+          "limbs": [
+            { "side": "L", "sx": 1, "arm_loc": [0.4, 0, 1.35], "leg_loc": [0.25, 0, 0.1] },
+            { "side": "R", "sx": -1, "arm_loc": [-0.4, 0, 1.35], "leg_loc": [-0.25, 0, 0.1] }
+          ],
+          "rig": {
+            "bones": [
+              { "name": "Torso", "head": [0,0,0], "tail": [0,0,1.5], "deform": true },
+              { "name": "Neck", "head": [0,0,1.5], "tail": [0,0,1.7], "parent": "Torso", "deform": true },
+              { "name": "Head", "head": [0,0,1.7], "tail": [0,0,2.5], "parent": "Neck", "deform": true }
+            ]
+          }
+        },
         "parameters": {
-          "dimensions": { "torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2 },
-          "materials": { "bark_color": [0.2, 0.12, 0.08], "leaf_color": [0.2, 0.6, 0.1] },
-          "foliage": { "density": 50 }
+          "materials": {
+            "bark_color": [0.2, 0.12, 0.08], "leaf_color": [0.2, 0.6, 0.1],
+            "iris_color": [0.36, 0.24, 0.62]
+          },
+          "animation": {
+            "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
+            "idle": { "bone": "Torso", "freq": 0.1, "amp": 0.02 }
+          }
         },
         "default_pos": [1.75, 0.3, 0.0],
         "target_height": 1.0
