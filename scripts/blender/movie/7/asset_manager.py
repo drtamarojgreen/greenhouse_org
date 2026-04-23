@@ -12,7 +12,7 @@ class AssetManager:
 
     def ensure_collection(self, name):
         coll = bpy.data.collections.get(name) or bpy.data.collections.new(name)
-        if coll.name not in bpy.context.scene.collection.children:
+        if bpy.context.scene.collection.children.get(coll.name) is None:
             bpy.context.scene.collection.children.link(coll)
         return coll
 
@@ -45,11 +45,11 @@ class AssetManager:
         imported_objs = []
         for obj in data_to.objects:
             if obj:
-                if obj.name not in coll.objects:
+                if coll.objects.get(obj.name) is None:
                     coll.objects.link(obj)
                 imported_objs.append(obj)
                 for child in obj.children_recursive:
-                    if child.name not in coll.objects:
+                    if coll.objects.get(child.name) is None:
                         coll.objects.link(child)
         return imported_objs
 
