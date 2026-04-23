@@ -28,8 +28,8 @@ class TestMovie7Parity(unittest.TestCase):
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
-        # Should have mesh + props (Eyes/Ears)
-        self.assertGreaterEqual(len(char.rig.children), 5)
+        # Should have mesh + props (Eyes)
+        self.assertEqual(len(char.rig.children), 3)
 
 if __name__ == "__main__":
     unittest.main()

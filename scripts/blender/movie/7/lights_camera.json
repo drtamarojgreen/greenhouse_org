@@ -3,7 +3,7 @@
     { "id": "focus_herbaceous", "pos": [-1.75, -0.3, 2.5] },
     { "id": "focus_arbor", "pos": [1.75, 0.3, 2.5] },
     { "id": "lighting_midpoint", "pos": [0, 0, 2.2] },
-    { "id": "focus_exterior", "pos": [0, 0, 5.0] }
+    { "id": "focus_exterior", "pos": [0, -20.0, 5.0] }
   ],
   "cameras": [
     {
@@ -23,8 +23,8 @@
     { "id": "Antag3", "pos": [-1.0, -4.5, 2.0], "lens": 135.0, "target": "Antag3.Rig" },
     { "id": "Antag4", "pos": [-4.0, -4.5, 2.0], "lens": 135.0, "target": "Antag4.Rig" },
     {
-      "id": "Exterior", "pos": [0, -175, 32], "lens": 50.0, "target": "focus_exterior",
-      "animation": { "points": [[-50, -175, 32], [0, -175, 32], [50, -175, 32]], "segments": [{ "start": 1, "end": 3 }, { "start": 4151, "end": 4200 }] }
+      "id": "Exterior", "pos": [0, -40, 5], "lens": 50.0, "target": "focus_exterior",
+      "animation": { "points": [[-15, -40, 5], [0, -40, 5], [15, -40, 5]], "segments": [{ "start": 1, "end": 3 }, { "start": 4151, "end": 4200 }] }
     }
   ],
   "lighting": {

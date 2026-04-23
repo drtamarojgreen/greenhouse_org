@@ -79,7 +79,8 @@ class LinkedCharacter(Character):
         if self.cfg.get("source_mesh"): targets.append(self.cfg["source_mesh"])
         if self.cfg.get("source_rig"): targets.append(self.cfg["source_rig"])
 
-        objs = manager.link_assets(config.config.assets_blend, targets)
+        blend_file = config.config.protagonist_blend if self.cfg.get("is_protagonist") else config.config.assets_blend
+        objs = manager.link_assets(blend_file, targets)
         for obj in objs:
             if obj.type == 'ARMATURE':
                 self.rig = obj

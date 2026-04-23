@@ -42,7 +42,7 @@ class MovieConfig:
 
     @property
     def protagonist_blend(self):
-        return os.path.join(self.equipment_dir, self.get("paths.protagonist_blend", "MHD2_characters_v5.blend"))
+        return os.path.join(self.equipment_dir, self.get("paths.protagonist_blend", "MHD2_animation133.blend"))
 
     @property
     def output_dir(self):

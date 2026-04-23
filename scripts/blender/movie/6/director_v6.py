@@ -481,22 +481,15 @@ class SylvanDirector:
         herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
         arbor = bpy.data.objects.get(config.CHAR_ARBOR)
 
-        # DIRECTOR: If protagonists are already rigged/bound, do not interfere.
-        if herb and herb.type == 'ARMATURE' and herb.animation_data:
-            pass
-        else:
-            if herb:
-                animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=3000)
-                animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
-                animation_library_v6.apply_animation_by_tag(herb, "dance", 3000, duration=1200)
+        if herb:
+            animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=3000)
+            animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
+            animation_library_v6.apply_animation_by_tag(herb, "dance", 3000, duration=1200)
 
-        if arbor and arbor.type == 'ARMATURE' and arbor.animation_data:
-            pass
-        else:
-            if arbor:
-                animation_library_v6.apply_animation_by_tag(arbor, "talking", 1, duration=2999)
-                animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
-                animation_library_v6.apply_animation_by_tag(arbor, "dance", 3000, duration=1200)
+        if arbor:
+            animation_library_v6.apply_animation_by_tag(arbor, "talking", 1, duration=2999)
+            animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
+            animation_library_v6.apply_animation_by_tag(arbor, "dance", 3000, duration=1200)
 
         # 2. Key Legendary Entities (Ensuring Full Visibility and Motion)
         majesty = next((o for o in coll.objects if "Sylvan_Majesty" in o.name and o.type == 'ARMATURE'), None)

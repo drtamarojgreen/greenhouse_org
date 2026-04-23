@@ -77,7 +77,7 @@ def generate_full_scene_v6():
 
 
     # Set Color Management to a neutral standard
-    bpy.context.scene.render.image_settings.color_mode = 'RGBA' # Ensure RGBA output
+    bpy.context.scene.render.image_settings.color_mode = 'RGB' # Ensure RGB output
     bpy.context.scene.display_settings.display_device = 'sRGB'
     bpy.context.scene.view_settings.view_transform = 'Standard'
     bpy.context.scene.view_settings.look = 'None'

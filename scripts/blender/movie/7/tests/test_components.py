@@ -21,14 +21,23 @@ class TestComponentParity(unittest.TestCase):
         cfg = {
             "id": "CompChar",
             "type": "DYNAMIC",
-            "parameters": {"dimensions": {"torso_h": 2.0}, "foliage": {"density": 10}}
+            "components": {
+                "modeling": "ProceduralModeler",
+                "rigging": "ProceduralRigger",
+                "shading": "UniversalShader"
+            },
+            "parameters": {
+                "dimensions": {"torso_h": 2.0},
+                "foliage": {"density": 10},
+                "materials": {"primary": {"color": [0,1,0]}, "accent": {"color": [1,0,0]}}
+            }
         }
         char = CharacterBuilder.create("CompChar", cfg)
         char.build(self.manager)
 
         self.assertIsNotNone(char.rig)
         self.assertIsNotNone(char.mesh)
-        self.assertEqual(len(char.mesh.data.materials), 2)
+        self.assertEqual(len(char.mesh.data.materials), 1)
         self.assertIn("Torso", char.rig.pose.bones)
 
 if __name__ == "__main__":

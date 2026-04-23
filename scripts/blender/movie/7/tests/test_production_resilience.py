@@ -25,7 +25,7 @@ class TestProductionResilience(unittest.TestCase):
         cls.director = Director()
         cls.director.setup_environment()
         cls.director.setup_lighting()
-        cls.director.setup_cameras()
+        cls.director.setup_cinematics()
 
     def test_res_fbx_rna_export(self):
         self.assertTrue(hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"))

@@ -10,61 +10,19 @@
     "entities": [
       {
         "id": "Herbaceous",
-        "type": "DYNAMIC",
-        "components": { "modeling": "ProceduralModeler", "rigging": "ProceduralRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
-        "structure": {
-          "geometry": [
-            { "name": "Torso", "type": "CONE", "params": [0.5, 0.25, 1.5], "loc": [0,0,0.75], "mid_scale": 1.2, "material": "primary" },
-            { "name": "Neck", "type": "CONE", "params": [0.15, 0.12, 0.2], "loc": [0,0,1.6], "material": "primary" },
-            { "name": "Head", "type": "SPHERE", "params": [0.4], "loc": [0,0,2.1], "material": "primary" }
-          ],
-          "props": [
-            { "name": "Eye_L", "bone": "Head", "type": "SPHERE", "params": [0.065], "loc": [0.14, -0.35, 0.2], "material": "accent" },
-            { "name": "Eye_R", "bone": "Head", "type": "SPHERE", "params": [0.065], "loc": [-0.14, -0.35, 0.2], "material": "accent" }
-          ],
-          "rig": {
-            "bones": [
-              { "name": "Torso", "head": [0,0,0], "tail": [0,0,1.5], "deform": true },
-              { "name": "Neck", "head": [0,0,1.5], "tail": [0,0,1.7], "parent": "Torso", "deform": true },
-              { "name": "Head", "head": [0,0,1.7], "tail": [0,0,2.5], "parent": "Neck", "deform": true }
-            ]
-          }
-        },
-        "parameters": {
-          "materials": { "primary": { "color": [0.1, 0.15, 0.05] }, "secondary": { "color": [0.6, 0.4, 0.8] }, "accent": { "color": [0.36, 0.24, 0.62] } },
-          "animation": {
-            "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
-            "idle": { "bone": "Torso", "freq": 0.1, "amp": 0.02 },
-            "dance": { "bone": "Torso", "freq": 0.3, "amp": 0.1 }
-          }
-        },
-        "default_pos": [-1.75, -0.3, 0.0],
+        "type": "MESH",
+        "source_mesh": "Herbaceous_V5_Body",
+        "source_rig": "Herbaceous_V5_Rig",
+        "default_pos": [-1.75, -18.0, 0.0],
         "target_height": 1.0,
         "is_protagonist": true
       },
       {
         "id": "Arbor",
         "type": "DYNAMIC",
-        "components": { "modeling": "ProceduralModeler", "rigging": "ProceduralRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
-        "structure": {
-          "geometry": [
-            { "name": "Torso", "type": "CONE", "params": [0.5, 0.25, 1.5], "loc": [0,0,0.75], "mid_scale": 1.2, "material": "primary" },
-            { "name": "Neck", "type": "CONE", "params": [0.15, 0.12, 0.2], "loc": [0,0,1.6], "material": "primary" },
-            { "name": "Head", "type": "SPHERE", "params": [0.4], "loc": [0,0,2.1], "material": "primary" }
-          ],
-          "props": [
-            { "name": "Eye_L", "bone": "Head", "type": "SPHERE", "params": [0.065], "loc": [0.14, -0.35, 0.2], "material": "accent" },
-            { "name": "Eye_R", "bone": "Head", "type": "SPHERE", "params": [0.065], "loc": [-0.14, -0.35, 0.2], "material": "accent" }
-          ],
-          "rig": {
-            "bones": [
-              { "name": "Torso", "head": [0,0,0], "tail": [0,0,1.5], "deform": true },
-              { "name": "Neck", "head": [0,0,1.5], "tail": [0,0,1.7], "parent": "Torso", "deform": true },
-              { "name": "Head", "head": [0,0,1.7], "tail": [0,0,2.5], "parent": "Neck", "deform": true }
-            ]
-          }
-        },
+        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
         "parameters": {
+          "seed": 1337,
           "materials": { "primary": { "color": [0.2, 0.12, 0.08] }, "secondary": { "color": [0.2, 0.6, 0.1] }, "accent": { "color": [0.36, 0.24, 0.62] } },
           "animation": {
             "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
@@ -72,18 +30,18 @@
             "dance": { "bone": "Torso", "freq": 0.3, "amp": 0.1 }
           }
         },
-        "default_pos": [1.75, 0.3, 0.0],
+        "default_pos": [1.75, -18.0, 0.0],
         "target_height": 1.0,
         "is_protagonist": true
       },
-      { "id": "Sylvan_Majesty", "type": "MESH", "target_height": 12.0, "source_mesh": "Sylvan_Majesty.Body", "source_rig": "Sylvan_Majesty.Rig" },
-      { "id": "Radiant_Aura", "type": "MESH", "target_height": 12.0, "source_mesh": "Radiant_Aura.Body", "source_rig": "Radiant_Aura.Rig" },
-      { "id": "Verdant_Sprite", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Verdant_Sprite.Body", "source_rig": "Verdant_Sprite.Rig" },
-      { "id": "Shadow_Weaver", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Shadow_Weaver.Body", "source_rig": "Shadow_Weaver.Rig" },
-      { "id": "Emerald_Sentinel", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Emerald_Sentinel.Body", "source_rig": "Emerald_Sentinel.Rig" },
-      { "id": "Root_Guardian", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Root_Guardian.Body", "source_rig": "Root_Guardian.Rig" },
-      { "id": "Phoenix_Herald", "type": "MESH", "target_height": 10.0, "source_mesh": "Phoenix_Herald.Body", "source_rig": "Phoenix_Herald.Rig" },
-      { "id": "Golden_Phoenix", "type": "MESH", "target_height": 10.0, "source_mesh": "Golden_Phoenix.Body", "source_rig": "Golden_Phoenix.Rig" },
+      { "id": "Sylvan_Majesty", "type": "MESH", "target_height": 12.0, "source_mesh": "Mesh1_Mesh1.044", "source_rig": "Armature.002" },
+      { "id": "Radiant_Aura", "type": "MESH", "target_height": 12.0, "source_mesh": "Mesh1_Mesh1.001", "source_rig": "Armature.004" },
+      { "id": "Verdant_Sprite", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.006", "source_rig": "Armature.001" },
+      { "id": "Shadow_Weaver", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.052", "source_rig": "Armature.003" },
+      { "id": "Emerald_Sentinel", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.058", "source_rig": "Armature" },
+      { "id": "Root_Guardian", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "skeleton", "source_rig": "skeleton" },
+      { "id": "Phoenix_Herald", "type": "MESH", "target_height": 10.0, "source_mesh": "Leonardo_Phoenix textured 3D model", "source_rig": "skeleton" },
+      { "id": "Golden_Phoenix", "type": "MESH", "target_height": 10.0, "source_mesh": "Leonardo_Phoenix textured 3D model.001", "source_rig": "skeleton.001" },
       {
         "id": "WaterCan", "type": "DYNAMIC",
         "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
@@ -110,7 +68,8 @@
     ],
     "storyline": [
       { "beat": "Arrival", "start": 1, "end": 600, "events": [
-         { "target": "Sylvan_Majesty", "action": "visibility", "params": { "visible_at": 300 } }
+         { "target": "Sylvan_Majesty", "action": "visibility", "params": { "visible_at": 300 } },
+         { "target": "Shadow_Weaver", "action": "animate", "start": 1, "params": { "tag": "shake", "duration": 599 } }
       ]},
       { "beat": "Rite of Joy", "start": 600, "end": 1800, "events": [
          { "target": "Radiant_Aura", "action": "visibility", "params": { "visible_at": 600 } },

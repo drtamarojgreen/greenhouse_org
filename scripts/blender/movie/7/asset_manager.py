@@ -80,9 +80,7 @@ class AssetManager:
         if not metrics or metrics['height'] < 0.001: return
         scale_factor = target_height / metrics['height']
         rig.scale *= scale_factor
-        bpy.context.view_layer.objects.active = rig
-        rig.select_set(True)
-        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        # Intentionally do not apply scale to avoid procedural double-transforms via Armature modifier
         bpy.context.view_layer.update()
         new_metrics = self._get_metrics(rig)
         if new_metrics: rig.location.z -= new_metrics['ground_z']

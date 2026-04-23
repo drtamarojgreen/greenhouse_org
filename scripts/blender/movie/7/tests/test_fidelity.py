@@ -39,7 +39,7 @@ class TestMovie7Fidelity(unittest.TestCase):
         eyes = [o for o in char.rig.children if "Eye" in o.name]
         for eye in eyes:
             self.assertEqual(eye.parent_type, 'BONE')
-            self.assertIn("Eye", eye.parent_bone)
+            self.assertEqual("Head", eye.parent_bone)
 
 if __name__ == "__main__":
     unittest.main()

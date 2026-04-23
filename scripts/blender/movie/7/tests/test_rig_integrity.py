@@ -52,7 +52,7 @@ class TestMovie7RigIntegrity(unittest.TestCase):
         char.build(self.manager)
 
         self.assertTrue(char.rig.data.bones["Torso"].use_deform)
-        self.assertFalse(char.rig.data.bones["Eye.L"].use_deform)
+        self.assertTrue(char.rig.data.bones["Neck"].use_deform)
 
 if __name__ == "__main__":
     unittest.main()

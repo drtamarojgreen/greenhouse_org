@@ -14,7 +14,7 @@
       }
     },
     {
-      "path": "/home/tamarojgreen/Documents/Movie_Equipment/MHD2_characters_v5.blend",
+      "path": "/home/tamarojgreen/Documents/Movie_Equipment/MHD2_animation133.blend",
       "mapping": {
         "Herbaceous_V5_Body": { "id": "Herbaceous", "rig": "Herbaceous_V5_Rig", "is_protagonist": true },
         "Arbor_V5_Body": { "id": "Arbor", "rig": "Arbor_V5_Rig", "is_protagonist": true }

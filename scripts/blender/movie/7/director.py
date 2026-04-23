@@ -6,6 +6,7 @@ import sys
 import json
 import random
 import config
+from animation_handler import AnimationHandler
 
 # Ensure Movie 7 root is in sys.path
 M7_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -43,7 +44,21 @@ class Director:
             cam_data.clip_end = 2000.0
 
             cam_obj = bpy.data.objects.get(cam_id) or bpy.data.objects.new(cam_id, cam_data)
-            cam_obj.location = cam_cfg["pos"]
+            target_id = cam_cfg.get("target")
+            
+            if target_id and "Antag" in cam_id:
+                target_obj = bpy.data.objects.get(target_id)
+                base_pos = mathutils.Vector(cam_cfg["pos"])
+                if target_obj:
+                    # Dynamic offset: scale vector from target to camera
+                    foc_world = target_obj.matrix_world.translation
+                    vec_to_camera = base_pos - foc_world
+                    cam_obj.location = foc_world + (vec_to_camera * 3.0) # 3.0 is ANTAG_GLOBAL_OFFSET
+                else:
+                    cam_obj.location = cam_cfg["pos"]
+            else:
+                cam_obj.location = cam_cfg["pos"]
+                
             if "rot" in cam_cfg:
                  cam_obj.rotation_euler = [math.radians(r) for r in cam_cfg["rot"]]
 
@@ -61,6 +76,11 @@ class Director:
                 if target_obj:
                     con = next((c for c in cam_obj.constraints if c.type == 'TRACK_TO'), None) or cam_obj.constraints.new(type='TRACK_TO')
                     con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
+
+    def setup_environment(self):
+        """Constructs the environment meshes from config using ExteriorModeler."""
+        from environment.exterior import ExteriorModeler
+        ExteriorModeler().build_mesh("Env", config.config.get("environment", {}))
 
     def setup_lighting(self):
         """Constructs lighting rigs from config."""
@@ -113,7 +133,7 @@ class Director:
         num = len(spirits)
         if num == 0: return
 
-        fan_width, fan_dist, var_dist, center_y = 0.95, 12.0, 3.5, 6.0
+        fan_width, fan_dist, var_dist, center_y = 0.95, 12.0, 3.5, -15.0
         for i, rig in enumerate(spirits):
             angle = (i / max(num-1, 1)) * math.pi * fan_width - math.pi * (fan_width/2)
             dist = fan_dist + (i % 2) * var_dist
@@ -141,6 +161,69 @@ class Director:
         for beat in story:
             for event in beat.get("events", []):
                 self._execute_event(event)
+
+    def apply_scene_animations(self):
+        """Orchestrates continuous timeline animations for all characters using AnimationHandler."""
+        anim_handler = AnimationHandler()
+        total_f = config.config.total_frames
+        
+        # 1. Protagonists
+        herb = bpy.data.objects.get("Herbaceous.Rig") or bpy.data.objects.get("Herbaceous")
+        arbor = bpy.data.objects.get("Arbor.Rig") or bpy.data.objects.get("Arbor")
+        
+        if herb:
+            anim_handler.apply_animation(herb, "talking", 1, duration=3000)
+            anim_handler.apply_animation(herb, "nod", 120)
+            anim_handler.apply_animation(herb, "dance", 3000, duration=1200)
+            
+        if arbor:
+            anim_handler.apply_animation(arbor, "talking", 1, duration=2999)
+            anim_handler.apply_animation(arbor, "shake", 300)
+            anim_handler.apply_animation(arbor, "dance", 3000, duration=1200)
+            
+        # 2. Key Entities
+        majesty = bpy.data.objects.get("Sylvan_Majesty.Rig")
+        if majesty:
+            anim_handler.apply_animation(majesty, "idle", 1, duration=3000)
+            anim_handler.apply_animation(majesty, "dance", 3000, duration=1200)
+            
+        aura = bpy.data.objects.get("Radiant_Aura.Rig")
+        if aura:
+            anim_handler.apply_animation(aura, "dance", 1, duration=total_f)
+            
+        # 3. Spore Tag (Weaver)
+        weaver = bpy.data.objects.get("Shadow_Weaver.Rig")
+        if weaver:
+            anim_handler.apply_animation(weaver, "shake", 1, duration=599)
+            anim_handler.apply_animation(weaver, "dance", 600, duration=total_f - 600)
+            
+        # 4. Blessing
+        can = bpy.data.objects.get("WaterCan")
+        hose = bpy.data.objects.get("GardenHose")
+        if can: self._animate_blessing(can, 1800, 3000)
+        if hose: self._animate_blessing(hose, 1800, 3000)
+            
+        # 5. Ensemble Loop
+        spirits = [o for o in bpy.data.objects if ".Rig" in o.name and o not in [herb, arbor, majesty, aura, weaver]]
+        tags = ["dance", "nod", "shake", "idle"]
+        for i, spirit in enumerate(spirits):
+            tag = tags[i % len(tags)]
+            anim_handler.apply_animation(spirit, tag, 1, duration=total_f // 2)
+            anim_handler.apply_animation(spirit, "dance", (total_f // 2) + 1, duration=total_f // 2)
+
+    def _animate_blessing(self, prop_obj, start_frame, end_frame):
+        """Port of animate_blessing for Movie 7."""
+        if not prop_obj.animation_data:
+            prop_obj.animation_data_create()
+            
+        base_z = prop_obj.location.z
+        for f in range(start_frame, end_frame, 30):
+            prop_obj.location.z = base_z + math.sin(f * 0.1) * 0.5
+            prop_obj.keyframe_insert(data_path="location", index=2, frame=f)
+            prop_obj.rotation_euler[0] = math.sin(f * 0.05) * 0.2
+            prop_obj.rotation_euler[2] = f * 0.01
+            prop_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+            prop_obj.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
 
     def _execute_event(self, event):
         target = event["target"]
@@ -176,6 +259,9 @@ class Director:
                         bsdf.inputs['Emission Strength'].keyframe_insert(data_path="default_value", frame=(params["start"]+params["end"])//2)
                         bsdf.inputs['Emission Strength'].default_value = 5.0
                         bsdf.inputs['Emission Strength'].keyframe_insert(data_path="default_value", frame=params["end"])
+            elif action == "animate":
+                anim_handler = AnimationHandler()
+                anim_handler.apply_animation(obj, params["tag"], event.get("start", 1), params.get("duration"))
 
     def _setup_camera_path(self, cam_obj, anim):
         points = anim["points"]; path_name = f"Path_{cam_obj.name}"
