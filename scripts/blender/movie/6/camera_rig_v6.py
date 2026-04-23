@@ -86,4 +86,11 @@ def setup_camera_rig_v6():
     if ots2_cam:
         setup_follow_path(ots2_cam, ots2_path, duration=config.TOTAL_FRAMES, track_target=arbor_target)
 
+    # 4. ANTAGONIST CAMERAS (Z-OFFSET FIX)
+    for i in range(1, 5):
+        cam = bpy.data.objects.get(f"Antag{i}")
+        if cam:
+            # Set position with +20m Z-offset
+            cam.location.z += 20.0
+            
     return True

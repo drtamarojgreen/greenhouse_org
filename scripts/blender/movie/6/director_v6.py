@@ -470,91 +470,73 @@ class SylvanDirector:
                     obj.animation_data.action = bpy.data.actions[action_name]
 
     def apply_scene_animations(self):
-        """Orchestrates Act IV storyline beats and varied animations."""
+        """Orchestrates continuous Act IV storyline beats for all characters."""
         self.ensure_animation_data()
         
         coll = bpy.data.collections.get(config.COLL_ASSETS)
         if not coll: return
+        total_f = getattr(config, "TOTAL_FRAMES", 4200)
 
         # 1. Protagonists (The Conversation)
         herb = bpy.data.objects.get(config.CHAR_HERBACEOUS)
         arbor = bpy.data.objects.get(config.CHAR_ARBOR)
 
-        if herb:
-            animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=3000)
-            animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
-            # Final Ascent synchronized finale (3000-4200)
-            animation_library_v6.apply_animation_by_tag(herb, "dance", 3000, duration=1200)
+        # DIRECTOR: If protagonists are already rigged/bound, do not interfere.
+        if herb and herb.type == 'ARMATURE' and herb.animation_data:
+            pass
+        else:
+            if herb:
+                animation_library_v6.apply_animation_by_tag(herb, "talking", 1, duration=3000)
+                animation_library_v6.apply_animation_by_tag(herb, "nod", 120)
+                animation_library_v6.apply_animation_by_tag(herb, "dance", 3000, duration=1200)
 
-        if arbor:
-            animation_library_v6.apply_animation_by_tag(arbor, "talking", 1, duration=2999)
-            animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
-            # Final Ascent synchronized finale (3000-4200)
-            animation_library_v6.apply_animation_by_tag(arbor, "dance", 3000, duration=1200)
+        if arbor and arbor.type == 'ARMATURE' and arbor.animation_data:
+            pass
+        else:
+            if arbor:
+                animation_library_v6.apply_animation_by_tag(arbor, "talking", 1, duration=2999)
+                animation_library_v6.apply_animation_by_tag(arbor, "shake", 300)
+                animation_library_v6.apply_animation_by_tag(arbor, "dance", 3000, duration=1200)
 
-        # 2. Key Legendary Entities (Act IV Beats)
+        # 2. Key Legendary Entities (Ensuring Full Visibility and Motion)
         majesty = next((o for o in coll.objects if "Sylvan_Majesty" in o.name and o.type == 'ARMATURE'), None)
         aura = next((o for o in coll.objects if "Radiant_Aura" in o.name and o.type == 'ARMATURE'), None)
 
         if majesty:
-            # Act IV Beat 1: The Arrival (0-600)
-            # Control mesh visibility for the "Arrival" effect
+            # Full visibility throughout
             for child in majesty.children_recursive:
                 if child.type == 'MESH':
-                    child.hide_render = True
-                    child.hide_viewport = True
-                    child.keyframe_insert(data_path="hide_render", frame=1)
-                    child.keyframe_insert(data_path="hide_viewport", frame=1)
                     child.hide_render = False
                     child.hide_viewport = False
-                    child.keyframe_insert(data_path="hide_render", frame=300)
-                    child.keyframe_insert(data_path="hide_viewport", frame=300)
-            animation_library_v6.apply_animation_by_tag(majesty, "idle", 300, duration=2700)
-            # Synchronized finale
+            # Continuous movement
+            animation_library_v6.apply_animation_by_tag(majesty, "idle", 1, duration=3000)
             animation_library_v6.apply_animation_by_tag(majesty, "dance", 3000, duration=1200)
 
         if aura:
-            # Act IV Beat 2: The Rite of Joy (600-1800)
-            for child in aura.children:
+            for child in aura.children_recursive:
                 if child.type == 'MESH':
-                    child.hide_render = True
-                    child.keyframe_insert(data_path="hide_render", frame=1)
                     child.hide_render = False
-                    child.keyframe_insert(data_path="hide_render", frame=600)
-            # Performing a high-altitude "Spirit Dance"
             aura.location.z = 5.0
-            aura.keyframe_insert(data_path="location", index=2, frame=1)
-            aura.location.z = 10.0
-            aura.keyframe_insert(data_path="location", index=2, frame=600)
-            animation_library_v6.apply_animation_by_tag(aura, "dance", 600, duration=2400)
-            # Synchronized finale
-            animation_library_v6.apply_animation_by_tag(aura, "dance", 3000, duration=1200)
+            animation_library_v6.apply_animation_by_tag(aura, "dance", 1, duration=total_f)
 
-        # 3. The Blessing (1800-3000)
-        # Spirits interact with props, imbuing them with glowing essence
+        # 3. The Blessing
         can = bpy.data.objects.get("WaterCan")
         hose = bpy.data.objects.get("GardenHose")
         if can: animate_blessing(can, 1800, 3000)
         if hose: animate_blessing(hose, 1800, 3000)
 
-        # 4. Spore Tag (Shadow_Weaver playful conflict)
+        # 4. Spore Tag
         weaver = next((o for o in coll.objects if "Shadow_Weaver" in o.name and o.type == 'ARMATURE'), None)
         if weaver:
-            # Playful "Gloom Puffs" interactions - represented by shake and movement
             animation_library_v6.apply_animation_by_tag(weaver, "shake", 1, duration=599)
-            animation_library_v6.apply_animation_by_tag(weaver, "dance", 600, duration=2400)
-            # Synchronized finale
-            animation_library_v6.apply_animation_by_tag(weaver, "dance", 3000, duration=1200)
+            animation_library_v6.apply_animation_by_tag(weaver, "dance", 600, duration=total_f - 600)
 
-        # 5. Remaining Ensemble Spirits (Atmospheric Motion)
+        # 5. Full Ensemble Loop (No frozen characters)
         spirits = [o for o in coll.objects if o.type == 'ARMATURE' and o not in [herb, arbor, majesty, aura, weaver]]
         tags = ["dance", "nod", "shake", "idle"]
 
         for i, spirit in enumerate(spirits):
-            tag = random.choice(tags)
-            start = 1
-            # Duration should cover until the finale starts
-            mid_duration = 2999
-            animation_library_v6.apply_animation_by_tag(spirit, tag, start, duration=mid_duration)
-            # Synchronized finale for everyone
-            animation_library_v6.apply_animation_by_tag(spirit, "dance", 3000, duration=1200)
+            # Sequence multiple animations to fill the entire timeline
+            tag = tags[i % len(tags)]
+            animation_library_v6.apply_animation_by_tag(spirit, tag, 1, duration=total_f // 2)
+            animation_library_v6.apply_animation_by_tag(spirit, "dance", (total_f // 2) + 1, duration=total_f // 2)
