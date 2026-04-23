@@ -1,58 +1,197 @@
 import bpy
 import math
+import mathutils
 import os
 import sys
+import json
+import random
+import config
 
 # Ensure Movie 7 root is in sys.path
 M7_ROOT = os.path.dirname(os.path.abspath(__file__))
 if M7_ROOT not in sys.path:
     sys.path.insert(0, M7_ROOT)
 
-import config
-
 class Director:
-    """Abstract Director for Movie 7, implementing Movie 6 cinematic standards."""
+    """Universal Director for Movie 7, driven by lights_camera.json and movie_config.json."""
 
-    def __init__(self):
+    def __init__(self, lc_config_path=None):
+        if not lc_config_path:
+            lc_config_path = os.path.join(M7_ROOT, "lights_camera.json")
+        with open(lc_config_path, 'r') as f:
+            self.lc_cfg = json.load(f)
         self.coll_cameras = config.config.coll_cameras
         self.coll_env = config.config.coll_environment
 
-    def setup_cameras(self):
-        coll = self._ensure_collection(self.coll_cameras)
-        for cam_cfg in config.config.get("cinematics.cameras", []):
+    def setup_cinematics(self):
+        """Constructs focal targets, cameras, and paths from config."""
+        self._ensure_collection(self.coll_env)
+        cam_coll = self._ensure_collection(self.coll_cameras)
+
+        # 1. Focal Targets
+        for foc in self.lc_cfg.get("focal_targets", []):
+            obj = bpy.data.objects.get(foc["id"]) or bpy.data.objects.new(foc["id"], None)
+            obj.location = foc["pos"]
+            if obj.name not in bpy.data.collections[self.coll_env].objects:
+                bpy.data.collections[self.coll_env].objects.link(obj)
+
+        # 2. Cameras & Paths
+        for cam_cfg in self.lc_cfg.get("cameras", []):
             cam_id = cam_cfg["id"]
-            cam_data = bpy.data.cameras.new(cam_id)
+            cam_data = bpy.data.cameras.get(cam_id) or bpy.data.cameras.new(cam_id)
             cam_data.lens = cam_cfg.get("lens", 35.0)
-            cam_data.clip_end = cam_cfg.get("clip_end", 2000.0)
+            cam_data.clip_end = 2000.0
+
             cam_obj = bpy.data.objects.get(cam_id) or bpy.data.objects.new(cam_id, cam_data)
             cam_obj.location = cam_cfg["pos"]
-            if cam_obj.name not in coll.objects: coll.objects.link(cam_obj)
+            if "rot" in cam_cfg:
+                 cam_obj.rotation_euler = [math.radians(r) for r in cam_cfg["rot"]]
+
+            if cam_obj.name not in cam_coll.objects:
+                cam_coll.objects.link(cam_obj)
+
+            # Animation Paths
+            anim = cam_cfg.get("animation")
+            if anim: self._setup_camera_path(cam_obj, anim)
+
+            # Constraints
             target_id = cam_cfg.get("target")
             if target_id:
-                target_obj = bpy.data.objects.get(f"{target_id}.Rig") or bpy.data.objects.get(f"focus_{target_id.lower()}")
+                target_obj = bpy.data.objects.get(target_id)
                 if target_obj:
                     con = next((c for c in cam_obj.constraints if c.type == 'TRACK_TO'), None) or cam_obj.constraints.new(type='TRACK_TO')
                     con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
-            if cam_id == config.config.get("cinematics.active_camera"): bpy.context.scene.camera = cam_obj
 
     def setup_lighting(self):
-        coll = self._ensure_collection(self.coll_env)
-        for light_id, cfg in config.config.get("lighting", {}).items():
-            light_data = bpy.data.lights.new(name=light_id, type='SUN')
-            light_data.energy, light_data.color = cfg.get("energy", 1.0), cfg.get("color", (1,1,1))
-            light_obj = bpy.data.objects.get(light_id) or bpy.data.objects.new(name=light_id, object_data=light_data)
-            if light_obj.name not in coll.objects: coll.objects.link(light_obj)
-            light_obj.rotation_euler = (math.radians(cfg.get("angle", 45)), 0, math.radians(-40))
+        """Constructs lighting rigs from config."""
+        env_coll = self._ensure_collection(self.coll_env)
+        for light_id, l_cfg in self.lc_cfg.get("lighting", {}).items():
+            l_type = l_cfg.get("type", "SUN")
+            l_data = bpy.data.lights.get(light_id) or bpy.data.lights.new(name=light_id, type=l_type)
+            l_data.energy, l_data.color = l_cfg.get("energy", 1.0), l_cfg.get("color", (1,1,1))
 
-    def setup_environment(self):
-        coll = self._ensure_collection(self.coll_env)
-        for bd in config.config.get("environment.backdrops", []):
-            bd_name = f"Backdrop_{bd['id']}"
-            if bd_name not in bpy.data.objects:
-                bpy.ops.mesh.primitive_plane_add(size=config.config.get("environment.floor_size", 40), location=bd["pos"])
-                plane = bpy.context.active_object; plane.name = bd_name
-                for c in plane.users_collection: c.objects.unlink(plane)
-                coll.objects.link(plane); plane.rotation_euler = [math.radians(r) for r in bd["rot"]]
+            l_obj = bpy.data.objects.get(light_id) or bpy.data.objects.new(name=light_id, object_data=l_data)
+            if l_obj.name not in env_coll.objects: env_coll.objects.link(l_obj)
+            if "pos" in l_cfg: l_obj.location = l_cfg["pos"]
+            if "rot" in l_cfg: l_obj.rotation_euler = [math.radians(r) for r in l_cfg["rot"]]
+            if "target" in l_cfg:
+                target_obj = bpy.data.objects.get(l_cfg["target"])
+                if target_obj:
+                    con = next((c for c in l_obj.constraints if c.type == 'TRACK_TO'), None) or l_obj.constraints.new(type='TRACK_TO')
+                    con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
+
+    def apply_sequencing(self):
+        """Orchestrates timeline markers based on sequencing rules."""
+        scene = bpy.context.scene; scene.timeline_markers.clear()
+        seq = self.lc_cfg.get("sequencing", {})
+
+        # Intro/Outro/Main
+        for key in ["intro", "main_open", "outro"]:
+            cfg = seq.get(key)
+            if cfg:
+                m = scene.timeline_markers.new(key.capitalize(), frame=cfg["start"])
+                m.camera = bpy.data.objects.get(cfg["camera"])
+
+        # Cycle
+        cycle = seq.get("cycle")
+        if cycle:
+            frame, end, order, durs, c_idx = cycle["start"], cycle["end"], cycle["order"], cycle["durations"], 0
+            while frame < end:
+                c_type = order[c_idx % len(order)]
+                cam_name = c_type
+                if c_type == "Ots": cam_name = "Ots1" if (c_idx // len(order)) % 2 == 0 else "Ots2"
+                if c_type == "Antag": cam_name = f"Antag{(c_idx // len(order)) % 4 + 1}"
+                cam_obj = bpy.data.objects.get(cam_name)
+                if cam_obj:
+                    m = scene.timeline_markers.new(f"Shot_{cam_name}_{frame}", frame=frame)
+                    m.camera = cam_obj
+                frame += durs.get(c_type, 100); c_idx += 1
+
+    def compose_ensemble(self):
+        """Algorithmically positions ensemble spirits in a cinematic fan."""
+        spirits = sorted([o for o in bpy.data.objects if ".Rig" in o.name and not o.get("is_protagonist")], key=lambda o: o.name)
+        num = len(spirits)
+        if num == 0: return
+
+        fan_width, fan_dist, var_dist, center_y = 0.95, 12.0, 3.5, 6.0
+        for i, rig in enumerate(spirits):
+            angle = (i / max(num-1, 1)) * math.pi * fan_width - math.pi * (fan_width/2)
+            dist = fan_dist + (i % 2) * var_dist
+            rig.location = (math.sin(angle)*dist, center_y + math.cos(angle)*4.0, 0.0)
+            # Face wide camera
+            wide_pos = mathutils.Vector((0, -8, 2))
+            vec = wide_pos - rig.location
+            rig.rotation_euler[2] = vec.to_track_quat('Y', 'Z').to_euler().z + (math.pi/2)
+            rig.keyframe_insert(data_path="location", frame=1)
+            rig.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
+
+    def position_protagonists(self):
+        """Faces Herbaceous and Arbor toward each other."""
+        herb = bpy.data.objects.get("Herbaceous.Rig")
+        arbor = bpy.data.objects.get("Arbor.Rig")
+        if herb and arbor:
+            vec_h = arbor.location - herb.location
+            vec_a = herb.location - arbor.location
+            herb.rotation_euler[2] = vec_h.to_track_quat('Y', 'Z').to_euler().z + math.pi
+            arbor.rotation_euler[2] = vec_a.to_track_quat('Y', 'Z').to_euler().z + math.pi
+
+    def apply_storyline(self):
+        """Executes storyline events defined in movie_config.json."""
+        story = config.config.get("ensemble.storyline", [])
+        for beat in story:
+            for event in beat.get("events", []):
+                self._execute_event(event)
+
+    def _execute_event(self, event):
+        target = event["target"]
+        action = event["action"]
+        params = event["params"]
+
+        objs = []
+        if target == "ALL":
+            objs = [o for o in bpy.data.objects if ".Rig" in o.name]
+        else:
+            objs = [bpy.data.objects.get(f"{target}.Rig") or bpy.data.objects.get(target)]
+
+        for obj in [o for o in objs if o]:
+            if action == "visibility":
+                for c in obj.children_recursive:
+                    if c.type == 'MESH':
+                        c.hide_render = True; c.hide_viewport = True
+                        c.keyframe_insert(data_path="hide_render", frame=1)
+                        c.hide_render = False; c.hide_viewport = False
+                        c.keyframe_insert(data_path="hide_render", frame=params["visible_at"])
+            elif action == "altitude":
+                obj.location.z = 0; obj.keyframe_insert(data_path="location", index=2, frame=1)
+                obj.location.z = params["height"]; obj.keyframe_insert(data_path="location", index=2, frame=params["frames"])
+            elif action == "emission_pulse":
+                if obj.data.materials:
+                    mat = obj.data.materials[0]
+                    nodes = mat.node_tree.nodes
+                    bsdf = nodes.get("Principled BSDF")
+                    if bsdf and 'Emission Strength' in bsdf.inputs:
+                        bsdf.inputs['Emission Strength'].default_value = 1.0
+                        bsdf.inputs['Emission Strength'].keyframe_insert(data_path="default_value", frame=params["start"])
+                        bsdf.inputs['Emission Strength'].default_value = params["max"]
+                        bsdf.inputs['Emission Strength'].keyframe_insert(data_path="default_value", frame=(params["start"]+params["end"])//2)
+                        bsdf.inputs['Emission Strength'].default_value = 5.0
+                        bsdf.inputs['Emission Strength'].keyframe_insert(data_path="default_value", frame=params["end"])
+
+    def _setup_camera_path(self, cam_obj, anim):
+        points = anim["points"]; path_name = f"Path_{cam_obj.name}"
+        curve_obj = bpy.data.objects.get(path_name)
+        if not curve_obj:
+            curve_data = bpy.data.curves.new(name=path_name, type='CURVE'); curve_data.dimensions = '3D'
+            curve_obj = bpy.data.objects.new(path_name, curve_data); bpy.data.collections[self.coll_cameras].objects.link(curve_obj)
+            spline = curve_data.splines.new('BEZIER'); spline.bezier_points.add(len(points)-1)
+            for i, pt in enumerate(points):
+                p = spline.bezier_points[i]; p.co = pt; p.handle_left_type = p.handle_right_type = 'AUTO'
+        con = next((c for c in cam_obj.constraints if c.type == 'FOLLOW_PATH'), None) or cam_obj.constraints.new(type='FOLLOW_PATH')
+        con.target, con.use_fixed_location = curve_obj, True
+        segments = anim.get("segments", [{"start": 1, "end": anim.get("end_frame", config.config.total_frames)}])
+        for seg in segments:
+            con.offset_factor = 0.0; con.keyframe_insert(data_path="offset_factor", frame=seg["start"])
+            con.offset_factor = 1.0; con.keyframe_insert(data_path="offset_factor", frame=seg["end"])
 
     def _ensure_collection(self, name):
         coll = bpy.data.collections.get(name) or bpy.data.collections.new(name)

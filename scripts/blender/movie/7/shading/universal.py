@@ -10,10 +10,9 @@ class UniversalShader(Shader):
         mats_cfg = params.get("materials", {})
         materials = {}
         for mat_id, cfg in mats_cfg.items():
-            materials[mat_id] = self._create_material(f"{mesh.name}_{mat_id}", cfg.get("color", (1,1,1)))
+            materials[mat_id] = self._create_material(f"{mesh.name}_{mat_id}", cfg)
 
         # 2. Assign primary material to the main body
-        # We assume the first material in config or 'primary' is the body material
         primary_mat = materials.get("primary")
         if primary_mat:
             mesh.data.materials.append(primary_mat)
@@ -27,12 +26,20 @@ class UniversalShader(Shader):
                 if mat:
                     child.data.materials.append(mat)
 
-    def _create_material(self, name, color):
+    def _create_material(self, name, cfg):
+        color = cfg.get("color", (1,1,1))
+        emission = cfg.get("emission", 0.0)
+
         mat = bpy.data.materials.new(name=name)
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         bsdf = nodes.get("Principled BSDF") or nodes.new(type='ShaderNodeBsdfPrincipled')
-        bsdf.inputs['Base Color'].default_value = (*color, 1)
+
+        bsdf.inputs['Base Color'].default_value = (*color[:3], 1.0)
+        if 'Emission' in bsdf.inputs: # For newer Blender versions
+             bsdf.inputs['Emission'].default_value = (*color[:3], 1.0)
+             bsdf.inputs['Emission Strength'].default_value = emission
+
         return mat
 
 registry.register_shading("UniversalShader", UniversalShader)

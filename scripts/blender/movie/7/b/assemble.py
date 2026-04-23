@@ -2,30 +2,54 @@ import bpy
 import math
 import os
 import sys
+import json
+import config
 
 # Ensure Movie 7 root is in sys.path
 M7_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M7_ROOT not in sys.path:
     sys.path.insert(0, M7_ROOT)
 
-import config
-import components
 from director import Director
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
+import components
 
 def run_assembly():
     print("PHASE B: OO SCENE ASSEMBLY")
     components.initialize_registry()
     director, manager = Director(), AssetManager(); manager.clear_scene()
-    director.setup_environment(); director.setup_lighting(); director.setup_cameras()
 
-    for ent_cfg in config.config.get("ensemble.entities", []):
+    # 1. Environment Build
+    from registry import registry
+    ext_modeler_cls = registry.get_modeling("ExteriorModeler")
+    if ext_modeler_cls:
+        ext_modeler = ext_modeler_cls()
+        ext_modeler.build_mesh("Environment", config.config.get("environment", {}))
+
+    backdrop_modeler_cls = registry.get_modeling("BackdropModeler")
+    if backdrop_modeler_cls:
+        backdrop_modeler = backdrop_modeler_cls()
+        backdrop_modeler.build_mesh("Chroma", config.config.get("chroma", {}))
+
+    # 2. Cinematics & Lighting
+    director.setup_lighting()
+    director.setup_cinematics()
+    director.apply_sequencing()
+
+    # 3. Characters
+    entities = config.config.get("ensemble.entities", [])
+    for ent_cfg in entities:
         char = CharacterBuilder.create(ent_cfg["id"], ent_cfg)
         char.build(manager)
         char.apply_pose()
         if char.animator:
             char.animate("idle", 1)
+
+    # 4. Refinements & Storyline
+    director.compose_ensemble()
+    director.position_protagonists()
+    director.apply_storyline()
 
     bpy.context.view_layer.update(); print("SUCCESS: Movie 7 Scene Assembled.")
 

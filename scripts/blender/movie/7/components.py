@@ -5,6 +5,7 @@ import modeling.procedural
 import rigging.procedural
 import shading.universal
 import animation.universal
+import environment.exterior
 
 def initialize_registry():
     """Explicitly import all components to ensure they register themselves."""
