@@ -11,30 +11,137 @@
       {
         "id": "Herbaceous",
         "type": "DYNAMIC",
-        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator" },
+        "components": { "modeling": "ProceduralModeler", "rigging": "ProceduralRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
+        "structure": {
+          "geometry": [
+            { "name": "Torso", "type": "CONE", "params": [0.5, 0.25, 1.5], "loc": [0,0,0.75], "mid_scale": 1.2, "material": "primary" },
+            { "name": "Neck", "type": "CONE", "params": [0.15, 0.12, 0.2], "loc": [0,0,1.6], "material": "primary" },
+            { "name": "Head", "type": "SPHERE", "params": [0.4], "loc": [0,0,2.1], "material": "primary" }
+          ],
+          "props": [
+            { "name": "Eye_L", "bone": "Head", "type": "SPHERE", "params": [0.065], "loc": [0.14, -0.35, 0.2], "material": "accent" },
+            { "name": "Eye_R", "bone": "Head", "type": "SPHERE", "params": [0.065], "loc": [-0.14, -0.35, 0.2], "material": "accent" }
+          ],
+          "rig": {
+            "bones": [
+              { "name": "Torso", "head": [0,0,0], "tail": [0,0,1.5], "deform": true },
+              { "name": "Neck", "head": [0,0,1.5], "tail": [0,0,1.7], "parent": "Torso", "deform": true },
+              { "name": "Head", "head": [0,0,1.7], "tail": [0,0,2.5], "parent": "Neck", "deform": true }
+            ]
+          }
+        },
         "parameters": {
-          "dimensions": { "torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2 },
-          "materials": { "bark_color": [0.1, 0.15, 0.05], "leaf_color": [0.6, 0.4, 0.8] },
-          "foliage": { "density": 50 }
+          "materials": { "primary": { "color": [0.1, 0.15, 0.05] }, "secondary": { "color": [0.6, 0.4, 0.8] }, "accent": { "color": [0.36, 0.24, 0.62] } },
+          "animation": {
+            "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
+            "idle": { "bone": "Torso", "freq": 0.1, "amp": 0.02 },
+            "dance": { "bone": "Torso", "freq": 0.3, "amp": 0.1 }
+          }
         },
         "default_pos": [-1.75, -0.3, 0.0],
-        "target_height": 1.0
+        "target_height": 1.0,
+        "is_protagonist": true
       },
       {
         "id": "Arbor",
         "type": "DYNAMIC",
-        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator" },
+        "components": { "modeling": "ProceduralModeler", "rigging": "ProceduralRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
+        "structure": {
+          "geometry": [
+            { "name": "Torso", "type": "CONE", "params": [0.5, 0.25, 1.5], "loc": [0,0,0.75], "mid_scale": 1.2, "material": "primary" },
+            { "name": "Neck", "type": "CONE", "params": [0.15, 0.12, 0.2], "loc": [0,0,1.6], "material": "primary" },
+            { "name": "Head", "type": "SPHERE", "params": [0.4], "loc": [0,0,2.1], "material": "primary" }
+          ],
+          "props": [
+            { "name": "Eye_L", "bone": "Head", "type": "SPHERE", "params": [0.065], "loc": [0.14, -0.35, 0.2], "material": "accent" },
+            { "name": "Eye_R", "bone": "Head", "type": "SPHERE", "params": [0.065], "loc": [-0.14, -0.35, 0.2], "material": "accent" }
+          ],
+          "rig": {
+            "bones": [
+              { "name": "Torso", "head": [0,0,0], "tail": [0,0,1.5], "deform": true },
+              { "name": "Neck", "head": [0,0,1.5], "tail": [0,0,1.7], "parent": "Torso", "deform": true },
+              { "name": "Head", "head": [0,0,1.7], "tail": [0,0,2.5], "parent": "Neck", "deform": true }
+            ]
+          }
+        },
         "parameters": {
-          "dimensions": { "torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2 },
-          "materials": { "bark_color": [0.2, 0.12, 0.08], "leaf_color": [0.2, 0.6, 0.1] },
-          "foliage": { "density": 50 }
+          "materials": { "primary": { "color": [0.2, 0.12, 0.08] }, "secondary": { "color": [0.2, 0.6, 0.1] }, "accent": { "color": [0.36, 0.24, 0.62] } },
+          "animation": {
+            "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
+            "idle": { "bone": "Torso", "freq": 0.1, "amp": 0.02 },
+            "dance": { "bone": "Torso", "freq": 0.3, "amp": 0.1 }
+          }
         },
         "default_pos": [1.75, 0.3, 0.0],
-        "target_height": 1.0
+        "target_height": 1.0,
+        "is_protagonist": true
+      },
+      { "id": "Sylvan_Majesty", "type": "MESH", "target_height": 12.0, "source_mesh": "Sylvan_Majesty.Body", "source_rig": "Sylvan_Majesty.Rig" },
+      { "id": "Radiant_Aura", "type": "MESH", "target_height": 12.0, "source_mesh": "Radiant_Aura.Body", "source_rig": "Radiant_Aura.Rig" },
+      { "id": "Verdant_Sprite", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Verdant_Sprite.Body", "source_rig": "Verdant_Sprite.Rig" },
+      { "id": "Shadow_Weaver", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Shadow_Weaver.Body", "source_rig": "Shadow_Weaver.Rig" },
+      { "id": "Emerald_Sentinel", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Emerald_Sentinel.Body", "source_rig": "Emerald_Sentinel.Rig" },
+      { "id": "Root_Guardian", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Root_Guardian.Body", "source_rig": "Root_Guardian.Rig" },
+      { "id": "Phoenix_Herald", "type": "MESH", "target_height": 10.0, "source_mesh": "Phoenix_Herald.Body", "source_rig": "Phoenix_Herald.Rig" },
+      { "id": "Golden_Phoenix", "type": "MESH", "target_height": 10.0, "source_mesh": "Golden_Phoenix.Body", "source_rig": "Golden_Phoenix.Rig" },
+      {
+        "id": "WaterCan", "type": "DYNAMIC",
+        "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
+        "structure": {
+           "geometry": [
+              { "name": "Body", "type": "SPHERE", "params": [0.4], "loc": [0,0,0], "material": "glow" },
+              { "name": "Spout", "type": "CONE", "params": [0.05, 0.12, 0.6], "loc": [0.4, 0, 0.2], "rot": [0, 45, 0], "material": "glow" }
+           ]
+        },
+        "parameters": { "materials": { "glow": { "color": [0.4, 0.1, 0.8], "emission": 5.0 } } },
+        "default_pos": [3, 3, 0.5]
+      },
+      {
+        "id": "GardenHose", "type": "DYNAMIC",
+        "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
+        "structure": {
+           "geometry": [
+              { "name": "Body", "type": "CONE", "params": [0.1, 0.1, 1.5], "loc": [0,0,0.75], "material": "glow" }
+           ]
+        },
+        "parameters": { "materials": { "glow": { "color": [0.1, 0.8, 0.2], "emission": 5.0 } } },
+        "default_pos": [-3, 3, 0.5]
       }
+    ],
+    "storyline": [
+      { "beat": "Arrival", "start": 1, "end": 600, "events": [
+         { "target": "Sylvan_Majesty", "action": "visibility", "params": { "visible_at": 300 } }
+      ]},
+      { "beat": "Rite of Joy", "start": 600, "end": 1800, "events": [
+         { "target": "Radiant_Aura", "action": "visibility", "params": { "visible_at": 600 } },
+         { "target": "Radiant_Aura", "action": "altitude", "params": { "height": 10.0, "frames": 600 } }
+      ]},
+      { "beat": "Blessing", "start": 1800, "end": 3000, "events": [
+         { "target": "WaterCan", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } },
+         { "target": "GardenHose", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } }
+      ]},
+      { "beat": "Final Ascent", "start": 3000, "end": 4200, "events": [
+         { "target": "ALL", "action": "animate", "params": { "tag": "dance", "duration": 1200 } }
+      ]}
     ]
   },
-  "environment": { "floor_size": 40, "backdrops": [ { "id": "Wide", "pos": [0, 20, 7.5], "rot": [90, 0, 0] } ] },
-  "cinematics": { "cameras": [ { "id": "Wide", "pos": [0, -8, 2], "lens": 35 } ], "active_camera": "Wide" },
+  "environment": {
+    "floor": { "size": 40, "interior_color": [0.22, 0.12, 0.05, 1.0], "exterior_radius": 300, "exterior_color": [0.02, 0.15, 0.02, 1.0] },
+    "roof": { "size": 42, "height": 30, "color": [0.7, 0.85, 1.0, 0.2] },
+    "pillars": { "radius": 0.8, "height": 10.0, "color": [0.95, 0.95, 0.97, 1.0] },
+    "mountains": { "radius": 250, "count": 24, "color": [0.05, 0.05, 0.08, 1.0] },
+    "vegetation": { "count": 50, "shades": [[0.04, 0.22, 0.04], [0.07, 0.30, 0.07]] },
+    "rock_path": { "length": 20, "width": 2.5, "color": [0.42, 0.42, 0.42, 1.0] },
+    "lavender": { "depth": 3.5, "density": 35, "stalk_color": [0.25, 0.5, 0.2], "flower_color": [0.55, 0.28, 0.85] },
+    "fog": { "density": 0.01, "color": [0.1, 0.5, 0.2, 1.0] }
+  },
+  "chroma": {
+    "size": 30, "alpha": 0.8,
+    "walls": [
+      { "id": "wide", "pos": [0, 20, 7.5], "rot": [90, 0, 0] },
+      { "id": "ots1", "pos": [-20, 0, 7.5], "rot": [90, 0, 90] },
+      { "id": "ots2", "pos": [20, 0, 7.5], "rot": [90, 0, -90] }
+    ]
+  },
   "normalization": { "strategy": "DENSITY", "enable_culling": true, "enable_origin_reset": true }
 }

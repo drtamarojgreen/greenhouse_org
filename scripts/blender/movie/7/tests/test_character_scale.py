@@ -14,22 +14,21 @@ from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
 
-class TestMovie7Parity(unittest.TestCase):
-    """Ensures Movie 7 output matches qualitative standards using universal logic."""
-
+class TestMovie7CharacterScale(unittest.TestCase):
     def setUp(self):
         components.initialize_registry()
         self.manager = AssetManager(); self.manager.clear_scene()
 
-    def test_structural_parity(self):
-        """Verifies that the built character has the expected structural complexity."""
+    def test_procedural_scaling(self):
+        """Verifies that the AssetManager correctly scales a character based on target_height."""
         from config import config
-        cfg = config.get_character_config("Herbaceous")
-        char = CharacterBuilder.create("Herbaceous", cfg)
+        cfg = config.get_character_config("Herbaceous").copy()
+        cfg["target_height"] = 5.0
+        char = CharacterBuilder.create("ScaledChar", cfg)
         char.build(self.manager)
 
-        # Should have mesh + props (Eyes/Ears)
-        self.assertGreaterEqual(len(char.rig.children), 5)
+        metrics = self.manager._get_metrics(char.rig)
+        self.assertAlmostEqual(metrics['height'], 5.0, places=1)
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,22 +14,22 @@ from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
 
-class TestMovie7Parity(unittest.TestCase):
-    """Ensures Movie 7 output matches qualitative standards using universal logic."""
-
+class TestMovie7Materials(unittest.TestCase):
     def setUp(self):
         components.initialize_registry()
         self.manager = AssetManager(); self.manager.clear_scene()
 
-    def test_structural_parity(self):
-        """Verifies that the built character has the expected structural complexity."""
+    def test_universal_material_assignment(self):
+        """Verifies that the UniversalShader assigns the expected material types."""
         from config import config
         cfg = config.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
-        # Should have mesh + props (Eyes/Ears)
-        self.assertGreaterEqual(len(char.rig.children), 5)
+        # Check that mesh data has materials
+        self.assertGreater(len(char.mesh.data.materials), 0)
+        primary_found = any("primary" in m.name for m in char.mesh.data.materials if m)
+        self.assertTrue(primary_found)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,14 +1,13 @@
 import bpy
-import bmesh
 import mathutils
 import os
-from .config import config
+import config
 
 class AssetManager:
     """Abstract Asset Manager synchronized with Movie 6 standards."""
 
     def __init__(self):
-        self.coll_assets = config.coll_assets
+        self.coll_assets = config.config.coll_assets
 
     def ensure_collection(self, name):
         coll = bpy.data.collections.get(name) or bpy.data.collections.new(name)
@@ -56,126 +55,79 @@ class AssetManager:
     def normalize_character(self, rig, target_height):
         """Comprehensive normalization matching Movie 6 standards."""
         if not rig or rig.type != 'ARMATURE': return
-
-        # 1. Parent-First Origin Reset
-        if config.get("normalization.enable_origin_reset", True):
+        if config.config.get("normalization.enable_origin_reset", True):
             self.execute_origin_reset(rig)
-
-        # 2. Scaling
         self.normalize_scale(rig, target_height)
-
-        # 3. Statistical Balanced Culling
-        if config.get("normalization.enable_culling", True):
+        if config.config.get("normalization.enable_culling", True):
             self.execute_balanced_culling(rig)
 
     def execute_origin_reset(self, rig):
-        """Standard Movie 6 Origin Reset logic."""
+        import mathutils
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
-        rig.location = (0, 0, 0)
-        rig.rotation_euler = (0, 0, 0)
-        rig.scale = (1, 1, 1)
-
+        rig.location, rig.rotation_euler, rig.scale = (0,0,0), (0,0,0), (1,1,1)
         for m in meshes:
             m.parent = rig
             m.matrix_parent_inverse = mathutils.Matrix.Identity(4)
-            m.location = (0, 0, 0)
-            m.rotation_euler = (0, 0, 0)
-            m.scale = (1, 1, 1)
-
+            m.location, m.rotation_euler, m.scale = (0,0,0), (0,0,0), (1,1,1)
         bpy.context.view_layer.update()
         metrics = self._get_metrics(rig)
-        if metrics:
-            rig.location.z -= metrics['ground_z']
+        if metrics: rig.location.z -= metrics['ground_z']
         bpy.context.view_layer.update()
 
     def normalize_scale(self, rig, target_height):
-        """Standard Movie 6 Scaling logic."""
         bpy.context.view_layer.update()
         metrics = self._get_metrics(rig)
         if not metrics or metrics['height'] < 0.001: return
-
         scale_factor = target_height / metrics['height']
         rig.scale *= scale_factor
-
         bpy.context.view_layer.objects.active = rig
         rig.select_set(True)
         bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-
         bpy.context.view_layer.update()
         new_metrics = self._get_metrics(rig)
-        if new_metrics:
-            rig.location.z -= new_metrics['ground_z']
+        if new_metrics: rig.location.z -= new_metrics['ground_z']
         bpy.context.view_layer.update()
 
     def execute_balanced_culling(self, rig):
-        """Standard Movie 6 Balanced Culling logic."""
+        import bmesh
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         irw = rig.matrix_world.inverted()
-
         for mesh in meshes:
             mw = mesh.matrix_world
             v_data = [(v.index, (irw @ (mw @ v.co)).length) for v in mesh.data.vertices]
             if not v_data: continue
-
             dists = [v[1] for v in v_data]
             max_d, min_d = max(dists), min(dists)
             bin_width = (max_d - min_d) / 10 if max_d > min_d else 1.0
-
-            bin0_threshold = min_d + bin_width
-            bin0_count = sum(1 for d in dists if d < bin0_threshold)
-
-            bin9_threshold = min_d + (9 * bin_width)
-            bin9_data = [v for v in v_data if v[1] >= bin9_threshold]
-
+            bin0_count = sum(1 for d in dists if d < min_d + bin_width)
+            bin9_data = [v for v in v_data if v[1] >= min_d + (9 * bin_width)]
             to_delete_count = len(bin9_data) - bin0_count
             if to_delete_count <= 0: continue
-
             bin9_data.sort(key=lambda x: x[1], reverse=True)
             target_indices = {v[0] for v in bin9_data[:to_delete_count]}
-
-            bm = bmesh.new()
-            bm.from_mesh(mesh.data)
-            bm.verts.ensure_lookup_table()
+            bm = bmesh.new(); bm.from_mesh(mesh.data); bm.verts.ensure_lookup_table()
             verts_to_remove = [bm.verts[i] for i in target_indices if i < len(bm.verts)]
             bmesh.ops.delete(bm, geom=verts_to_remove, context='VERTS')
-            bm.to_mesh(mesh.data)
-            bm.free()
-            mesh.data.update()
+            bm.to_mesh(mesh.data); bm.free(); mesh.data.update()
 
     def _get_metrics(self, rig):
-        """Density-based height and ground measurement (Movie 6 standard)."""
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         all_z = []
         for m in meshes:
             mw = m.matrix_world
-            for v in m.data.vertices:
-                all_z.append((mw @ v.co).z)
+            for v in m.data.vertices: all_z.append((mw @ v.co).z)
         if not all_z: return None
-
         min_z, max_z = min(all_z), max(all_z)
-        span = max_z - min_z
-        num_bins = 20
-        bin_width = span / num_bins if span > 0 else 1.0
-
+        num_bins, bin_width = 20, (max_z - min_z) / 20 if max_z > min_z else 1.0
         bins = [0] * num_bins
-        for z in all_z:
-            idx = min(num_bins - 1, int((z - min_z) / bin_width)) if bin_width > 0 else 0
-            bins[idx] += 1
-
+        for z in all_z: bins[min(num_bins-1, int((z-min_z)/bin_width))] += 1
         threshold = len(all_z) * 0.015
         true_ground_z, true_top_z = min_z, max_z
-
         for i, count in enumerate(bins):
-            if count > threshold:
-                true_ground_z = min_z + (i * bin_width)
-                break
+            if count > threshold: true_ground_z = min_z + (i * bin_width); break
         for i in range(num_bins - 1, -1, -1):
-            if bins[i] > threshold:
-                true_top_z = min_z + ((i + 1) * bin_width)
-                break
-
+            if bins[i] > threshold: true_top_z = min_z + ((i + 1) * bin_width); break
         return {"height": max(0.1, true_top_z - true_ground_z), "ground_z": true_ground_z}
 
     def apply_standard_renaming(self, obj, new_id, is_rig=False):
-        suffix = "Rig" if is_rig else "Body"
-        obj.name = f"{new_id}.{suffix}"
+        obj.name = f"{new_id}.{'Rig' if is_rig else 'Body'}"

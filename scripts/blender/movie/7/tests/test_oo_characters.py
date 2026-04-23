@@ -3,27 +3,32 @@ import bpy
 import os
 import sys
 
-M7_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M7_DIR not in sys.path:
-    sys.path.append(M7_DIR)
+# Standard Path setup for tests
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+M7_ROOT = os.path.dirname(TEST_DIR)
 
-from config import config
+if M7_ROOT not in sys.path:
+    sys.path.insert(0, M7_ROOT)
+
 from asset_manager import AssetManager
-from character_builder import CharacterBuilder, MeshCharacter, DynamicCharacter
+from character_builder import CharacterBuilder
+import components
 
 class TestMovie7OOCharacters(unittest.TestCase):
     def setUp(self):
-        self.manager = AssetManager()
-        self.manager.clear_scene()
+        components.initialize_registry()
+        self.manager = AssetManager(); self.manager.clear_scene()
 
-    def test_factory_creation(self):
-        mesh_cfg = {"type": "MESH", "source_mesh": "Test"}
-        char_mesh = CharacterBuilder.create("MeshChar", mesh_cfg)
-        self.assertIsInstance(char_mesh, MeshCharacter)
+    def test_character_oo_composition(self):
+        """Verifies composition and component resolution."""
+        from config import config
+        cfg = config.get_character_config("Herbaceous")
+        char = CharacterBuilder.create("Herbaceous", cfg)
 
-        dyn_cfg = {"type": "DYNAMIC", "components": {"modeling": "PlantModeler"}}
-        char_dyn = CharacterBuilder.create("DynChar", dyn_cfg)
-        self.assertIsInstance(char_dyn, DynamicCharacter)
+        self.assertIsNotNone(char.modeler)
+        self.assertIsNotNone(char.rigger)
+        self.assertIsNotNone(char.shader)
+        self.assertIsNotNone(char.animator)
 
 if __name__ == "__main__":
     unittest.main()

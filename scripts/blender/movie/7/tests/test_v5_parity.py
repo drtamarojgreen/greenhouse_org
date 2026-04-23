@@ -14,22 +14,22 @@ from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
 
-class TestMovie7Parity(unittest.TestCase):
-    """Ensures Movie 7 output matches qualitative standards using universal logic."""
-
+class TestMovie7V5Parity(unittest.TestCase):
     def setUp(self):
         components.initialize_registry()
         self.manager = AssetManager(); self.manager.clear_scene()
 
-    def test_structural_parity(self):
-        """Verifies that the built character has the expected structural complexity."""
+    def test_vertex_group_naming_parity(self):
+        """Verifies that vertex groups match bone names (standard for V5/V6 parity)."""
         from config import config
         cfg = config.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
-        # Should have mesh + props (Eyes/Ears)
-        self.assertGreaterEqual(len(char.rig.children), 5)
+        vg_names = {vg.name for vg in char.mesh.vertex_groups}
+        for bone in char.rig.data.bones:
+            if bone.use_deform:
+                self.assertIn(bone.name, vg_names)
 
 if __name__ == "__main__":
     unittest.main()

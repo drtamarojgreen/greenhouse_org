@@ -1,26 +1,20 @@
 class ComponentRegistry:
     """Registry to map configuration strings to implementation classes."""
-    _modeling = {}
-    _rigging = {}
-    _shading = {}
-    _animation = {}
+    def __init__(self):
+        self._modeling = {}
+        self._rigging = {}
+        self._shading = {}
+        self._animation = {}
 
-    @classmethod
-    def register_modeling(cls, name, impl): cls._modeling[name] = impl
-    @classmethod
-    def register_rigging(cls, name, impl): cls._rigging[name] = impl
-    @classmethod
-    def register_shading(cls, name, impl): cls._shading[name] = impl
-    @classmethod
-    def register_animation(cls, name, impl): cls._animation[name] = impl
+    def register_modeling(self, name, impl): self._modeling[name] = impl
+    def register_rigging(self, name, impl): self._rigging[name] = impl
+    def register_shading(self, name, impl): self._shading[name] = impl
+    def register_animation(self, name, impl): self._animation[name] = impl
 
-    @classmethod
-    def get_modeling(cls, name): return cls._modeling.get(name)
-    @classmethod
-    def get_rigging(cls, name): return cls._rigging.get(name)
-    @classmethod
-    def get_shading(cls, name): return cls._shading.get(name)
-    @classmethod
-    def get_animation(cls, name): return cls._animation.get(name)
+    def get_modeling(self, name): return self._modeling.get(name)
+    def get_rigging(self, name): return self._rigging.get(name)
+    def get_shading(self, name): return self._shading.get(name)
+    def get_animation(self, name): return self._animation.get(name)
 
+# Singleton instance
 registry = ComponentRegistry()

@@ -14,22 +14,22 @@ from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
 
-class TestMovie7Parity(unittest.TestCase):
-    """Ensures Movie 7 output matches qualitative standards using universal logic."""
-
+class TestMovie7AnimationPresence(unittest.TestCase):
     def setUp(self):
         components.initialize_registry()
         self.manager = AssetManager(); self.manager.clear_scene()
 
-    def test_structural_parity(self):
-        """Verifies that the built character has the expected structural complexity."""
+    def test_procedural_animation_presence(self):
+        """Verifies that the animator correctly targets bones from config."""
         from config import config
         cfg = config.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
-        # Should have mesh + props (Eyes/Ears)
-        self.assertGreaterEqual(len(char.rig.children), 5)
+        char.animate("talking", 1, {"duration": 10})
+
+        self.assertIsNotNone(char.rig.animation_data)
+        self.assertIsNotNone(char.rig.animation_data.action)
 
 if __name__ == "__main__":
     unittest.main()
