@@ -15,6 +15,8 @@ import rigging.procedural
 import shading.universal
 import animation.universal
 
+MAIN_CHARACTER_IDS = {"Arbor", "Herbaceous", "Herbacous"}
+
 class Character:
     """Strictly OO Character container following Composition over Inheritance."""
     def __init__(self, char_id, cfg):
@@ -22,6 +24,7 @@ class Character:
         self.cfg = cfg
         self.rig = None
         self.mesh = None
+        self.is_protagonist = cfg.get("is_protagonist", False) or char_id in MAIN_CHARACTER_IDS
 
         c_cfg = cfg.get("components", {})
         self.modeler = self._resolve(registry.get_modeling, c_cfg.get("modeling"))
@@ -61,6 +64,12 @@ class Character:
         if self.rig and self.cfg.get("target_height"):
             manager.normalize_character(self.rig, self.cfg["target_height"])
 
+        # 6. Main character tagging for director/cinematic logic
+        if self.rig:
+            self.rig["is_protagonist"] = self.is_protagonist
+        if self.mesh:
+            self.mesh["is_protagonist"] = self.is_protagonist
+
     def apply_pose(self):
         if self.rig:
             pos = self.cfg.get("default_pos", [0, 0, 0])
@@ -96,6 +105,10 @@ class CharacterBuilder:
     """Factory for Character instantiation."""
     @staticmethod
     def create(char_id, cfg):
-        ctype = cfg.get("type", "MESH")
-        if ctype == "DYNAMIC": return Character(char_id, cfg)
-        return LinkedCharacter(char_id, cfg)
+        resolved_cfg = dict(cfg)
+        if char_id in MAIN_CHARACTER_IDS:
+            resolved_cfg["is_protagonist"] = True
+
+        ctype = resolved_cfg.get("type", "MESH")
+        if ctype == "DYNAMIC": return Character(char_id, resolved_cfg)
+        return LinkedCharacter(char_id, resolved_cfg)
