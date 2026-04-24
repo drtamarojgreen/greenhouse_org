@@ -1,5 +1,53 @@
 {
   "production": { "title": "Movie 7", "total_frames": 4200, "start_frame": 1 },
+  "text_overlays": {
+    "intro": [
+      {
+        "text": "Scene 7: The Greenhouse Awakening",
+        "start": 1,
+        "end": 180,
+        "font_size": 72,
+        "font_weight": "BOLD",
+        "color": [0.95, 0.98, 0.90, 1.0],
+        "accent_color": [0.42, 0.78, 0.42, 1.0],
+        "position": [0.5, 0.84],
+        "shadow": { "enabled": true, "color": [0.02, 0.05, 0.02, 0.85], "offset": [2, -2], "blur": 8 }
+      },
+      {
+        "text": "The spirits awaken. The greenhouse breathes.",
+        "start": 100,
+        "end": 320,
+        "font_size": 42,
+        "font_weight": "SEMIBOLD",
+        "color": [0.88, 0.95, 0.84, 1.0],
+        "position": [0.5, 0.76],
+        "stroke": { "enabled": true, "color": [0.10, 0.24, 0.10, 0.95], "width": 1.5 }
+      }
+    ],
+    "outro": [
+      {
+        "text": "Growth is inevitable.",
+        "start": 3900,
+        "end": 4100,
+        "font_size": 60,
+        "font_weight": "BOLD",
+        "color": [0.94, 0.92, 0.84, 1.0],
+        "accent_color": [0.64, 0.48, 0.22, 1.0],
+        "position": [0.5, 0.82],
+        "shadow": { "enabled": true, "color": [0.03, 0.02, 0.01, 0.8], "offset": [2, -2], "blur": 7 }
+      },
+      {
+        "text": "Arbor & Herbaceous",
+        "start": 4020,
+        "end": 4200,
+        "font_size": 40,
+        "font_weight": "MEDIUM",
+        "color": [0.82, 0.92, 0.76, 1.0],
+        "position": [0.5, 0.73],
+        "stroke": { "enabled": true, "color": [0.05, 0.16, 0.06, 0.95], "width": 1.25 }
+      }
+    ]
+  },
   "paths": {
     "equipment_dir": "/home/tamarojgreen/Documents/Movie_Equipment/",
     "assets_blend": "MHD2_animation133.blend",
