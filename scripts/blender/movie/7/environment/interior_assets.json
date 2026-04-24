@@ -1,0 +1,200 @@
+{
+  "racks": [
+    {
+      "id": "rack_front_left",
+      "pos": [-14, 2, 0],
+      "rot": [0, 0, 0],
+      "params": {
+        "width": 3.0, "depth": 0.6, "height": 2.2,
+        "shelves": 4,
+        "shelf_color": [0.55, 0.45, 0.30],
+        "frame_color": [0.20, 0.12, 0.06]
+      }
+    },
+    {
+      "id": "rack_front_right",
+      "pos": [14, 2, 0],
+      "rot": [0, 0, 0],
+      "params": {
+        "width": 3.0, "depth": 0.6, "height": 2.2,
+        "shelves": 4,
+        "shelf_color": [0.55, 0.45, 0.30],
+        "frame_color": [0.20, 0.12, 0.06]
+      }
+    },
+    {
+      "id": "rack_rear_left",
+      "pos": [-14, 15, 0],
+      "rot": [0, 0, 0],
+      "params": {
+        "width": 3.0, "depth": 0.6, "height": 2.2,
+        "shelves": 4,
+        "shelf_color": [0.55, 0.45, 0.30],
+        "frame_color": [0.20, 0.12, 0.06]
+      }
+    },
+    {
+      "id": "rack_rear_right",
+      "pos": [14, 15, 0],
+      "rot": [0, 0, 0],
+      "params": {
+        "width": 3.0, "depth": 0.6, "height": 2.2,
+        "shelves": 4,
+        "shelf_color": [0.55, 0.45, 0.30],
+        "frame_color": [0.20, 0.12, 0.06]
+      }
+    }
+  ],
+
+  "flower_beds": [
+    {
+      "id": "flower_bed_center",
+      "pos": [0, 3, 0],
+      "params": {
+        "width": 4.0, "depth": 2.0, "wall_height": 0.35,
+        "soil_color": [0.12, 0.08, 0.04],
+        "wall_color": [0.45, 0.35, 0.25],
+        "plant_density": 20,
+        "plant_colors": [[0.1, 0.6, 0.1], [0.55, 0.28, 0.85]]
+      }
+    },
+    {
+      "id": "flower_bed_left",
+      "pos": [-8, 8, 0],
+      "params": {
+        "width": 3.0, "depth": 1.5, "wall_height": 0.35,
+        "soil_color": [0.12, 0.08, 0.04],
+        "wall_color": [0.45, 0.35, 0.25],
+        "plant_density": 15,
+        "plant_colors": [[0.1, 0.5, 0.1], [0.8, 0.2, 0.2]]
+      }
+    },
+    {
+      "id": "flower_bed_right",
+      "pos": [8, 8, 0],
+      "params": {
+        "width": 3.0, "depth": 1.5, "wall_height": 0.35,
+        "soil_color": [0.12, 0.08, 0.04],
+        "wall_color": [0.45, 0.35, 0.25],
+        "plant_density": 15,
+        "plant_colors": [[0.1, 0.5, 0.1], [0.2, 0.2, 0.8]]
+      }
+    }
+  ],
+
+  "potted_plants": [
+    {
+      "id": "pot_entrance_left",
+      "pos": [-2.5, -5, 0],
+      "params": {
+        "pot_radius": 0.25, "pot_height": 0.3,
+        "pot_color": [0.55, 0.30, 0.15],
+        "plant_type": "bush", "plant_scale": 1.0, "plant_color": [0.1, 0.5, 0.1]
+      }
+    },
+    {
+      "id": "pot_entrance_right",
+      "pos": [2.5, -5, 0],
+      "params": {
+        "pot_radius": 0.25, "pot_height": 0.3,
+        "pot_color": [0.55, 0.30, 0.15],
+        "plant_type": "bush", "plant_scale": 1.0, "plant_color": [0.1, 0.5, 0.1]
+      }
+    },
+    {
+      "id": "pot_rack_left_s1", "pos": [-14.5, 2, 0.76],
+      "params": { "pot_radius": 0.18, "pot_height": 0.2, "pot_color": [0.4, 0.2, 0.1], "plant_type": "bush", "plant_scale": 0.6, "plant_color": [0.2, 0.6, 0.2] }
+    },
+    {
+      "id": "pot_rack_left_s2", "pos": [-13.5, 2, 1.43],
+      "params": { "pot_radius": 0.18, "pot_height": 0.2, "pot_color": [0.4, 0.2, 0.1], "plant_type": "tall", "plant_scale": 0.5, "plant_color": [0.2, 0.5, 0.2] }
+    },
+    {
+      "id": "pot_rack_right_s1", "pos": [14.5, 2, 0.76],
+      "params": { "pot_radius": 0.18, "pot_height": 0.2, "pot_color": [0.4, 0.2, 0.1], "plant_type": "bush", "plant_scale": 0.6, "plant_color": [0.2, 0.6, 0.2] }
+    },
+    {
+      "id": "pot_rack_right_s2", "pos": [13.5, 2, 1.43],
+      "params": { "pot_radius": 0.18, "pot_height": 0.2, "pot_color": [0.4, 0.2, 0.1], "plant_type": "tall", "plant_scale": 0.5, "plant_color": [0.2, 0.5, 0.2] }
+    }
+  ],
+
+  "chairs": [
+    {
+      "id": "chair_left",
+      "pos": [-1.8, -2.0, 0],
+      "rot": [0, 0, 15],
+      "params": {
+        "seat_color": [0.25, 0.45, 0.25],
+        "frame_color": [0.18, 0.10, 0.04],
+        "cushion": true
+      }
+    },
+    {
+      "id": "chair_right",
+      "pos": [1.8, -2.0, 0],
+      "rot": [0, 0, -15],
+      "params": {
+        "seat_color": [0.25, 0.45, 0.25],
+        "frame_color": [0.18, 0.10, 0.04],
+        "cushion": true
+      }
+    }
+  ],
+
+  "end_tables": [
+    {
+      "id": "end_table_left",
+      "pos": [-3.2, -2.0, 0],
+      "params": {
+        "top_radius": 0.35, "height": 0.65,
+        "top_color": [0.55, 0.45, 0.30],
+        "leg_color": [0.18, 0.10, 0.04],
+        "legs": 3
+      }
+    },
+    {
+      "id": "end_table_right",
+      "pos": [3.2, -2.0, 0],
+      "params": {
+        "top_radius": 0.35, "height": 0.65,
+        "top_color": [0.55, 0.45, 0.30],
+        "leg_color": [0.18, 0.10, 0.04],
+        "legs": 3
+      }
+    }
+  ],
+
+  "television_stand": {
+    "id": "tv_stand",
+    "pos": [0, 17, 0],
+    "params": {
+      "width": 1.8, "depth": 0.5, "height": 0.55,
+      "cabinet_color": [0.15, 0.10, 0.06],
+      "door_color": [0.20, 0.14, 0.08],
+      "shelves": 2
+    }
+  },
+
+  "television": {
+    "id": "television",
+    "pos": [0, 17, 0.55],
+    "params": {
+      "screen_width": 1.4, "screen_height": 0.82, "depth": 0.08,
+      "bezel_color": [0.05, 0.05, 0.05],
+      "screen_emission_strength": 6.0,
+      "stand_height": 0.12
+    }
+  },
+
+  "logo": {
+    "text": "GreenhouseMD",
+    "color": [0.20, 0.80, 0.25],
+    "background_color": [0.02, 0.04, 0.02],
+    "emission_strength": 8.0,
+    "scale": [1.1, 0.65, 1.0],
+    "animate": true,
+    "pulse_freq": 0.5,
+    "pulse_amp": 2.0
+  }
+}

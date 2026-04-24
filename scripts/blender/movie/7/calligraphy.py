@@ -44,6 +44,8 @@ class CalligraphyDirector:
         curve.align_x = 'CENTER'
         curve.align_y = 'CENTER'
         curve.size = cfg.get("size", 0.7)
+        curve.extrude = cfg.get("extrude", 0.08)
+        curve.bevel_depth = cfg.get("bevel_depth", 0.01)
         obj = bpy.data.objects.new(name, curve)
         bpy.context.scene.collection.objects.link(obj)
 
@@ -73,7 +75,7 @@ class CalligraphyDirector:
             forward = cam_q @ mathutils.Vector((0, 0, -1))
             text_obj.location = cam_obj.matrix_world.translation + (right * offset.x) + (up * offset.y) + (forward * offset.z)
             to_cam = (cam_obj.matrix_world.translation - text_obj.location).normalized()
-            text_obj.rotation_euler = to_cam.to_track_quat('Y', 'Z').to_euler()
+            text_obj.rotation_euler = to_cam.to_track_quat('Z', 'Y').to_euler()
             text_obj.keyframe_insert(data_path="location", frame=frame)
             text_obj.keyframe_insert(data_path="rotation_euler", frame=frame)
 
@@ -106,7 +108,10 @@ class CalligraphyDirector:
             if l_obj.name not in bpy.context.scene.collection.objects:
                 bpy.context.scene.collection.objects.link(l_obj)
             l_obj.location = text_obj.location + mathutils.Vector(ld.get("offset", [0, 2, 0.5]))
-            l_data.color = theme_colors[ld.get("color_index", 0) % len(theme_colors)]
+            if "color" in ld:
+                l_data.color = ld["color"]
+            else:
+                l_data.color = theme_colors[ld.get("color_index", 0) % len(theme_colors)]
             self._animate_light_curve(l_data, ld.get("energy", 240.0), i0, i1, o0, o1)
 
     def _animate_light_curve(self, light_data, base_energy, i0, i1, o0, o1):

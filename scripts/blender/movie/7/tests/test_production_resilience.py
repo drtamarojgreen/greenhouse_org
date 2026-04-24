@@ -89,6 +89,13 @@ class TestProductionResilience(unittest.TestCase):
     def test_res_batch_19(self): self.assertTrue(any("Bark" in m.name for m in bpy.data.materials))
     def test_res_batch_20(self): self.assertTrue(any("Leaf" in m.name for m in bpy.data.materials))
     def test_res_batch_21(self): self.assertTrue(any("Iris" in m.name for m in bpy.data.materials))
+    def test_res_batch_22(self): self.assertIn("television", bpy.data.objects)
+    def test_res_batch_23(self): self.assertIn("tv_stand", bpy.data.objects)
+    def test_res_batch_24(self): 
+        # Calligraphy setup needs to be called explicitly in the test if not in setUpClass
+        self.director.setup_calligraphy()
+        self.assertIn("GreenhouseMD_Calligraphy", bpy.data.objects)
 
 if __name__ == "__main__":
-    unittest.main()
+    import sys
+    unittest.main(argv=[sys.argv[0]])

@@ -51,7 +51,8 @@
   "paths": {
     "equipment_dir": "/home/tamarojgreen/Documents/Movie_Equipment/",
     "assets_blend": "MHD2_animation133.blend",
-    "output_dir": "scripts/blender/movie/7/assets/"
+    "output_dir": "scripts/blender/movie/7/assets/",
+    "m6_root": "scripts/blender/movie/6/"
   },
   "collections": { "assets": "7a.ASSETS", "environment": "7b.ENVIRONMENT", "cameras": "SETTINGS.CAMERAS" },
   "ensemble": {
@@ -150,5 +151,6 @@
       { "id": "ots2", "pos": [20, 0, 7.5], "rot": [90, 0, -90] }
     ]
   },
+  "interior": {},
   "normalization": { "strategy": "BBOX", "enable_culling": false, "enable_origin_reset": true }
 }
