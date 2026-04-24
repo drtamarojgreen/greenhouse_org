@@ -1,5 +1,53 @@
 {
   "production": { "title": "Movie 7", "total_frames": 4200, "start_frame": 1 },
+  "text_overlays": {
+    "intro": [
+      {
+        "text": "Scene 7: The Greenhouse Awakening",
+        "start": 1,
+        "end": 180,
+        "font_size": 72,
+        "font_weight": "BOLD",
+        "color": [0.95, 0.98, 0.90, 1.0],
+        "accent_color": [0.42, 0.78, 0.42, 1.0],
+        "position": [0.5, 0.84],
+        "shadow": { "enabled": true, "color": [0.02, 0.05, 0.02, 0.85], "offset": [2, -2], "blur": 8 }
+      },
+      {
+        "text": "The spirits awaken. The greenhouse breathes.",
+        "start": 100,
+        "end": 320,
+        "font_size": 42,
+        "font_weight": "SEMIBOLD",
+        "color": [0.88, 0.95, 0.84, 1.0],
+        "position": [0.5, 0.76],
+        "stroke": { "enabled": true, "color": [0.10, 0.24, 0.10, 0.95], "width": 1.5 }
+      }
+    ],
+    "outro": [
+      {
+        "text": "Growth is inevitable.",
+        "start": 3900,
+        "end": 4100,
+        "font_size": 60,
+        "font_weight": "BOLD",
+        "color": [0.94, 0.92, 0.84, 1.0],
+        "accent_color": [0.64, 0.48, 0.22, 1.0],
+        "position": [0.5, 0.82],
+        "shadow": { "enabled": true, "color": [0.03, 0.02, 0.01, 0.8], "offset": [2, -2], "blur": 7 }
+      },
+      {
+        "text": "Arbor & Herbaceous",
+        "start": 4020,
+        "end": 4200,
+        "font_size": 40,
+        "font_weight": "MEDIUM",
+        "color": [0.82, 0.92, 0.76, 1.0],
+        "position": [0.5, 0.73],
+        "stroke": { "enabled": true, "color": [0.05, 0.16, 0.06, 0.95], "width": 1.25 }
+      }
+    ]
+  },
   "paths": {
     "equipment_dir": "/home/tamarojgreen/Documents/Movie_Equipment/",
     "assets_blend": "MHD2_animation133.blend",
@@ -10,31 +58,97 @@
     "entities": [
       {
         "id": "Herbaceous",
-        "type": "DYNAMIC",
-        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator" },
-        "parameters": {
-          "dimensions": { "torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2 },
-          "materials": { "bark_color": [0.1, 0.15, 0.05], "leaf_color": [0.6, 0.4, 0.8] },
-          "foliage": { "density": 50 }
-        },
-        "default_pos": [-1.75, -0.3, 0.0],
-        "target_height": 1.0
+        "type": "MESH",
+        "source_mesh": "Herbaceous_V5_Body",
+        "source_rig": "Herbaceous_V5_Rig",
+        "default_pos": [-1.2, 0.5, 0.0],
+        "target_height": 3.0,
+        "is_protagonist": true
       },
       {
         "id": "Arbor",
         "type": "DYNAMIC",
-        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "PlantShader", "animation": "PlantAnimator" },
+        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
         "parameters": {
-          "dimensions": { "torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2 },
-          "materials": { "bark_color": [0.2, 0.12, 0.08], "leaf_color": [0.2, 0.6, 0.1] },
-          "foliage": { "density": 50 }
+          "seed": 1337,
+          "materials": { "primary": { "color": [0.2, 0.12, 0.08] }, "secondary": { "color": [0.2, 0.6, 0.1] }, "accent": { "color": [0.36, 0.24, 0.62] } },
+          "animation": {
+            "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
+            "idle": { "bone": "Torso", "freq": 0.1, "amp": 0.02 },
+            "dance": { "bone": "Torso", "freq": 0.3, "amp": 0.1 }
+          }
         },
-        "default_pos": [1.75, 0.3, 0.0],
-        "target_height": 1.0
+        "default_pos": [1.2, 0.5, 0.0],
+        "target_height": 3.0,
+        "is_protagonist": true
+      },
+      { "id": "Sylvan_Majesty", "type": "MESH", "target_height": 3.0, "default_pos": [0.0, 5.5, 0.0], "source_mesh": "Mesh1_Mesh1.044", "source_rig": "Armature.002" },
+      { "id": "Radiant_Aura", "type": "MESH", "target_height": 3.0, "default_pos": [2.2, 6.0, 0.0], "source_mesh": "Mesh1_Mesh1.001", "source_rig": "Armature.004" },
+      { "id": "Verdant_Sprite", "type": "MESH", "target_height": 3.0, "default_pos": [-2.2, 6.0, 0.0], "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.006", "source_rig": "Armature.001" },
+      { "id": "Shadow_Weaver", "type": "MESH", "target_height": 3.0, "default_pos": [4.0, 7.0, 0.0], "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.052", "source_rig": "Armature.003" },
+      { "id": "Emerald_Sentinel", "type": "MESH", "target_height": 3.0, "default_pos": [-4.0, 7.0, 0.0], "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.058", "source_rig": "Armature" },
+      { "id": "Root_Guardian", "type": "MESH", "target_height": 3.0, "default_pos": [6.0, 8.0, 0.0], "is_antagonist": true, "source_mesh": "skeleton", "source_rig": "skeleton" },
+      { "id": "Phoenix_Herald", "type": "MESH", "target_height": 3.0, "default_pos": [-6.0, 8.0, 0.0], "source_mesh": "Leonardo_Phoenix textured 3D model", "source_rig": "skeleton" },
+      { "id": "Golden_Phoenix", "type": "MESH", "target_height": 3.0, "default_pos": [0.0, 8.8, 0.0], "source_mesh": "Leonardo_Phoenix textured 3D model.001", "source_rig": "skeleton.001" },
+      {
+        "id": "WaterCan", "type": "DYNAMIC",
+        "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
+        "structure": {
+           "geometry": [
+              { "name": "Body", "type": "SPHERE", "params": [0.4], "loc": [0,0,0], "material": "glow" },
+              { "name": "Spout", "type": "CONE", "params": [0.05, 0.12, 0.6], "loc": [0.4, 0, 0.2], "rot": [0, 45, 0], "material": "glow" }
+           ]
+        },
+        "parameters": { "materials": { "glow": { "color": [0.4, 0.1, 0.8], "emission": 5.0 } } },
+        "default_pos": [3, 3, 0.5]
+      },
+      {
+        "id": "GardenHose", "type": "DYNAMIC",
+        "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
+        "structure": {
+           "geometry": [
+              { "name": "Body", "type": "CONE", "params": [0.1, 0.1, 1.5], "loc": [0,0,0.75], "material": "glow" }
+           ]
+        },
+        "parameters": { "materials": { "glow": { "color": [0.1, 0.8, 0.2], "emission": 5.0 } } },
+        "default_pos": [-3, 3, 0.5]
       }
+    ],
+    "storyline": [
+      { "beat": "Arrival", "start": 1, "end": 600, "events": [
+         { "target": "Sylvan_Majesty", "action": "visibility", "params": { "visible_at": 300 } },
+         { "target": "Shadow_Weaver", "action": "animate", "start": 1, "params": { "tag": "shake", "duration": 599 } }
+      ]},
+      { "beat": "Rite of Joy", "start": 600, "end": 1800, "events": [
+         { "target": "Radiant_Aura", "action": "visibility", "params": { "visible_at": 600 } },
+         { "target": "Radiant_Aura", "action": "altitude", "params": { "height": 10.0, "frames": 600 } }
+      ]},
+      { "beat": "Blessing", "start": 1800, "end": 3000, "events": [
+         { "target": "WaterCan", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } },
+         { "target": "GardenHose", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } }
+      ]},
+      { "beat": "Final Ascent", "start": 3000, "end": 4200, "events": [
+         { "target": "ALL", "action": "animate", "params": { "tag": "dance", "duration": 1200 } }
+      ]}
     ]
   },
-  "environment": { "floor_size": 40, "backdrops": [ { "id": "Wide", "pos": [0, 20, 7.5], "rot": [90, 0, 0] } ] },
-  "cinematics": { "cameras": [ { "id": "Wide", "pos": [0, -8, 2], "lens": 35 } ], "active_camera": "Wide" },
-  "normalization": { "strategy": "DENSITY", "enable_culling": true, "enable_origin_reset": true }
+  "environment": {
+    "floor": { "size": 40, "interior_color": [0.22, 0.12, 0.05, 1.0], "exterior_radius": 300, "exterior_color": [0.02, 0.15, 0.02, 1.0] },
+    "roof": { "size": 42, "height": 30, "color": [0.7, 0.85, 1.0, 0.2] },
+    "pillars": { "radius": 0.8, "height": 10.0, "color": [0.95, 0.95, 0.97, 1.0] },
+    "mountains": { "radius": 250, "count": 24, "color": [0.05, 0.05, 0.08, 1.0] },
+    "vegetation": { "count": 50, "shades": [[0.04, 0.22, 0.04], [0.07, 0.30, 0.07]] },
+    "rock_path": { "length": 20, "width": 2.5, "color": [0.42, 0.42, 0.42, 1.0] },
+    "lavender": { "depth": 3.5, "density": 35, "stalk_color": [0.25, 0.5, 0.2], "flower_color": [0.55, 0.28, 0.85] },
+    "fog": { "density": 0.01, "color": [0.1, 0.5, 0.2, 1.0] }
+  },
+  "chroma": {
+    "size": 30, "alpha": 0.8,
+    "walls": [
+      { "id": "wide", "pos": [0, 20, 7.5], "rot": [90, 0, 0] },
+      { "id": "ots1", "pos": [-20, 0, 7.5], "rot": [90, 0, 90] },
+      { "id": "ots2", "pos": [20, 0, 7.5], "rot": [90, 0, -90] }
+    ]
+  },
+  "normalization": { "strategy": "BBOX", "enable_culling": false, "enable_origin_reset": true }
 }

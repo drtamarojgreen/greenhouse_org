@@ -1,27 +1,26 @@
-import bpy
 import unittest
-import sys
+import bpy
 import os
+import sys
 
-# Ensure the test directory is in the path for module discovery
+# scripts/blender/movie/7/tests/run_all_tests.py
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-if TEST_DIR not in sys.path:
-    sys.path.insert(0, TEST_DIR)
+M7_DIR = os.path.dirname(TEST_DIR)
 
-# Add parent directory to sys.path for Movie 7 modules
-M7_DIR = os.path.abspath(os.path.join(TEST_DIR, '..'))
 if M7_DIR not in sys.path:
     sys.path.insert(0, M7_DIR)
 
 def run_tests():
-    # Discover all tests in the current directory
-    suite = unittest.TestLoader().discover(TEST_DIR)
+    # Force registration by importing components
+    import components
+    components.initialize_registry()
 
-    # Run the tests
+    loader = unittest.TestLoader()
+    suite = loader.discover(TEST_DIR)
+
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
 
-    # Exit with appropriate status code
     if not result.wasSuccessful():
         sys.exit(1)
     sys.exit(0)

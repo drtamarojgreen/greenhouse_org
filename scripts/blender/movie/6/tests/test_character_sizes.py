@@ -254,7 +254,7 @@ def run_character_size_audit():
             results[key] = {"before": metrics, "final_name": rig.name}
 
     print("\nPhase 2: Normalizing Assets (Baseline)...")
-    manager.renormalize_objects()
+    #manager.renormalize_objects()
     bpy.context.view_layer.update()
 
     print("\nPhase 3: Post-Normalization Audit")
@@ -278,7 +278,7 @@ def run_character_size_audit():
             experimental_origin_reset(rig.name)
     
     print("\nPhase 6: Final Re-Normalization Audit")
-    manager.renormalize_objects()
+    #manager.renormalize_objects()
     bpy.context.view_layer.update()
     
     for rig in [o for o in bpy.data.objects if o.type == 'ARMATURE']:

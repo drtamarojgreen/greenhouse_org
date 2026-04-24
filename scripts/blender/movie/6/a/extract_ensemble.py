@@ -54,8 +54,9 @@ def _safe_fbx_export(filepath, use_selection=True):
         "use_selection": use_selection,
         "apply_unit_scale": False,
         "bake_anim": False,
+        "add_leaf_bones": False,
         "path_mode": 'COPY',
-        "embed_textures": False,
+        "embed_textures": True,
         "use_space_transform": False,
         "axis_forward": '-Z',
         "axis_up": 'Y',
@@ -64,6 +65,11 @@ def _safe_fbx_export(filepath, use_selection=True):
     kwargs = {k: v for k, v in potential_kwargs.items() if k in supported}
 
     try:
+        # Force all images to be packed before export
+        for img in bpy.data.images:
+            if not img.packed_file:
+                img.pack()
+
         if os.path.exists(filepath):
             os.remove(filepath)
 
@@ -86,152 +92,47 @@ def _safe_fbx_export(filepath, use_selection=True):
 
 def extract_assets():
     print("\n" + "=" * 80)
-    print("PHASE A: ASSET EXTRACTION (Sylvan Ensemble)")
+    print("PHASE A: ASSET EXTRACTION (Direct Export)")
     print("=" * 80)
 
+    # Import config and ensure latest
+    import importlib
+    importlib.reload(config)
     manager = SylvanEnsembleManager()
     manager.ensure_clean_slate()
-    manager.link_ensemble()
-
-    print("ASSET_MANAGER: Resolving ensemble objects...")
-    resolved_map = {}
-
-    all_art_names = set(list(manager.ensemble.values()) + list(manager.rig_map.keys()))
-    for name in all_art_names: resolved_map[name] = {'mesh': None, 'rig': None}
-
-    for obj in bpy.data.objects:
-        src = obj.get("source_name")
-        if not src: continue
-        for art, rig_src in manager.rig_map.items():
-            if src == rig_src: resolved_map[art]['rig'] = obj
-        for mesh_src, art in manager.ensemble.items():
-            if src == mesh_src: resolved_map[art]['mesh'] = obj
-
-    for art_name, objs in resolved_map.items():
-        if objs['mesh'] is None:
-            src_mesh_names = [k for k, v in manager.ensemble.items() if v == art_name]
-            for n in src_mesh_names:
-                o = bpy.data.objects.get(n)
-                if o: objs['mesh'] = o; break
-
-        if objs['rig'] is None:
-            # Special case: rig might be the same object as mesh (e.g. Root_Guardian)
-            if art_name == "Root_Guardian":
-                skel = bpy.data.objects.get("skeleton")
-                if skel:
-                    objs['mesh'] = skel
-                    objs['rig'] = skel
-            else:
-                src_rig = manager.rig_map.get(art_name)
-                if src_rig:
-                    o = bpy.data.objects.get(src_rig)
-                    if o: objs['rig'] = o
-
-    print("ASSET_MANAGER: Handling shared rigs and renaming...")
-    processed_objs = set()
-    sorted_names = sorted(resolved_map.keys(), key=lambda n: n in (config.CHAR_HERBACEOUS, config.CHAR_ARBOR), reverse=True)
-
-    for art_name in sorted_names:
-        objs = resolved_map[art_name]
-        sep = "_" if _is_protagonist(art_name) else "."
-        rig = objs['rig']
-        mesh = objs['mesh']
-
-        if not rig and not mesh: continue
-
-        if rig and rig in processed_objs:
-            new_rig = rig.copy()
-            new_rig.data = rig.data.copy()
-            if rig.get("source_name"): new_rig["source_name"] = rig["source_name"]
-            bpy.context.scene.collection.objects.link(new_rig)
-            rig = new_rig
-            objs['rig'] = rig
-            if mesh:
-                mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None)
-                if mod: mod.object = rig
-
-        if rig:
-            rig.name = f"{art_name}{sep}Rig"
-            processed_objs.add(rig)
-        if mesh and mesh not in processed_objs:
-            mesh.name = f"{art_name}{sep}Body"
-            processed_objs.add(mesh)
-
-        print(f"  Resolved {art_name}: Mesh->{mesh.name if mesh else 'NONE'}, Rig->{rig.name if rig else 'NONE'}")
-
+    manager.link_ensemble(source='BLEND')
+    
     asset_dir = os.path.join(V6_DIR, "assets")
     os.makedirs(asset_dir, exist_ok=True)
-    print(f"\nDECOUPLING TEXTURES TO: {asset_dir}")
-
-    import shutil
-    for obj in bpy.data.objects:
-        if not hasattr(obj.data, "materials"): continue
-        for mat in obj.data.materials:
-            use_nodes = getattr(mat, "use_nodes", True)
-            if not mat or not use_nodes: continue
-            for node in mat.node_tree.nodes:
-                if node.type == 'TEX_IMAGE' and node.image:
-                    src_path = bpy.path.abspath(node.image.filepath)
-                    if os.path.exists(src_path):
-                        dest_path = os.path.join(asset_dir, os.path.basename(src_path))
-                        if not os.path.exists(dest_path):
-                            shutil.copy2(src_path, dest_path)
-                            print(f"  Copied texture: {os.path.basename(src_path)}")
-                    else:
-                        print(f"  WARNING: Texture source missing: {src_path}")
-
-    print(f"\nEXPORTING TO FBX: {asset_dir}")
-
+    
     exported = []
-    skipped  = []
-
-    for art_name, objs in resolved_map.items():
-        body = objs['mesh']
-        rig  = objs['rig']
-        fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
-
-        # Explicitly ensure Root_Guardian is selected if it's the skeleton
-        if art_name == "Root_Guardian" and not body and not rig:
-             skel = bpy.data.objects.get("Root_Guardian.Rig") or bpy.data.objects.get("Root_Guardian.Body")
-             if skel: body = skel; rig = skel
-
-        if body and rig and body != rig:
+    
+    # Iterate using the rig_map directly from config
+    for art_name, rig_name in config.RIG_MAP_SRC.items():
+        print(f"DIRECTOR: Preparing {art_name} (Look for: {rig_name})...")
+        
+        # Look for the armature by the internal name found in audit
+        rig = bpy.data.objects.get(rig_name)
+        
+        if rig:
+            fbx_path = os.path.join(asset_dir, f"{art_name}.fbx")
+            
+            # Select everything in the rig's hierarchy
             bpy.ops.object.select_all(action='DESELECT')
-            body.select_set(True)
             rig.select_set(True)
-            for child in body.children_recursive:
-                child.select_set(True)
-            for child in rig.children_recursive:
-                child.select_set(True)
+            for obj in rig.children_recursive:
+                obj.select_set(True)
             bpy.context.view_layer.objects.active = rig
+            
             _safe_fbx_export(fbx_path, use_selection=True)
-
-        elif body and body.type == 'ARMATURE':
-            bpy.ops.object.select_all(action='DESELECT')
-            body.select_set(True)
-            for child in body.children_recursive:
-                child.select_set(True)
-            bpy.context.view_layer.objects.active = body
-            _safe_fbx_export(fbx_path, use_selection=True)
-
+            
+            if os.path.exists(fbx_path):
+                exported.append(art_name)
+                print(f"  SUCCESS: {art_name} exported.")
         else:
-            msg = []
-            if not body: msg.append(f"body missing")
-            if not rig:  msg.append(f"rig missing")
-            print(f"  SKIP: {art_name} — {', '.join(msg)}")
-            skipped.append(art_name)
-            continue
+            print(f"  SKIP: {art_name} rig not found (looked for: {rig_name}).")
 
-        if os.path.exists(fbx_path):
-            print(f"  SUCCESS: {art_name} -> {fbx_path}")
-            exported.append(art_name)
-        else:
-            print(f"  FAILURE: {art_name} export failed silently")
-            skipped.append(art_name)
-
-    print(f"\nPHASE A COMPLETE: {len(exported)} exported, {len(skipped)} skipped.")
-    if skipped:
-        print(f"  Skipped: {skipped}")
+    print(f"\nPHASE A COMPLETE: {len(exported)} exported.")
 
 
 if __name__ == "__main__":

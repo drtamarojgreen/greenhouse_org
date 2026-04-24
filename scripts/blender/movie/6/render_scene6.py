@@ -10,6 +10,7 @@ if V6_DIR not in sys.path: sys.path.insert(0, V6_DIR)
 ASSETS_V6_DIR = os.path.join(V6_DIR, "assets_v6")
 if ASSETS_V6_DIR not in sys.path: sys.path.insert(0, ASSETS_V6_DIR)
 
+import config
 from generate_scene6 import generate_full_scene_v6
 
 def get_frame_range():

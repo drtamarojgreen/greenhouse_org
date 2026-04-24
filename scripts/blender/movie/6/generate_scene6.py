@@ -77,7 +77,7 @@ def generate_full_scene_v6():
 
 
     # Set Color Management to a neutral standard
-    bpy.context.scene.render.image_settings.color_mode = 'RGBA' # Ensure RGBA output
+    bpy.context.scene.render.image_settings.color_mode = 'RGB' # Ensure RGB output
     bpy.context.scene.display_settings.display_device = 'sRGB'
     bpy.context.scene.view_settings.view_transform = 'Standard'
     bpy.context.scene.view_settings.look = 'None'
@@ -88,21 +88,14 @@ def generate_full_scene_v6():
     chroma_green_setup.setup_chroma_green_backdrop()
     exterior_setup_v6.setup_exterior_world()
 
-    # Ensure assets collection exists before creating procedural characters
-    if config.COLL_ASSETS not in bpy.data.collections:
-        assets_coll = bpy.data.collections.new(config.COLL_ASSETS)
-        bpy.context.scene.collection.children.link(assets_coll)
-
-    plant_humanoid_v6.create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
-    plant_humanoid_v6.create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
+    # 4. Character Assembly (Director's Sequence)
+    # Import Ensemble spirits first to handle their complex rigs/normalization
+    am.link_ensemble()
+    
+    # Create procedural protagonists
+    am.link_protagonists()
 
     # 2b. Prop Generation
-    # Position props on the ground between the characters
-    create_water_can_v6("WaterCan", (0.0, -0.4, 0.0))
-    create_garden_hose_v6("GardenHose", (0.0, 0.4, 0.0))
-
-    am.link_ensemble()
-    am.renormalize_objects()
 
     dv6 = director_v6.SylvanDirector()
     dv6.setup_cinematics() # Build standard 3-camera rig

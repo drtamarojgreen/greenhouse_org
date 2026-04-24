@@ -1,0 +1,38 @@
+{
+  "sources": [
+    {
+      "path": "/home/tamarojgreen/Documents/Movie_Equipment/MHD2_animation133.blend",
+      "mapping": {
+        "Mesh1_Mesh1.044": { "id": "Sylvan_Majesty", "rig": "Armature.002" },
+        "Mesh1_Mesh1.001": { "id": "Radiant_Aura", "rig": "Armature.004" },
+        "Mesh1_Mesh1.006": { "id": "Verdant_Sprite", "rig": "Armature.001" },
+        "Mesh1_Mesh1.052": { "id": "Shadow_Weaver", "rig": "Armature.003" },
+        "Mesh1_Mesh1.058": { "id": "Emerald_Sentinel", "rig": "Armature" },
+        "Leonardo_Phoenix textured 3D model": { "id": "Phoenix_Herald", "rig": "skeleton" },
+        "Leonardo_Phoenix textured 3D model.001": { "id": "Golden_Phoenix", "rig": "skeleton.001" },
+        "skeleton": { "id": "Root_Guardian", "rig": "skeleton" }
+      }
+    },
+    {
+      "path": "/home/tamarojgreen/Documents/Movie_Equipment/MHD2_animation133.blend",
+      "mapping": {
+        "Herbaceous_V5_Body": { "id": "Herbaceous", "rig": "Herbaceous_V5_Rig", "is_protagonist": true },
+        "Arbor_V5_Body": { "id": "Arbor", "rig": "Arbor_V5_Rig", "is_protagonist": true }
+      }
+    }
+  ],
+  "export": {
+    "output_dir": "scripts/blender/movie/7/assets/",
+    "format": "FBX",
+    "params": {
+      "use_selection": true,
+      "apply_unit_scale": false,
+      "bake_anim": false,
+      "path_mode": "COPY",
+      "embed_textures": false,
+      "use_space_transform": false,
+      "axis_forward": "-Z",
+      "axis_up": "Y"
+    }
+  }
+}

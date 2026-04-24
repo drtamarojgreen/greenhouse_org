@@ -13,7 +13,7 @@ TOTAL_FRAMES = 4200
 EQUIPMENT_DIR = "/home/tamarojgreen/Documents/Movie_Equipment/"
 SPIRITS_ASSET_BLEND = os.path.join(EQUIPMENT_DIR, "MHD2_animation133.blend")
 
-# 1. ENSEMBLE DEFINITIONS (Artistic Naming)
+# 1. ENSEMBLE DEFINITIONS (Mapped to Internal Blend Names)
 SPIRIT_ENSEMBLE = {
     "Mesh1_Mesh1.044": "Sylvan_Majesty",
     "Mesh1_Mesh1.001": "Radiant_Aura",
@@ -23,6 +23,18 @@ SPIRIT_ENSEMBLE = {
     "Leonardo_Phoenix textured 3D model": "Phoenix_Herald",
     "Leonardo_Phoenix textured 3D model.001": "Golden_Phoenix",
     "skeleton": "Root_Guardian"
+}
+
+# 1b. RIG MAPPING
+RIG_MAP_SRC = {
+    "Sylvan_Majesty":   "Armature.002",
+    "Radiant_Aura":     "Armature.004",
+    "Verdant_Sprite":   "Armature.001",
+    "Shadow_Weaver":    "Armature.003",
+    "Emerald_Sentinel": "Armature",
+    "Phoenix_Herald":   "skeleton",
+    "Golden_Phoenix":   "skeleton.001",
+    "Root_Guardian":    "skeleton"
 }
 
 # 1b. ROLE CLASSIFICATION
@@ -77,9 +89,9 @@ CHAR_ARBOR_POS      = ( 1.75,  0.3, 0.0)
 CHAR_HERBACEOUS_EYE = (-1.75, -0.3, 2.5)
 CHAR_ARBOR_EYE      = ( 1.75,  0.3, 2.5)
 
-MAJESTIC_HEIGHT = 12.0
-SPRITE_HEIGHT   = 10.0
-PHOENIX_HEIGHT  = 10.0
+MAJESTIC_HEIGHT = 3.0
+SPRITE_HEIGHT   = 3.0
+PHOENIX_HEIGHT  = 3.0
 
 # 6. CAMERA POSITIONS (Sentence_case)
 CAM_WIDE_POS = (0.0, -4.5, 1.8)
@@ -236,7 +248,7 @@ CHROMA_GREEN_RGB = (0, 1, 0)
 START_FRAME = 1
 
 # 8. ASSET NORMALIZATION SETTINGS
-ENABLE_STATISTICAL_CULLING  = True
+ENABLE_STATISTICAL_CULLING  = False
 ENABLE_ORIGIN_RESET         = True
 HEIGHT_MEASURE_STRATEGY     = 'DENSITY' # Options: 'DENSITY', 'BONE', 'PERCENTILE'
 CULLING_TARGET_BIN          = 0         # Distance bin used as the baseline for culling

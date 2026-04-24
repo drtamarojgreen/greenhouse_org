@@ -1,6 +1,8 @@
 import bpy
 import os
 import sys
+import math
+import mathutils
 
 # Standardize path injection for movie/6 assets
 V6_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,208 +49,219 @@ class SylvanEnsembleManager:
 
         bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
 
-    def link_ensemble(self):
-        """Appends ensemble objects from the production blend."""
-        if any(f"{art_name}" in obj.name for obj in bpy.data.objects for art_name in self.ensemble.values()):
-             return
-
+    def link_ensemble(self, source='FBX'):
+        """Imports ensemble objects. source can be 'FBX' or 'BLEND'."""
         coll = bpy.data.collections.get(self.collection_name) or bpy.data.collections.new(self.collection_name)
         if coll.name not in bpy.context.scene.collection.children:
             bpy.context.scene.collection.children.link(coll)
 
+        if source == 'BLEND':
+            self._link_from_blend(coll)
+        else:
+            self._link_from_fbx(coll)
+
+    def _link_from_blend(self, coll):
+        """Standard legacy linking from master blend."""
         src_mesh_names = list(self.ensemble.keys())
         src_rig_names  = list(self.rig_map.values())
         want = set(src_mesh_names + src_rig_names)
 
-        if not os.path.exists(config.SPIRITS_ASSET_BLEND):
-            print(f"ERROR: Production asset blend not found: {config.SPIRITS_ASSET_BLEND}. Skipping ensemble linking.")
-            return
-
         with bpy.data.libraries.load(config.SPIRITS_ASSET_BLEND, link=False) as (data_from, data_to):
             data_to.objects = [n for n in want if n in data_from.objects]
 
-        for obj in data_to.objects: # 'obj' is already the bpy.types.Object
+        for obj in data_to.objects:
             if obj and obj.name not in coll.objects:
                 coll.objects.link(obj)
                 obj["source_name"] = obj.name
-                self.linked_objects_map[obj.name] = obj # Add to map
-                # Recursively link children (Point 142)
+                self.linked_objects_map[obj.name] = obj
                 for child in obj.children_recursive:
                     if child.name not in coll.objects:
                         coll.objects.link(child)
-                        self.linked_objects_map[child.name] = child # Add child to map
+                        self.linked_objects_map[child.name] = child
 
-    def link_protagonists(self):
-        """Creates procedural protagonists."""
-        create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
-        create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
+    def _link_from_fbx(self, coll):
+        """Imports from local FBX folder."""
+        assets_dir = os.path.join(V6_DIR, "assets")
+        if not os.path.exists(assets_dir): return
 
-    def normalize_character_scale(self, rig, target_height):
-        """Unified Parent-First Scaling: Scales the Rig and lets parented meshes follow."""
-        if not rig: return
-        bpy.context.view_layer.update()
-
-        # 1. Measure height using density metrics
-        strategy = getattr(config, "HEIGHT_MEASURE_STRATEGY", "DENSITY")
-        metrics = asset_normalization_functions.get_normalization_metrics(rig, strategy=strategy)
-        if not metrics: return
-        
-        current_h = metrics['height']
-        if current_h < 0.001: return
-        
-        scale_factor = target_height / current_h
-        
-        # 2. Scale Rig Object (Parent-First)
-        # Because meshes are already parented at (0,0,0) local in execute_density_origin_reset,
-        # scaling the rig will scale the meshes correctly from the feet.
-        rig.scale = (rig.scale.x * scale_factor, rig.scale.y * scale_factor, rig.scale.z * scale_factor)
-        
-        # Apply scale to rig data for posing stability
-        bpy.context.view_layer.objects.active = rig
-        rig.select_set(True)
-        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-        rig.select_set(False)
-
-        # 3. Explicit Final Grounding
-        # Re-verify ground after scale just in case pivot wasn't exactly at 0
-        bpy.context.view_layer.update()
-        new_metrics = asset_normalization_functions.get_normalization_metrics(rig, strategy=strategy)
-        if new_metrics:
-            rig.location.z -= new_metrics['ground_z']
+        fbx_files = sorted([f for f in os.listdir(assets_dir) if f.lower().endswith(".fbx")])
+        for fbx_name in fbx_files:
+            art_name = fbx_name.replace(".fbx", "")
+            if "test_resilience" in art_name: continue
             
-        bpy.context.view_layer.update()
+            print(f"DIRECTOR: Importing {art_name} from FBX...")
+            fbx_path = os.path.join(assets_dir, fbx_name)
+            pre_import = set(bpy.data.objects.keys())
+            bpy.ops.import_scene.fbx(filepath=fbx_path)
+            new_objs = [bpy.data.objects[n] for n in set(bpy.data.objects.keys()) - pre_import]
+            
+            for obj in new_objs:
+                obj.hide_render = False
+                obj.hide_viewport = False
+                if obj.name not in coll.objects: coll.objects.link(obj)
 
-    def renormalize_objects(self):
-        """Syncs spirit meshes to rigs and resets parent inverses."""
-        coll = bpy.data.collections.get(self.collection_name)
-        if not coll: return
+            rig = next((o for o in new_objs if o.type == 'ARMATURE'), None)
+            mesh = next((o for o in new_objs if (o.type == 'MESH' and "Body" in o.name)) or (o for o in new_objs if o.type == 'MESH'), None)
+            
+            if mesh and not rig:
+                self._emergency_rig(mesh, art_name)
+                rig = bpy.data.objects.get(f"{art_name}.Rig")
 
-        # Ensure all meshes parented to rigs have Identity parent inverse to prevent visual scale/offset fracturing
-        import mathutils
-        for obj in list(bpy.data.objects):
-            if obj.type == 'MESH' and obj.parent and obj.parent.type == 'ARMATURE':
-                if not obj.matrix_parent_inverse.is_identity:
-                    mw = obj.matrix_world.copy()
-                    obj.matrix_parent_inverse = mathutils.Matrix.Identity(4)
-                    obj.matrix_basis = obj.parent.matrix_world.inverted() @ mw
+            if rig:
+                rig.name = f"{art_name}.Rig"
+                if mesh: mesh.name = f"{art_name}.Body"
+                self.linked_objects_map[rig.name] = rig
                 
-            if obj.type == 'ARMATURE':
-                for pb in obj.pose.bones:
-                    pb.rotation_mode = 'XYZ'
-
-        targets = []
-        # Pre-populate map with all artistic names and their source components
-        resolved_objects = {} # art_name -> {"mesh": obj, "rig": obj}
-
-        for src_mesh, art_name in self.ensemble.items():
-            if art_name not in resolved_objects:
-                resolved_objects[art_name] = {"mesh": None, "rig": None}
-            targets.append((src_mesh, art_name, "."))
-
-        # Root_Guardian special handling in targets
-        if "Root_Guardian" not in self.ensemble.values():
-            resolved_objects["Root_Guardian"] = {"mesh": None, "rig": None}
-            targets.append(("skeleton", "Root_Guardian", "."))
-
-        # --- Phase 1: Resolve all original objects from the map to avoid renaming conflicts ---
-        for src_mesh_name_key, art_name_value in self.ensemble.items():
-            # Resolve mesh object
-            mesh_obj = self.linked_objects_map.get(src_mesh_name_key)
-            if mesh_obj:
-                resolved_objects[art_name_value]["mesh"] = mesh_obj
-
-            # Resolve rig object
-            original_rig_name = self.rig_map.get(art_name_value)
-            if original_rig_name:
-                rig_obj = self.linked_objects_map.get(original_rig_name)
-                if rig_obj:
-                    resolved_objects[art_name_value]["rig"] = rig_obj
-
-        # Special handling for Root_Guardian resolution
-        skeleton_obj = self.linked_objects_map.get("skeleton")
-        if skeleton_obj:
-            if "Root_Guardian" in resolved_objects:
-                if not resolved_objects["Root_Guardian"]["mesh"]:
-                    resolved_objects["Root_Guardian"]["mesh"] = skeleton_obj
-                if not resolved_objects["Root_Guardian"]["rig"]:
-                    resolved_objects["Root_Guardian"]["rig"] = skeleton_obj
-
-        # --- Phase 2: Apply renames, parenting, and scaling using resolved objects ---
-        for src_mesh_name_from_targets, art_name, sep in targets: # targets still has the original src names
-            t_mesh_name = f"{art_name}{sep}Body"
-            t_rig_name  = f"{art_name}{sep}Rig"
-
-            resolved_entry = resolved_objects.get(art_name)
-            if not resolved_entry: continue
-
-            rig = resolved_entry.get("rig")
-            mesh = resolved_entry.get("mesh")
-
-            if not mesh or not rig: continue
-
-            # Rename if necessary
-            if mesh.name != t_mesh_name: mesh.name = t_mesh_name
-            if rig.name != t_rig_name: rig.name = t_rig_name
-
-            if mesh != rig:
-                if mesh.parent != rig:
-                    mesh.parent = rig
-                mesh.location = (0, 0, 0)
-                mesh.rotation_euler = (0, 0, 0)
-
-            protags = [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]
-            is_protag = any(p in rig.name or p in art_name for p in protags)
-
-            if not is_protag:
-                # 1. PRIORITY PASS: Absolute Origin Reset (Must happen before any scale/grounding)
-                if getattr(config, "ENABLE_ORIGIN_RESET", False):
-                    asset_normalization_functions.execute_density_origin_reset(rig)
-
-                # 2. NORMALIZATION PASS: Scaling (Now targeting centered geometry)
-                # Default to sprite height for generic spirits
                 target_h = config.SPRITE_HEIGHT
-                if "Sylvan_Majesty" in art_name or "Radiant_Aura" in art_name:
-                    target_h = config.MAJESTIC_HEIGHT
-                elif "Verdant_Sprite" in art_name:
-                    target_h = config.SPRITE_HEIGHT
-                elif "Phoenix" in art_name:
-                    target_h = config.PHOENIX_HEIGHT
-
+                if "Majesty" in art_name or "Aura" in art_name: target_h = config.MAJESTIC_HEIGHT
+                elif "Phoenix" in art_name: target_h = config.PHOENIX_HEIGHT
                 self.normalize_character_scale(rig, target_h)
 
-                # 3. CLEANUP PASS: Statistical Culling
-                if getattr(config, "ENABLE_STATISTICAL_CULLING", False):
-                    asset_normalization_functions.execute_balanced_culling(rig, config)
+        #self.repair_materials()
 
-            if mesh and mesh.type == 'MESH':
-                arm_mod = next((m for m in mesh.modifiers if m.type == 'ARMATURE'), None) or mesh.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = rig
+    def _emergency_rig(self, mesh, art_name):
+        """Creates a skeletal rig for mesh-only characters."""
+        print(f"  - Generating skeleton for {art_name}...")
+        bpy.ops.object.select_all(action='DESELECT')
+        mesh.select_set(True)
+        bpy.context.view_layer.objects.active = mesh
+        bbox = [mathutils.Vector(v) for v in mesh.bound_box]
+        height = max(v.z for v in bbox) - min(v.z for v in bbox)
+        
+        bpy.ops.object.armature_add(location=(mesh.location.x, mesh.location.y, mesh.location.z + min(v.z for v in bbox)))
+        rig = bpy.context.active_object
+        rig.name = f"{art_name}.Rig"
+        
+        bpy.ops.object.mode_set(mode='EDIT')
+        eb = rig.data.edit_bones[0]
+        eb.name = "Torso"; eb.head = (0,0,0); eb.tail = (0,0,height*0.5)
+        bn = rig.data.edit_bones.new("Neck"); bn.parent = eb; bn.head = eb.tail; bn.tail = (0,0,height*0.8)
+        bh = rig.data.edit_bones.new("Head"); bh.parent = bn; bh.head = bn.tail; bh.tail = (0,0,height)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
+        mesh.select_set(True)
+        bpy.context.view_layer.objects.active = rig
+        #bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+        mesh.name = f"{art_name}.Body"
+
+    def link_protagonists(self):
+        """Creates procedural protagonists and enforces Armature modifiers."""
+        create_plant_humanoid_v6(config.CHAR_HERBACEOUS, config.CHAR_HERBACEOUS_POS)
+        create_plant_humanoid_v6(config.CHAR_ARBOR, config.CHAR_ARBOR_POS)
+        
+        #for name in [config.CHAR_HERBACEOUS, config.CHAR_ARBOR]:
+        #    rig = bpy.data.objects.get(name)
+        #    if rig: self.normalize_character_scale(rig, 2.5)
+
+    def normalize_character_scale(self, rig, target_height):
+        """Extreme Reset Normalization: Decouples meshes to ensure 1:1 local-world mapping before scaling."""
+        if not rig: return
+        bpy.context.view_layer.update()
+        
+        meshes = [c for c in rig.children_recursive if c.type == 'MESH']
+        if not meshes:
+            print(f"   [Normalization] Skipping {rig.name}: No meshes found.")
+            return
+            
+        for m in meshes:
+            m.parent = None
+            m.matrix_world = mathutils.Matrix.Identity(4)
+        
+        rig.location = (0, 0, 0)
+        rig.rotation_euler = (0, 0, 0)
+        rig.scale = (1, 1, 1)
+        bpy.context.view_layer.update()
+        
+        # Measure unparented mesh collection
+        metrics = asset_normalization_functions.get_normalization_metrics(meshes[0]) # Use first mesh for scale
+        if not metrics or metrics['height'] < 0.01: 
+            # Re-parent and abort
+            for m in meshes: m.parent = rig; m.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+            return
+        
+        factor = target_height / metrics['height']
+        
+        for m in meshes:
+            bpy.context.view_layer.objects.active = m
+            m.scale *= factor
+            bpy.ops.object.transform_apply(scale=True)
+            
+            bpy.context.view_layer.update()
+            temp_metrics = asset_normalization_functions.get_normalization_metrics(m)
+            if temp_metrics:
+                m.location.z -= temp_metrics['ground_z']
+            bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
+            
+            m.parent = rig
+            m.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+
+        print(f"   [Normalization] {rig.name} absolute reset to {target_height}m")
+
+    def renormalize_objects(self):
+        """Syncs all child meshes to rigs and forces Armature modifiers or bone parenting."""
+        for obj in list(bpy.data.objects):
+            if obj.type == 'MESH':
+                # Find the root armature in the hierarchy
+                root = obj
+                while root.parent: root = root.parent
                 
-                # Apply Weight Polishing to ensure fluid animation and fix distortion
-                self.polish_weights(mesh, rig)
+                if root.type == 'ARMATURE':
+                    rig = root
+                    obj.hide_render = False
+                    obj.hide_viewport = False
+                    
+                    # Armature Skinning logic
+                    mod = next((m for m in obj.modifiers if m.type == 'ARMATURE'), None)
+                    if not mod:
+                        mod = obj.modifiers.new(name="Armature", type='ARMATURE')
+                    mod.object = rig
+                    
+                    # Fix missing skinning: Auto-bind if no vertex groups exist
+                    if len(rig.data.bones) > 1 and not obj.vertex_groups:
+                        #print(f"DIRECTOR: Auto-binding {obj.name} to {rig.name} (Repairing Skinning)")
+                        #bpy.context.view_layer.objects.active = obj
+                        #bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+                        pass
+                    
+                    # Cleanup parenting transforms
+                    if obj.parent == rig:
+                        obj.matrix_parent_inverse = rig.matrix_world.inverted()
+        
+        # Polish ALL meshes in assets
+        coll = bpy.data.collections.get(self.collection_name)
+        if coll:
+            for rig in [o for o in coll.objects if o.type == 'ARMATURE']:
+                for mesh in [c for c in rig.children_recursive if c.type == 'MESH']:
+                    self.polish_weights(mesh, rig)
 
     def polish_weights(self, mesh, rig):
-        """Procedurally refines vertex weights to prevent distortion and ensure fluidity."""
+        """Ensures weights are normalized to 1.0."""
         if not mesh or mesh.type != 'MESH': return
-
-        # Set active and selected for operators
         bpy.context.view_layer.objects.active = mesh
-        mesh.select_set(True)
-        
-        # 1. Normalize All Weights: Ensure total weight per vertex = 1.0
-        # This prevents 'fighting' weights that cause spidery stretching.
         try:
             bpy.ops.object.mode_set(mode='OBJECT')
             bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
-            
-            # 2. Iterative Smooth: Requires WEIGHT_PAINT mode to poll reliably in some versions
-            bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
-            bpy.ops.object.vertex_group_smooth(group_select_mode='ALL', factor=0.5, repeat=2)
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except Exception as e:
-            print(f"WARNING: Could not polish weights for {mesh.name}: {e}")
-            if mesh.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
+        except: pass
 
     def repair_materials(self):
-        """Ensures spirit materials are linked (minimal logic)."""
-        pass
+        """Forces re-linking of materials to internal image data-blocks to solve pink blob issue."""
+        print("DIRECTOR: Forcing texture re-link for all materials...")
+
+        for mat in bpy.data.materials:
+            if not mat.use_nodes: continue
+            for node in mat.node_tree.nodes:
+                if node.type == 'TEX_IMAGE':
+                    # Search all loaded images for a match
+                    for img in bpy.data.images:
+                        img_name = img.name.lower()
+                        # Direct match or partial match
+                        if self._clean_mat_name(mat.name) in img_name or img_name in self._clean_mat_name(mat.name):
+                            node.image = img
+                            print(f"  - SUCCESS: Linked {mat.name} to {img.name}")
+                            break
+
+    def _clean_mat_name(self, name):
+        """Helper to clean names for matching."""
+        return name.split('.')[0].replace("_", "").lower()
+
+

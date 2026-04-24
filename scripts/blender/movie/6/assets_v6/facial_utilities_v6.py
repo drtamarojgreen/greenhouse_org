@@ -112,7 +112,14 @@ def create_facial_props_v6(name, armature, bones_map, iris_material, sclera_mate
             else:
                 v.co.z *= 1.1 # Fullness for lower
         bm.to_mesh(lip_obj.data); bm.free()
-        lip_obj.data.materials.append(lip_material)
+        if lip_material:
+            lip_obj.data.materials.append(lip_material)
+
+        # RESTORE V5: Bone Parenting instead of Armature Modifier
+        lip_obj.parent = armature
+        lip_obj.parent_type = 'BONE'
+        lip_obj.parent_bone = bone
+
         for p in lip_obj.data.polygons: p.use_smooth = True
 
     # 4. Respiratory Core (Nose)
