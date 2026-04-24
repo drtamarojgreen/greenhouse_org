@@ -55,7 +55,10 @@ class ExteriorModeler(Modeler):
         self._link_to_coll(obj, coll)
 
     def _create_roof(self, coll, cfg):
-        bpy.ops.mesh.primitive_plane_add(size=cfg.get("size", 42), location=(0, 0, cfg.get("height", 30)))
+        size = cfg.get("size", 42)
+        height = cfg.get("height", 30)
+        # Use a thin cube so the ceiling remains visible from inside the greenhouse.
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, height), scale=(size / 2.0, size / 2.0, 0.08))
         roof = bpy.context.active_object
         roof.name = "greenhouse_roof"
         mat = self._apply_mat(roof, "mat_roof", cfg.get("color", (0.7, 0.85, 1.0, 0.2)), alpha=True)
@@ -68,8 +71,10 @@ class ExteriorModeler(Modeler):
 
     def _create_pillars_and_statues(self, coll, cfg, half):
         corners = [(-half, -half), (half, -half), (-half, half), (half, half)]
+        mids = [(0, -half), (0, half), (-half, 0), (half, 0)]
+        supports = corners + mids
         r, h = cfg.get("radius", 0.8), cfg.get("height", 10.0)
-        for i, (cx, cy) in enumerate(corners):
+        for i, (cx, cy) in enumerate(supports):
             # Pillar
             mesh = bpy.data.meshes.new(f"pillar_{i}")
             p = bpy.data.objects.new(f"pillar_{i}", mesh)

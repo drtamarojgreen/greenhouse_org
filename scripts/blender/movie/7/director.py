@@ -81,7 +81,9 @@ class Director:
     def setup_environment(self):
         """Constructs the environment meshes from config using ExteriorModeler."""
         from environment.exterior import ExteriorModeler
+        from environment.backdrop import BackdropModeler
         ExteriorModeler().build_mesh("Env", config.config.get("environment", {}))
+        BackdropModeler().build_mesh("Chroma", config.config.get("chroma", {}))
 
     def setup_lighting(self):
         """Constructs lighting rigs from config."""

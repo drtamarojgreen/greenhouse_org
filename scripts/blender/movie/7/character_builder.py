@@ -100,8 +100,24 @@ class LinkedCharacter(Character):
                 self.mesh = obj
                 manager.apply_standard_renaming(obj, self.char_id, is_rig=False)
 
+        # Ensure linked mesh follows its rig the same way as procedural characters.
+        if self.mesh and self.rig:
+            if self.mesh.parent != self.rig:
+                self.mesh.parent = self.rig
+                self.mesh.matrix_parent_inverse = self.rig.matrix_world.inverted()
+
+            arm_mod = next((m for m in self.mesh.modifiers if m.type == 'ARMATURE'), None)
+            if arm_mod is None:
+                arm_mod = self.mesh.modifiers.new(name="Armature", type='ARMATURE')
+            arm_mod.object = self.rig
+
         if self.rig and self.cfg.get("target_height"):
             manager.normalize_character(self.rig, self.cfg["target_height"])
+
+        if self.rig:
+            self.rig["is_protagonist"] = self.is_protagonist
+        if self.mesh:
+            self.mesh["is_protagonist"] = self.is_protagonist
 
 class CharacterBuilder:
     """Factory for Character instantiation."""
