@@ -144,15 +144,21 @@ class Director:
         num = len(spirits)
         if num == 0: return
 
+        entity_map = {e["id"]: e for e in config.config.get("ensemble.entities", [])}
         fan_width, fan_dist, var_dist, center_y = 0.95, 12.0, 3.5, 15.0
         for i, rig in enumerate(spirits):
-            angle = (i / max(num-1, 1)) * math.pi * fan_width - math.pi * (fan_width/2)
-            dist = fan_dist + (i % 2) * var_dist
-            rig.location = (math.sin(angle)*dist, center_y + math.cos(angle)*4.0, 0.0)
+            entity = entity_map.get(rig.name.replace(".Rig", ""))
+            if entity and "default_pos" in entity:
+                rig.location = mathutils.Vector(entity["default_pos"])
+            else:
+                angle = (i / max(num-1, 1)) * math.pi * fan_width - math.pi * (fan_width/2)
+                dist = fan_dist + (i % 2) * var_dist
+                rig.location = (math.sin(angle)*dist, center_y + math.cos(angle)*4.0, 0.0)
             # Face wide camera
             wide_pos = mathutils.Vector((0, 8, 2))
             vec = wide_pos - rig.location
             rig.rotation_euler[2] = vec.to_track_quat('Y', 'Z').to_euler().z + (math.pi/2)
+            self._ground_rig_to_zero(rig)
             rig.keyframe_insert(data_path="location", frame=1)
             rig.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
 
