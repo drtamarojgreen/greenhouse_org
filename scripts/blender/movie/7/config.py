@@ -70,3 +70,7 @@ class MovieConfig:
 
 # Singleton instance for easy access
 config = MovieConfig()
+
+# Compatibility shims for Movie 6 helper modules (e.g. facial_utilities_v6)
+COLL_ASSETS = config.coll_assets
+COLL_CAMERAS = config.coll_cameras

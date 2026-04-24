@@ -141,6 +141,8 @@ class LinkedCharacter(Character):
                 arm_mod = self.mesh.modifiers.new(name="Armature", type='ARMATURE')
             arm_mod.object = self.rig
 
+        if self.rig:
+            self.rig["linked_asset"] = True
         if self.rig and self.cfg.get("target_height"):
             manager.normalize_character(self.rig, self.cfg["target_height"])
 

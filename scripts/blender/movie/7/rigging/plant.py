@@ -232,7 +232,21 @@ class PlantRigger(Rigger):
             # We will call it without materials to generate the physical eyes/lips.
             try:
                 bones_map = {b.name: b.name for b in armature_obj.data.bones}
-                create_facial_props_v6(char_id, armature_obj, bones_map, None, None, None, None)
+                iris_mat = bpy.data.materials.get(f"Iris_{char_id}") or bpy.data.materials.new(f"Iris_{char_id}")
+                sclera_mat = bpy.data.materials.get(f"Sclera_{char_id}") or bpy.data.materials.new(f"Sclera_{char_id}")
+                bark_mat = bpy.data.materials.get(f"Bark_{char_id}") or bpy.data.materials.new(f"Bark_{char_id}")
+                lip_mat = bpy.data.materials.get(f"Lip_{char_id}") or bpy.data.materials.new(f"Lip_{char_id}")
+                for mat, color in (
+                    (iris_mat, (0.08, 0.18, 0.05, 1.0)),
+                    (sclera_mat, (0.85, 0.9, 0.82, 1.0)),
+                    (bark_mat, (0.1, 0.15, 0.05, 1.0) if "Herbaceous" in char_id else (0.2, 0.12, 0.08, 1.0)),
+                    (lip_mat, (0.42, 0.18, 0.28, 1.0)),
+                ):
+                    mat.use_nodes = True
+                    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                    if bsdf:
+                        bsdf.inputs["Base Color"].default_value = color
+                create_facial_props_v6(char_id, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
             except Exception as e:
                 print(f"Warning: could not create facial props: {e}")
 

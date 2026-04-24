@@ -68,10 +68,11 @@ class AssetManager:
     def normalize_character(self, rig, target_height):
         """Comprehensive normalization matching Movie 6 standards."""
         if not rig or rig.type != 'ARMATURE': return
-        if config.config.get("normalization.enable_origin_reset", True):
+        is_linked_asset = bool(rig.get("linked_asset", False))
+        if config.config.get("normalization.enable_origin_reset", True) and not is_linked_asset:
             self.execute_origin_reset(rig)
         self.normalize_scale(rig, target_height)
-        if config.config.get("normalization.enable_culling", True):
+        if config.config.get("normalization.enable_culling", True) and not is_linked_asset:
             self.execute_balanced_culling(rig)
 
     def execute_origin_reset(self, rig):
