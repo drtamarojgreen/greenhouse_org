@@ -169,6 +169,8 @@ class Director:
             vec_a = herb.location - arbor.location
             herb.rotation_euler[2] = vec_h.to_track_quat('Y', 'Z').to_euler().z + math.pi
             arbor.rotation_euler[2] = vec_a.to_track_quat('Y', 'Z').to_euler().z + math.pi
+            self._ground_rig_to_zero(herb)
+            self._ground_rig_to_zero(arbor)
 
     def apply_storyline(self):
         """Executes storyline events defined in movie_config.json."""
@@ -298,3 +300,21 @@ class Director:
         coll = bpy.data.collections.get(name) or bpy.data.collections.new(name)
         if coll.name not in bpy.context.scene.collection.children: bpy.context.scene.collection.children.link(coll)
         return coll
+
+    def _ground_rig_to_zero(self, rig):
+        meshes = [m for m in rig.children_recursive if m.type == 'MESH']
+        for obj in bpy.data.objects:
+            if obj.type != 'MESH' or obj in meshes:
+                continue
+            arm_mod = next((mod for mod in obj.modifiers if mod.type == 'ARMATURE' and mod.object == rig), None)
+            if arm_mod:
+                meshes.append(obj)
+        if not meshes:
+            return
+        min_z = None
+        for mesh in meshes:
+            for corner in mesh.bound_box:
+                z = (mesh.matrix_world @ mathutils.Vector(corner)).z
+                min_z = z if min_z is None else min(min_z, z)
+        if min_z is not None:
+            rig.location.z -= min_z
