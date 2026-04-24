@@ -9,13 +9,21 @@ class UniversalShader(Shader):
         # 1. Resolve and create all materials defined in config
         mats_cfg = params.get("materials", {})
         materials = {}
+        char_id = mesh.name.split(".")[0]
         for mat_id, cfg in mats_cfg.items():
-            materials[mat_id] = self._create_material(f"{mesh.name}_{mat_id}", cfg)
+            mat_name = f"{mesh.name}_{mat_id}"
+            if char_id in {"Herbaceous", "Arbor"}:
+                if mat_id == "primary":
+                    mat_name = f"Bark_{char_id}"
+                elif mat_id == "secondary":
+                    mat_name = f"Leaf_{char_id}"
+            materials[mat_id] = self._create_material(mat_name, cfg)
 
-        # 2. Assign primary material to the main body
-        primary_mat = materials.get("primary")
-        if primary_mat:
-            mesh.data.materials.append(primary_mat)
+        # 2. Assign body materials in index order (supports foliage faces set to material_index=1)
+        for mat_id in ["primary", "secondary", "accent"]:
+            mat = materials.get(mat_id)
+            if mat and mat.name not in [m.name for m in mesh.data.materials if m]:
+                mesh.data.materials.append(mat)
 
         # 3. Assign materials to props based on metadata
         if mesh.parent and mesh.parent.type == 'ARMATURE':

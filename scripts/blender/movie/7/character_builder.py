@@ -18,6 +18,20 @@ import shading.universal
 import animation.universal
 
 MAIN_CHARACTER_IDS = {"Arbor", "Herbaceous"}
+PROTAGONIST_V6_MATERIALS = {
+    "Herbaceous": {
+        "materials": {
+            "primary": {"color": [0.1, 0.15, 0.05]},
+            "secondary": {"color": [0.6, 0.4, 0.8]}
+        }
+    },
+    "Arbor": {
+        "materials": {
+            "primary": {"color": [0.2, 0.12, 0.08]},
+            "secondary": {"color": [0.2, 0.6, 0.1]}
+        }
+    },
+}
 
 class Character:
     """Strictly OO Character container following Composition over Inheritance."""
@@ -107,6 +121,8 @@ class LinkedCharacter(Character):
             fallback_modeler = self._resolve(registry.get_modeling, "PlantModeler")
             fallback_shader = self._resolve(registry.get_shading, "UniversalShader")
             params = self.cfg.get("parameters", {}).copy()
+            if "materials" not in params:
+                params.update(PROTAGONIST_V6_MATERIALS.get(self.char_id, {}))
             if fallback_rigger and self.rig is None:
                 self.rig = fallback_rigger.build_rig(self.char_id, params)
             if fallback_modeler and self.mesh is None:
