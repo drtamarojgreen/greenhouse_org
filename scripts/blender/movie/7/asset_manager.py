@@ -124,6 +124,15 @@ class AssetManager:
 
     def _get_metrics(self, rig):
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
+        # Linked FBX-style assets are not always strict children of the armature.
+        # Include any mesh using this rig in an Armature modifier so grounding
+        # and normalization are based on the visible bound geometry.
+        for obj in bpy.data.objects:
+            if obj.type != 'MESH' or obj in meshes:
+                continue
+            arm_mod = next((m for m in obj.modifiers if m.type == 'ARMATURE' and m.object == rig), None)
+            if arm_mod is not None:
+                meshes.append(obj)
         all_z = []
         for m in meshes:
             mw = m.matrix_world
