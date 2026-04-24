@@ -126,19 +126,12 @@ class AssetManager:
         all_z = []
         for m in meshes:
             mw = m.matrix_world
-            for v in m.data.vertices: all_z.append((mw @ v.co).z)
-        if not all_z: return None
+            for corner in m.bound_box:
+                all_z.append((mw @ mathutils.Vector(corner)).z)
+        if not all_z:
+            return None
         min_z, max_z = min(all_z), max(all_z)
-        num_bins, bin_width = 20, (max_z - min_z) / 20 if max_z > min_z else 1.0
-        bins = [0] * num_bins
-        for z in all_z: bins[min(num_bins-1, int((z-min_z)/bin_width))] += 1
-        threshold = len(all_z) * 0.015
-        true_ground_z, true_top_z = min_z, max_z
-        for i, count in enumerate(bins):
-            if count > threshold: true_ground_z = min_z + (i * bin_width); break
-        for i in range(num_bins - 1, -1, -1):
-            if bins[i] > threshold: true_top_z = min_z + ((i + 1) * bin_width); break
-        return {"height": max(0.1, true_top_z - true_ground_z), "ground_z": true_ground_z}
+        return {"height": max(0.1, max_z - min_z), "ground_z": min_z}
 
     def apply_standard_renaming(self, obj, new_id, is_rig=False):
         obj.name = f"{new_id}.{'Rig' if is_rig else 'Body'}"

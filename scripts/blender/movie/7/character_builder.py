@@ -11,11 +11,13 @@ import config
 from registry import registry
 # Import procedural components to ensure registration
 import modeling.procedural
+import modeling.plant
 import rigging.procedural
+import rigging.plant
 import shading.universal
 import animation.universal
 
-MAIN_CHARACTER_IDS = {"Arbor", "Herbaceous", "Herbacous"}
+MAIN_CHARACTER_IDS = {"Arbor", "Herbaceous"}
 
 class Character:
     """Strictly OO Character container following Composition over Inheritance."""

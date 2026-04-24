@@ -14,6 +14,22 @@ from character_builder import CharacterBuilder
 import components
 from director import Director
 
+def validate_scene_integrity():
+    """Hard gate before rendering: armature count must match character expectations."""
+    entities = config.config.get("ensemble.entities", [])
+    expected_rigs = 0
+    for entity in entities:
+        if entity.get("type") == "DYNAMIC":
+            expected_rigs += 1 if entity.get("components", {}).get("rigging") else 0
+        else:
+            expected_rigs += 1 if entity.get("source_rig") else 0
+
+    actual_rigs = len([o for o in bpy.data.objects if o.type == 'ARMATURE' and o.name.endswith(".Rig")])
+    if actual_rigs != expected_rigs:
+        raise RuntimeError(
+            f"Integrity validation failed: expected {expected_rigs} armatures, found {actual_rigs}. Aborting render."
+        )
+
 def build_scene():
     components.initialize_registry()
     manager = AssetManager()
@@ -41,6 +57,7 @@ def build_scene():
     director.apply_scene_animations()
     director.apply_storyline()
     director.apply_sequencing()
+    validate_scene_integrity()
     print("Scene generated successfully.")
 
 def parse_args():

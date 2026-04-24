@@ -13,8 +13,8 @@
         "type": "MESH",
         "source_mesh": "Herbaceous_V5_Body",
         "source_rig": "Herbaceous_V5_Rig",
-        "default_pos": [-1.75, -18.0, 0.0],
-        "target_height": 1.0,
+        "default_pos": [-1.2, 0.5, 0.0],
+        "target_height": 3.0,
         "is_protagonist": true
       },
       {
@@ -30,18 +30,18 @@
             "dance": { "bone": "Torso", "freq": 0.3, "amp": 0.1 }
           }
         },
-        "default_pos": [1.75, -18.0, 0.0],
-        "target_height": 1.0,
+        "default_pos": [1.2, 0.5, 0.0],
+        "target_height": 3.0,
         "is_protagonist": true
       },
-      { "id": "Sylvan_Majesty", "type": "MESH", "target_height": 12.0, "source_mesh": "Mesh1_Mesh1.044", "source_rig": "Armature.002" },
-      { "id": "Radiant_Aura", "type": "MESH", "target_height": 12.0, "source_mesh": "Mesh1_Mesh1.001", "source_rig": "Armature.004" },
-      { "id": "Verdant_Sprite", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.006", "source_rig": "Armature.001" },
-      { "id": "Shadow_Weaver", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.052", "source_rig": "Armature.003" },
-      { "id": "Emerald_Sentinel", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.058", "source_rig": "Armature" },
-      { "id": "Root_Guardian", "type": "MESH", "target_height": 10.0, "is_antagonist": true, "source_mesh": "skeleton", "source_rig": "skeleton" },
-      { "id": "Phoenix_Herald", "type": "MESH", "target_height": 10.0, "source_mesh": "Leonardo_Phoenix textured 3D model", "source_rig": "skeleton" },
-      { "id": "Golden_Phoenix", "type": "MESH", "target_height": 10.0, "source_mesh": "Leonardo_Phoenix textured 3D model.001", "source_rig": "skeleton.001" },
+      { "id": "Sylvan_Majesty", "type": "MESH", "target_height": 3.0, "source_mesh": "Mesh1_Mesh1.044", "source_rig": "Armature.002" },
+      { "id": "Radiant_Aura", "type": "MESH", "target_height": 3.0, "source_mesh": "Mesh1_Mesh1.001", "source_rig": "Armature.004" },
+      { "id": "Verdant_Sprite", "type": "MESH", "target_height": 3.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.006", "source_rig": "Armature.001" },
+      { "id": "Shadow_Weaver", "type": "MESH", "target_height": 3.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.052", "source_rig": "Armature.003" },
+      { "id": "Emerald_Sentinel", "type": "MESH", "target_height": 3.0, "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.058", "source_rig": "Armature" },
+      { "id": "Root_Guardian", "type": "MESH", "target_height": 3.0, "is_antagonist": true, "source_mesh": "skeleton", "source_rig": "skeleton" },
+      { "id": "Phoenix_Herald", "type": "MESH", "target_height": 3.0, "source_mesh": "Leonardo_Phoenix textured 3D model", "source_rig": "skeleton" },
+      { "id": "Golden_Phoenix", "type": "MESH", "target_height": 3.0, "source_mesh": "Leonardo_Phoenix textured 3D model.001", "source_rig": "skeleton.001" },
       {
         "id": "WaterCan", "type": "DYNAMIC",
         "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
@@ -102,5 +102,5 @@
       { "id": "ots2", "pos": [20, 0, 7.5], "rot": [90, 0, -90] }
     ]
   },
-  "normalization": { "strategy": "DENSITY", "enable_culling": true, "enable_origin_reset": true }
+  "normalization": { "strategy": "BBOX", "enable_culling": false, "enable_origin_reset": true }
 }

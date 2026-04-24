@@ -56,6 +56,7 @@ class Director:
                     cam_obj.location = foc_world + (vec_to_camera * 3.0) # 3.0 is ANTAG_GLOBAL_OFFSET
                 else:
                     cam_obj.location = cam_cfg["pos"]
+                cam_obj.location.z += 20.0
             else:
                 cam_obj.location = cam_cfg["pos"]
                 
@@ -85,6 +86,7 @@ class Director:
     def setup_lighting(self):
         """Constructs lighting rigs from config."""
         env_coll = self._ensure_collection(self.coll_env)
+        total_f = config.config.total_frames
         for light_id, l_cfg in self.lc_cfg.get("lighting", {}).items():
             l_type = l_cfg.get("type", "SUN")
             l_data = bpy.data.lights.get(light_id) or bpy.data.lights.new(name=light_id, type=l_type)
@@ -99,6 +101,13 @@ class Director:
                 if target_obj:
                     con = next((c for c in l_obj.constraints if c.type == 'TRACK_TO'), None) or l_obj.constraints.new(type='TRACK_TO')
                     con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
+
+            # 0.5Hz heartbeat pulse for scene vitality.
+            base_energy = l_cfg.get("energy", 1.0)
+            for f in range(1, total_f + 1, 12):
+                pulse = 1.0 + 0.08 * math.sin(2.0 * math.pi * 0.5 * (f / 24.0))
+                l_data.energy = base_energy * pulse
+                l_data.keyframe_insert(data_path="energy", frame=f)
 
     def apply_sequencing(self):
         """Orchestrates timeline markers based on sequencing rules."""
@@ -133,13 +142,13 @@ class Director:
         num = len(spirits)
         if num == 0: return
 
-        fan_width, fan_dist, var_dist, center_y = 0.95, 12.0, 3.5, -15.0
+        fan_width, fan_dist, var_dist, center_y = 0.95, 12.0, 3.5, 15.0
         for i, rig in enumerate(spirits):
             angle = (i / max(num-1, 1)) * math.pi * fan_width - math.pi * (fan_width/2)
             dist = fan_dist + (i % 2) * var_dist
             rig.location = (math.sin(angle)*dist, center_y + math.cos(angle)*4.0, 0.0)
             # Face wide camera
-            wide_pos = mathutils.Vector((0, -8, 2))
+            wide_pos = mathutils.Vector((0, 8, 2))
             vec = wide_pos - rig.location
             rig.rotation_euler[2] = vec.to_track_quat('Y', 'Z').to_euler().z + (math.pi/2)
             rig.keyframe_insert(data_path="location", frame=1)
@@ -150,6 +159,8 @@ class Director:
         herb = bpy.data.objects.get("Herbaceous.Rig")
         arbor = bpy.data.objects.get("Arbor.Rig")
         if herb and arbor:
+            herb.location = mathutils.Vector((-1.2, 0.5, 0.0))
+            arbor.location = mathutils.Vector((1.2, 0.5, 0.0))
             vec_h = arbor.location - herb.location
             vec_a = herb.location - arbor.location
             herb.rotation_euler[2] = vec_h.to_track_quat('Y', 'Z').to_euler().z + math.pi
