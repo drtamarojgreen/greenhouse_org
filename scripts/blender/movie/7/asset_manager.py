@@ -123,6 +123,8 @@ class AssetManager:
             bm.to_mesh(mesh.data); bm.free(); mesh.data.update()
 
     def _get_metrics(self, rig):
+        if rig is None:
+            return None
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         # Linked FBX-style assets are not always strict children of the armature.
         # Include any mesh using this rig in an Armature modifier so grounding

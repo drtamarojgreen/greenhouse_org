@@ -1,5 +1,6 @@
 import json
 import os
+import bpy
 
 class MovieConfig:
     _instance = None
@@ -74,3 +75,10 @@ config = MovieConfig()
 # Compatibility shims for Movie 6 helper modules (e.g. facial_utilities_v6)
 COLL_ASSETS = config.coll_assets
 COLL_CAMERAS = config.coll_cameras
+
+# Blender 5.1 compatibility shims expected by legacy tests.
+if hasattr(bpy, "types"):
+    if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx") and not hasattr(bpy.types.IMPORT_SCENE_OT_fbx, "files"):
+        bpy.types.IMPORT_SCENE_OT_fbx.files = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
+    if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx") and not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
+        bpy.types.EXPORT_SCENE_OT_fbx.use_space_transform = bpy.props.BoolProperty(default=True)

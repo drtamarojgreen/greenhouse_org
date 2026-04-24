@@ -75,9 +75,14 @@ class Director:
             target_id = cam_cfg.get("target")
             if target_id:
                 target_obj = bpy.data.objects.get(target_id)
+                if target_obj is None:
+                    target_obj = bpy.data.objects.get("lighting_midpoint")
                 if target_obj:
                     con = next((c for c in cam_obj.constraints if c.type == 'TRACK_TO'), None) or cam_obj.constraints.new(type='TRACK_TO')
                     con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
+
+        if bpy.context.scene.camera is None:
+            bpy.context.scene.camera = bpy.data.objects.get("Wide")
 
     def setup_calligraphy(self):
         """Sets up intro/outro GreenhouseMD lettering and dedicated lighting."""

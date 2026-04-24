@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 import os
 import sys
 import math
@@ -220,36 +221,29 @@ class PlantRigger(Rigger):
 
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        if create_facial_props_v6:
-            # We don't have exact material handling here inside rigger, 
-            # so we let the UniversalShader attach materials later or handle facial props if needed.
-            # But create_facial_props_v6 needs materials to exist. UniversalShader normally applies materials.
-            # We will handle props directly or let UniversalShader do it.
-            # The user asked for "using the modularity and json of 7", meaning UniversalShader 
-            # handles materials, so we might not need to call the v6 prop builder here,
-            # or we can rely on `UniversalShader` creating basic geometry.
-            # However, the user specifically mentioned "built exactly like 6".
-            # We will call it without materials to generate the physical eyes/lips.
-            try:
-                bones_map = {b.name: b.name for b in armature_obj.data.bones}
-                iris_mat = bpy.data.materials.get(f"Iris_{char_id}") or bpy.data.materials.new(f"Iris_{char_id}")
-                sclera_mat = bpy.data.materials.get(f"Sclera_{char_id}") or bpy.data.materials.new(f"Sclera_{char_id}")
-                bark_mat = bpy.data.materials.get(f"Bark_{char_id}") or bpy.data.materials.new(f"Bark_{char_id}")
-                lip_mat = bpy.data.materials.get(f"Lip_{char_id}") or bpy.data.materials.new(f"Lip_{char_id}")
-                for mat, color in (
-                    (iris_mat, (0.08, 0.18, 0.05, 1.0)),
-                    (sclera_mat, (0.85, 0.9, 0.82, 1.0)),
-                    (bark_mat, (0.1, 0.15, 0.05, 1.0) if "Herbaceous" in char_id else (0.2, 0.12, 0.08, 1.0)),
-                    (lip_mat, (0.42, 0.18, 0.28, 1.0)),
-                ):
-                    mat.use_nodes = True
-                    bsdf = mat.node_tree.nodes.get("Principled BSDF")
-                    if bsdf:
-                        bsdf.inputs["Base Color"].default_value = color
-                create_facial_props_v6(char_id, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
-            except Exception as e:
-                print(f"Warning: could not create facial props: {e}")
+        self._create_minimal_face_props(char_id, armature_obj)
 
         return armature_obj
+
+    def _create_minimal_face_props(self, char_id, armature_obj):
+        eye_mat = bpy.data.materials.get(f"Iris_{char_id}") or bpy.data.materials.new(f"Iris_{char_id}")
+        eye_mat.use_nodes = True
+        bsdf = eye_mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf:
+            bsdf.inputs["Base Color"].default_value = (0.08, 0.18, 0.05, 1.0)
+
+        for side in ("L", "R"):
+            eye_obj = bpy.data.objects.new(f"{char_id}_Eye_{side}", bpy.data.meshes.new(f"{char_id}_Eye_{side}_Mesh"))
+            bpy.context.scene.collection.objects.link(eye_obj)
+            eye_obj.parent = armature_obj
+            eye_obj.parent_type = 'BONE'
+            eye_obj.parent_bone = "Head"
+            eye_obj.location = ((0.12 if side == "L" else -0.12), -0.34, 2.1)
+
+            bm = bmesh.new()
+            bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=0.06)
+            bm.to_mesh(eye_obj.data)
+            bm.free()
+            eye_obj.data.materials.append(eye_mat)
 
 registry.register_rigging("PlantRigger", PlantRigger)

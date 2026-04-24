@@ -160,6 +160,13 @@ class CharacterBuilder:
         resolved_cfg = dict(cfg)
         if char_id in MAIN_CHARACTER_IDS:
             resolved_cfg["is_protagonist"] = True
+            resolved_cfg["type"] = "DYNAMIC"
+            comps = dict(resolved_cfg.get("components", {}))
+            comps.setdefault("modeling", "PlantModeler")
+            comps.setdefault("rigging", "PlantRigger")
+            comps.setdefault("shading", "UniversalShader")
+            comps.setdefault("animation", "ProceduralAnimator")
+            resolved_cfg["components"] = comps
 
         ctype = resolved_cfg.get("type", "MESH")
         if ctype == "DYNAMIC": return Character(char_id, resolved_cfg)

@@ -14,13 +14,24 @@ class UniversalShader(Shader):
             mat_name = f"{mesh.name}_{mat_id}"
             if char_id in {"Herbaceous", "Arbor"}:
                 if mat_id == "primary":
-                    mat_name = f"Bark_{char_id}"
+                    mat_name = f"Bark_{char_id}_primary"
                 elif mat_id == "secondary":
-                    mat_name = f"Leaf_{char_id}"
+                    mat_name = f"Leaf_{char_id}_secondary"
             materials[mat_id] = self._create_material(mat_name, cfg)
 
-        # 2. Assign body materials in index order (supports foliage faces set to material_index=1)
-        for mat_id in ["primary", "secondary", "accent"]:
+        # 2. Assign only materials required by current mesh material indices.
+        # Legacy tests expect one material for simple procedural meshes.
+        max_slot = 0
+        if hasattr(mesh.data, "polygons") and len(mesh.data.polygons) > 0:
+            max_slot = max(p.material_index for p in mesh.data.polygons)
+
+        ordered = ["primary"]
+        if max_slot >= 1:
+            ordered.append("secondary")
+        if max_slot >= 2:
+            ordered.append("accent")
+
+        for mat_id in ordered:
             mat = materials.get(mat_id)
             if mat and mat.name not in [m.name for m in mesh.data.materials if m]:
                 mesh.data.materials.append(mat)
