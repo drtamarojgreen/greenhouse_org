@@ -36,10 +36,23 @@ class AssetManager:
             print(f"ERROR: Asset blend not found: {blend_path}")
             return []
 
+        # Blender append can become unstable when the same ID is requested
+        # multiple times in a single library load call (e.g. source_mesh and
+        # source_rig both set to "skeleton"). Keep first occurrence order.
+        unique_targets = []
+        seen = set()
+        for name in targets:
+            if name and name not in seen:
+                unique_targets.append(name)
+                seen.add(name)
+
+        if not unique_targets:
+            return []
+
         coll = self.ensure_collection(self.coll_assets)
 
         with bpy.data.libraries.load(blend_path, link=False) as (data_from, data_to):
-            data_to.objects = [n for n in targets if n in data_from.objects]
+            data_to.objects = [n for n in unique_targets if n in data_from.objects]
 
         imported_objs = []
         for obj in data_to.objects:
