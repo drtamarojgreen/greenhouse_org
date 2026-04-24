@@ -100,6 +100,20 @@ class LinkedCharacter(Character):
                 self.mesh = obj
                 manager.apply_standard_renaming(obj, self.char_id, is_rig=False)
 
+        # Protagonist fallback: if linked assets are missing, construct a plant humanoid procedurally
+        # so Scene 7 always has both speaking protagonists present.
+        if (self.rig is None or self.mesh is None) and self.char_id in MAIN_CHARACTER_IDS:
+            fallback_rigger = self._resolve(registry.get_rigging, "PlantRigger")
+            fallback_modeler = self._resolve(registry.get_modeling, "PlantModeler")
+            fallback_shader = self._resolve(registry.get_shading, "UniversalShader")
+            params = self.cfg.get("parameters", {}).copy()
+            if fallback_rigger and self.rig is None:
+                self.rig = fallback_rigger.build_rig(self.char_id, params)
+            if fallback_modeler and self.mesh is None:
+                self.mesh = fallback_modeler.build_mesh(self.char_id, params, rig=self.rig)
+            if fallback_shader and self.mesh:
+                fallback_shader.apply_materials(self.mesh, params)
+
         # Ensure linked mesh follows its rig the same way as procedural characters.
         if self.mesh and self.rig:
             if self.mesh.parent != self.rig:
