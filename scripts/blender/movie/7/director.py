@@ -161,8 +161,10 @@ class Director:
         herb = bpy.data.objects.get("Herbaceous.Rig")
         arbor = bpy.data.objects.get("Arbor.Rig")
         if herb and arbor:
-            herb.location = mathutils.Vector((-1.2, 0.5, 0.0))
-            arbor.location = mathutils.Vector((1.2, 0.5, 0.0))
+            herb_z = herb.location.z
+            arbor_z = arbor.location.z
+            herb.location = mathutils.Vector((-1.2, 0.5, herb_z))
+            arbor.location = mathutils.Vector((1.2, 0.5, arbor_z))
             vec_h = arbor.location - herb.location
             vec_a = herb.location - arbor.location
             herb.rotation_euler[2] = vec_h.to_track_quat('Y', 'Z').to_euler().z + math.pi

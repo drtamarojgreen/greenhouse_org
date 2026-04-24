@@ -87,9 +87,11 @@ class Character:
             self.mesh["is_protagonist"] = self.is_protagonist
 
     def apply_pose(self):
+        pos = self.cfg.get("default_pos", [0, 0, 0])
         if self.rig:
-            pos = self.cfg.get("default_pos", [0, 0, 0])
             self.rig.location = pos
+        elif self.mesh:
+            self.mesh.location = pos
 
     def animate(self, tag, frame, params=None):
         if self.rig and self.animator:
