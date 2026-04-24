@@ -51,7 +51,7 @@
     "emission_strength": 10.0,
     "intro_frames": [1, 5],
     "outro_frames": [4196, 4200],
-    "offset": [0.0, 2.8, -0.35],
+    "offset": [0.0, -0.1, 4.0],
     "lighting": [
       { "id": "Calligraphy_Key", "type": "AREA", "energy": 360.0, "color_index": 0, "offset": [0.0, 1.8, 0.7] },
       { "id": "Calligraphy_Fill", "type": "POINT", "energy": 220.0, "color_index": 1, "offset": [0.7, 2.1, 0.25] },

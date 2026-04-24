@@ -63,19 +63,23 @@ class CalligraphyDirector:
     def _keyframe_text_segment(self, text_obj, cam_obj, frame_start, frame_end, cfg):
         if not cam_obj:
             return
-        offset = mathutils.Vector(cfg.get("offset", [0.0, 2.6, -0.35]))
+        offset = mathutils.Vector(cfg.get("offset", [0.0, -0.1, 4.0]))
         for frame in range(frame_start, frame_end + 1):
             scene = bpy.context.scene
             scene.frame_set(frame)
-            world_offset = cam_obj.matrix_world.to_3x3() @ offset
-            text_obj.location = cam_obj.matrix_world.translation + world_offset
-            text_obj.rotation_euler = cam_obj.rotation_euler
+            cam_q = cam_obj.matrix_world.to_quaternion()
+            right = cam_q @ mathutils.Vector((1, 0, 0))
+            up = cam_q @ mathutils.Vector((0, 1, 0))
+            forward = cam_q @ mathutils.Vector((0, 0, -1))
+            text_obj.location = cam_obj.matrix_world.translation + (right * offset.x) + (up * offset.y) + (forward * offset.z)
+            to_cam = (cam_obj.matrix_world.translation - text_obj.location).normalized()
+            text_obj.rotation_euler = to_cam.to_track_quat('Y', 'Z').to_euler()
             text_obj.keyframe_insert(data_path="location", frame=frame)
             text_obj.keyframe_insert(data_path="rotation_euler", frame=frame)
 
     def _hide_outside_ranges(self, text_obj, i0, i1, o0, o1):
         key_data = [
-            (1, True),
+            (1, False if i0 <= 1 <= i1 else True),
             (i0, False),
             (i1 + 1, True),
             (o0, False),
