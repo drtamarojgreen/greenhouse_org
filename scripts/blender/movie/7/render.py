@@ -48,6 +48,7 @@ def build_scene():
     director.setup_environment()
     director.setup_lighting()
     director.setup_cinematics()
+    director.setup_calligraphy()
     
     print("Composing Cinematic Layout...")
     director.compose_ensemble()

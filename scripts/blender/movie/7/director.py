@@ -7,6 +7,7 @@ import json
 import random
 import config
 from animation_handler import AnimationHandler
+from calligraphy import CalligraphyDirector
 
 # Ensure Movie 7 root is in sys.path
 M7_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -77,6 +78,10 @@ class Director:
                 if target_obj:
                     con = next((c for c in cam_obj.constraints if c.type == 'TRACK_TO'), None) or cam_obj.constraints.new(type='TRACK_TO')
                     con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
+
+    def setup_calligraphy(self):
+        """Sets up intro/outro GreenhouseMD lettering and dedicated lighting."""
+        CalligraphyDirector(self.lc_cfg, config.config.total_frames, M7_ROOT).apply()
 
     def setup_environment(self):
         """Constructs the environment meshes from config using ExteriorModeler."""
