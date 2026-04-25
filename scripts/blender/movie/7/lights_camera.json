@@ -1,63 +1,372 @@
 {
   "focal_targets": [
-    { "id": "focus_herbaceous", "pos": [-1.75, -0.3, 2.5] },
-    { "id": "focus_arbor", "pos": [1.75, 0.3, 2.5] },
-    { "id": "lighting_midpoint", "pos": [0, 0, 2.2] },
-    { "id": "focus_exterior", "pos": [0, -20.0, 5.0] }
+    {
+      "id": "focus_herbaceous",
+      "pos": [
+        -1.75,
+        -0.3,
+        2.5
+      ]
+    },
+    {
+      "id": "focus_arbor",
+      "pos": [
+        1.75,
+        0.3,
+        2.5
+      ]
+    },
+    {
+      "id": "lighting_midpoint",
+      "pos": [
+        0,
+        0,
+        2.2
+      ]
+    },
+    {
+      "id": "focus_exterior",
+      "pos": [
+        0,
+        -20.0,
+        5.0
+      ]
+    }
   ],
   "cameras": [
     {
-      "id": "Wide", "pos": [0.0, -8.0, 2.0], "rot": [90, 0, 0], "lens": 35.0, "target": "lighting_midpoint",
-      "animation": { "points": [[0,-8,2], [0,-150,25], [0,-8,2]], "end_frame": 12 }
+      "id": "Wide",
+      "pos": [
+        0.0,
+        -8.0,
+        2.0
+      ],
+      "rot": [
+        90,
+        0,
+        0
+      ],
+      "lens": 35.0,
+      "target": "lighting_midpoint",
+      "animation": {
+        "points": [
+          [
+            0,
+            -8,
+            2
+          ],
+          [
+            0,
+            -150,
+            25
+          ],
+          [
+            0,
+            -8,
+            2
+          ]
+        ],
+        "end_frame": 12
+      }
     },
     {
-      "id": "Ots1", "pos": [13.5, 11.0, 6.0], "lens": 50.0, "target": "focus_herbaceous",
-      "animation": { "points": [[13.5, 11.0, 6.0], [16.0, 13.5, 6.3]] }
+      "id": "Ots1",
+      "pos": [
+        13.5,
+        11.0,
+        6.0
+      ],
+      "lens": 50.0,
+      "target": "focus_herbaceous",
+      "animation": {
+        "points": [
+          [
+            13.5,
+            11.0,
+            6.0
+          ],
+          [
+            16.0,
+            13.5,
+            6.3
+          ]
+        ]
+      }
     },
     {
-      "id": "Ots2", "pos": [-13.5, -11.0, 6.0], "lens": 50.0, "target": "focus_arbor",
-      "animation": { "points": [[-13.5, -11.0, 6.0], [-16.0, -13.5, 6.3]] }
+      "id": "Ots2",
+      "pos": [
+        -13.5,
+        -11.0,
+        6.0
+      ],
+      "lens": 50.0,
+      "target": "focus_arbor",
+      "animation": {
+        "points": [
+          [
+            -13.5,
+            -11.0,
+            6.0
+          ],
+          [
+            -16.0,
+            -13.5,
+            6.3
+          ]
+        ]
+      }
     },
-    { "id": "Antag1", "pos": [4.0, -4.5, 2.0], "lens": 135.0, "target": "Antag1.Rig" },
-    { "id": "Antag2", "pos": [1.0, -4.5, 2.0], "lens": 135.0, "target": "Antag2.Rig" },
-    { "id": "Antag3", "pos": [-1.0, -4.5, 2.0], "lens": 135.0, "target": "Antag3.Rig" },
-    { "id": "Antag4", "pos": [-4.0, -4.5, 2.0], "lens": 135.0, "target": "Antag4.Rig" },
     {
-      "id": "Exterior", "pos": [0, -40, 5], "lens": 50.0, "target": "focus_exterior",
-      "animation": { "points": [[-15, -40, 5], [0, -40, 5], [15, -40, 5]], "segments": [{ "start": 1, "end": 3 }, { "start": 4151, "end": 4200 }] }
+      "id": "Antag1",
+      "pos": [
+        4.0,
+        -4.5,
+        2.0
+      ],
+      "lens": 135.0,
+      "target": "Antag1.Rig"
+    },
+    {
+      "id": "Antag2",
+      "pos": [
+        1.0,
+        -4.5,
+        2.0
+      ],
+      "lens": 135.0,
+      "target": "Antag2.Rig"
+    },
+    {
+      "id": "Antag3",
+      "pos": [
+        -1.0,
+        -4.5,
+        2.0
+      ],
+      "lens": 135.0,
+      "target": "Antag3.Rig"
+    },
+    {
+      "id": "Antag4",
+      "pos": [
+        -4.0,
+        -4.5,
+        2.0
+      ],
+      "lens": 135.0,
+      "target": "Antag4.Rig"
+    },
+    {
+      "id": "Exterior",
+      "pos": [
+        0,
+        -40,
+        5
+      ],
+      "lens": 50.0,
+      "target": "focus_exterior",
+      "animation": {
+        "points": [
+          [
+            -15,
+            -40,
+            5
+          ],
+          [
+            0,
+            -40,
+            5
+          ],
+          [
+            15,
+            -40,
+            5
+          ]
+        ],
+        "segments": [
+          {
+            "start": 1,
+            "end": 3
+          },
+          {
+            "start": 4151,
+            "end": 4200
+          }
+        ]
+      }
     }
   ],
   "lighting": {
-    "Rim": { "type": "SPOT", "pos": [0, -10, 10], "energy": 1200.0, "color": [1.0, 0.9, 0.8], "target": "lighting_midpoint" },
-    "Key": { "type": "SUN", "rot": [55, 0, -40], "energy": 3.0, "color": [0.95, 1.0, 1.0] },
-    "Leg": { "type": "SUN", "rot": [50, 0, -40], "energy": 2.0, "color": [1.0, 1.0, 0.95] },
-    "Sun": { "type": "SUN", "pos": [60, -40, 120], "rot": [55, 0, -40], "energy": 3.0, "color": [1.0, 0.97, 0.88] },
-    "Torch": { "type": "POINT", "energy": 450.0, "color": [1.0, 0.55, 0.1] }
+    "Rim": {
+      "type": "SPOT",
+      "pos": [
+        0,
+        -10,
+        10
+      ],
+      "energy": 1200.0,
+      "color": [
+        1.0,
+        0.9,
+        0.8
+      ],
+      "target": "lighting_midpoint"
+    },
+    "Key": {
+      "type": "SUN",
+      "rot": [
+        55,
+        0,
+        -40
+      ],
+      "energy": 3.0,
+      "color": [
+        0.95,
+        1.0,
+        1.0
+      ]
+    },
+    "Leg": {
+      "type": "SUN",
+      "rot": [
+        50,
+        0,
+        -40
+      ],
+      "energy": 2.0,
+      "color": [
+        1.0,
+        1.0,
+        0.95
+      ]
+    },
+    "Sun": {
+      "type": "SUN",
+      "pos": [
+        60,
+        -40,
+        120
+      ],
+      "rot": [
+        55,
+        0,
+        -40
+      ],
+      "energy": 3.0,
+      "color": [
+        1.0,
+        0.97,
+        0.88
+      ]
+    },
+    "Torch": {
+      "type": "POINT",
+      "energy": 450.0,
+      "color": [
+        1.0,
+        0.55,
+        0.1
+      ]
+    }
   },
   "sequencing": {
-    "intro": { "camera": "Exterior", "start": 1, "end": 3 },
-    "main_open": { "camera": "Wide", "start": 4, "end": 503 },
-    "cycle": {
-      "order": ["Ots", "Antag", "Wide"],
-      "durations": { "Ots": 200, "Antag": 100, "Wide": 250 },
-      "start": 504, "end": 4150
+    "intro": {
+      "camera": "Exterior",
+      "start": 1,
+      "end": 3
     },
-    "outro": { "camera": "Exterior", "start": 4151, "end": 4200 }
+    "main_open": {
+      "camera": "Wide",
+      "start": 4,
+      "end": 503
+    },
+    "cycle": {
+      "order": [
+        "Ots",
+        "Antag",
+        "Wide"
+      ],
+      "durations": {
+        "Ots": 200,
+        "Antag": 100,
+        "Wide": 250
+      },
+      "start": 504,
+      "end": 4150
+    },
+    "outro": {
+      "camera": "Exterior",
+      "start": 4151,
+      "end": 4200
+    }
   },
   "calligraphy": {
     "name": "GreenhouseMD_Calligraphy",
     "text": "GreenhouseMD",
-    "size": 0.58,
-    "extrude": 0.12,
+    "size": 0.36,
+    "extrude": 0.06,
     "bevel_depth": 0.02,
-    "emission_strength": 12.0,
-    "intro_frames": [1, 5],
-    "outro_frames": [4196, 4200],
-    "offset": [0.0, -0.1, 4.0],
+    "emission_strength": 6.0,
+    "intro_frames": [
+      1,
+      5
+    ],
+    "outro_frames": [
+      4196,
+      4200
+    ],
+    "offset": [
+      0.0,
+      -0.1,
+      4.0
+    ],
     "lighting": [
-      { "id": "Calligraphy_Key", "type": "AREA", "energy": 800.0, "color": [0.2, 0.8, 0.2], "offset": [0.0, 1.8, 0.7] },
-      { "id": "Calligraphy_Fill", "type": "POINT", "energy": 450.0, "color": [0.4, 0.9, 0.4], "offset": [0.7, 2.1, 0.25] },
-      { "id": "Calligraphy_Rim", "type": "SPOT", "energy": 350.0, "color": [0.1, 0.6, 0.1], "offset": [-0.8, 1.9, 0.5] }
+      {
+        "id": "Calligraphy_Key",
+        "type": "AREA",
+        "energy": 800.0,
+        "color": [
+          0.2,
+          0.8,
+          0.2
+        ],
+        "offset": [
+          0.0,
+          1.8,
+          0.7
+        ]
+      },
+      {
+        "id": "Calligraphy_Fill",
+        "type": "POINT",
+        "energy": 450.0,
+        "color": [
+          0.4,
+          0.9,
+          0.4
+        ],
+        "offset": [
+          0.7,
+          2.1,
+          0.25
+        ]
+      },
+      {
+        "id": "Calligraphy_Rim",
+        "type": "SPOT",
+        "energy": 350.0,
+        "color": [
+          0.1,
+          0.6,
+          0.1
+        ],
+        "offset": [
+          -0.8,
+          1.9,
+          0.5
+        ]
+      }
     ]
   }
 }
