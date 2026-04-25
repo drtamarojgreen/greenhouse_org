@@ -89,11 +89,13 @@ class Director:
         CalligraphyDirector(self.lc_cfg, config.config.total_frames, M7_ROOT).apply()
 
     def setup_environment(self):
-        """Constructs the environment meshes from config using ExteriorModeler."""
+        """Constructs the environment meshes from config using Modeler components."""
         from environment.exterior import ExteriorModeler
         from environment.backdrop import BackdropModeler
+        from environment.interior import InteriorModeler
         ExteriorModeler().build_mesh("Env", config.config.get("environment", {}))
         BackdropModeler().build_mesh("Chroma", config.config.get("chroma", {}))
+        InteriorModeler().build_mesh("Interior", config.config.get("interior", {}))
 
     def setup_lighting(self):
         """Constructs lighting rigs from config."""

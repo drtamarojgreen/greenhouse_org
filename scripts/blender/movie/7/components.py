@@ -8,6 +8,8 @@ import rigging.plant
 import shading.universal
 import animation.universal
 import environment.exterior
+import environment.interior
+import environment.backdrop
 
 def initialize_registry():
     """Explicitly import all components to ensure they register themselves."""
