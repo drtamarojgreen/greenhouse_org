@@ -26,6 +26,13 @@ class TestComponentParity(unittest.TestCase):
                 "rigging": "ProceduralRigger",
                 "shading": "UniversalShader"
             },
+            "structure": {
+                "rig": {
+                    "bones": [
+                        {"name": "Torso", "head": [0,0,0], "tail": [0,0,2.0]}
+                    ]
+                }
+            },
             "parameters": {
                 "dimensions": {"torso_h": 2.0},
                 "foliage": {"density": 10},
