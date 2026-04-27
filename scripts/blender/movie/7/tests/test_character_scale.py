@@ -13,6 +13,7 @@ if M7_ROOT not in sys.path:
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
+import config
 
 class TestMovie7CharacterScale(unittest.TestCase):
     def setUp(self):
@@ -21,10 +22,13 @@ class TestMovie7CharacterScale(unittest.TestCase):
 
     def test_procedural_scaling(self):
         """Verifies that the AssetManager correctly scales a character based on target_height."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous").copy()
-        cfg["target_height"] = 5.0
-        char = CharacterBuilder.create("ScaledChar", cfg)
+        cfg = config.config.get("ensemble.entities", [])
+        herb_cfg = next((c for c in cfg if c["id"] == "Herbaceous"), {"id": "Herbaceous", "target_height": 3.0}).copy()
+        herb_cfg["type"] = "DYNAMIC"
+        # Ensure components are set even if ID is not Herbaceous
+        herb_cfg.setdefault("components", {"modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator"})
+        herb_cfg["target_height"] = 5.0
+        char = CharacterBuilder.create("ScaledChar", herb_cfg)
         char.build(self.manager)
 
         metrics = self.manager._get_metrics(char.rig)
