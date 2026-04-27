@@ -1,6 +1,8 @@
 import bpy
 import math
 import config
+import base
+from registry import registry
 
 BONE_NAME_MAP = {
     "Head": "mixamorig:Head",
@@ -25,8 +27,13 @@ def get_bone(arm_obj, name):
         if bone: return bone
     return arm_obj.pose.bones.get(f"mixamorig:{name}")
 
-class AnimationHandler:
+class AnimationHandler(base.Animator):
     """Modular Animation Handler with robust procedural application logic."""
+
+    def apply_action(self, rig, tag, frame, params):
+        """Dispatches to legacy apply_animation for V6 compatibility."""
+        duration = params.get("duration", 100)
+        self.apply_animation(rig, tag, frame, duration)
 
     def apply_animation(self, obj, tag, start_frame, duration=None):
         """Applies an animation to an object based on a tag."""
@@ -139,3 +146,6 @@ class AnimationHandler:
         track = obj.animation_data.nla_tracks.new()
         strip = track.strips.new(action.name, start, action)
         strip.repeat = duration / (action.frame_range[1] - action.frame_range[0])
+
+registry.register_animation("AnimationHandler", AnimationHandler)
+registry.register_animation("ProceduralAnimator", AnimationHandler)

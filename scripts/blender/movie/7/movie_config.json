@@ -1,5 +1,5 @@
 {
-  "production": { "title": "Movie 7", "total_frames": 4200, "start_frame": 1 },
+  "production": { "title": "Movie 7", "total_frames": 4800, "start_frame": 1 },
   "text_overlays": {
     "intro": [
       {
@@ -85,9 +85,57 @@
       },
       { "id": "Sylvan_Majesty", "type": "MESH", "target_height": 3.0, "default_pos": [0.0, 5.5, 0.0], "source_mesh": "Mesh1_Mesh1.044", "source_rig": "Armature.002" },
       { "id": "Radiant_Aura", "type": "MESH", "target_height": 3.0, "default_pos": [2.2, 6.0, 0.0], "source_mesh": "Mesh1_Mesh1.001", "source_rig": "Armature.004" },
-      { "id": "Verdant_Sprite", "type": "MESH", "target_height": 3.0, "default_pos": [-2.2, 6.0, 0.0], "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.006", "source_rig": "Armature.001" },
-      { "id": "Shadow_Weaver", "type": "MESH", "target_height": 3.0, "default_pos": [4.0, 7.0, 0.0], "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.052", "source_rig": "Armature.003" },
-      { "id": "Emerald_Sentinel", "type": "MESH", "target_height": 3.0, "default_pos": [-4.0, 7.0, 0.0], "is_antagonist": true, "source_mesh": "Mesh1_Mesh1.058", "source_rig": "Armature" },
+      {
+        "id": "Verdant_Sprite",
+        "type": "MESH",
+        "target_height": 3.0,
+        "default_pos": [-2.2, 6.0, 0.0],
+        "is_antagonist": true,
+        "source_mesh": "Mesh1_Mesh1.006",
+        "source_rig": "Armature.001",
+        "patrol": {
+          "enabled": true,
+          "path": "perimeter_inner",
+          "speed_frames_per_unit": 10,
+          "start_offset": 0.5,
+          "height": 0.0,
+          "loop": true
+        }
+      },
+      {
+        "id": "Shadow_Weaver",
+        "type": "MESH",
+        "target_height": 3.0,
+        "default_pos": [4.0, 7.0, 0.0],
+        "is_antagonist": true,
+        "source_mesh": "Mesh1_Mesh1.052",
+        "source_rig": "Armature.003",
+        "patrol": {
+          "enabled": true,
+          "path": "perimeter",
+          "speed_frames_per_unit": 8,
+          "start_offset": 0.0,
+          "height": 0.0,
+          "loop": true
+        }
+      },
+      {
+        "id": "Emerald_Sentinel",
+        "type": "MESH",
+        "target_height": 3.0,
+        "default_pos": [-4.0, 7.0, 0.0],
+        "is_antagonist": true,
+        "source_mesh": "Mesh1_Mesh1.058",
+        "source_rig": "Armature",
+        "patrol": {
+          "enabled": true,
+          "path": "perimeter",
+          "speed_frames_per_unit": 8,
+          "start_offset": 0.5,
+          "height": 0.0,
+          "loop": true
+        }
+      },
       { "id": "Root_Guardian", "type": "MESH", "target_height": 3.0, "default_pos": [6.0, 8.0, 0.0], "is_antagonist": true, "source_mesh": "skeleton", "source_rig": "skeleton" },
       { "id": "Phoenix_Herald", "type": "MESH", "target_height": 3.0, "default_pos": [-6.0, 8.0, 0.0], "source_mesh": "Leonardo_Phoenix textured 3D model", "source_rig": "skeleton" },
       { "id": "Golden_Phoenix", "type": "MESH", "target_height": 3.0, "default_pos": [0.0, 8.8, 0.0], "source_mesh": "Leonardo_Phoenix textured 3D model.001", "source_rig": "skeleton.001" },
@@ -113,15 +161,43 @@
         },
         "parameters": { "materials": { "glow": { "color": [0.1, 0.8, 0.2], "emission": 5.0 } } },
         "default_pos": [-3, 3, 0.5]
+      },
+      {
+        "id": "GreenhouseMobile",
+        "type": "DYNAMIC",
+        "components": {
+          "modeling": "GreenhouseMobileModeler",
+          "shading": "UniversalShader"
+        },
+        "parameters": {
+          "materials": {
+            "body":  { "color": [0.15, 0.35, 0.15] },
+            "glass": { "color": [0.7, 0.9, 1.0], "emission": 0.5 },
+            "wheel": { "color": [0.08, 0.08, 0.08] },
+            "frame": { "color": [0.25, 0.18, 0.10] }
+          }
+        },
+        "structure": {
+          "body_length": 6.0,
+          "body_width":  2.8,
+          "body_height": 2.5,
+          "wheel_radius": 0.45,
+          "wheel_width":  0.25,
+          "num_windows":  4,
+          "door_width":   0.9,
+          "door_height":  2.0,
+          "roof_type":    "arched"
+        },
+        "default_pos": [8.0, -18.0, 0.0]
       }
     ],
     "storyline": [
       { "beat": "Arrival", "start": 1, "end": 600, "events": [
-         { "target": "Sylvan_Majesty", "action": "visibility", "params": { "visible_at": 300 } },
+         { "target": "Sylvan_Majesty", "action": "visibility", "params": { "hidden_at": 1, "visible_at": 300 } },
          { "target": "Shadow_Weaver", "action": "animate", "start": 1, "params": { "tag": "shake", "duration": 599 } }
       ]},
       { "beat": "Rite of Joy", "start": 600, "end": 1800, "events": [
-         { "target": "Radiant_Aura", "action": "visibility", "params": { "visible_at": 600 } },
+         { "target": "Radiant_Aura", "action": "visibility", "params": { "hidden_at": 1, "visible_at": 600 } },
          { "target": "Radiant_Aura", "action": "altitude", "params": { "height": 10.0, "frames": 600 } }
       ]},
       { "beat": "Blessing", "start": 1800, "end": 3000, "events": [
@@ -136,21 +212,70 @@
   "environment": {
     "floor": { "size": 40, "interior_color": [0.22, 0.12, 0.05, 1.0], "exterior_radius": 300, "exterior_color": [0.02, 0.15, 0.02, 1.0] },
     "roof": { "size": 42, "height": 30, "color": [0.7, 0.85, 1.0, 0.2] },
-    "pillars": { "radius": 0.8, "height": 10.0, "color": [0.95, 0.95, 0.97, 1.0] },
+    "pillars": {
+      "radius": 0.8,
+      "height": null,
+      "derive_from": "chroma.wall_height",
+      "color": [0.95, 0.95, 0.97, 1.0]
+    },
     "mountains": { "radius": 250, "count": 24, "color": [0.05, 0.05, 0.08, 1.0] },
-    "vegetation": { "count": 50, "shades": [[0.04, 0.22, 0.04], [0.07, 0.30, 0.07]] },
-    "rock_path": { "length": 20, "width": 2.5, "color": [0.42, 0.42, 0.42, 1.0] },
-    "lavender": { "depth": 3.5, "density": 35, "stalk_color": [0.25, 0.5, 0.2], "flower_color": [0.55, 0.28, 0.85] },
+    "vegetation": {
+      "count": 50,
+      "shades": [[0.04, 0.22, 0.04], [0.07, 0.30, 0.07]],
+      "leaf_material": {
+        "enabled": true,
+        "roughness": 0.7,
+        "translucency": 0.35,
+        "subsurface_radius": [0.05, 0.12, 0.05],
+        "variation_seed": 42,
+        "color_variation_amount": 0.08
+      }
+    },
+    "rock_path": { "length": 40, "width": 2.5, "color": [0.42, 0.42, 0.42, 1.0] },
+    "torches": {
+      "height": 2.4,
+      "flame_cone_height": 0.42,
+      "spacing": 5.0,
+      "flame_color": [1.0, 0.55, 0.1, 1.0],
+      "flame_emission_strength": 6.0
+    },
+    "lavender": {
+      "depth": 8.0,
+      "density": 80,
+      "side_spread": 18.0,
+      "stalk_color": [0.25, 0.5, 0.2],
+      "flower_color": [0.55, 0.28, 0.85],
+      "max_stalk_height": 0.65
+    },
     "fog": { "density": 0.01, "color": [0.1, 0.5, 0.2, 1.0] }
   },
   "chroma": {
-    "size": 30, "alpha": 0.8,
+    "size": 30, "alpha": 0.8, "wall_height": 15.0,
     "walls": [
       { "id": "wide", "pos": [0, 20, 7.5], "rot": [90, 0, 0] },
       { "id": "ots1", "pos": [-20, 0, 7.5], "rot": [90, 0, 90] },
       { "id": "ots2", "pos": [20, 0, 7.5], "rot": [90, 0, -90] }
     ]
   },
+  "patrol_paths": {
+    "perimeter": {
+      "waypoints": [
+        [-15, -15, 0], [15, -15, 0], [15, 15, 0],
+        [-15, 15, 0], [-15, -15, 0]
+      ]
+    },
+    "perimeter_inner": {
+      "waypoints": [
+        [-10, -10, 0], [10, -10, 0], [10, 10, 0],
+        [-10, 10, 0], [-10, -10, 0]
+      ]
+    }
+  },
+  "extended_scenes": [
+    "scene_configs/scene_08_enter_mobile.json",
+    "scene_configs/scene_09_forest_drive.json",
+    "scene_configs/scene_10_mountain_ascent.json"
+  ],
   "interior": {},
   "normalization": { "strategy": "BBOX", "enable_culling": false, "enable_origin_reset": true }
 }

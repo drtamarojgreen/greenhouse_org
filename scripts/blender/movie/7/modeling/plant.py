@@ -102,7 +102,9 @@ class PlantModeler(Modeler):
                 for v in l_ret['verts']:
                     v[dlayer][head_vg.index] = 1.0
                     v[dlayer][foliage_vg.index] = 1.0
-                    for face in v.link_faces: face.material_index = 1
+                    for face in v.link_faces:
+                        face.material_index = 1
+                        face.smooth = True
 
         limbs_foliage = ["Arm.L","Arm.R","Elbow.L","Elbow.R","Thigh.L","Thigh.R","Knee.L","Knee.R"]
         for bone_name in limbs_foliage:
@@ -119,7 +121,9 @@ class PlantModeler(Modeler):
                 for v in l_ret['verts']:
                     v[dlayer][vg.index] = 1.0
                     v[dlayer][foliage_vg.index] = 0.6
-                    for face in v.link_faces: face.material_index = 1
+                    for face in v.link_faces:
+                        face.material_index = 1
+                        face.smooth = True
 
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.004)
         for v in bm.verts:

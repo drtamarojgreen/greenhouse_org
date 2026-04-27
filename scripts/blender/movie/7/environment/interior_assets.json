@@ -2,29 +2,49 @@
   "racks": [
     {
       "id": "rack_front_left",
-      "pos": [-14, 2, 0],
+      "pos": [-14, -6, 0],
       "rot": [0, 0, 0],
       "params": {
         "width": 3.0, "depth": 0.6, "height": 2.2,
         "shelves": 4,
         "shelf_color": [0.55, 0.45, 0.30],
         "frame_color": [0.20, 0.12, 0.06]
+      },
+      "shelf_pots": {
+        "enabled": true,
+        "pot_radius": 0.10,
+        "pot_height": 0.12,
+        "plant_type": "bush",
+        "plant_scale": 0.4,
+        "count_per_shelf": 3,
+        "pot_color": [0.4, 0.2, 0.1],
+        "plant_color": [0.2, 0.6, 0.2]
       }
     },
     {
       "id": "rack_front_right",
-      "pos": [14, 2, 0],
+      "pos": [14, -6, 0],
       "rot": [0, 0, 0],
       "params": {
         "width": 3.0, "depth": 0.6, "height": 2.2,
         "shelves": 4,
         "shelf_color": [0.55, 0.45, 0.30],
         "frame_color": [0.20, 0.12, 0.06]
+      },
+      "shelf_pots": {
+        "enabled": true,
+        "pot_radius": 0.10,
+        "pot_height": 0.12,
+        "plant_type": "bush",
+        "plant_scale": 0.4,
+        "count_per_shelf": 3,
+        "pot_color": [0.4, 0.2, 0.1],
+        "plant_color": [0.2, 0.6, 0.2]
       }
     },
     {
       "id": "rack_rear_left",
-      "pos": [-14, 15, 0],
+      "pos": [-14, 10, 0],
       "rot": [0, 0, 0],
       "params": {
         "width": 3.0, "depth": 0.6, "height": 2.2,
@@ -35,15 +55,30 @@
     },
     {
       "id": "rack_rear_right",
-      "pos": [14, 15, 0],
+      "pos": [14, 10, 0],
       "rot": [0, 0, 0],
       "params": {
         "width": 3.0, "depth": 0.6, "height": 2.2,
         "shelves": 4,
         "shelf_color": [0.55, 0.45, 0.30],
         "frame_color": [0.20, 0.12, 0.06]
+      },
+      "shelf_pots": {
+        "enabled": true,
+        "pot_radius": 0.10, "pot_height": 0.12,
+        "plant_type": "bush", "plant_scale": 0.4, "count_per_shelf": 4,
+        "pot_color": [0.4, 0.2, 0.1], "plant_color": [0.1, 0.6, 0.1]
       }
     }
+  ],
+
+  "forward_racks": [
+    { "id": "rack_fwd_1", "pos": [-10, -12, 0], "rot": [0,0,0], "params": { "width": 3.0, "depth": 0.6, "height": 2.2, "shelves": 4, "shelf_color": [0.55, 0.45, 0.30], "frame_color": [0.20, 0.12, 0.06] }, "shelf_pots": { "enabled": true, "pot_radius": 0.1, "pot_height": 0.1, "plant_type": "bush", "count_per_shelf": 3, "pot_color": [0.4, 0.2, 0.1], "plant_color": [0.2, 0.7, 0.2] } },
+    { "id": "rack_fwd_2", "pos": [ -6, -12, 0], "rot": [0,0,0], "params": { "width": 3.0, "depth": 0.6, "height": 2.2, "shelves": 4, "shelf_color": [0.55, 0.45, 0.30], "frame_color": [0.20, 0.12, 0.06] }, "shelf_pots": { "enabled": true, "pot_radius": 0.1, "pot_height": 0.1, "plant_type": "bush", "count_per_shelf": 3, "pot_color": [0.4, 0.2, 0.1], "plant_color": [0.2, 0.7, 0.2] } },
+    { "id": "rack_fwd_3", "pos": [ -2, -12, 0], "rot": [0,0,0], "params": { "width": 3.0, "depth": 0.6, "height": 2.2, "shelves": 4, "shelf_color": [0.55, 0.45, 0.30], "frame_color": [0.20, 0.12, 0.06] }, "shelf_pots": { "enabled": true, "pot_radius": 0.1, "pot_height": 0.1, "plant_type": "bush", "count_per_shelf": 3, "pot_color": [0.4, 0.2, 0.1], "plant_color": [0.2, 0.7, 0.2] } },
+    { "id": "rack_fwd_4", "pos": [  2, -12, 0], "rot": [0,0,0], "params": { "width": 3.0, "depth": 0.6, "height": 2.2, "shelves": 4, "shelf_color": [0.55, 0.45, 0.30], "frame_color": [0.20, 0.12, 0.06] }, "shelf_pots": { "enabled": true, "pot_radius": 0.1, "pot_height": 0.1, "plant_type": "bush", "count_per_shelf": 3, "pot_color": [0.4, 0.2, 0.1], "plant_color": [0.2, 0.7, 0.2] } },
+    { "id": "rack_fwd_5", "pos": [  6, -12, 0], "rot": [0,0,0], "params": { "width": 3.0, "depth": 0.6, "height": 2.2, "shelves": 4, "shelf_color": [0.55, 0.45, 0.30], "frame_color": [0.20, 0.12, 0.06] }, "shelf_pots": { "enabled": true, "pot_radius": 0.1, "pot_height": 0.1, "plant_type": "bush", "count_per_shelf": 3, "pot_color": [0.4, 0.2, 0.1], "plant_color": [0.2, 0.7, 0.2] } },
+    { "id": "rack_fwd_6", "pos": [ 10, -12, 0], "rot": [0,0,0], "params": { "width": 3.0, "depth": 0.6, "height": 2.2, "shelves": 4, "shelf_color": [0.55, 0.45, 0.30], "frame_color": [0.20, 0.12, 0.06] }, "shelf_pots": { "enabled": true, "pot_radius": 0.1, "pot_height": 0.1, "plant_type": "bush", "count_per_shelf": 3, "pot_color": [0.4, 0.2, 0.1], "plant_color": [0.2, 0.7, 0.2] } }
   ],
 
   "flower_beds": [
@@ -55,7 +90,10 @@
         "soil_color": [0.12, 0.08, 0.04],
         "wall_color": [0.45, 0.35, 0.25],
         "plant_density": 20,
-        "plant_colors": [[0.1, 0.6, 0.1], [0.55, 0.28, 0.85]]
+        "plant_colors": [[0.1, 0.6, 0.1], [0.55, 0.28, 0.85]],
+        "plant_min_height": 0.45,
+        "plant_max_height": 0.95,
+        "plant_base_radius": 0.12
       }
     },
     {
@@ -66,7 +104,10 @@
         "soil_color": [0.12, 0.08, 0.04],
         "wall_color": [0.45, 0.35, 0.25],
         "plant_density": 15,
-        "plant_colors": [[0.1, 0.5, 0.1], [0.8, 0.2, 0.2]]
+        "plant_colors": [[0.1, 0.5, 0.1], [0.8, 0.2, 0.2]],
+        "plant_min_height": 0.45,
+        "plant_max_height": 0.95,
+        "plant_base_radius": 0.12
       }
     },
     {
@@ -77,7 +118,10 @@
         "soil_color": [0.12, 0.08, 0.04],
         "wall_color": [0.45, 0.35, 0.25],
         "plant_density": 15,
-        "plant_colors": [[0.1, 0.5, 0.1], [0.2, 0.2, 0.8]]
+        "plant_colors": [[0.1, 0.5, 0.1], [0.2, 0.2, 0.8]],
+        "plant_min_height": 0.45,
+        "plant_max_height": 0.95,
+        "plant_base_radius": 0.12
       }
     }
   ],
@@ -100,43 +144,27 @@
         "pot_color": [0.55, 0.30, 0.15],
         "plant_type": "bush", "plant_scale": 1.0, "plant_color": [0.1, 0.5, 0.1]
       }
-    },
-    {
-      "id": "pot_rack_left_s1", "pos": [-14.5, 2, 0.76],
-      "params": { "pot_radius": 0.18, "pot_height": 0.2, "pot_color": [0.4, 0.2, 0.1], "plant_type": "bush", "plant_scale": 0.6, "plant_color": [0.2, 0.6, 0.2] }
-    },
-    {
-      "id": "pot_rack_left_s2", "pos": [-13.5, 2, 1.43],
-      "params": { "pot_radius": 0.18, "pot_height": 0.2, "pot_color": [0.4, 0.2, 0.1], "plant_type": "tall", "plant_scale": 0.5, "plant_color": [0.2, 0.5, 0.2] }
-    },
-    {
-      "id": "pot_rack_right_s1", "pos": [14.5, 2, 0.76],
-      "params": { "pot_radius": 0.18, "pot_height": 0.2, "pot_color": [0.4, 0.2, 0.1], "plant_type": "bush", "plant_scale": 0.6, "plant_color": [0.2, 0.6, 0.2] }
-    },
-    {
-      "id": "pot_rack_right_s2", "pos": [13.5, 2, 1.43],
-      "params": { "pot_radius": 0.18, "pot_height": 0.2, "pot_color": [0.4, 0.2, 0.1], "plant_type": "tall", "plant_scale": 0.5, "plant_color": [0.2, 0.5, 0.2] }
     }
   ],
 
   "chairs": [
     {
-      "id": "chair_left",
-      "pos": [-1.8, -2.0, 0],
-      "rot": [0, 0, 15],
+      "id": "chair_1",
+      "pos": [-4.0, 0.5, 0],
+      "rot": [0, 0, -15],
       "params": {
-        "seat_color": [0.25, 0.45, 0.25],
-        "frame_color": [0.18, 0.10, 0.04],
+        "frame_color": [0.15, 0.1, 0.06],
+        "seat_color": [0.6, 0.3, 0.15],
         "cushion": true
       }
     },
     {
-      "id": "chair_right",
-      "pos": [1.8, -2.0, 0],
-      "rot": [0, 0, -15],
+      "id": "chair_2",
+      "pos": [4.0, 0.5, 0],
+      "rot": [0, 0, 15],
       "params": {
-        "seat_color": [0.25, 0.45, 0.25],
-        "frame_color": [0.18, 0.10, 0.04],
+        "frame_color": [0.15, 0.1, 0.06],
+        "seat_color": [0.6, 0.3, 0.15],
         "cushion": true
       }
     }
@@ -165,9 +193,38 @@
     }
   ],
 
+  "floor_lamps": [
+    {
+      "id": "floor_lamp_left",
+      "pos": [-2.8, -1.0, 0],
+      "params": {
+        "pole_height": 1.6,
+        "shade_radius": 0.22,
+        "pole_color": [0.15, 0.10, 0.05],
+        "shade_color": [0.9, 0.85, 0.7],
+        "light_type": "POINT",
+        "light_energy": 600.0,
+        "light_color": [1.0, 0.92, 0.78]
+      }
+    },
+    {
+      "id": "floor_lamp_right",
+      "pos": [2.8, -1.0, 0],
+      "params": {
+        "pole_height": 1.6,
+        "shade_radius": 0.22,
+        "pole_color": [0.15, 0.10, 0.05],
+        "shade_color": [0.9, 0.85, 0.7],
+        "light_type": "POINT",
+        "light_energy": 600.0,
+        "light_color": [1.0, 0.92, 0.78]
+      }
+    }
+  ],
+
   "television_stand": {
     "id": "tv_stand",
-    "pos": [0, 17, 0],
+    "pos": [0, 12, 0],
     "params": {
       "width": 1.8, "depth": 0.5, "height": 0.55,
       "cabinet_color": [0.15, 0.10, 0.06],
@@ -178,7 +235,7 @@
 
   "television": {
     "id": "television",
-    "pos": [0, 17, 0.55],
+    "pos": [0, 12, 0.55],
     "params": {
       "screen_width": 1.4, "screen_height": 0.82, "depth": 0.08,
       "bezel_color": [0.05, 0.05, 0.05],

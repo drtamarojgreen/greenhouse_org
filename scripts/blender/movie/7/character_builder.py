@@ -12,6 +12,9 @@ from registry import registry
 # Import procedural components to ensure registration
 import modeling.procedural
 import modeling.plant
+import modeling.greenhouse_mobile
+import environment.forest_road
+import environment.mountain_base
 import rigging.procedural
 import rigging.plant
 import shading.universal
@@ -85,6 +88,9 @@ class Character:
             self.rig["is_protagonist"] = self.is_protagonist
         if self.mesh:
             self.mesh["is_protagonist"] = self.is_protagonist
+            if self.mesh.type == 'MESH':
+                for poly in self.mesh.data.polygons:
+                    poly.use_smooth = True
 
     def apply_pose(self):
         pos = self.cfg.get("default_pos", [0, 0, 0])
@@ -92,6 +98,7 @@ class Character:
             self.rig.location = pos
         elif self.mesh:
             self.mesh.location = pos
+        bpy.context.view_layer.update()
 
     def animate(self, tag, frame, params=None):
         if self.rig and self.animator:
@@ -143,7 +150,8 @@ class LinkedCharacter(Character):
                 arm_mod = self.mesh.modifiers.new(name="Armature", type='ARMATURE')
             arm_mod.object = self.rig
 
-        if self.rig:
+        # Only mark as linked_asset if it was ACTUALLY loaded (not fallback)
+        if self.rig and not (self.char_id in MAIN_CHARACTER_IDS and not objs):
             self.rig["linked_asset"] = True
         if self.rig and self.cfg.get("target_height"):
             manager.normalize_character(self.rig, self.cfg["target_height"])
@@ -152,6 +160,11 @@ class LinkedCharacter(Character):
             self.rig["is_protagonist"] = self.is_protagonist
         if self.mesh:
             self.mesh["is_protagonist"] = self.is_protagonist
+        if self.mesh:
+            self.mesh["is_protagonist"] = self.is_protagonist
+            if self.mesh.type == 'MESH':
+                for poly in self.mesh.data.polygons:
+                    poly.use_smooth = True
 
 class CharacterBuilder:
     """Factory for Character instantiation."""
@@ -160,7 +173,8 @@ class CharacterBuilder:
         resolved_cfg = dict(cfg)
         if char_id in MAIN_CHARACTER_IDS:
             resolved_cfg["is_protagonist"] = True
-            resolved_cfg["type"] = "DYNAMIC"
+            if resolved_cfg.get("type") != "MESH":
+                resolved_cfg["type"] = "DYNAMIC"
             comps = dict(resolved_cfg.get("components", {}))
             comps.setdefault("modeling", "PlantModeler")
             comps.setdefault("rigging", "PlantRigger")
