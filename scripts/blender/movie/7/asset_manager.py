@@ -125,6 +125,7 @@ class AssetManager:
     def _get_metrics(self, rig):
         if rig is None:
             return None
+        bpy.context.view_layer.update()
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         # Linked FBX-style assets are not always strict children of the armature.
         # Include any mesh using this rig in an Armature modifier so grounding
@@ -133,7 +134,7 @@ class AssetManager:
             if obj.type != 'MESH' or obj in meshes:
                 continue
             arm_mod = next((m for m in obj.modifiers if m.type == 'ARMATURE' and m.object == rig), None)
-            if arm_mod is not None:
+            if arm_mod is not None or obj.parent == rig:
                 meshes.append(obj)
         all_z = []
         for m in meshes:

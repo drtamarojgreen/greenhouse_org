@@ -31,8 +31,8 @@ class TestInteriorFurnishing(unittest.TestCase):
         modeler.build_mesh("Interior", {})
         
         expected = [
-            "rack_left", "rack_right", 
-            "flower_bed_center", 
+            "rack_front_left", "rack_front_right", "rack_rear_left", "rack_rear_right",
+            "flower_bed_center", "flower_bed_left", "flower_bed_right",
             "pot_entrance_left", "pot_entrance_right",
             "chair_left", "chair_right",
             "end_table_left", "end_table_right",

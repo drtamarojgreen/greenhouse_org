@@ -29,7 +29,7 @@
       "pos": [
         0,
         -20.0,
-        5.0
+        1.5
       ]
     }
   ],
@@ -119,43 +119,27 @@
     },
     {
       "id": "Antag1",
-      "pos": [
-        4.0,
-        -4.5,
-        2.0
-      ],
+      "pos": [4.0, -4.5, 2.0],
       "lens": 135.0,
-      "target": "Antag1.Rig"
+      "target": "Shadow_Weaver.Rig"
     },
     {
       "id": "Antag2",
-      "pos": [
-        1.0,
-        -4.5,
-        2.0
-      ],
+      "pos": [1.0, -4.5, 2.0],
       "lens": 135.0,
-      "target": "Antag2.Rig"
+      "target": "Verdant_Sprite.Rig"
     },
     {
       "id": "Antag3",
-      "pos": [
-        -1.0,
-        -4.5,
-        2.0
-      ],
+      "pos": [-1.0, -4.5, 2.0],
       "lens": 135.0,
-      "target": "Antag3.Rig"
+      "target": "Emerald_Sentinel.Rig"
     },
     {
       "id": "Antag4",
-      "pos": [
-        -4.0,
-        -4.5,
-        2.0
-      ],
+      "pos": [-4.0, -4.5, 2.0],
       "lens": 135.0,
-      "target": "Antag4.Rig"
+      "target": "Root_Guardian.Rig"
     },
     {
       "id": "Exterior",
@@ -195,6 +179,22 @@
           }
         ]
       }
+    },
+    {
+      "id": "MobileCam",
+      "pos": [15.0, -35.0, 5.0],
+      "rot": [90, 0, 0],
+      "target": "GreenhouseMobile"
+    },
+    {
+      "id": "ForestCam",
+      "pos": [0, -10, 2.5],
+      "target": "GreenhouseMobile"
+    },
+    {
+      "id": "MountainCam",
+      "pos": [10, 80, 20],
+      "target": "Herbaceous.Rig"
     }
   ],
   "lighting": {
@@ -268,6 +268,10 @@
         0.55,
         0.1
       ]
+    },
+    "MidLight": {
+      "type": "POINT",
+      "deprecated": true
     }
   },
   "sequencing": {
@@ -312,10 +316,7 @@
       1,
       5
     ],
-    "outro_frames": [
-      4196,
-      4200
-    ],
+    "outro_frames": [4751, 4800],
     "offset": [
       0.0,
       -0.1,
@@ -324,48 +325,36 @@
     "lighting": [
       {
         "id": "Calligraphy_Key",
-        "type": "AREA",
+        "type": "SPOT",
         "energy": 800.0,
-        "color": [
-          0.2,
-          0.8,
-          0.2
-        ],
-        "offset": [
-          0.0,
-          1.8,
-          0.7
-        ]
+        "spot_size_deg": 30.0,
+        "color": [0.2, 0.8, 0.2],
+        "offset": [0.0, 1.8, 0.7],
+        "animate_sweep": true,
+        "sweep_axis": "X",
+        "sweep_amp_deg": 12.0,
+        "sweep_freq_hz": 0.4
       },
       {
         "id": "Calligraphy_Fill",
-        "type": "POINT",
+        "type": "SPOT",
         "energy": 450.0,
-        "color": [
-          0.4,
-          0.9,
-          0.4
-        ],
-        "offset": [
-          0.7,
-          2.1,
-          0.25
-        ]
+        "spot_size_deg": 45.0,
+        "color": [0.4, 0.9, 0.4],
+        "offset": [0.7, 2.1, 0.25],
+        "animate_sweep": true,
+        "sweep_axis": "Y",
+        "sweep_amp_deg": 8.0,
+        "sweep_freq_hz": 0.3
       },
       {
         "id": "Calligraphy_Rim",
         "type": "SPOT",
         "energy": 350.0,
-        "color": [
-          0.1,
-          0.6,
-          0.1
-        ],
-        "offset": [
-          -0.8,
-          1.9,
-          0.5
-        ]
+        "spot_size_deg": 25.0,
+        "color": [0.1, 0.6, 0.1],
+        "offset": [-0.8, 1.9, 0.5],
+        "animate_sweep": false
       }
     ]
   }

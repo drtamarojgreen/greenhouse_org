@@ -1,0 +1,22 @@
+{
+  "scene_id": "scene_08",
+  "start_frame": 4201,
+  "end_frame": 4400,
+  "story_beats": [
+    {
+      "beat": "Boarding",
+      "start": 4201,
+      "events": [
+        { "target": "GreenhouseMobile", "action": "open_door", "start": 4210, "params": { "duration_frames": 30 } },
+        { "target": "ENSEMBLE", "action": "move_to", "start": 4201, "params": { "destination_pos": [8.0, -18.0, 0.0], "duration_frames": 100, "formation": "loose_cluster" } },
+        { "target": "Herbaceous", "action": "move_to", "start": 4201, "params": { "destination_pos": [7.5, -18.0, 0.0], "duration_frames": 60 } },
+        { "target": "Arbor", "action": "move_to", "start": 4201, "params": { "destination_pos": [8.5, -18.0, 0.0], "duration_frames": 60 } },
+        { "target": "Herbaceous", "action": "enter_vehicle", "start": 4280, "params": { "vehicle_id": "GreenhouseMobile", "entry_pos": [0,0,0.5] } },
+        { "target": "Arbor", "action": "enter_vehicle", "start": 4290, "params": { "vehicle_id": "GreenhouseMobile", "entry_pos": [0.5,0,0.5] } }
+      ]
+    }
+  ],
+  "camera_sequence": [
+    { "camera": "MobileCam", "start": 4201, "end": 4400 }
+  ]
+}

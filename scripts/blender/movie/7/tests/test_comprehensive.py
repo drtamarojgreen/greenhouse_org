@@ -29,7 +29,7 @@ class TestMovie7Comprehensive(unittest.TestCase):
         char.animate("idle", 1)
 
         self.assertIsNotNone(char.rig.animation_data)
-        self.assertEqual(char.rig.location.x, cfg["default_pos"][0])
+        self.assertAlmostEqual(char.rig.location.x, cfg["default_pos"][0], places=4)
 
     def test_multiple_characters(self):
         """Verifies that building multiple characters doesn't cross-pollinate data."""

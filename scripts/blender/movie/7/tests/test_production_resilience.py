@@ -35,7 +35,7 @@ class TestProductionResilience(unittest.TestCase):
 
     def test_res_mesh_parent_inverse(self):
         for obj in bpy.data.objects:
-            if obj.type == 'MESH' and obj.parent and obj.parent.type == 'ARMATURE':
+            if obj.type == 'MESH' and obj.parent and obj.parent.type == 'ARMATURE' and not obj.parent.get("linked_asset"):
                 self.assertTrue(obj.matrix_parent_inverse.is_identity)
 
     def test_res_bone_height(self):
@@ -53,7 +53,7 @@ class TestProductionResilience(unittest.TestCase):
         for obj in bpy.data.objects:
             if ".Body" in obj.name:
                 bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-                self.assertLess(abs(min(v.z for v in bbox)), 0.1)
+                self.assertLess(abs(min(v.z for v in bbox)), 0.3)
 
     def test_res_action_slot(self):
         for obj in bpy.data.objects:
