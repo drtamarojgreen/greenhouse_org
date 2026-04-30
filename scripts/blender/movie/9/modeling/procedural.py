@@ -55,6 +55,9 @@ class ProceduralModeler(base.Modeler):
         matrix = mathutils.Matrix.Translation(loc)
         if "rot" in geo:
             matrix @= mathutils.Euler(geo["rot"]).to_matrix().to_4x4()
+        if "scale" in geo:
+            s_vec = geo["scale"]
+            matrix @= mathutils.Matrix.Diagonal((*s_vec, 1))
 
         if gtype == "CONE":
             r1, r2, h = geo["params"]

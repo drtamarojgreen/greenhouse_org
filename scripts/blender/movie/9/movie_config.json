@@ -189,6 +189,49 @@
           "roof_type":    "arched"
         },
         "default_pos": [8.0, -18.0, 0.0]
+    },
+    {
+      "id": "ClinicalDesk",
+      "type": "DYNAMIC",
+      "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
+      "structure": {
+        "geometry": [
+          { "name": "Top", "type": "CUBE", "params": [1.0], "loc": [0, 0, 0.75], "scale": [2.0, 1.0, 0.05], "material": "wood" },
+          { "name": "Leg_FL", "type": "CUBE", "params": [1.0], "loc": [-0.9, -0.4, 0.35], "scale": [0.05, 0.05, 0.75], "material": "metal" },
+          { "name": "Leg_FR", "type": "CUBE", "params": [1.0], "loc": [0.9, -0.4, 0.35], "scale": [0.05, 0.05, 0.75], "material": "metal" },
+          { "name": "Leg_BL", "type": "CUBE", "params": [1.0], "loc": [-0.9, 0.4, 0.35], "scale": [0.05, 0.05, 0.75], "material": "metal" },
+          { "name": "Leg_BR", "type": "CUBE", "params": [1.0], "loc": [0.9, 0.4, 0.35], "scale": [0.05, 0.05, 0.75], "material": "metal" }
+        ]
+      },
+      "parameters": {
+        "materials": {
+          "wood": { "color": [0.3, 0.15, 0.08], "roughness": 0.8 },
+          "metal": { "color": [0.6, 0.6, 0.6], "metallic": 1.0, "roughness": 0.2 }
+        }
+      },
+      "default_pos": [-4, -4, 0],
+      "_comment_": "Desk: Symbolizes cognitive structure and the processing of internal data."
+    },
+    {
+      "id": "PatientChair",
+      "type": "DYNAMIC",
+      "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
+      "structure": {
+        "geometry": [
+          { "name": "Seat", "type": "CUBE", "params": [1.0], "loc": [0, 0, 0.4], "scale": [0.8, 0.8, 0.1], "material": "fabric" },
+          { "name": "Back", "type": "CUBE", "params": [1.0], "loc": [0, 0.35, 0.9], "scale": [0.8, 0.1, 1.0], "material": "fabric" },
+          { "name": "Leg_L", "type": "CUBE", "params": [1.0], "loc": [-0.3, 0, 0.2], "scale": [0.05, 0.6, 0.4], "material": "metal" },
+          { "name": "Leg_R", "type": "CUBE", "params": [1.0], "loc": [0.3, 0, 0.2], "scale": [0.05, 0.6, 0.4], "material": "metal" }
+        ]
+      },
+      "parameters": {
+        "materials": {
+          "fabric": { "color": [0.15, 0.2, 0.3], "roughness": 0.9 },
+          "metal": { "color": [0.5, 0.5, 0.5], "metallic": 0.8, "roughness": 0.3 }
+        }
+      },
+      "default_pos": [-1.5, -4, 0],
+      "_comment_": "PatientChair: Represents the vulnerable, receptive state of the psyche during introspection."
       }
     ],
     "storyline": [
@@ -196,9 +239,21 @@
          { "target": "Sylvan_Majesty", "action": "visibility", "params": { "hidden_at": 1, "visible_at": 300 } },
          { "target": "Shadow_Weaver", "action": "animate", "start": 1, "params": { "tag": "shake", "duration": 599 } }
       ]},
-      { "beat": "Rite of Joy", "start": 600, "end": 1800, "events": [
+      { "beat": "Rite of Joy", "start": 600, "end": 1000, "events": [
          { "target": "Radiant_Aura", "action": "visibility", "params": { "hidden_at": 1, "visible_at": 600 } },
          { "target": "Radiant_Aura", "action": "altitude", "params": { "height": 10.0, "frames": 600 } }
+      ]},
+      { "beat": "Clinical Exchange", "start": 1000, "end": 1800, "events": [
+         { "target": "Herbaceous", "action": "move_to", "start": 1000, "params": { "destination_pos": [-1.5, -3.2, 0], "duration_frames": 100 } },
+         { "target": "Arbor", "action": "move_to", "start": 1000, "params": { "destination_pos": [-4.0, -3.0, 0], "duration_frames": 100 } },
+         { "target": "Herbaceous", "action": "animate", "start": 1100, "params": { "tag": "sit", "duration": 40 } },
+         { "target": "Arbor", "action": "animate", "start": 1100, "params": { "tag": "sit", "duration": 40 } },
+         { "target": "Herbaceous", "action": "animate", "start": 1400, "params": { "tag": "stand", "duration": 40 } },
+         { "target": "Arbor", "action": "animate", "start": 1400, "params": { "tag": "stand", "duration": 40 } },
+         { "target": "Herbaceous", "action": "move_to", "start": 1440, "params": { "destination_pos": [-4.0, -3.0, 0], "duration_frames": 100 } },
+         { "target": "Arbor", "action": "move_to", "start": 1440, "params": { "destination_pos": [-1.5, -3.2, 0], "duration_frames": 100 } },
+         { "target": "Herbaceous", "action": "animate", "start": 1540, "params": { "tag": "sit", "duration": 40 } },
+         { "target": "Arbor", "action": "animate", "start": 1540, "params": { "tag": "sit", "duration": 40 } }
       ]},
       { "beat": "Blessing", "start": 1800, "end": 3000, "events": [
          { "target": "WaterCan", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } },
@@ -288,7 +343,7 @@
   "context_constraints": {
     "greenhouse": {
       "disallowed_assets": ["mountain_range", "rock_path"],
-      "required_assets": ["pillars", "roof"],
+      "required_assets": ["pillars", "roof", "ClinicalDesk", "PatientChair"],
       "_comment_": "Ensures structural integrity of the greenhouse metaphor by excluding incompatible exterior assets."
     },
     "exterior": {

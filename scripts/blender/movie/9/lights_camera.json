@@ -224,6 +224,13 @@
       "lens": 18.0,
       "target": "lighting_midpoint",
       "_comment_": "A high-altitude overview symbolizing objective meta-cognition and self-observation."
+    },
+    {
+      "id": "Clinical_TwoShot",
+      "pos": [-2.75, -12.0, 1.5],
+      "lens": 50.0,
+      "target": "lighting_midpoint",
+      "_comment_": "Framed specifically for the Clinical Exchange, capturing the interpersonal dynamic between the two protagonists."
     }
   ],
   "lighting": {
@@ -314,6 +321,11 @@
       "camera": "Exterior",
       "start": 1,
       "end": 3
+    },
+    "clinical_interaction": {
+      "camera": "Clinical_TwoShot",
+      "start": 1000,
+      "end": 1800
     },
     "main_open": {
       "camera": "Wide",

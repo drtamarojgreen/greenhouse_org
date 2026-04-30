@@ -75,6 +75,10 @@ class AnimationHandler(base.Animator):
             self._animate_droop(obj, start_frame, duration or 60)
         elif tag == "smile":
             self._animate_smile(obj, start_frame, duration or 30)
+        elif tag == "sit":
+            self._animate_sit(obj, start_frame, duration or 40)
+        elif tag == "stand":
+            self._animate_stand(obj, start_frame, duration or 40)
 
         # Blender 5.1 Slotted Action Support
         if hasattr(obj.animation_data, "action_slot"):
@@ -248,6 +252,47 @@ class AnimationHandler(base.Animator):
         if not head: return
         head.rotation_euler[0] -= math.radians(5)
         head.keyframe_insert(data_path=f'pose.bones["{head.name}"].rotation_euler', index=0, frame=start + duration)
+
+    def _animate_sit(self, obj, start, duration):
+        """
+        Coordinated bending of the lower body to achieve a natural seated posture.
+        Emotional Accuracy: Sitting represents a transition from external action to internal
+        processing and stability.
+        """
+        if obj.type != 'ARMATURE': return
+        pb = obj.pose.bones
+
+        # 1. Torso lower and lean
+        torso = get_bone(obj, "Torso")
+        if torso:
+            torso.location[2] = -0.6
+            torso.rotation_euler[0] = math.radians(-10) # Slight forward lean
+            torso.keyframe_insert(data_path="location", index=2, frame=start + duration)
+            torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start + duration)
+
+        # 2. Thighs up (90 degrees)
+        for side in ["L", "R"]:
+            thigh = get_bone(obj, f"Leg.{side}")
+            if thigh:
+                thigh.rotation_euler[0] = math.radians(90)
+                thigh.keyframe_insert(data_path="rotation_euler", index=0, frame=start + duration)
+
+            # 3. Knees back (90 degrees)
+            # Knee bone name in Movie 9 plant rig is derived from standard naming
+            knee = get_bone(obj, f"Knee.{side}")
+            if knee:
+                knee.rotation_euler[0] = math.radians(-90)
+                knee.keyframe_insert(data_path="rotation_euler", index=0, frame=start + duration)
+
+    def _animate_stand(self, obj, start, duration):
+        """Resets the bone rotations to a standard upright posture."""
+        if obj.type != 'ARMATURE': return
+        # Simply keyframe identity transforms
+        for b in obj.pose.bones:
+            b.location = (0,0,0)
+            b.rotation_euler = (0,0,0)
+            b.keyframe_insert(data_path="location", frame=start + duration)
+            b.keyframe_insert(data_path="rotation_euler", frame=start + duration)
 
     def loop_animation(self, obj, action_name, start, duration):
         """
