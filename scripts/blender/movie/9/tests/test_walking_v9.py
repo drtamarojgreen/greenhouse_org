@@ -30,11 +30,11 @@ class TestWalkingV9(unittest.TestCase):
         handler._animate_walk(rig, start=1, duration=40)
 
         # Check a frame where Leg.L and Leg.R should be offset
-        # Leg.L uses cos(phase), Leg.R uses cos(phase + 0.5)
-        # At f=11, phase=0.25. Leg.L ~ cos(0.5pi)=0, Leg.R ~ cos(pi)=-1
+        # Leg.L uses cos(phase * 2pi), Leg.R uses cos((phase + 0.5) * 2pi)
+        # At f=1, phase=0. Leg.L ~ cos(0)=1, Leg.R ~ cos(pi)=-1
 
         # Note: keyframe_insert might not update pose until frame_set
-        bpy.context.scene.frame_set(11)
+        bpy.context.scene.frame_set(1)
         leg_l = rig.pose.bones["Leg.L"].rotation_euler[0]
         leg_r = rig.pose.bones["Leg.R"].rotation_euler[0]
 

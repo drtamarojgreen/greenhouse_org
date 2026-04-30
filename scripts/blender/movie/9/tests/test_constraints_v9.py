@@ -29,7 +29,7 @@ class TestContextConstraintsV9(unittest.TestCase):
         disallowed = constraints.get("disallowed_assets", [])
 
         test_env = {
-            "mountain_range": {"count": 5},
+            "mountains": {"count": 5},
             "pillars": {"radius": 0.5},
             "rock_path": {"width": 2}
         }
@@ -39,7 +39,7 @@ class TestContextConstraintsV9(unittest.TestCase):
             if d in filtered:
                 del filtered[d]
 
-        self.assertNotIn("mountain_range", filtered)
+        self.assertNotIn("mountains", filtered)
         self.assertNotIn("rock_path", filtered)
         self.assertIn("pillars", filtered)
 
