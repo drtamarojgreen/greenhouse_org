@@ -16,14 +16,12 @@ namespace Movie8
         
         [Header("Gameplay Systems")]
         [SerializeField] private PlayerController playerController;
-        // [SerializeField] private CombatSystem combatSystem; // Future expansion
         [SerializeField] private DialogueSystem dialogueSystem;
-        // [SerializeField] private LevelManager levelManager; // Future expansion
         
         // Runtime state
         private Dictionary<string, CharacterData> characters = new Dictionary<string, CharacterData>();
-        private Dictionary<string, AnimationClip> loadedAnimations = new Dictionary<string, AnimationClip>();
         private AssetManifest manifest;
+        private LevelLayout layout;
         
         public static Movie8GameManager Instance { get; private set; }
         
@@ -50,6 +48,7 @@ namespace Movie8
         {
             Time.timeScale = gameTimeScale;
             LoadManifest();
+            LoadLayout();
             LoadAllCharacters();
             SetupStoryEvents();
             
@@ -74,6 +73,18 @@ namespace Movie8
             
             Debug.Log($"Loaded manifest v{manifest.version}");
         }
+
+        private void LoadLayout()
+        {
+            TextAsset layoutAsset = Resources.Load<TextAsset>("LevelLayout");
+            if (layoutAsset == null) {
+                Debug.LogWarning("LevelLayout.json not found in Resources. Using defaults.");
+                return;
+            }
+
+            layout = JsonConvert.DeserializeObject<LevelLayout>(layoutAsset.text);
+            Debug.Log($"Loaded level layout with {layout.characters.Count} character placements.");
+        }
         
         private void LoadAllCharacters()
         {
@@ -81,7 +92,19 @@ namespace Movie8
             
             foreach (var charConfig in manifest.gameplay_config.ensemble_entities)
             {
-                LoadCharacter(charConfig.id);
+                GameObject charObj = LoadCharacter(charConfig.id);
+
+                // Position character if layout data exists
+                if (charObj != null && layout != null)
+                {
+                    var charLayout = layout.characters.Find(c => c.id == charConfig.id);
+                    if (charLayout != null)
+                    {
+                        charObj.transform.position = charLayout.transform.ToVector3();
+                        charObj.transform.rotation = Quaternion.Euler(charLayout.rotation.ToVector3());
+                        charObj.transform.localScale = charLayout.scale.ToVector3();
+                    }
+                }
             }
         }
         
@@ -179,10 +202,53 @@ namespace Movie8
         public int start_frame;
         public Dictionary<string, string> params_dict; // Simplified
     }
+
+    [System.Serializable]
+    public class LevelLayout
+    {
+        public List<CharacterPlacement> characters;
+        public List<SpawnPoint> spawn_points;
+        public List<WaypointPath> waypoints;
+    }
+
+    [System.Serializable]
+    public class CharacterPlacement
+    {
+        public string id;
+        public List<float> transform;
+        public List<float> rotation;
+        public List<float> scale;
+    }
+
+    [System.Serializable]
+    public class SpawnPoint
+    {
+        public string name;
+        public List<float> position;
+        public List<float> rotation;
+        public float focal_length;
+    }
+
+    [System.Serializable]
+    public class WaypointPath
+    {
+        public string id;
+        public List<List<float>> points;
+        public bool loop;
+    }
     
     public class CharacterData
     {
         public GameObject GameObject;
         public Animator Animator;
+    }
+
+    public static class ListExtensions
+    {
+        public static Vector3 ToVector3(this List<float> list)
+        {
+            if (list == null || list.Count < 3) return Vector3.zero;
+            return new Vector3(list[0], list[1], list[2]);
+        }
     }
 }
