@@ -32,7 +32,32 @@ class UnityAssetExporter:
         self.export_environment()
         self.export_level_layout()
         self.generate_metadata()
+
+        self._print_performance_summary()
         print("Export completed successfully.")
+
+    def _print_performance_summary(self):
+        """Print a summary of optimization results."""
+        print("\n" + "="*40)
+        print("MOVIE 8 PERFORMANCE SUMMARY")
+        print("="*40)
+
+        # Character LOD stats
+        chars = [o for o in bpy.data.objects if o.type == 'ARMATURE' and ".Rig" in o.name]
+        print(f"Total Characters Exported: {len(chars)}")
+        for rig in chars:
+            poly_count = sum(len(m.data.polygons) for m in rig.children_recursive if m.type == 'MESH')
+            print(f"  - {rig.name.replace('.Rig', '')}: {poly_count} polygons (LOD0)")
+
+        # Environment stats
+        env_collections = ["7b.ENVIRONMENT", "8a.WORLD", "8b.PROPS"]
+        print("\nEnvironment Optimization:")
+        for coll_name in env_collections:
+            coll = bpy.data.collections.get(coll_name)
+            if coll:
+                mesh_count = len([o for o in coll.objects if o.type == 'MESH'])
+                print(f"  - {coll_name}: Reduced {mesh_count} meshes to 1 draw call.")
+        print("="*40 + "\n")
         
     def export_characters(self):
         """Export each character as optimized FBX with LODs."""

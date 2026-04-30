@@ -44,8 +44,20 @@ A decoupled UI system for displaying mental insights and character interactions.
 To verify the export pipeline without opening the Blender UI:
 
 ```bash
+# Functional Integrity Tests
 blender --background --python scripts/blender/movie/8/tests/test_exporter.py
+
+# Performance & Optimization Tests
+blender --background --python scripts/blender/movie/8/tests/test_performance.py
 ```
+
+## 📊 Performance Benchmarks & Validation
+
+The Movie 8 pipeline includes rigorous performance validation to ensure assets are "game-ready":
+
+1. **LOD Efficiency**: Tests verify that LOD1 and LOD2 significantly reduce FBX file size and polygon complexity compared to LOD0.
+2. **Draw Call Minimization**: Automated verification that entire environment collections are flattened into single mesh objects during export.
+3. **Vertex Budgeting**: Assets are audited against a mobile-friendly vertex budget (default: 5000 vertices per character) to maintain high frame rates in Unity.
 
 ---
 
