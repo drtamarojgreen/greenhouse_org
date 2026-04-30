@@ -193,7 +193,7 @@
     },
     {
       "id": "MountainCam",
-      "pos": [10, 80, 20],
+      "pos": [20.0, -70.0, 35.0],
       "target": "Herbaceous.Rig"
     }
   ],
@@ -260,6 +260,12 @@
         0.88
       ]
     },
+    "Outro_Key": {
+      "type": "SUN",
+      "energy": 2.5,
+      "color": [1.0, 0.95, 0.85],
+      "rot": [50, 0, -30]
+    },
     "Torch": {
       "type": "POINT",
       "energy": 450.0,
@@ -302,7 +308,7 @@
     "outro": {
       "camera": "Exterior",
       "start": 4151,
-      "end": 4200
+      "end": 4800
     }
   },
   "calligraphy": {
@@ -320,7 +326,7 @@
     "offset": [
       0.0,
       -0.1,
-      4.0
+      5.5
     ],
     "lighting": [
       {

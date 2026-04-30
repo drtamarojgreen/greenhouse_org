@@ -134,10 +134,25 @@ class LinkedCharacter(Character):
                 params.update(PROTAGONIST_V6_MATERIALS.get(self.char_id, {}))
             if fallback_rigger and self.rig is None:
                 self.rig = fallback_rigger.build_rig(self.char_id, params)
+            
+            if self.rig:
+                self.rig["fallback_built"] = True
+                
             if fallback_modeler and self.mesh is None:
                 self.mesh = fallback_modeler.build_mesh(self.char_id, params, rig=self.rig)
             if fallback_shader and self.mesh:
                 fallback_shader.apply_materials(self.mesh, params)
+                
+            # Fallback characters should face the camera during the outro
+            if self.rig:
+                ext_cam = bpy.data.objects.get("Exterior")
+                if ext_cam:
+                    con = self.rig.constraints.new(type='TRACK_TO')
+                    con.target = ext_cam
+                    con.track_axis = 'TRACK_NEGATIVE_Z'
+                    con.up_axis = 'UP_Y'
+                    con.influence = 0.0 # Will be keyed manually or by director if needed, or kept low
+                    con.name = "TrackCameraOutro"
 
         # Ensure linked mesh follows its rig the same way as procedural characters.
         if self.mesh and self.rig:

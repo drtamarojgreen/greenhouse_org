@@ -34,7 +34,7 @@ class TestInteriorFurnishing(unittest.TestCase):
             "rack_front_left", "rack_front_right", "rack_rear_left", "rack_rear_right",
             "flower_bed_center", "flower_bed_left", "flower_bed_right",
             "pot_entrance_left", "pot_entrance_right",
-            "chair_left", "chair_right",
+            "chair_1", "chair_2",
             "end_table_left", "end_table_right",
             "tv_stand", "television", "tv_logo"
         ]

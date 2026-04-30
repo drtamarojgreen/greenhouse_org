@@ -77,7 +77,7 @@ class Director:
                 for obj in list(coll.objects):
                     bpy.data.objects.remove(obj, do_unlink=True)
             # Legacy/Procedural cleanup
-            for name in ["Env", "mountain_face", "forest_road", "mountain_apron"]:
+            for name in ["Env", "Interior", "Chroma", "mountain_face", "forest_road", "mountain_apron"]:
                 old = bpy.data.objects.get(name)
                 if old: bpy.data.objects.remove(old, do_unlink=True)
 
@@ -121,14 +121,25 @@ class Director:
                     con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
 
             # Pulse heartbeat - ensure it covers the entire production range (extended scenes)
-            actual_total_f = total_f
+            actual_total_f = config.config.total_frames
             for m in bpy.context.scene.timeline_markers:
                 if m.frame > actual_total_f: actual_total_f = m.frame
             
             base_energy = l_cfg.get("energy", 1.0)
             for f in range(1, actual_total_f + 1, 24):
                 pulse = 1.0 + 0.08 * math.sin(2.0 * math.pi * 0.5 * (f / 24.0))
-                l_data.energy = base_energy * pulse
+                
+                # Cinematic Fade for specific lights
+                fade_mult = 1.0
+                if f >= 4800:
+                    if light_id in ["Rim", "Key", "Outro_Key"]:
+                        # Fade from 100% at 4200 to 20% at 4800
+                        fade_mult = 1.0 - (0.8 * (f - 4800) / 600)
+                    elif light_id == "Torch":
+                        # Fade to 0 by 4600
+                        fade_mult = max(0, 1.0 - (f - 4800) / 400)
+                
+                l_data.energy = base_energy * pulse * fade_mult
                 l_data.keyframe_insert(data_path="energy", frame=f)
 
     def apply_sequencing(self):
@@ -179,13 +190,17 @@ class Director:
             self._ground_rig_to_zero(herb)
             # Ensure visible
             for c in herb.children_recursive:
-                if c.type == 'MESH': c.hide_render = False; c.keyframe_insert(data_path="hide_render", frame=1)
+                if c.type == 'MESH': 
+                    c.hide_render = False; c.keyframe_insert(data_path="hide_render", frame=1)
+                    c.keyframe_insert(data_path="hide_render", frame=4800)
         if arbor:
             arbor.location = mathutils.Vector((1.2, 0.5, arbor.location.z))
             self._ground_rig_to_zero(arbor)
             # Ensure visible
             for c in arbor.children_recursive:
-                if c.type == 'MESH': c.hide_render = False; c.keyframe_insert(data_path="hide_render", frame=1)
+                if c.type == 'MESH': 
+                    c.hide_render = False; c.keyframe_insert(data_path="hide_render", frame=1)
+                    c.keyframe_insert(data_path="hide_render", frame=4800)
         
         if herb and arbor:
             bpy.context.view_layer.update()
@@ -208,14 +223,14 @@ class Director:
         if herb:
             anim_handler.apply_animation(herb, "talking", 1, duration=3000)
             anim_handler.apply_animation(herb, "nod", 120)
-            anim_handler.apply_animation(herb, "dance", 3000, duration=1200)
+            anim_handler.apply_animation(herb, "dance", 3000, duration=total_f - 3000)
         if arbor:
             anim_handler.apply_animation(arbor, "talking", 1, duration=2999)
             anim_handler.apply_animation(arbor, "shake", 300)
-            anim_handler.apply_animation(arbor, "dance", 3000, duration=1200)
+            anim_handler.apply_animation(arbor, "dance", 3000, duration=total_f - 3000)
         
         majesty = bpy.data.objects.get("Sylvan_Majesty.Rig")
-        if majesty: anim_handler.apply_animation(majesty, "idle", 1, duration=3000); anim_handler.apply_animation(majesty, "dance", 3000, duration=1200)
+        if majesty: anim_handler.apply_animation(majesty, "idle", 1, duration=3000); anim_handler.apply_animation(majesty, "dance", 3000, duration=total_f - 3000)
         
         aura = bpy.data.objects.get("Radiant_Aura.Rig")
         if aura: anim_handler.apply_animation(aura, "dance", 1, duration=total_f)
@@ -230,7 +245,13 @@ class Director:
         spirits = [o for o in bpy.data.objects if ".Rig" in o.name and o not in [herb, arbor, majesty, aura, weaver]]
         tags = ["dance", "nod", "shake", "idle"]
         for i, spirit in enumerate(spirits):
-            tag = tags[i % len(tags)]; anim_handler.apply_animation(spirit, tag, 1, duration=total_f // 2); anim_handler.apply_animation(spirit, "dance", (total_f // 2) + 1, duration=total_f // 2)
+            tag = tags[i % len(tags)]; anim_handler.apply_animation(spirit, tag, 1, duration=total_f // 2); anim_handler.apply_animation(spirit, "dance", (total_f // 2) + 1, duration=total_f - (total_f // 2))
+
+        # Blink Pass for the Outro
+        for f in range(4200, 4800, 80):
+            for rig in [o for o in bpy.data.objects if o.type == 'ARMATURE' and ".Rig" in o.name]:
+                anim_handler.apply_animation(rig, "blink", f, duration=6)
+        
         self.apply_patrol_animations()
 
     def apply_patrol_animations(self):
@@ -248,6 +269,9 @@ class Director:
             offset = patrol.get("start_offset", 0.0)
             h = patrol.get("height", 0.0)
             
+            # Antagonists stop patrolling at the outro
+            patrol_end = 4200 if entity.get("is_antagonist") else total_f
+
             # Compute total distance of path
             segments = []
             total_dist = 0
@@ -257,7 +281,7 @@ class Director:
             
             start_dist = offset * total_dist
             curr_dist = 0; frame = 1
-            while frame <= total_f:
+            while frame <= patrol_end:
                 # Find current segment based on curr_dist + start_dist
                 target_d = (curr_dist + start_dist) % total_dist if total_dist > 0 else 0
                 seg_accum = 0; seg_idx = 0
@@ -295,7 +319,7 @@ class Director:
             etype = env.get("type")
             print(f"Switching environment to: {etype}")
             # Clean up old environment
-            for name in ["Env", "mountain_face", "forest_road", "mountain_apron"]:
+            for name in ["Env", "Interior", "Chroma", "mountain_face", "forest_road", "mountain_apron"]:
                 old = bpy.data.objects.get(name)
                 if old: bpy.data.objects.remove(old, do_unlink=True)
             
