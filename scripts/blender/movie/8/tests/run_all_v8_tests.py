@@ -13,15 +13,17 @@ def run_all_tests():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     unit_dir = os.path.join(base_dir, "unit")
     bdd_dir = os.path.join(base_dir, "bdd")
+    cdd_dir = os.path.join(base_dir, "cdd")
 
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
 
     # Discover and add tests
-    print(f"Discovering tests in:\n  - {unit_dir}\n  - {bdd_dir}")
+    print(f"Discovering tests in:\n  - {unit_dir}\n  - {bdd_dir}\n  - {cdd_dir}")
 
     suite.addTests(loader.discover(unit_dir, pattern='test_*.py'))
     suite.addTests(loader.discover(bdd_dir, pattern='test_*.py'))
+    suite.addTests(loader.discover(cdd_dir, pattern='test_*.py'))
 
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

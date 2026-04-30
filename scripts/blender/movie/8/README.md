@@ -5,6 +5,16 @@ Movie 8 represents the transition from procedural rendering in Blender to real-t
 
 ---
 
+## 🌿 Mental Health Environments
+
+Movie 8 introduces five core "Mindscape" environments designed to simulate various cognitive and emotional states:
+
+1.  **The Clinical Anchor (Psychiatric Office)**: A structured space representing psychological vulnerability and analytical processing.
+2.  **The Greenhouse of Growth (Wellness Garden)**: A lush, rhythmic space focused on neuroplasticity and self-regulation.
+3.  **The Ascent of Resilience (Mountain Forest)**: A high-contrast, rugged environment symbolizing strength and perspective.
+4.  **The Horizon of Calm (Beach Gazebo)**: A minimalist, airy space for mindfulness and clarity.
+5.  **The Records of Reason (Meditation Library)**: A warm, introspection-focused environment representing cognitive storage and knowledge.
+
 ## 🏗️ Asset Pipeline (`asset_exporter.py`)
 
 The pipeline automates the transformation of Blender scenes into Unity-ready assets.
@@ -45,10 +55,16 @@ To verify the export pipeline without opening the Blender UI:
 
 ```bash
 # Functional Integrity Tests
-blender --background --python scripts/blender/movie/8/tests/test_exporter.py
+blender --background --python scripts/blender/movie/8/tests/unit/test_exporter.py
 
 # Performance & Optimization Tests
-blender --background --python scripts/blender/movie/8/tests/test_performance.py
+blender --background --python scripts/blender/movie/8/tests/unit/test_performance.py
+
+# CDD Component Tests
+blender --background --python scripts/blender/movie/8/tests/cdd/test_environment_components.py
+
+# Master Runner (All Python Tests)
+blender --background --python scripts/blender/movie/8/tests/run_all_v8_tests.py
 ```
 
 ## 📊 Performance Benchmarks & Validation

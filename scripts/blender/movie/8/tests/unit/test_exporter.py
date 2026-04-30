@@ -8,8 +8,8 @@ import shutil
 import sys
 from pathlib import Path
 
-# Add current dir to sys.path to import exporter
-M8_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Add Movie 8 root to sys.path to import exporter
+M8_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if M8_ROOT not in sys.path:
     sys.path.insert(0, M8_ROOT)
 

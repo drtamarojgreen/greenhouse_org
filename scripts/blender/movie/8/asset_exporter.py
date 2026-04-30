@@ -50,7 +50,7 @@ class UnityAssetExporter:
             print(f"  - {rig.name.replace('.Rig', '')}: {poly_count} polygons (LOD0)")
 
         # Environment stats
-        env_collections = ["7b.ENVIRONMENT", "8a.WORLD", "8b.PROPS"]
+        env_collections = ["7b.ENVIRONMENT", "8a.WORLD", "8b.PROPS", "8c.MENTAL_HEALTH"]
         print("\nEnvironment Optimization:")
         for coll_name in env_collections:
             coll = bpy.data.collections.get(coll_name)
@@ -215,7 +215,7 @@ class UnityAssetExporter:
         env_path = self.export_root / "Environment"
         env_path.mkdir(exist_ok=True)
         
-        env_collections = ["7b.ENVIRONMENT", "8a.WORLD", "8b.PROPS"]
+        env_collections = ["7b.ENVIRONMENT", "8a.WORLD", "8b.PROPS", "8c.MENTAL_HEALTH"]
         
         for coll_name in env_collections:
             try:
@@ -228,7 +228,7 @@ class UnityAssetExporter:
                 # Setup temporary collection for processing
                 temp_coll = bpy.data.collections.new(f"temp_env_{coll_name}")
                 bpy.context.scene.collection.children.link(temp_coll)
-                
+
                 processed_objs = []
                 for obj in coll.objects:
                     if obj.type == 'MESH':

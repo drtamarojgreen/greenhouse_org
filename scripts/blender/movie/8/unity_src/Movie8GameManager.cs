@@ -20,6 +20,7 @@ namespace Movie8
         
         // Runtime state
         private Dictionary<string, CharacterData> characters = new Dictionary<string, CharacterData>();
+        private Dictionary<string, GameObject> environments = new Dictionary<string, GameObject>();
         private AssetManifest manifest;
         private LevelLayout layout;
         
@@ -49,10 +50,29 @@ namespace Movie8
             Time.timeScale = gameTimeScale;
             LoadManifest();
             LoadLayout();
+            LoadEnvironments();
             LoadAllCharacters();
             SetupStoryEvents();
             
-            Debug.Log($"Movie 8 Initialized. {characters.Count} characters loaded.");
+            Debug.Log($"Movie 8 Initialized. {characters.Count} characters, {environments.Count} environments loaded.");
+        }
+
+        private void LoadEnvironments()
+        {
+            // Load mental health environments from Resources
+            string[] envIds = { "psychiatric_office", "wellness_garden", "mountain_forest", "beach_gazebo", "meditation_library" };
+            foreach (var id in envIds)
+            {
+                string path = $"Environment/{id}";
+                GameObject envPrefab = Resources.Load<GameObject>(path);
+                if (envPrefab != null)
+                {
+                    GameObject env = Instantiate(envPrefab);
+                    env.name = id;
+                    env.SetActive(false); // Start disabled, let StoryEvents enable them
+                    environments[id] = env;
+                }
+            }
         }
         
         private void LoadManifest()
@@ -163,6 +183,15 @@ namespace Movie8
                     charData.Animator.SetTrigger("Talk");
                 }
             }
+        }
+
+        public void SwitchEnvironment(string environmentId)
+        {
+            foreach (var env in environments)
+            {
+                env.Value.SetActive(env.Key == environmentId);
+            }
+            Debug.Log($"Switched to environment: {environmentId}");
         }
     }
     
