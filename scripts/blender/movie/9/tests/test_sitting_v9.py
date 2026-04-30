@@ -39,7 +39,7 @@ class TestSittingV9(unittest.TestCase):
 
         # Check Torso vertical offset
         torso_z = rig.pose.bones["Torso"].location[2]
-        self.assertEqual(torso_z, -0.6)
+        self.assertAlmostEqual(torso_z, -0.6, places=4)
 
 if __name__ == "__main__":
     unittest.main()

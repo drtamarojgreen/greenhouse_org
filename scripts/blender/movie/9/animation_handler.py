@@ -178,7 +178,8 @@ class AnimationHandler(base.Animator):
         if bone:
             val = math.sin(phase * 2 * math.pi) * amplitude
             bone.rotation_euler[0] = val
-            bone.keyframe_insert(data_path=f'pose.bones["{bone.name}"].rotation_euler', index=0, frame=frame)
+            # Use data_path relative to armature object
+            obj.keyframe_insert(data_path=f'pose.bones["{bone.name}"].rotation_euler', index=0, frame=frame)
 
     def _animate_leg_stride(self, obj, bone_name, frame, phase, amplitude=0.4):
         """Helper to create rhythmic leg strides."""
@@ -186,7 +187,7 @@ class AnimationHandler(base.Animator):
         if bone:
             val = math.cos(phase * 2 * math.pi) * amplitude
             bone.rotation_euler[0] = val
-            bone.keyframe_insert(data_path=f'pose.bones["{bone.name}"].rotation_euler', index=0, frame=frame)
+            obj.keyframe_insert(data_path=f'pose.bones["{bone.name}"].rotation_euler', index=0, frame=frame)
 
     def _animate_walk(self, obj, start, duration):
         """
@@ -204,7 +205,7 @@ class AnimationHandler(base.Animator):
             torso = get_bone(obj, "Torso")
             if torso:
                 torso.location[2] = abs(math.sin(phase * 2 * math.pi)) * step_h
-                torso.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=f)
+                obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=f)
 
             # Coordinate Limbs
             self._animate_leg_stride(obj, "Leg.L", f, phase, 0.4)
@@ -222,8 +223,8 @@ class AnimationHandler(base.Animator):
         for f in range(start, start + duration, 2):
             torso.location[0] = (random.random() - 0.5) * 0.02
             torso.location[1] = (random.random() - 0.5) * 0.02
-            torso.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=0, frame=f)
-            torso.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=1, frame=f)
+            obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=0, frame=f)
+            obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=1, frame=f)
 
     def _animate_droop(self, obj, start, duration):
         """
@@ -240,8 +241,8 @@ class AnimationHandler(base.Animator):
         head.rotation_euler[0] = orig_h_x + math.radians(20)
         neck.rotation_euler[0] = orig_n_x + math.radians(10)
 
-        head.keyframe_insert(data_path=f'pose.bones["{head.name}"].rotation_euler', index=0, frame=start + duration // 2)
-        neck.keyframe_insert(data_path=f'pose.bones["{neck.name}"].rotation_euler', index=0, frame=start + duration // 2)
+        obj.keyframe_insert(data_path=f'pose.bones["{head.name}"].rotation_euler', index=0, frame=start + duration // 2)
+        obj.keyframe_insert(data_path=f'pose.bones["{neck.name}"].rotation_euler', index=0, frame=start + duration // 2)
 
     def _animate_smile(self, obj, start, duration):
         """
@@ -251,7 +252,7 @@ class AnimationHandler(base.Animator):
         head = get_bone(obj, "Head")
         if not head: return
         head.rotation_euler[0] -= math.radians(5)
-        head.keyframe_insert(data_path=f'pose.bones["{head.name}"].rotation_euler', index=0, frame=start + duration)
+        obj.keyframe_insert(data_path=f'pose.bones["{head.name}"].rotation_euler', index=0, frame=start + duration)
 
     def _animate_sit(self, obj, start, duration):
         """
@@ -260,29 +261,27 @@ class AnimationHandler(base.Animator):
         processing and stability.
         """
         if obj.type != 'ARMATURE': return
-        pb = obj.pose.bones
 
         # 1. Torso lower and lean
         torso = get_bone(obj, "Torso")
         if torso:
             torso.location[2] = -0.6
             torso.rotation_euler[0] = math.radians(-10) # Slight forward lean
-            torso.keyframe_insert(data_path="location", index=2, frame=start + duration)
-            torso.keyframe_insert(data_path="rotation_euler", index=0, frame=start + duration)
+            obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].location', index=2, frame=start + duration)
+            obj.keyframe_insert(data_path=f'pose.bones["{torso.name}"].rotation_euler', index=0, frame=start + duration)
 
         # 2. Thighs up (90 degrees)
         for side in ["L", "R"]:
             thigh = get_bone(obj, f"Leg.{side}")
             if thigh:
                 thigh.rotation_euler[0] = math.radians(90)
-                thigh.keyframe_insert(data_path="rotation_euler", index=0, frame=start + duration)
+                obj.keyframe_insert(data_path=f'pose.bones["{thigh.name}"].rotation_euler', index=0, frame=start + duration)
 
             # 3. Knees back (90 degrees)
-            # Knee bone name in Movie 9 plant rig is derived from standard naming
             knee = get_bone(obj, f"Knee.{side}")
             if knee:
                 knee.rotation_euler[0] = math.radians(-90)
-                knee.keyframe_insert(data_path="rotation_euler", index=0, frame=start + duration)
+                obj.keyframe_insert(data_path=f'pose.bones["{knee.name}"].rotation_euler', index=0, frame=start + duration)
 
     def _animate_stand(self, obj, start, duration):
         """Resets the bone rotations to a standard upright posture."""
@@ -291,8 +290,8 @@ class AnimationHandler(base.Animator):
         for b in obj.pose.bones:
             b.location = (0,0,0)
             b.rotation_euler = (0,0,0)
-            b.keyframe_insert(data_path="location", frame=start + duration)
-            b.keyframe_insert(data_path="rotation_euler", frame=start + duration)
+            obj.keyframe_insert(data_path=f'pose.bones["{b.name}"].location', frame=start + duration)
+            obj.keyframe_insert(data_path=f'pose.bones["{b.name}"].rotation_euler', frame=start + duration)
 
     def loop_animation(self, obj, action_name, start, duration):
         """

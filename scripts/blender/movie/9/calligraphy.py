@@ -9,7 +9,7 @@ class CalligraphyDirector:
     Manages 3D text branding and dedicated spot lighting.
     Feature Kept: Branding through 3D calligraphy is a project-wide standard
     for the Greenhouse, providing a consistent professional introduction
-    ported from Movie 7.
+    ported from Movie 9.
     """
 
     def __init__(self, lc_cfg, total_frames, root_dir):

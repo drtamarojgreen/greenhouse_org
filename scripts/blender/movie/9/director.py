@@ -91,7 +91,7 @@ class Director:
                 for obj in list(coll.objects):
                     bpy.data.objects.remove(obj, do_unlink=True)
             # Legacy/Procedural cleanup
-            for name in ["Env", "Interior", "Chroma", "mountain_face", "forest_road", "mountain_apron"]:
+            for name in ["Env", "Interior", "Chroma", "mountain_face", "forest_road", "mountain_apron", "mountain_range", "rock_path"]:
                 old = bpy.data.objects.get(name)
                 if old: bpy.data.objects.remove(old, do_unlink=True)
 
@@ -188,15 +188,34 @@ class Director:
         """
         scene = bpy.context.scene; scene.timeline_markers.clear()
         seq = self.lc_cfg.get("sequencing", {})
-        for key in ["intro", "main_open", "outro"]:
-            cfg_s = seq.get(key)
-            if cfg_s:
+
+        # 1. Apply named sequence blocks (including custom therapeutic beats)
+        for key, cfg_s in seq.items():
+            if key == "cycle": continue
+            if "camera" in cfg_s and "start" in cfg_s:
                 m = scene.timeline_markers.new(key.capitalize(), frame=cfg_s["start"])
                 m.camera = bpy.data.objects.get(cfg_s["camera"])
+
+        # 2. Apply the procedural cycle (respecting existing named markers)
         cycle = seq.get("cycle")
         if cycle:
+            # Gather frames occupied by named sequence blocks to avoid overlap
+            occupied_frames = []
+            for key, cfg_s in seq.items():
+                if key == "cycle": continue
+                if "start" in cfg_s and "end" in cfg_s:
+                    occupied_frames.append((cfg_s["start"], cfg_s["end"]))
+
             frame, end, order, durs, c_idx = cycle["start"], cycle["end"], cycle["order"], cycle["durations"], 0
             while frame < end:
+                # Check if current frame falls within an occupied range
+                skip = False
+                for start_occ, end_occ in occupied_frames:
+                    if start_occ <= frame < end_occ:
+                        frame = end_occ # Jump to end of named sequence
+                        skip = True; break
+                if skip: continue
+
                 c_type = order[c_idx % len(order)]; cam_name = c_type
                 if c_type == "Ots": cam_name = "Ots1" if (c_idx // len(order)) % 2 == 0 else "Ots2"
                 if c_type == "Antag": cam_name = f"Antag{(c_idx // len(order)) % 4 + 1}"

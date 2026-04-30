@@ -16,7 +16,7 @@ class AssetExtractor:
     OO Asset Extractor for Phase A, matching Movie 6 decoupling standards.
     Architecture Kept: The extraction-based workflow ensures that assets are
     properly normalized and decoupled from their source blend files, a
-    production-grade feature ported from Movie 7.
+    production-grade feature ported from Movie 9.
     """
 
     def __init__(self, config_path):

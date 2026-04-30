@@ -5,7 +5,7 @@ import bpy
 class MovieConfig:
     """
     Singleton Configuration Manager for Movie 9.
-    Architecture Kept: The JSON-driven configuration pattern from Movie 7 is
+    Architecture Kept: The JSON-driven configuration pattern from Movie 9 is
     maintained for Movie 9 to allow for high-level artistic direction without
     modifying implementation code. This ensures the 'modularity' requirement is met.
     """

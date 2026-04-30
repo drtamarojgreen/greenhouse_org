@@ -56,8 +56,10 @@ class ExteriorModeler(Modeler):
         torches_cfg = env_cfg.get("torches", {})
         self._create_path_torches(coll, env_cfg.get("floor", {}).get("size", 60)/2, env_cfg.get("rock_path", {}), torches_cfg)
 
-        self._create_mountain_range(coll, env_cfg.get("mountains", {}))
-        self._scatter_vegetation(coll, env_cfg.get("vegetation", {}), env_cfg.get("floor", {}).get("size", 60)/2)
+        if "mountains" in env_cfg:
+            self._create_mountain_range(coll, env_cfg.get("mountains", {}))
+        if "vegetation" in env_cfg:
+            self._scatter_vegetation(coll, env_cfg.get("vegetation", {}), env_cfg.get("floor", {}).get("size", 60)/2)
 
         return None
 
@@ -145,6 +147,7 @@ class ExteriorModeler(Modeler):
                 for poly in l.data.polygons: poly.material_index = 1 if poly.center.z > 0.6 else 0
 
     def _create_rock_path(self, coll, cfg, half):
+        if not cfg: return
         length, width = cfg.get("length", 40), cfg.get("width", 2.5)
         name = "rock_path"
         if bpy.data.objects.get(name): return

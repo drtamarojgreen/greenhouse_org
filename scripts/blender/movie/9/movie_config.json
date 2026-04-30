@@ -342,7 +342,7 @@
   "normalization": { "strategy": "BBOX", "enable_culling": false, "enable_origin_reset": true },
   "context_constraints": {
     "greenhouse": {
-      "disallowed_assets": ["mountain_range", "rock_path"],
+      "disallowed_assets": ["mountains", "rock_path"],
       "required_assets": ["pillars", "roof", "ClinicalDesk", "PatientChair"],
       "_comment_": "Ensures structural integrity of the greenhouse metaphor by excluding incompatible exterior assets."
     },

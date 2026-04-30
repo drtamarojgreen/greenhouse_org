@@ -10,7 +10,7 @@ class ForestRoadModeler(Modeler):
     """
     Procedural modeler for the forest road sequence.
     Feature Kept: The forest road environment provides a transitional space
-    representing cognitive movement between mental regions, ported from Movie 7.
+    representing cognitive movement between mental regions, ported from Movie 9.
     """
 
     def build_mesh(self, char_id, params, rig=None):
