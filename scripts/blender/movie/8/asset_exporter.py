@@ -224,7 +224,7 @@ class UnityAssetExporter:
                     continue
 
                 print(f"Exporting environment collection: {coll_name}")
-
+                
                 # Setup temporary collection for processing
                 temp_coll = bpy.data.collections.new(f"temp_env_{coll_name}")
                 bpy.context.scene.collection.children.link(temp_coll)

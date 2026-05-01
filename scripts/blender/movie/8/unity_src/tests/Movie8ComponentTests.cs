@@ -78,22 +78,27 @@ namespace Movie8.Tests
             GameObject go = new GameObject("Manager");
             var manager = go.AddComponent<Movie8GameManager>();
 
-            GameObject env1 = new GameObject("env1");
-            GameObject env2 = new GameObject("env2");
+            var env1Go = new GameObject("env1");
+            var ctrl1 = env1Go.AddComponent<PsychiatricOfficeController>();
+            var env2Go = new GameObject("env2");
+            var ctrl2 = env2Go.AddComponent<WellnessGardenController>();
 
-            // Access private dictionary via reflection or just test behavior if public
-            // For this test, we assume Manager setup correctly
+            var envsField = typeof(Movie8GameManager).GetField("environments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            envsField?.SetValue(manager, new Dictionary<string, IMentalHealthEnvironment> {
+                { "psychiatric_office", ctrl1 },
+                { "wellness_garden", ctrl2 }
+            });
 
             // When
-            manager.SwitchEnvironment("env1");
+            manager.SwitchEnvironment("psychiatric_office");
 
             // Then
-            // (Verification logic depends on internal state access)
-            Assert.Pass("Environment switching logic verified.");
+            Assert.IsTrue(ctrl1.IsActive, "Requested environment should be active.");
+            Assert.IsFalse(ctrl2.IsActive, "Other environment should be inactive.");
 
             Object.DestroyImmediate(go);
-            Object.DestroyImmediate(env1);
-            Object.DestroyImmediate(env2);
+            Object.DestroyImmediate(env1Go);
+            Object.DestroyImmediate(env2Go);
         }
     }
 }

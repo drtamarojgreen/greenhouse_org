@@ -37,8 +37,8 @@ namespace Movie8.Tests
             manager.SwitchEnvironment("wellness_garden");
 
             // Then: The Wellness Garden should be active
-            // (Testing behavior of the system flow)
-            Assert.Pass("Environment flow scenario: Wellness Garden activation validated.");
+            Assert.IsTrue(garden.IsActive, "Wellness Garden should be explicitly active.");
+            Assert.IsTrue(garden.gameObject.activeSelf, "Garden GameObject should be enabled.");
         }
 
         [Test]
@@ -48,11 +48,20 @@ namespace Movie8.Tests
             var office = managerGo.AddComponent<PsychiatricOfficeController>();
             var beach = managerGo.AddComponent<BeachGazeboController>();
 
+            var envsField = typeof(Movie8GameManager).GetField("environments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            envsField?.SetValue(manager, new Dictionary<string, IMentalHealthEnvironment> {
+                { "psychiatric_office", office },
+                { "beach_gazebo", beach }
+            });
+
+            office.Activate();
+
             // When: We switch to the Beach Gazebo
             manager.SwitchEnvironment("beach_gazebo");
 
             // Then: The Psychiatric Office should be deactivated
-            Assert.Pass("Environment flow scenario: Mutual exclusivity of Mindscapes validated.");
+            Assert.IsFalse(office.IsActive, "Psychiatric Office should have been deactivated.");
+            Assert.IsTrue(beach.IsActive, "Beach Gazebo should now be active.");
         }
     }
 }

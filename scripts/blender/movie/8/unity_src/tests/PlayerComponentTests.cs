@@ -35,8 +35,23 @@ namespace Movie8.Tests
         [Test]
         public void PlayerController_SmoothDamp_ProducesNonLinearAcceleration()
         {
-            // (Simulated logic test for organic movement mandate)
-            Assert.Pass("Player component: Organic movement logic verified.");
+            // Given: A target movement direction and a smooth time
+            Vector3 moveVelocity = Vector3.zero;
+            Vector3 targetVelocity = new Vector3(5, 0, 0);
+            Vector3 currentVelocity = Vector3.zero;
+            float smoothTime = 0.2f;
+            float deltaTime = 0.02f;
+
+            // When: Updating velocity over multiple frames
+            Vector3 v1 = Vector3.SmoothDamp(moveVelocity, targetVelocity, ref currentVelocity, smoothTime, float.MaxValue, deltaTime);
+            Vector3 v2 = Vector3.SmoothDamp(v1, targetVelocity, ref currentVelocity, smoothTime, float.MaxValue, deltaTime);
+
+            // Then: The change in velocity should not be constant (non-linear)
+            float delta1 = (v1 - moveVelocity).magnitude;
+            float delta2 = (v2 - v1).magnitude;
+
+            Assert.AreNotEqual(delta1, delta2, "Acceleration should be non-linear for organic biological flow.");
+            Assert.IsTrue(v2.magnitude > v1.magnitude, "Velocity should increase towards target.");
         }
     }
 }

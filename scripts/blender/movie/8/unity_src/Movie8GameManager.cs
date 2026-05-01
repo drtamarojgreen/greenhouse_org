@@ -21,6 +21,7 @@ namespace Movie8
         // Runtime state
         private Dictionary<string, CharacterData> characters = new Dictionary<string, CharacterData>();
         private Dictionary<string, IMentalHealthEnvironment> environments = new Dictionary<string, IMentalHealthEnvironment>();
+        private List<StoryEvent> registeredEvents = new List<StoryEvent>();
         private AssetManifest manifest;
         private LevelLayout layout;
         
@@ -165,10 +166,12 @@ namespace Movie8
         {
             if (manifest?.gameplay_config?.story_beats == null) return;
             
+            registeredEvents.Clear();
             foreach (var beat in manifest.gameplay_config.story_beats)
             {
                 foreach (var storyEvent in beat.events)
                 {
+                    registeredEvents.Add(storyEvent);
                     Debug.Log($"Registered story event: {storyEvent.action} for {storyEvent.target}");
                 }
             }

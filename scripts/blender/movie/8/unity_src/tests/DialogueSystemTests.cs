@@ -42,19 +42,50 @@ namespace Movie8.Tests
         }
 
         [Test]
-        public void Dialogue_Start_UpdatesActiveState()
+        public void Dialogue_Start_UpdatesUIComponents()
         {
             // Given
             string dialogueId = "Insight_01";
-            GameObject speaker = new GameObject("Arbor");
+            GameObject speaker = new GameObject("Arbor_Speaker");
+
+            // Setup private fields via reflection to avoid null refs in tests
+            var panelField = typeof(DialogueSystem).GetField("dialoguePanel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var panel = new GameObject("Panel");
+            panelField?.SetValue(dialogueSystem, panel);
+
+            var speakerField = typeof(DialogueSystem).GetField("speakerNameText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            speakerField?.SetValue(dialogueSystem, speakerText);
+
+            var contentField = typeof(DialogueSystem).GetField("dialogueText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            contentField?.SetValue(dialogueSystem, contentText);
 
             // When
             dialogueSystem.StartDialogue(dialogueId, speaker);
 
-            // Then - verify it doesn't crash and logs correctly (behavioral check)
-            Assert.Pass("Dialogue system successfully handles StartDialogue.");
+            // Then
+            Assert.IsTrue(panel.activeSelf, "Dialogue panel should be active.");
+            Assert.AreEqual("Arbor_Speaker", speakerText.text, "Speaker name should be correctly assigned.");
+            Assert.IsTrue(contentText.text.Contains(dialogueId), "Dialogue text should mention the ID.");
 
             Object.DestroyImmediate(speaker);
+            Object.DestroyImmediate(panel);
+        }
+
+        [Test]
+        public void Dialogue_End_HidesPanel()
+        {
+            // Given
+            var panelField = typeof(DialogueSystem).GetField("dialoguePanel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var panel = new GameObject("Panel");
+            panel.SetActive(true);
+            panelField?.SetValue(dialogueSystem, panel);
+
+            // When
+            dialogueSystem.EndDialogue();
+
+            // Then
+            Assert.IsFalse(panel.activeSelf, "Dialogue panel should be hidden after EndDialogue.");
+            Object.DestroyImmediate(panel);
         }
     }
 }

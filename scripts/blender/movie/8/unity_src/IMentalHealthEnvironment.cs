@@ -14,6 +14,8 @@ namespace Movie8
     {
         string EnvironmentId { get; }
         string PsychologicalMeaning { get; }
+        bool IsActive { get; }
+        float CurrentIntensity { get; }
         void Activate();
         void Deactivate();
         void UpdateMentalState(float intensity);
