@@ -22,3 +22,9 @@
 ## Open
 
 - [ ] PoseMarkerAudit: verify that all 'action' tags used in storyline have corresponding pose markers in the respective rigs.
+- [x] SourceRigConsistencyAudit: verify each MESH entity with a source_mesh also declares a source_rig; flags missing and empty rig references.
+
+## Open
+
+- [ ] BeatOverlapAudit: check if any two storyline beats have overlapping frame ranges (distinct from contiguity — catches beats that share frames unintentionally).
+- [ ] PatrolPathReferenceAudit: verify every entity patrol.path value (e.g. "perimeter", "perimeter_inner") matches a key declared in patrol_paths — stray path names will silently produce no animation.

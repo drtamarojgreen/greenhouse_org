@@ -23,6 +23,7 @@ TARGETS = \
 	$(BIN_DIR)/PatrolPathReferenceAudit \
 	$(BIN_DIR)/CameraSequencingAudit \
 	$(BIN_DIR)/CharacterVisibilityAudit
+	$(BIN_DIR)/SourceRigConsistencyAudit
 
 all: $(TARGETS)
 
