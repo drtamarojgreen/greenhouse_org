@@ -17,7 +17,8 @@ TARGETS = \
 	$(BIN_DIR)/FrameBoundaryAudit \
 	$(BIN_DIR)/AnimationTagAudit \
 	$(BIN_DIR)/SourceMeshPresenceAudit \
-	$(BIN_DIR)/SceneConfigCoverageAudit
+	$(BIN_DIR)/SceneConfigCoverageAudit \
+	$(BIN_DIR)/SourceRigConsistencyAudit
 
 all: $(TARGETS)
 
@@ -36,6 +37,7 @@ run: all
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/AnimationTagAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/SourceMeshPresenceAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/SceneConfigCoverageAudit
+	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/SourceRigConsistencyAudit
 
 verify: run
 
