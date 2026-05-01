@@ -1,0 +1,4 @@
+Situation: Source_Rig_Consistency
+# Every MESH entity must declare a non-empty source_rig
+Is mesh_source_rig_required = true
+Is mesh_source_rig_non_empty = true
