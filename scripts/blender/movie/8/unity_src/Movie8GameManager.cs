@@ -20,7 +20,7 @@ namespace Movie8
         
         // Runtime state
         private Dictionary<string, CharacterData> characters = new Dictionary<string, CharacterData>();
-        private Dictionary<string, GameObject> environments = new Dictionary<string, GameObject>();
+        private Dictionary<string, IMentalHealthEnvironment> environments = new Dictionary<string, IMentalHealthEnvironment>();
         private AssetManifest manifest;
         private LevelLayout layout;
         
@@ -59,19 +59,22 @@ namespace Movie8
 
         private void LoadEnvironments()
         {
-            // Load mental health environments from Resources
-            string[] envIds = { "psychiatric_office", "wellness_garden", "mountain_forest", "beach_gazebo", "meditation_library" };
-            foreach (var id in envIds)
+            // Load specialized mental health environment controllers
+            var psychiatricOffice = gameObject.AddComponent<PsychiatricOfficeController>();
+            var wellnessGarden = gameObject.AddComponent<WellnessGardenController>();
+            var mountainForest = gameObject.AddComponent<MountainForestController>();
+            var beachGazebo = gameObject.AddComponent<BeachGazeboController>();
+            var meditationLibrary = gameObject.AddComponent<MeditationLibraryController>();
+
+            environments["psychiatric_office"] = psychiatricOffice;
+            environments["wellness_garden"] = wellnessGarden;
+            environments["mountain_forest"] = mountainForest;
+            environments["beach_gazebo"] = beachGazebo;
+            environments["meditation_library"] = meditationLibrary;
+
+            foreach (var env in environments.Values)
             {
-                string path = $"Environment/{id}";
-                GameObject envPrefab = Resources.Load<GameObject>(path);
-                if (envPrefab != null)
-                {
-                    GameObject env = Instantiate(envPrefab);
-                    env.name = id;
-                    env.SetActive(false); // Start disabled, let StoryEvents enable them
-                    environments[id] = env;
-                }
+                env.Deactivate();
             }
         }
         
@@ -189,7 +192,10 @@ namespace Movie8
         {
             foreach (var env in environments)
             {
-                env.Value.SetActive(env.Key == environmentId);
+                if (env.Key == environmentId)
+                    env.Value.Activate();
+                else
+                    env.Value.Deactivate();
             }
             Debug.Log($"Switched to environment: {environmentId}");
         }

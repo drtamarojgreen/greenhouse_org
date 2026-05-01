@@ -1,7 +1,7 @@
-# 🎮 Movie 8: Unity Integration & Asset Pipeline
+# 🎮 Movie 8 Game: Mindscape Integration & Unity Engine
 
 ## Overview
-Movie 8 represents the transition from procedural rendering in Blender to real-time interactive experiences in Unity. This module provides the bridge between the high-fidelity anatomical rigs of Movie 7 and the performance requirements of a gaming environment.
+Movie 8 is a real-time Unity Game focused on interactive mental health environments (Mindscapes). This project bridges the high-fidelity assets of the Greenhouse production pipeline with the immersive gameplay logic required for interactive self-regulation and psychological development.
 
 ---
 
@@ -69,17 +69,17 @@ blender --background --python scripts/blender/movie/8/tests/run_all_v8_tests.py
 
 ### 🧪 Unity C# Testing (NUnit)
 
-The Unity integration scripts include a comprehensive suite of C# unit tests located in `unity_src/tests/`.
+The Movie 8 Game features a multi-layered C# testing architecture located in `unity_src/tests/`.
 
 **How to run in Unity:**
 1. Open the **Window > General > Test Runner** in the Unity Editor.
 2. Select the **EditMode** tab.
 3. Find the `Movie8.Tests` namespace and click **Run All**.
 
-**Test Suites included:**
-- `Movie8GameManagerTests`: Validates JSON deserialization and manifest mapping.
-- `PlayerControllerTests`: Verifies movement math and normalization.
-- `DialogueSystemTests`: Tests UI interaction logic.
+**Included Test Suites:**
+- **Unit Tests**: `DataModelTests`, `UtilityTests`, `DialogueSystemTests`. Granular validation of serialization and extension logic.
+- **BDD Scenarios**: `EnvironmentFlowTests`, `InteractionScenarios`. Behavioral verification of user-centric flows like Mindscape switching and organic movement.
+- **CDD Tests**: `MentalHealthEnvironmentTests`, `PlayerComponentTests`. Isolated validation of specialized environment controllers and player components.
 
 ## 📊 Performance Benchmarks & Validation
 
