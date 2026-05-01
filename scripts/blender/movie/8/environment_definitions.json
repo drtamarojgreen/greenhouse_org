@@ -1,0 +1,49 @@
+{
+  "environments": [
+    {
+      "id": "psychiatric_office",
+      "name": "The Clinical Anchor",
+      "psychological_meaning": "Structural processing and psychological vulnerability. Represents the analytical mind.",
+      "visual_tone": "Neutral with focused warm lighting",
+      "key_assets": ["ClinicalDesk", "PatientChair", "FileCabinet_Memory"],
+      "creative_constraint": "Rigid but supportive. Clean lines meets soft fabrics.",
+      "color_palette": [[0.9, 0.9, 0.9], [0.3, 0.3, 0.35], [0.6, 0.4, 0.2]]
+    },
+    {
+      "id": "wellness_garden",
+      "name": "The Greenhouse of Growth",
+      "psychological_meaning": "Neuroplasticity and self-regulation. Represents the evolving self.",
+      "visual_tone": "Lush greens, smooth gradients, rhythmic motion",
+      "key_assets": ["GreenhouseMobile", "WellnessTrellis", "Flowering_Neuro_Path"],
+      "creative_constraint": "Purely organic. Branching systems and neural-like networks.",
+      "color_palette": [[0.1, 0.5, 0.1], [0.8, 0.9, 0.2], [0.4, 0.2, 0.6]]
+    },
+    {
+      "id": "mountain_forest",
+      "name": "The Ascent of Resilience",
+      "psychological_meaning": "Strength, perspective, and overcoming obstacles.",
+      "visual_tone": "High contrast, cool blues and earthy browns",
+      "key_assets": ["MistyMountain", "Pine_Sentinel", "ResiliencePath"],
+      "creative_constraint": "Biologically inspired geometry. Folds and rugged textures.",
+      "color_palette": [[0.05, 0.05, 0.1], [0.2, 0.15, 0.1], [0.7, 0.8, 0.9]]
+    },
+    {
+      "id": "beach_gazebo",
+      "name": "The Horizon of Calm",
+      "psychological_meaning": "Clarity, mindfulness, and the vastness of the subconscious.",
+      "visual_tone": "Soft blues, smooth motion (waves), high transparency",
+      "key_assets": ["BeachGazebo", "Zen_Rake", "Subconscious_Waves"],
+      "creative_constraint": "Light and motion as primary tools. Flowing, airy structures.",
+      "color_palette": [[0.5, 0.8, 0.9], [0.95, 0.95, 0.8], [1.0, 1.0, 1.0]]
+    },
+    {
+      "id": "meditation_library",
+      "name": "The Records of Reason",
+      "psychological_meaning": "Knowledge, introspection, and cognitive storage.",
+      "visual_tone": "Warm, muted colors, low energy, rhythmic light",
+      "key_assets": ["LibraryShelf_Logic", "Meditation_Pod", "Ancestral_Tome"],
+      "creative_constraint": "Intricate microstructures. Every element must be interpretable.",
+      "color_palette": [[0.2, 0.1, 0.05], [0.8, 0.6, 0.4], [0.3, 0.3, 0.4]]
+    }
+  ]
+}
