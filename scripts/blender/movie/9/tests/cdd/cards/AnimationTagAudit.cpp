@@ -48,13 +48,17 @@ int main() {
                 in_animate = true;
                 animate_event_count++;
             }
-            if (in_animate && line.find("\"tag\":") != std::string::npos) {
-                size_t open = line.find('\"', line.find(':')) + 1;
-                std::string tag = line.substr(open, line.find('\"', open) - open);
-                in_animate = false;
-                if (!known_tags.empty() && known_tags.find(tag) == known_tags.end()) {
-                    unknown[tag]++;
-                    std::cerr << "[FAIL] Unknown animation tag: '" << tag << "'" << std::endl;
+            if (in_animate) {
+                size_t tag_pos = line.find("\"tag\":");
+                if (tag_pos != std::string::npos) {
+                    size_t colon_pos = line.find(':', tag_pos);
+                    size_t open = line.find('\"', colon_pos) + 1;
+                    std::string tag = line.substr(open, line.find('\"', open) - open);
+                    in_animate = false;
+                    if (!known_tags.empty() && known_tags.find(tag) == known_tags.end()) {
+                        unknown[tag]++;
+                        std::cerr << "[FAIL] Unknown animation tag: '" << tag << "'" << std::endl;
+                    }
                 }
             }
         }
