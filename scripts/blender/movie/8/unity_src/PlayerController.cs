@@ -13,6 +13,7 @@ namespace Movie8
         [SerializeField] private float runSpeed = 8f;
         [SerializeField] private float jumpForce = 10f;
         [SerializeField] private float gravity = -20f;
+        [SerializeField] private float accelerationTime = 0.2f; // Time to reach max speed
         
         [Header("References")]
         [SerializeField] private Camera playerCamera;
@@ -22,7 +23,9 @@ namespace Movie8
         // Runtime state
         private CharacterController controller;
         private Animator animator;
-        private Vector3 velocity;
+        private Vector3 moveVelocity;
+        private Vector3 currentVelocity;
+        private Vector3 verticalVelocity;
         private bool isGrounded;
         private bool isRunning;
         
@@ -51,27 +54,32 @@ namespace Movie8
         {
             isGrounded = Physics.CheckSphere(groundCheck.position, 0.2f, groundMask);
             
-            if (isGrounded && velocity.y < 0)
-                velocity.y = -2f;
+            if (isGrounded && verticalVelocity.y < 0)
+                verticalVelocity.y = -2f;
             
-            float x = Input.GetAxis("Horizontal");
-            float z = Input.GetAxis("Vertical");
+            float x = Input.GetAxisRaw("Horizontal");
+            float z = Input.GetAxisRaw("Vertical");
             
-            Vector3 move = transform.right * x + transform.forward * z;
+            Vector3 targetDirection = (transform.right * x + transform.forward * z).normalized;
             
             isRunning = Input.GetKey(KeyCode.LeftShift) && z > 0;
-            float currentSpeed = isRunning ? runSpeed : walkSpeed;
+            float targetSpeed = targetDirection.magnitude * (isRunning ? runSpeed : walkSpeed);
             
-            controller.Move(move * currentSpeed * Time.deltaTime);
+            // Organic acceleration using SmoothDamp
+            // Psychological Rationale: Non-linear motion reflects biological movement patterns,
+            // avoiding mechanical 'snap' and promoting a sense of natural flow.
+            moveVelocity = Vector3.SmoothDamp(moveVelocity, targetDirection * targetSpeed, ref currentVelocity, accelerationTime);
+
+            controller.Move(moveVelocity * Time.deltaTime);
             
             // Jump
             if (Input.GetButtonDown("Jump") && isGrounded)
             {
-                velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
+                verticalVelocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
             }
             
-            velocity.y += gravity * Time.deltaTime;
-            controller.Move(velocity * Time.deltaTime);
+            verticalVelocity.y += gravity * Time.deltaTime;
+            controller.Move(verticalVelocity * Time.deltaTime);
         }
         
         private void UpdateAnimations()

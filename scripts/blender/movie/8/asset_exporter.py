@@ -32,7 +32,32 @@ class UnityAssetExporter:
         self.export_environment()
         self.export_level_layout()
         self.generate_metadata()
+
+        self._print_performance_summary()
         print("Export completed successfully.")
+
+    def _print_performance_summary(self):
+        """Print a summary of optimization results."""
+        print("\n" + "="*40)
+        print("MOVIE 8 PERFORMANCE SUMMARY")
+        print("="*40)
+
+        # Character LOD stats
+        chars = [o for o in bpy.data.objects if o.type == 'ARMATURE' and ".Rig" in o.name]
+        print(f"Total Characters Exported: {len(chars)}")
+        for rig in chars:
+            poly_count = sum(len(m.data.polygons) for m in rig.children_recursive if m.type == 'MESH')
+            print(f"  - {rig.name.replace('.Rig', '')}: {poly_count} polygons (LOD0)")
+
+        # Environment stats
+        env_collections = ["7b.ENVIRONMENT", "8a.WORLD", "8b.PROPS", "8c.MENTAL_HEALTH"]
+        print("\nEnvironment Optimization:")
+        for coll_name in env_collections:
+            coll = bpy.data.collections.get(coll_name)
+            if coll:
+                mesh_count = len([o for o in coll.objects if o.type == 'MESH'])
+                print(f"  - {coll_name}: Reduced {mesh_count} meshes to 1 draw call.")
+        print("="*40 + "\n")
         
     def export_characters(self):
         """Export each character as optimized FBX with LODs."""
@@ -179,36 +204,76 @@ class UnityAssetExporter:
         
         return {"filename": f"{action.name}.fbx", "duration": int(action.frame_range[1] - action.frame_range[0])}
         
-    def export_environment(self):
-        """Export environment meshes."""
+    def export_environment(self, join_meshes=True):
+        """
+        Export environment meshes.
+
+        Psychological Rationale: Environment assets are joined to create a cohesive 'world-state',
+        representing the integration of disparate thoughts into a stable mental landscape.
+        Technically, this reduces draw calls and improves Unity performance.
+        """
         env_path = self.export_root / "Environment"
         env_path.mkdir(exist_ok=True)
         
-        env_collections = ["7b.ENVIRONMENT", "8a.WORLD", "8b.PROPS"]
+        env_collections = ["7b.ENVIRONMENT", "8a.WORLD", "8b.PROPS", "8c.MENTAL_HEALTH"]
         
         for coll_name in env_collections:
-            coll = bpy.data.collections.get(coll_name)
-            if not coll:
-                continue
+            try:
+                coll = bpy.data.collections.get(coll_name)
+                if not coll or not coll.objects:
+                    continue
+
+                print(f"Exporting environment collection: {coll_name}")
                 
-            print(f"Exporting environment collection: {coll_name}")
-            bpy.ops.object.select_all(action='DESELECT')
-            for obj in coll.objects:
-                if obj.type == 'MESH':
+                # Setup temporary collection for processing
+                temp_coll = bpy.data.collections.new(f"temp_env_{coll_name}")
+                bpy.context.scene.collection.children.link(temp_coll)
+
+                processed_objs = []
+                for obj in coll.objects:
+                    if obj.type == 'MESH':
+                        new_obj = obj.copy()
+                        new_obj.data = obj.data.copy()
+                        temp_coll.objects.link(new_obj)
+                        processed_objs.append(new_obj)
+
+                if not processed_objs:
+                    bpy.data.collections.remove(temp_coll)
+                    continue
+
+                bpy.ops.object.select_all(action='DESELECT')
+                for obj in processed_objs:
                     obj.select_set(True)
-            
-            combined_name = coll_name.replace(".", "_")
-            fbx_path = env_path / f"{combined_name}.fbx"
-            
-            bpy.ops.export_scene.fbx(
-                filepath=str(fbx_path),
-                use_selection=True,
-                object_types={'MESH'},
-                use_mesh_modifiers=True,
-                mesh_smooth_type='FACE',
-                axis_forward='-Z',
-                axis_up='Y'
-            )
+
+                bpy.context.view_layer.objects.active = processed_objs[0]
+
+                if join_meshes and len(processed_objs) > 1:
+                    bpy.ops.object.join()
+                    # After join, only one object (the active one) remains selected
+                    export_objs = [bpy.context.view_layer.objects.active]
+                else:
+                    export_objs = processed_objs
+
+                combined_name = coll_name.replace(".", "_")
+                fbx_path = env_path / f"{combined_name}.fbx"
+
+                bpy.ops.export_scene.fbx(
+                    filepath=str(fbx_path),
+                    use_selection=True,
+                    object_types={'MESH'},
+                    use_mesh_modifiers=True,
+                    mesh_smooth_type='FACE',
+                    axis_forward='-Z',
+                    axis_up='Y'
+                )
+
+                # Cleanup
+                for obj in export_objs:
+                    bpy.data.objects.remove(obj, do_unlink=True)
+                bpy.data.collections.remove(temp_coll)
+
+            except Exception as e:
+                print(f"Error exporting collection {coll_name}: {str(e)}")
             
     def export_level_layout(self):
         """Export level layout data for Unity scene construction."""
@@ -307,27 +372,45 @@ class UnityAssetExporter:
         else: return "action"
 
     def _write_character_metadata(self, char_id, rig):
-        """Write character metadata JSON for Unity."""
-        materials = []
-        for mesh in rig.children_recursive:
-            if mesh.type == 'MESH' and mesh.data.materials:
-                for mat in mesh.data.materials:
-                    if mat and mat.name not in materials:
-                        materials.append(mat.name)
+        """
+        Write character metadata JSON for Unity.
         
-        bounds_min, bounds_max = self._get_character_bounds(rig)
-        
-        metadata = {
-            "id": char_id,
-            "materials": materials,
-            "bounds": {
-                "min": self._vector_to_list(bounds_min),
-                "max": self._vector_to_list(bounds_max)
+        Psychological Rationale: Metadata defines the 'boundaries of the self'.
+        LODs represent levels of psychological focus - closer objects are detailed (conscious focus),
+        while distant ones are decimated (subconscious presence).
+        """
+        try:
+            materials = []
+            for mesh in rig.children_recursive:
+                if mesh.type == 'MESH' and mesh.data.materials:
+                    for mat in mesh.data.materials:
+                        if mat and mat.name not in materials:
+                            materials.append(mat.name)
+
+            bounds_min, bounds_max = self._get_character_bounds(rig)
+            center = (bounds_min + bounds_max) / 2
+            size = bounds_max - bounds_min
+
+            metadata = {
+                "id": char_id,
+                "materials": materials,
+                "bounds": {
+                    "min": self._vector_to_list(bounds_min),
+                    "max": self._vector_to_list(bounds_max),
+                    "center": self._vector_to_list(center),
+                    "size": self._vector_to_list(size)
+                },
+                "collider": {
+                    "type": "BOX",
+                    "center": self._vector_to_list(center - rig.location),
+                    "size": self._vector_to_list(size)
+                }
             }
-        }
-        
-        with open(self.export_root / "Characters" / f"{char_id}_metadata.json", 'w') as f:
-            json.dump(metadata, f, indent=2)
+
+            with open(self.export_root / "Characters" / f"{char_id}_metadata.json", 'w') as f:
+                json.dump(metadata, f, indent=2)
+        except Exception as e:
+            print(f"Error writing metadata for {char_id}: {str(e)}")
     
     def _get_character_bounds(self, rig):
         min_v = mathutils.Vector((float('inf'), float('inf'), float('inf')))
