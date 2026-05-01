@@ -67,6 +67,20 @@ blender --background --python scripts/blender/movie/8/tests/cdd/test_environment
 blender --background --python scripts/blender/movie/8/tests/run_all_v8_tests.py
 ```
 
+### 🧪 Unity C# Testing (NUnit)
+
+The Unity integration scripts include a comprehensive suite of C# unit tests located in `unity_src/tests/`.
+
+**How to run in Unity:**
+1. Open the **Window > General > Test Runner** in the Unity Editor.
+2. Select the **EditMode** tab.
+3. Find the `Movie8.Tests` namespace and click **Run All**.
+
+**Test Suites included:**
+- `Movie8GameManagerTests`: Validates JSON deserialization and manifest mapping.
+- `PlayerControllerTests`: Verifies movement math and normalization.
+- `DialogueSystemTests`: Tests UI interaction logic.
+
 ## 📊 Performance Benchmarks & Validation
 
 The Movie 8 pipeline includes rigorous performance validation to ensure assets are "game-ready":

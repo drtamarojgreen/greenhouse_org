@@ -202,6 +202,8 @@ namespace Movie8
         public int character_count;
         public int animation_count;
         public GameplayConfig gameplay_config;
+
+        public static AssetManifest FromJson(string json) => JsonConvert.DeserializeObject<AssetManifest>(json);
     }
     
     [System.Serializable]
@@ -238,6 +240,8 @@ namespace Movie8
         public List<CharacterPlacement> characters;
         public List<SpawnPoint> spawn_points;
         public List<WaypointPath> waypoints;
+
+        public static LevelLayout FromJson(string json) => JsonConvert.DeserializeObject<LevelLayout>(json);
     }
 
     [System.Serializable]
