@@ -142,6 +142,12 @@ class PlantModeler(Modeler):
         tex_bark.noise_scale = 0.04
         disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')
         disp.texture = tex_bark; disp.strength = 0.055; disp.vertex_group = "Torso"
+        
+        # WindSway (WAVE modifier) restored from v5
+        wave = mesh_obj.modifiers.new(name="WindSway", type='WAVE')
+        wave.use_x = True; wave.use_y = True
+        wave.height = 0.05; wave.width = 1.5; wave.narrowness = 1.0
+        wave.speed = 0.2; wave.vertex_group = "Foliage"
 
         return mesh_obj
 

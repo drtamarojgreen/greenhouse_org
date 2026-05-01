@@ -63,6 +63,13 @@ class Director:
                     con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
 
         if bpy.context.scene.camera is None: bpy.context.scene.camera = bpy.data.objects.get("Wide")
+        
+        # Wide Camera subtle bounce
+        wide = bpy.data.objects.get("Wide")
+        if wide:
+            for f in range(1, config.config.total_frames + 1, 40):
+                wide.location.x = math.sin(f * 0.04) * 0.8
+                wide.keyframe_insert(data_path="location", index=0, frame=f)
 
     def setup_calligraphy(self):
         """Sets up intro/outro GreenhouseMD lettering and dedicated lighting."""
@@ -102,45 +109,36 @@ class Director:
             InteriorModeler().build_mesh("Interior", config.config.get("interior", {}))
 
     def setup_lighting(self):
-        """Constructs lighting rigs from config."""
+        """Constructs lighting rigs from config and places them in environment lamps."""
         env_coll = self._ensure_collection(self.coll_env)
-        total_f = config.config.total_frames
         for light_id, l_cfg in self.lc_cfg.get("lighting", {}).items():
             if l_cfg.get("deprecated", False): continue
-            l_type = l_cfg.get("type", "SUN")
+            l_type = l_cfg.get("type", "POINT")
             l_data = bpy.data.lights.get(light_id) or bpy.data.lights.new(name=light_id, type=l_type)
-            l_data.energy, l_data.color = l_cfg.get("energy", 1.0), l_cfg.get("color", (1,1,1))
+            l_data.energy, l_data.color = l_cfg.get("energy", 10.0), l_cfg.get("color", (1,1,1))
             l_obj = bpy.data.objects.get(light_id) or bpy.data.objects.new(name=light_id, object_data=l_data)
             if l_obj.name not in env_coll.objects: env_coll.objects.link(l_obj)
-            if "pos" in l_cfg: l_obj.location = l_cfg["pos"]
-            if "rot" in l_cfg: l_obj.rotation_euler = [math.radians(r) for r in l_cfg["rot"]]
-            if "target" in l_cfg:
-                target_obj = bpy.data.objects.get(l_cfg["target"])
-                if target_obj:
-                    con = next((c for c in l_obj.constraints if c.type == 'TRACK_TO'), None) or l_obj.constraints.new(type='TRACK_TO')
-                    con.target, con.track_axis, con.up_axis = target_obj, 'TRACK_NEGATIVE_Z', 'UP_Y'
-
-            # Pulse heartbeat - ensure it covers the entire production range (extended scenes)
-            actual_total_f = config.config.total_frames
-            for m in bpy.context.scene.timeline_markers:
-                if m.frame > actual_total_f: actual_total_f = m.frame
             
-            base_energy = l_cfg.get("energy", 1.0)
-            for f in range(1, actual_total_f + 1, 24):
-                pulse = 1.0 + 0.08 * math.sin(2.0 * math.pi * 0.5 * (f / 24.0))
-                
-                # Cinematic Fade for specific lights
-                fade_mult = 1.0
-                if f >= 4800:
-                    if light_id in ["Rim", "Key", "Outro_Key"]:
-                        # Fade from 100% at 4200 to 20% at 4800
-                        fade_mult = 1.0 - (0.8 * (f - 4800) / 600)
-                    elif light_id == "Torch":
-                        # Fade to 0 by 4600
-                        fade_mult = max(0, 1.0 - (f - 4800) / 400)
-                
-                l_data.energy = base_energy * pulse * fade_mult
-                l_data.keyframe_insert(data_path="energy", frame=f)
+            # Place in lamps if possible
+            if "Torch" in light_id or "Lamp" in light_id:
+                torches = [o for o in bpy.data.objects if "torch" in o.name.lower()]
+                if torches:
+                    # Distribute lights across torches
+                    idx = int(light_id.split("_")[-1]) if "_" in light_id else 0
+                    target_torch = torches[idx % len(torches)]
+                    l_obj.location = target_torch.location + mathutils.Vector((0, 0, 2.5))
+                else:
+                    if "pos" in l_cfg: l_obj.location = l_cfg["pos"]
+            else:
+                if "pos" in l_cfg: l_obj.location = l_cfg["pos"]
+            
+            if "rot" in l_cfg: l_obj.rotation_euler = [math.radians(r) for r in l_cfg["rot"]]
+            
+            # Remove tracking and animation as per user request
+            for con in l_obj.constraints:
+                if con.type == 'TRACK_TO': l_obj.constraints.remove(con)
+            if l_data.animation_data:
+                l_data.animation_data_clear()
 
     def apply_sequencing(self):
         """Orchestrates timeline markers based on sequencing rules."""
@@ -292,13 +290,29 @@ class Director:
                 
                 t = (target_d - seg_accum) / segments[seg_idx] if segments[seg_idx] > 0 else 0
                 p0 = mathutils.Vector(waypts[seg_idx]); p1 = mathutils.Vector(waypts[seg_idx+1])
-                pos = p0.lerp(p1, t); pos.z = h
+                pos = p0.lerp(p1, t)
+                
+                # Collision & Grounding - Raycast check
+                ray_origin = pos + mathutils.Vector((0, 0, 10))
+                ray_dir = mathutils.Vector((0, 0, -1))
+                hit, loc, norm, index, obj, matrix = bpy.context.scene.ray_cast(bpy.context.view_layer.depsgraph, ray_origin, ray_dir)
+                if hit:
+                    pos.z = loc.z + h
+                else:
+                    pos.z = h
+                
                 rig.location = pos; rig.keyframe_insert(data_path="location", frame=frame)
                 
-                # Rotation (face forward)
-                # Rotation (face forward)
+                # Wheel Verification & Visibility logic
+                for child in rig.children_recursive:
+                    if "wheel" in child.name.lower():
+                        # Ensure visible
+                        child.hide_viewport = child.hide_render = False
+                
+                # Rotation (face forward) - CORRECTED for X-Forward model
                 fwd = (p1 - p0).normalized()
-                rig.rotation_euler[2] = math.atan2(fwd.y, fwd.x) - math.pi/2
+                # If model is X-forward, rotation needs to be atan2(y, x)
+                rig.rotation_euler[2] = math.atan2(fwd.y, fwd.x)
                 rig.keyframe_insert(data_path="rotation_euler", index=2, frame=frame)
                 
                 frame += 5; curr_dist += 5 / speed
@@ -364,7 +378,28 @@ class Director:
                 obj.location.z = 0; obj.keyframe_insert(data_path="location", index=2, frame=1)
                 obj.location.z = params["height"]; obj.keyframe_insert(data_path="location", index=2, frame=params["frames"])
             elif action == "animate":
-                AnimationHandler().apply_animation(obj, params["tag"], event.get("start", 1), params.get("duration"))
+                anim_tag = params["tag"]
+                start_f = event.get("start", 1)
+                duration = params.get("duration", 100)
+                AnimationHandler().apply_animation(obj, anim_tag, start_f, duration)
+                # Baked Animation Location Control: ensure position is locked after completion
+                end_f = start_f + duration
+                obj.keyframe_insert(data_path="location", frame=end_f)
+                obj.keyframe_insert(data_path="rotation_euler", frame=end_f)
+            elif action == "prop_interact":
+                # ChildOf constraint for prop handling
+                prop_name = params["prop"]
+                prop_obj = bpy.data.objects.get(prop_name)
+                if prop_obj:
+                    start_f = event.get("start", 1)
+                    con = prop_obj.constraints.get("PropHold") or prop_obj.constraints.new(type='CHILD_OF')
+                    con.name = "PropHold"; con.target = obj; con.subtarget = params.get("bone", "Hand.R")
+                    con.influence = 0.0; con.keyframe_insert(data_path="influence", frame=start_f - 1)
+                    con.influence = 1.0; con.keyframe_insert(data_path="influence", frame=start_f)
+                    bpy.context.view_layer.update()
+                    con.inverse_matrix = obj.matrix_world.inverted()
+                    # Trigger pouring/spraying animation on prop
+                    self._animate_blessing(prop_obj, start_f, start_f + params.get("duration", 100))
             elif action == "move_to":
                 start_f = event.get("start", 1); duration = params.get("duration_frames", 60)
                 dest = mathutils.Vector(params["destination_pos"])
@@ -379,9 +414,9 @@ class Director:
                 obj.keyframe_insert(data_path="location", frame=start_f)
                 obj.location = dest; obj.keyframe_insert(data_path="location", frame=start_f + duration)
             elif action == "open_door":
+                start_f = event.get("start", 1); duration = params.get("duration_frames", 30)
                 door = next((c for c in obj.children_recursive if "_Door" in c.name), None)
                 if door:
-                    start_f = event.get("start", 1); duration = params.get("duration_frames", 30)
                     door.keyframe_insert(data_path="rotation_euler", index=1, frame=start_f)
                     door.rotation_euler[1] = -math.pi/2; door.keyframe_insert(data_path="rotation_euler", index=1, frame=start_f + duration)
             elif action == "enter_vehicle":
@@ -452,13 +487,20 @@ class Director:
         return coll
 
     def _ground_rig_to_zero(self, rig):
+        bpy.context.view_layer.update()
+        # Use depsgraph for final evaluated positions if needed
+        dg = bpy.context.evaluated_depsgraph_get()
         meshes = [m for m in rig.children_recursive if m.type == 'MESH']
         for obj in bpy.data.objects:
             if obj.type == 'MESH' and next((mod for mod in obj.modifiers if mod.type == 'ARMATURE' and mod.object == rig), None): meshes.append(obj)
         if not meshes: return
         min_z = None
         for mesh in meshes:
-            for corner in mesh.bound_box:
-                z = (mesh.matrix_world @ mathutils.Vector(corner)).z
+            m_eval = mesh.evaluated_get(dg)
+            mw = m_eval.matrix_world
+            for corner in m_eval.bound_box:
+                z = (mw @ mathutils.Vector(corner)).z
                 min_z = z if min_z is None else min(min_z, z)
-        if min_z is not None: rig.location.z -= min_z
+        if min_z is not None:
+            rig.location.z -= min_z
+            bpy.context.view_layer.update()
