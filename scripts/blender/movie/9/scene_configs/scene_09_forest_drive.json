@@ -1,0 +1,22 @@
+{
+  "scene_id": "scene_09",
+  "start_frame": 4401,
+  "end_frame": 4650,
+  "environment": {
+    "type": "forest_road",
+    "road": { "length": 150.0, "width": 4.5, "ruts": true, "color": [0.25, 0.18, 0.12] },
+    "trees": { "count": 80, "corridor_width": 7.0, "depth": 50.0, "canopy_types": ["evergreen", "maple", "oak"] }
+  },
+  "story_beats": [
+    {
+      "beat": "Forest Journey",
+      "start": 4401,
+      "events": [
+        { "target": "GreenhouseMobile", "action": "move_to", "start": 4401, "params": { "destination_pos": [0, 140, 0], "duration_frames": 249 } }
+      ]
+    }
+  ],
+  "camera_sequence": [
+    { "camera": "ForestCam", "start": 4401, "end": 4650 }
+  ]
+}
