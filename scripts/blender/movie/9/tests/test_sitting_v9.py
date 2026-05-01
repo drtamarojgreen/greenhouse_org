@@ -25,7 +25,7 @@ class TestSittingV9(unittest.TestCase):
         bpy.ops.object.mode_set(mode='POSE')
 
         handler = AnimationHandler()
-        handler._animate_sit(rig, start=1, duration=40)
+        handler.apply_animation(rig, "sit", 1, 40)
 
         bpy.context.scene.frame_set(41)
 

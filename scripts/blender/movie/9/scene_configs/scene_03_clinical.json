@@ -1,0 +1,155 @@
+{
+  "id": "scene_03_clinical",
+  "start_frame": 1000,
+  "end_frame": 1800,
+  "environment": {
+    "type": "interior",
+    "params": {
+      "light_intensity": 1.2,
+      "clinical_atmosphere": true
+    }
+  },
+  "interior": {
+    "television": {
+      "id": "television",
+      "pos": [
+        0,
+        12,
+        0.55
+      ]
+    },
+    "television_stand": {
+      "id": "tv_stand",
+      "pos": [
+        0,
+        12,
+        0
+      ]
+    },
+    "chairs": [
+      {
+        "id": "chair_herb",
+        "pos": [
+          -1.5,
+          -3.2,
+          0
+        ],
+        "rot": [
+          0,
+          0,
+          180
+        ]
+      },
+      {
+        "id": "chair_arbor",
+        "pos": [
+          -4.0,
+          -3.0,
+          0
+        ],
+        "rot": [
+          0,
+          0,
+          180
+        ]
+      }
+    ]
+  },
+  "entities": [
+    {
+      "id": "Herbaceous",
+      "pos": [
+        -1.2,
+        0.5,
+        0
+      ]
+    },
+    {
+      "id": "Arbor",
+      "pos": [
+        1.2,
+        0.5,
+        0
+      ]
+    }
+  ],
+  "story_beats": [
+    {
+      "beat": "Clinical Exchange",
+      "start": 1000,
+      "end": 1800,
+      "events": [
+        {
+          "target": "Herbaceous",
+          "action": "move_to",
+          "start": 1000,
+          "params": {
+            "destination_pos": [
+              -1.5,
+              -3.2,
+              0
+            ],
+            "duration_frames": 100
+          }
+        },
+        {
+          "target": "Arbor",
+          "action": "move_to",
+          "start": 1000,
+          "params": {
+            "destination_pos": [
+              -4.0,
+              -3.0,
+              0
+            ],
+            "duration_frames": 100
+          }
+        },
+        {
+          "target": "Herbaceous",
+          "action": "animate",
+          "start": 1100,
+          "params": {
+            "tag": "sit",
+            "duration": 40
+          }
+        },
+        {
+          "target": "Arbor",
+          "action": "animate",
+          "start": 1100,
+          "params": {
+            "tag": "sit",
+            "duration": 40
+          }
+        },
+        {
+          "target": "Herbaceous",
+          "action": "animate",
+          "start": 1540,
+          "params": {
+            "tag": "swap_position",
+            "target_pos": [
+              -4.0,
+              -3.0
+            ],
+            "duration": 1
+          }
+        },
+        {
+          "target": "Arbor",
+          "action": "animate",
+          "start": 1540,
+          "params": {
+            "tag": "swap_position",
+            "target_pos": [
+              -1.5,
+              -3.2
+            ],
+            "duration": 1
+          }
+        }
+      ]
+    }
+  ]
+}

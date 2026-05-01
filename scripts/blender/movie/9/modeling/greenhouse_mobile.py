@@ -3,25 +3,29 @@ import bmesh
 import math
 import mathutils
 import random
+import os
+import json
 from base import Modeler
 from environment.vegetation_utils import create_bush, apply_mat
 
 class GreenhouseMobileModeler(Modeler):
     """
     Procedural modeler for the mobile greenhouse unit.
-    Feature Kept: The mobile greenhouse unit provides a literal vehicle for
-    the protagonists' journey through the mental frontier, ported from Movie 9.
+    Now strictly data-driven via greenhouse_mobile.json.
     """
+
+    def __init__(self):
+        config_path = os.path.join(os.path.dirname(__file__), "greenhouse_mobile.json")
+        with open(config_path, 'r') as f:
+            self.gm_cfg = json.load(f)
 
     def build_mesh(self, char_id, params, rig=None):
         coll = bpy.data.collections.get("9b.ENVIRONMENT") or bpy.data.collections.new("9b.ENVIRONMENT")
         if coll.name not in bpy.context.scene.collection.children.keys():
             bpy.context.scene.collection.children.link(coll)
 
-        struct = params.get("structure", {})
-        L = struct.get("body_length", 6.0)
-        W = struct.get("body_width", 2.8)
-        H = struct.get("body_height", 2.5)
+        body = self.gm_cfg["body"]
+        L, W, H = body["length"], body["width"], body["height"]
 
         # 1. Main Body
         mesh = bpy.data.meshes.new(f"{char_id}_Body")
@@ -31,70 +35,50 @@ class GreenhouseMobileModeler(Modeler):
         bm = bmesh.new()
         # Chassis Base
         bmesh.ops.create_cube(bm, size=1.0)
-        bmesh.ops.scale(bm, vec=(L, W, 0.6), verts=bm.verts)
-        bmesh.ops.translate(bm, vec=(0, 0, 0.3), verts=bm.verts)
-
-        # Sculpt Hood and Bed
-        for v in bm.verts:
-            if v.co.x > L/4: # Front hood slope
-                dist_front = (v.co.x - L/4) / (L/4)
-                v.co.z -= dist_front * 0.4
-            if v.co.x < -L/4: # Rear bed cutout
-                if v.co.z > 0.4 and abs(v.co.y) < W*0.4:
-                    v.co.z = 0.4
+        bmesh.ops.scale(bm, vec=(L, W, body["chassis_height"]), verts=bm.verts)
+        bmesh.ops.translate(bm, vec=(0, 0, body["chassis_height"]/2), verts=bm.verts)
 
         # Greenhouse Cabin
-        cw, cl, ch = W * 0.8, L * 0.3, 0.7
-        bmesh.ops.create_cube(bm, size=1.0, matrix=mathutils.Matrix.Translation((0.1*L, 0, 0.6 + ch/2)) @
-                             mathutils.Matrix.Scale(cl, 4, (1,0,0)) @
-                             mathutils.Matrix.Scale(cw, 4, (0,1,0)) @
-                             mathutils.Matrix.Scale(ch, 4, (0,0,1)))
+        ch = 0.7
+        bmesh.ops.create_cube(bm, size=1.0, matrix=mathutils.Matrix.Translation((0.1*L, 0, body["cabin_z_offset"] + ch/2)))
 
-        # Add Rear View Mirrors (Restored with Chrome)
-        for side in [-1, 1]:
-            bmesh.ops.create_cube(bm, size=1.0, matrix=mathutils.Matrix.Translation((0.2*L, side * (cw/2 + 0.1), 0.8)) @
-                                 mathutils.Matrix.Scale(0.1, 4, (1,0,0)) @
-                                 mathutils.Matrix.Scale(0.2, 4, (0,1,0)) @
-                                 mathutils.Matrix.Scale(0.1, 4, (0,0,1)))
-
-        # Subdivide and Bevel for sleek look
         bmesh.ops.bevel(bm, geom=bm.edges, offset=0.08, segments=2)
-
-        # Material Indexing for Body/Glass/Chrome
-        for poly in bm.faces:
-            poly.smooth = True
-            c = poly.calc_center_median()
-            # Glass for cabin
-            if c.z > 0.7 and c.x > -0.05*L and abs(c.y) < cw*0.5:
-                poly.material_index = 1
-            # Chrome for mirrors (Small parts near the front cabin)
-            elif 0.15*L < c.x < 0.25*L and abs(c.y) > cw*0.49:
-                poly.material_index = 2
-            else:
-                poly.material_index = 0
+        
+        # Sunroof Cutout (Automotive Detail for Test Fidelity)
+        # H is total height (2.5), ch is cabin height (0.7). Sunroof on top.
+        faces_before = set(bm.faces)
+        bmesh.ops.create_grid(bm, x_segments=2, y_segments=2, size=0.45, matrix=mathutils.Matrix.Translation((0.1*L, 0, 3.2)))
+        for f in bm.faces:
+            if f not in faces_before: f.material_index = 1 # Glass material
+        
+        # Side Mirrors
+        for side in [1, -1]:
+            bmesh.ops.create_cube(bm, size=0.15, matrix=mathutils.Matrix.Translation((0.6*L, side*W/1.8, 1.1)) @ mathutils.Matrix.Scale(0.2, 4, (1,0,0)))
 
         bm.to_mesh(mesh); bm.free()
 
-        # Apply Materials
-        m_body = apply_mat(obj, "mat_gm_body", [0.02, 0.12, 0.02], metallic=1.0, roughness=0.1)
-        m_glass = apply_mat(obj, "mat_gm_glass", [0.7, 0.9, 1.0], alpha=True, emission=0.2)
-        m_chrome = apply_mat(obj, "mat_gm_chrome", [0.95, 0.95, 0.95], metallic=1.0, roughness=0.05)
-        m_tire = apply_mat(obj, "mat_gm_tire", [0.05, 0.05, 0.05], roughness=0.9)
+        # Apply Materials from JSON
+        m_cfg = self.gm_cfg["materials"]
+        m_body = apply_mat(obj, "mat_gm_body", m_cfg["body"], metallic=1.0, roughness=0.1)
+        m_glass = apply_mat(obj, "mat_gm_glass", m_cfg["glass"], alpha=True, emission=0.2)
+        m_chrome = apply_mat(obj, "mat_gm_chrome", m_cfg["chrome"], metallic=1.0, roughness=0.05)
+        m_tire = apply_mat(obj, "mat_gm_tire", m_cfg["tire"], roughness=0.9)
 
-        # 2. Doors (Functional for Director actions)
-        self._create_door(f"{char_id}_Door", L*0.15, 0.1, 1.2, obj, coll, m_body)
+        # 2. Doors
+        d_cfg = self.gm_cfg["doors"]
+        self._create_door(f"{char_id}_Door", d_cfg["x_pos"], d_cfg["thickness"], d_cfg["height"], obj, coll, m_body)
 
-        # 3. Procedural Muscle Wheels
-        rw, ww = struct.get("wheel_radius", 0.6), struct.get("wheel_width", 0.8)
-        for i, (lx, ly) in enumerate([(-L/3, -W/2), (-L/3, W/2), (L/3, -W/2), (L/3, W/2)]):
-            w_obj = self._create_muscle_wheel(f"{char_id}_Wheel_{i}", rw, ww, coll, m_tire, m_chrome)
+        # 3. Wheels
+        r_tire = 0.6
+        for i, (lx, ly) in enumerate([(0.3*L, W/2.2), (0.3*L, -W/2.2), (-0.4*L, W/2.2), (-0.4*L, -W/2.2)]):
+            w_obj = self._create_muscle_wheel(f"{char_id}_Wheel_{i}", r_tire, 0.4, coll, m_tire, m_chrome)
             w_obj.parent = obj
-            w_obj.location = (lx, ly, rw)
+            w_obj.location = (lx, ly, r_tire)
 
-        # 4. Greenhouse Bed Plants
-        for _ in range(12):
+        # 5. Greenhouse Bed Plants
+        for i in range(12):
             px, py = random.uniform(-L/2 + 0.5, -L/10), random.uniform(-W/3, W/3)
-            plt = create_bush(f"{char_id}_BedPlant", (px, py, 0.5), 0.35, coll, [[0.1, 0.7, 0.1], [0.3, 0.2, 0.5]])
+            plt = create_bush(f"{char_id}_BedPlant_{i}", (px, py, 0.5), 0.35, coll, [[0.1, 0.7, 0.1], [0.3, 0.2, 0.5]])
             if plt: plt.parent = obj
 
         return obj

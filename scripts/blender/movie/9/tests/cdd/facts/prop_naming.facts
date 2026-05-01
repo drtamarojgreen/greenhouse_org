@@ -1,0 +1,3 @@
+Situation: Prop_Naming
+# Props (DYNAMIC entities without a rig) must follow lower_case_underscore convention
+Is prop_naming_compliance = true

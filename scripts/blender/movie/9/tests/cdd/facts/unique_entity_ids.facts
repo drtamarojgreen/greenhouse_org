@@ -1,0 +1,3 @@
+Situation: Unique_Entity_Ids
+# Expected contract: no duplicate entity IDs in ensemble
+Is entity_ids_unique = true

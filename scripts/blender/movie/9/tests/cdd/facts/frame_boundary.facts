@@ -1,0 +1,5 @@
+Situation: Frame_Boundary
+# Expected contract for storyline frame layout
+Is total_frames_expected = 4800
+Is frame_boundary_respected = true
+Is beats_contiguous = true

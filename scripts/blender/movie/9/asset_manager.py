@@ -112,6 +112,7 @@ class AssetManager:
         new_metrics = self._get_metrics(rig)
         if new_metrics: rig.location.z -= new_metrics['ground_z']
         bpy.context.view_layer.update()
+        bpy.context.evaluated_depsgraph_get().update()
 
     def execute_balanced_culling(self, rig):
         import bmesh
@@ -139,6 +140,7 @@ class AssetManager:
         if rig is None:
             return None
         bpy.context.view_layer.update()
+        dg = bpy.context.evaluated_depsgraph_get()
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         # Linked FBX-style assets are not always strict children of the armature.
         # Include any mesh using this rig in an Armature modifier so grounding
@@ -151,8 +153,9 @@ class AssetManager:
                 meshes.append(obj)
         all_z = []
         for m in meshes:
-            mw = m.matrix_world
-            for corner in m.bound_box:
+            m_eval = m.evaluated_get(dg)
+            mw = m_eval.matrix_world
+            for corner in m_eval.bound_box:
                 all_z.append((mw @ mathutils.Vector(corner)).z)
         if not all_z:
             return None

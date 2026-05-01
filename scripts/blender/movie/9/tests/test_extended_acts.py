@@ -17,7 +17,7 @@ class TestExtendedActs(unittest.TestCase):
 
     def test_scene_09_environment_switch(self):
         """Verifies that Scene 9 correctly switches to the ForestRoad environment."""
-        self.director.apply_extended_scene("scene_configs/scene_09_forest_drive.json")
+        self.director.apply_extended_scene("scene_configs/scene_07_forest_drive.json")
 
         # Check if ForestRoad object exists
         forest = bpy.data.objects.get("Env") # Modeler returns obj, we named it Env in director
@@ -31,7 +31,7 @@ class TestExtendedActs(unittest.TestCase):
 
     def test_scene_10_environment_switch(self):
         """Verifies that Scene 10 correctly switches to the MountainBase environment and purges old assets."""
-        self.director.apply_extended_scene("scene_configs/scene_10_mountain_ascent.json")
+        self.director.apply_extended_scene("scene_configs/scene_05_ascent.json")
 
         # Check if Mountain object exists
         mountain = bpy.data.objects.get("Env")

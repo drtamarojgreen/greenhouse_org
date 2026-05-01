@@ -18,6 +18,10 @@ try:
 except ImportError:
     create_facial_props_v6 = None
 
+# Shading utils access
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "shading"))
+import shading_utils
+
 class PlantRigger(Rigger):
     """
     Specific Rigger for Procedural Plant Humanoids.
@@ -231,24 +235,36 @@ class PlantRigger(Rigger):
         return armature_obj
 
     def _create_minimal_face_props(self, char_id, armature_obj):
-        eye_mat = bpy.data.materials.get(f"Iris_{char_id}") or bpy.data.materials.new(f"Iris_{char_id}")
-        eye_mat.use_nodes = True
-        bsdf = eye_mat.node_tree.nodes.get("Principled BSDF")
-        if bsdf:
-            bsdf.inputs["Base Color"].default_value = (0.08, 0.18, 0.05, 1.0)
+        # Resolve materials for facial props
+        iris_mat = bpy.data.materials.get(f"Iris_{char_id}") or bpy.data.materials.new(f"Iris_{char_id}")
+        sclera_mat = bpy.data.materials.get(f"Sclera_{char_id}") or bpy.data.materials.new(f"Sclera_{char_id}")
+        bark_mat = bpy.data.materials.get(f"Bark_{char_id}") or bpy.data.materials.new(f"Bark_{char_id}")
+        lip_mat = bpy.data.materials.get(f"Lip_{char_id}") or bpy.data.materials.new(f"Lip_{char_id}")
+        
+        # Use shading_utils for consistent setup
+        shading_utils.setup_iris_nodes(iris_mat, (0.2, 0.5, 0.8))
+        shading_utils.setup_basic_material(sclera_mat, (0.9, 0.9, 0.9))
+        shading_utils.setup_basic_material(bark_mat, (0.15, 0.1, 0.05))
+        shading_utils.setup_basic_material(lip_mat, (0.6, 0.2, 0.2))
+        
+        if create_facial_props_v6:
+            # High-fidelity props from v6
+            bones_map = {b.name: b.name for b in armature_obj.pose.bones}
+            create_facial_props_v6(char_id, armature_obj, bones_map, iris_mat, sclera_mat, bark_mat, lip_mat)
+        else:
+            # Fallback to minimal spheres
+            for side in ("L", "R"):
+                eye_obj = bpy.data.objects.new(f"{char_id}_Eye_{side}", bpy.data.meshes.new(f"{char_id}_Eye_{side}_Mesh"))
+                bpy.context.scene.collection.objects.link(eye_obj)
+                eye_obj.parent = armature_obj
+                eye_obj.parent_type = 'BONE'
+                eye_obj.parent_bone = "Head"
+                eye_obj.location = ((0.12 if side == "L" else -0.12), -0.34, 2.1)
 
-        for side in ("L", "R"):
-            eye_obj = bpy.data.objects.new(f"{char_id}_Eye_{side}", bpy.data.meshes.new(f"{char_id}_Eye_{side}_Mesh"))
-            bpy.context.scene.collection.objects.link(eye_obj)
-            eye_obj.parent = armature_obj
-            eye_obj.parent_type = 'BONE'
-            eye_obj.parent_bone = "Head"
-            eye_obj.location = ((0.12 if side == "L" else -0.12), -0.34, 2.1)
-
-            bm = bmesh.new()
-            bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=0.06)
-            bm.to_mesh(eye_obj.data)
-            bm.free()
-            eye_obj.data.materials.append(eye_mat)
+                bm = bmesh.new()
+                bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=0.06)
+                bm.to_mesh(eye_obj.data)
+                bm.free()
+                eye_obj.data.materials.append(iris_mat)
 
 registry.register_rigging("PlantRigger", PlantRigger)

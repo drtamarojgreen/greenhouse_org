@@ -19,23 +19,35 @@ class ConfigurableAction(ProceduralAction):
 class ProceduralAnimator(Animator):
     """
     Animator that dispatches to procedural functions based on tags.
-    Architecture Kept: Tag-based dispatch allows for a high degree of
-    reusability and decoupling between the Director's high-level events and
-    the specific bone-level animation logic.
     """
-
     def apply_action(self, rig, tag, frame, params):
         anim_cfg = params.get("animation", {})
         action_cfg = anim_cfg.get(tag)
-
-        if not action_cfg:
-            return
-
-        if not rig.animation_data:
-            rig.animation_data_create()
-
+        if not action_cfg: return
+        if not rig.animation_data: rig.animation_data_create()
         action = ConfigurableAction()
         duration = action_cfg.get("duration", params.get("duration", 100))
         action.apply(rig, frame, duration, action_cfg)
 
+class BakedAnimator(Animator):
+    """
+    Animator that switches between pre-authored (baked) actions linked from assets.
+    """
+    def apply_action(self, rig, tag, frame, params):
+        if not rig.animation_data: rig.animation_data_create()
+        
+        # Look for action with name matching the tag (e.g. Herbaceous_V5_Rig_walk)
+        action_name = params.get("action_name", tag)
+        action = bpy.data.actions.get(action_name)
+        if not action:
+            # Fuzzy match
+            action = next((a for a in bpy.data.actions if tag.lower() in a.name.lower()), None)
+        
+        if action:
+            rig.animation_data.action = action
+            print(f"DEBUG: Applied baked action {action.name} to {rig.name}")
+        else:
+            print(f"WARNING: Baked action '{tag}' not found for {rig.name}")
+
 registry.register_animation("ProceduralAnimator", ProceduralAnimator)
+registry.register_animation("BakedAnimator", BakedAnimator)

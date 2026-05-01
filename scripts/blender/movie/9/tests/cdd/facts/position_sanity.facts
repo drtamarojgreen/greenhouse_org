@@ -1,0 +1,6 @@
+Situation: Position_Sanity
+# Positions must be finite and within the scene bounding box
+# Entities must not overlap camera positions
+Is position_bounds_valid = true
+Is entities_not_underground = true
+Is max_scene_radius = 50

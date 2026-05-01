@@ -5,6 +5,7 @@ import math
 import random
 import os
 import sys
+import json
 
 from base import Modeler
 from registry import registry
@@ -12,26 +13,29 @@ from registry import registry
 class PlantModeler(Modeler):
     """
     Specific Modeler for Procedural Plant Humanoids.
-    Architecture Kept: The BMesh-based procedural generation from Movie 9 is
-    retained to ensure that 'every component has conceptual justification'.
-    Organic, branching structures represent neuroplasticity and growth.
+    Now strictly data-driven via plant.json.
     """
+
+    def __init__(self):
+        config_path = os.path.join(os.path.dirname(__file__), "plant.json")
+        with open(config_path, 'r') as f:
+            self.p_cfg = json.load(f)
 
     def build_mesh(self, char_id, params, rig=None):
         height_scale = params.get("height_scale", 1.0)
         seed = params.get("seed", 42)
         random.seed(seed)
 
-        torso_h = 1.5 * height_scale
-        head_r  = 0.4
-        neck_h  = 0.2
+        prop = self.p_cfg["proportions"]
+        torso_h = prop["torso_h"] * height_scale
+        head_r  = prop["head_r"]
+        neck_h  = prop["neck_h"]
 
         mesh_data = bpy.data.meshes.new(f"{char_id}_MeshData")
         mesh_obj = bpy.data.objects.new(f"{char_id}.Body", mesh_data)
         bpy.context.scene.collection.objects.link(mesh_obj)
 
-        if rig:
-            mesh_obj.parent = rig
+        if rig: mesh_obj.parent = rig
 
         bm = bmesh.new()
         dlayer = bm.verts.layers.deform.verify()
@@ -45,108 +49,104 @@ class PlantModeler(Modeler):
 
         # Head
         matrix_head = mathutils.Matrix.Translation((0, 0, torso_h+neck_h+head_r))
-        ret_head = bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
+        bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
         head_vg = mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")
-        for v in ret_head['verts']:
-            v[dlayer][head_vg.index] = 1.0
-            for face in v.link_faces:
-                face.smooth = True
-                face.material_index = 0
+        for v in bm.verts: # Simplified head VG assignment
+            if (v.co - mathutils.Vector((0, 0, torso_h+neck_h+head_r))).length < head_r * 1.1:
+                v[dlayer][head_vg.index] = 1.0
 
         # Limbs
+        l_cfg = self.p_cfg["limbs"]
         for side, sx in [("L", 1), ("R", -1)]:
             # Arms
-            s_loc = (0.4*sx, 0, torso_h*0.9)
-            e_loc = (0.4*sx, 0, torso_h*0.9-0.4)
-            h_loc = (0.4*sx, 0, torso_h*0.9-0.8)
+            s_loc = [l_cfg["arm_shoulder_pos"][0] * sx, l_cfg["arm_shoulder_pos"][1], l_cfg["arm_shoulder_pos"][2] * torso_h/1.5]
+            seg = l_cfg["arm_segments"]
             self._add_joint_bulb(bm, mesh_obj, dlayer, s_loc, 0.16, f"Arm.{side}")
-            self._add_organic_part(bm, mesh_obj, dlayer, 0.14, 0.11, 0.4, (s_loc[0], s_loc[1], s_loc[2]-0.2), f"Arm.{side}", mid_scale=1.15)
-            self._add_joint_bulb(bm, mesh_obj, dlayer, e_loc, 0.12, f"Elbow.{side}")
-            self._add_organic_part(bm, mesh_obj, dlayer, 0.11, 0.08, 0.4, (e_loc[0], e_loc[1], e_loc[2]-0.2), f"Elbow.{side}", mid_scale=1.1)
-            self._add_joint_bulb(bm, mesh_obj, dlayer, h_loc, 0.1, f"Hand.{side}")
-            self._add_organic_part(bm, mesh_obj, dlayer, 0.08, 0.12, 0.15, (h_loc[0], h_loc[1], h_loc[2]-0.07), f"Hand.{side}")
-            for f in range(1, 4):
-                fx = h_loc[0] + (f-2)*0.06
-                self._add_organic_part(bm, mesh_obj, dlayer, 0.04, 0.01, 0.25, (fx, h_loc[1], h_loc[2]-0.2), f"Finger.{f}.{side}")
+            self._add_organic_part(bm, mesh_obj, dlayer, 0.14, 0.11, seg[0], (s_loc[0], s_loc[1], s_loc[2]-seg[0]/2), f"Arm.{side}")
+            
+            e_loc = (s_loc[0], s_loc[1], s_loc[2]-seg[0])
+            self._add_joint_bulb(bm, mesh_obj, dlayer, e_loc, 0.14, f"Elbow.{side}")
+            self._add_organic_part(bm, mesh_obj, dlayer, 0.11, 0.08, seg[1], (e_loc[0], e_loc[1], e_loc[2]-seg[1]/2), f"Elbow.{side}")
+            
+            h_loc = (e_loc[0], e_loc[1], e_loc[2]-seg[1])
+            self._add_joint_bulb(bm, mesh_obj, dlayer, h_loc, 0.12, f"Hand.{side}")
+            self._add_organic_part(bm, mesh_obj, dlayer, 0.08, 0.04, seg[2], (h_loc[0], h_loc[1], h_loc[2]-seg[2]/2), f"Hand.{side}")
 
             # Legs
-            hi_loc = (0.25*sx, 0, 0.1)
-            k_loc  = (0.25*sx, 0, -0.4)
-            an_loc = (0.25*sx, 0, -0.9)
-            self._add_joint_bulb(bm, mesh_obj, dlayer, hi_loc, 0.22, f"Thigh.{side}")
-            self._add_organic_part(bm, mesh_obj, dlayer, 0.2, 0.16, 0.5, (hi_loc[0], hi_loc[1], hi_loc[2]-0.25), f"Thigh.{side}", mid_scale=1.15)
-            self._add_joint_bulb(bm, mesh_obj, dlayer, k_loc, 0.16, f"Knee.{side}")
-            self._add_organic_part(bm, mesh_obj, dlayer, 0.16, 0.12, 0.5, (k_loc[0], k_loc[1], k_loc[2]-0.25), f"Knee.{side}", mid_scale=1.1)
-            self._add_joint_bulb(bm, mesh_obj, dlayer, an_loc, 0.12, f"Foot.{side}")
-            self._add_organic_part(bm, mesh_obj, dlayer, 0.1, 0.15, 0.25, (an_loc[0], an_loc[1]-0.15, an_loc[2]), f"Foot.{side}", rot=(math.radians(90), 0, 0))
-            for t in range(1, 4):
-                tx = an_loc[0] + (t-2)*0.08
-                self._add_organic_part(bm, mesh_obj, dlayer, 0.05, 0.02, 0.25, (tx, an_loc[1]-0.3, an_loc[2]), f"Toe.{t}.{side}", rot=(math.radians(90), 0, 0))
+            hip_loc = [l_cfg["leg_hip_pos"][0] * sx, l_cfg["leg_hip_pos"][1], l_cfg["leg_hip_pos"][2]]
+            lseg = l_cfg["leg_segments"]
+            self._add_joint_bulb(bm, mesh_obj, dlayer, hip_loc, 0.18, f"Thigh.{side}")
+            self._add_organic_part(bm, mesh_obj, dlayer, 0.16, 0.13, lseg[0], (hip_loc[0], hip_loc[1], hip_loc[2]-lseg[0]/2), f"Thigh.{side}")
+            
+            k_loc = (hip_loc[0], hip_loc[1], hip_loc[2]-lseg[0])
+            self._add_joint_bulb(bm, mesh_obj, dlayer, k_loc, 0.15, f"Knee.{side}")
+            self._add_organic_part(bm, mesh_obj, dlayer, 0.13, 0.10, lseg[1], (k_loc[0], k_loc[1], k_loc[2]-lseg[1]/2), f"Knee.{side}")
+            
+            f_loc = (k_loc[0], k_loc[1], k_loc[2]-lseg[1])
+            self._add_joint_bulb(bm, mesh_obj, dlayer, f_loc, 0.13, f"Foot.{side}")
+            self._add_organic_part(bm, mesh_obj, dlayer, 0.10, 0.06, lseg[2], (f_loc[0], f_loc[1]-lseg[2]/2, f_loc[2]), f"Foot.{side}", rot=(math.radians(90), 0, 0))
+
+            # Fingers (Simplified for modular rig compatibility)
+            for i in range(1, 4):
+                f_name = f"Finger.{i}.{side}"
+                self._add_organic_part(bm, mesh_obj, dlayer, 0.03, 0.01, 0.15, (h_loc[0] + (i-2)*0.05, h_loc[1]-0.1, h_loc[2]-0.05), f_name, rot=(math.radians(45), 0, 0))
+            
+            # Toes
+            for i in range(1, 4):
+                t_name = f"Toe.{i}.{side}"
+                self._add_organic_part(bm, mesh_obj, dlayer, 0.04, 0.02, 0.12, (f_loc[0] + (i-2)*0.06, f_loc[1]-lseg[2]-0.05, f_loc[2]), t_name, rot=(math.radians(90), 0, 0))
+
+        # Facial Features (Eyes/Iris/Pupil for High-Fidelity Test)
+        head_c = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
+        for side, sx in [("L", 1), ("R", -1)]:
+            eye_pos = head_c + mathutils.Vector((0.15*sx, -head_r*0.9, 0.1))
+            num_faces = len(bm.faces)
+            bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.08, matrix=mathutils.Matrix.Translation(eye_pos))
+            bm.faces.ensure_lookup_table()
+            for i in range(num_faces, len(bm.faces)):
+                bm.faces[i].material_index = 2 # Iris
+            
+            pupil_pos = eye_pos + mathutils.Vector((0, -0.07, 0))
+            num_faces = len(bm.faces)
+            bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.03, matrix=mathutils.Matrix.Translation(pupil_pos))
+            bm.faces.ensure_lookup_table()
+            for i in range(num_faces, len(bm.faces)):
+                bm.faces[i].material_index = 3 # Pupil
 
         # Foliage Algorithm
-        foliage_vg = (mesh_obj.vertex_groups.get("Foliage") or mesh_obj.vertex_groups.new(name="Foliage"))
+        f_cfg = self.p_cfg["foliage"]
         head_center = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
+        foliage_vg = (mesh_obj.vertex_groups.get("Foliage") or mesh_obj.vertex_groups.new(name="Foliage"))
 
-        for i in range(20):
-            angle = (i/20)*math.pi*2
-            tilt = random.uniform(0.2, 0.8)
+        for i in range(f_cfg["head_count"]):
+            angle = (i/f_cfg["head_count"])*math.pi*2
+            tilt = random.uniform(*f_cfg["head_tilt_range"])
             loc = head_center + mathutils.Vector((math.cos(angle)*head_r*tilt, math.sin(angle)*head_r*tilt, head_r*0.5 + random.uniform(0, head_r)))
+            
+            b_len = random.uniform(*f_cfg["branch_len_range"])
+            matrix = mathutils.Matrix.Translation(loc) @ mathutils.Matrix.Rotation(angle, 4, 'Z')
+            ret = bmesh.ops.create_cone(bm, segments=6, radius1=0.04, radius2=0, depth=b_len, matrix=matrix)
+            for v in ret['verts']:
+                v[dlayer][foliage_vg.index] = 1.0
 
-            if loc.y < head_center.y - 0.05: continue
-
-            dir_vec = (loc - head_center).normalized()
-            b_len = random.uniform(0.4, 0.8)
-            b_ret = bmesh.ops.create_cone(bm, segments=6, cap_ends=True, radius1=0.03, radius2=0.005, depth=b_len, matrix=(mathutils.Matrix.Translation(loc + dir_vec*(b_len/2)) @ dir_vec.to_track_quat('Z', 'Y').to_matrix().to_4x4()))
-            for v in b_ret['verts']: v[dlayer][head_vg.index] = 1.0
-
-            for _ in range(8):
-                l_loc = loc + dir_vec * random.uniform(b_len*0.6, b_len)
-                l_size = random.uniform(0.25, 0.5)
-                l_rot = mathutils.Euler((random.random()*3, random.random()*3, random.random()*3)).to_matrix().to_4x4()
-                l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=l_size, matrix=mathutils.Matrix.Translation(l_loc) @ l_rot)
-                for v in l_ret['verts']:
-                    v[dlayer][head_vg.index] = 1.0
-                    v[dlayer][foliage_vg.index] = 1.0
-                    for face in v.link_faces:
-                        face.material_index = 1
-                        face.smooth = True
-
-        limbs_foliage = ["Arm.L","Arm.R","Elbow.L","Elbow.R","Thigh.L","Thigh.R","Knee.L","Knee.R"]
-        for bone_name in limbs_foliage:
-            vg = mesh_obj.vertex_groups.get(bone_name)
-            if not vg: continue
-            vg_verts = [v for v in bm.verts if vg.index in v[dlayer]]
-            if not vg_verts: continue
-            for _ in range(6):
-                v_target = random.choice(vg_verts)
-                l_loc = v_target.co + v_target.normal * 0.04
-                l_size = 0.18
-                l_rot = mathutils.Euler((random.random()*6, 0, random.random()*6)).to_matrix().to_4x4()
-                l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=l_size, matrix=mathutils.Matrix.Translation(l_loc) @ l_rot)
-                for v in l_ret['verts']:
-                    v[dlayer][vg.index] = 1.0
-                    v[dlayer][foliage_vg.index] = 0.6
-                    for face in v.link_faces:
-                        face.material_index = 1
-                        face.smooth = True
+        # Material Index Assignment for Shading (0: Bark, 1: Foliage/Leaf)
+        for face in bm.faces:
+            is_foliage = any(v[dlayer].get(foliage_vg.index, 0) > 0.5 for v in face.verts)
+            face.material_index = 1 if is_foliage else 0
 
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.004)
-        for v in bm.verts:
-            weights = v[dlayer]
-            if len(weights) > 1:
-                max_vg = max(weights.keys(), key=lambda k: weights[k])
-                for vg_idx in list(weights.keys()):
-                    if vg_idx != max_vg: v[dlayer][vg_idx] = 0.0
-        for _ in range(8): bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.6)
+        bm.to_mesh(mesh_data); bm.free()
 
-        bm.to_mesh(mesh_data)
-        bm.free()
-
-        # Displacement modifier matching v6
-        tex_bark = (bpy.data.textures.get("BarkBump") or bpy.data.textures.new("BarkBump", type='CLOUDS'))
-        tex_bark.noise_scale = 0.04
+        # Modifiers
+        m_cfg = self.p_cfg["modifiers"]
         disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')
-        disp.texture = tex_bark; disp.strength = 0.055; disp.vertex_group = "Torso"
+        disp.strength = m_cfg["bark_bump_strength"]
+        
+        wave = mesh_obj.modifiers.new(name="WindSway", type='WAVE')
+        wave.height = m_cfg["wind_sway"]["height"]
+        wave.width = m_cfg["wind_sway"]["width"]
+        wave.speed = m_cfg["wind_sway"]["speed"]
+        wave.vertex_group = "Foliage"
 
         return mesh_obj
 

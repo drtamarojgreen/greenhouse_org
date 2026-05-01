@@ -1,6 +1,14 @@
 import bpy
 from base import Shader
 from registry import registry
+import os
+import sys
+
+# Ensure shading dir is in path for utils
+SHADING_DIR = os.path.dirname(os.path.abspath(__file__))
+if SHADING_DIR not in sys.path:
+    sys.path.insert(0, SHADING_DIR)
+import shading_utils
 
 class UniversalShader(Shader):
     """Truly Universal Shader that builds materials from config data."""
@@ -20,16 +28,13 @@ class UniversalShader(Shader):
             materials[mat_id] = self._create_material(mat_name, cfg)
 
         # 2. Assign only materials required by current mesh material indices.
-        # Legacy tests expect one material for simple procedural meshes.
         max_slot = 0
         if hasattr(mesh.data, "polygons") and len(mesh.data.polygons) > 0:
             max_slot = max(p.material_index for p in mesh.data.polygons)
 
         ordered = ["primary"]
-        if max_slot >= 1:
-            ordered.append("secondary")
-        if max_slot >= 2:
-            ordered.append("accent")
+        if max_slot >= 1: ordered.append("secondary")
+        if max_slot >= 2: ordered.append("accent")
 
         for mat_id in ordered:
             mat = materials.get(mat_id)
@@ -49,15 +54,24 @@ class UniversalShader(Shader):
         color = cfg.get("color", (1,1,1))
         emission = cfg.get("emission", 0.0)
 
-        mat = bpy.data.materials.new(name=name)
+        mat = bpy.data.materials.get(name) or bpy.data.materials.new(name=name)
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         bsdf = nodes.get("Principled BSDF") or nodes.new(type='ShaderNodeBsdfPrincipled')
 
-        bsdf.inputs['Base Color'].default_value = (*color[:3], 1.0)
-        if 'Emission' in bsdf.inputs: # For newer Blender versions
-             bsdf.inputs['Emission'].default_value = (*color[:3], 1.0)
-             bsdf.inputs['Emission Strength'].default_value = emission
+        if "Iris" in name or "Eye" in name:
+            shading_utils.setup_iris_nodes(mat, color)
+        else:
+            bsdf.inputs['Base Color'].default_value = (*color[:3], 1.0)
+            if 'Emission' in bsdf.inputs:
+                 bsdf.inputs['Emission'].default_value = (*color[:3], 1.0)
+                 # Handle Blender 4.0+ Emission Strength
+                 strength_input = bsdf.inputs.get('Emission Strength') or bsdf.inputs.get('Emission')
+                 if strength_input and hasattr(strength_input, "default_value"):
+                     strength_input.default_value = emission
+            
+            if "Leaf" in name:
+                shading_utils.setup_sss(bsdf)
 
         return mat
 

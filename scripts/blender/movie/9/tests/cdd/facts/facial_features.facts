@@ -1,0 +1,4 @@
+Situation: Facial_Features
+# Every protagonist must declare UniversalShader and iris/pupil material slots
+Is protagonist_shading_declared = true
+Is protagonist_facial_materials_present = true

@@ -62,6 +62,7 @@
         "type": "MESH",
         "source_mesh": "Herbaceous_V5_Body",
         "source_rig": "Herbaceous_V5_Rig",
+        "components": { "animation": "BakedAnimator" },
         "default_pos": [-1.2, 0.5, 0.0],
         "target_height": 3.0,
         "is_protagonist": true
@@ -72,12 +73,7 @@
         "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
         "parameters": {
           "seed": 1337,
-          "materials": { "primary": { "color": [0.2, 0.12, 0.08] }, "secondary": { "color": [0.2, 0.6, 0.1] }, "accent": { "color": [0.36, 0.24, 0.62] } },
-          "animation": {
-            "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
-            "idle": { "bone": "Torso", "freq": 0.1, "amp": 0.02 },
-            "dance": { "bone": "Torso", "freq": 0.3, "amp": 0.1 }
-          }
+          "materials": { "primary": { "color": [0.2, 0.12, 0.08] }, "secondary": { "color": [0.2, 0.6, 0.1] } }
         },
         "default_pos": [1.2, 0.5, 0.0],
         "target_height": 3.0,
@@ -334,9 +330,9 @@
     }
   },
   "extended_scenes": [
-    "scene_configs/scene_08_enter_mobile.json",
-    "scene_configs/scene_09_forest_drive.json",
-    "scene_configs/scene_10_mountain_ascent.json"
+    "scene_configs/scene_06_boarding.json",
+    "scene_configs/scene_07_forest_drive.json",
+    "scene_configs/scene_05_ascent.json"
   ],
   "interior": {},
   "normalization": { "strategy": "BBOX", "enable_culling": false, "enable_origin_reset": true },

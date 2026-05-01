@@ -1,0 +1,70 @@
+{
+  "id": "scene_02_rite_of_joy",
+  "title": "Enter Mobile",
+  "total_frames": 2400,
+  "entities": [
+    {
+      "id": "Herbaceous",
+      "type": "Plant",
+      "is_protagonist": true,
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "animations": [
+        {
+          "tag": "walk",
+          "start": 1,
+          "duration": 120
+        },
+        {
+          "tag": "idle",
+          "start": 121,
+          "duration": 2000
+        }
+      ]
+    },
+    {
+      "id": "Arbor",
+      "type": "Plant",
+      "is_protagonist": true,
+      "pos": [
+        2,
+        0,
+        0
+      ],
+      "animations": [
+        {
+          "tag": "walk",
+          "start": 20,
+          "duration": 120
+        }
+      ]
+    },
+    {
+      "id": "GreenhouseMobile",
+      "type": "Vehicle",
+      "pos": [
+        0,
+        -15,
+        0
+      ],
+      "animations": [
+        {
+          "tag": "open_door",
+          "start": 100,
+          "duration": 30
+        }
+      ]
+    }
+  ],
+  "camera": {
+    "default": "Wide",
+    "active_path": "entry_pan"
+  },
+  "environment": {
+    "type": "exterior",
+    "lighting_override": "Golden_Hour"
+  }
+}

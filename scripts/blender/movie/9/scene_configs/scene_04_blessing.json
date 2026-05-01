@@ -1,0 +1,42 @@
+{
+  "id": "scene_04_blessing",
+  "title": "Mountain Ascent",
+  "total_frames": 4800,
+  "entities": [
+    {
+      "id": "GreenhouseMobile",
+      "type": "Vehicle",
+      "pos": [
+        0,
+        100,
+        50
+      ],
+      "animations": []
+    },
+    {
+      "id": "Arbor",
+      "type": "Plant",
+      "is_protagonist": true,
+      "pos": [
+        0,
+        105,
+        50
+      ],
+      "animations": [
+        {
+          "tag": "climb",
+          "start": 1,
+          "duration": 4800
+        }
+      ]
+    }
+  ],
+  "camera": {
+    "default": "Aerial",
+    "active_path": "summit_sweep"
+  },
+  "environment": {
+    "type": "mountain_base",
+    "lighting_override": "Peak_Sunlight"
+  }
+}

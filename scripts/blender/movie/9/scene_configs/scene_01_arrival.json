@@ -1,0 +1,86 @@
+{
+  "id": "scene_01_arrival",
+  "title": "The Awakening",
+  "total_frames": 4800,
+  "entities": [
+    {
+      "id": "Herbaceous",
+      "type": "Plant",
+      "is_protagonist": true,
+      "pos": [
+        -1.75,
+        0,
+        0
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "scale": 1.1,
+      "animations": [
+        {
+          "tag": "talking",
+          "start": 100,
+          "duration": 500
+        },
+        {
+          "tag": "idle",
+          "start": 1,
+          "duration": 4800
+        }
+      ]
+    },
+    {
+      "id": "Arbor",
+      "type": "Plant",
+      "is_protagonist": true,
+      "pos": [
+        1.75,
+        0,
+        0
+      ],
+      "rot": [
+        0,
+        0,
+        3.14159
+      ],
+      "scale": 1.05,
+      "animations": [
+        {
+          "tag": "nod",
+          "start": 600,
+          "duration": 20
+        },
+        {
+          "tag": "idle",
+          "start": 1,
+          "duration": 4800
+        }
+      ]
+    },
+    {
+      "id": "GreenhouseMobile",
+      "type": "Vehicle",
+      "pos": [
+        0,
+        -10,
+        0
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "animations": []
+    }
+  ],
+  "camera": {
+    "default": "Wide",
+    "active_path": "intro_path"
+  },
+  "environment": {
+    "type": "exterior",
+    "lighting_override": "Standard_Daylight"
+  }
+}

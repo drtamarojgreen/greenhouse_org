@@ -1,0 +1,3 @@
+Situation: Backdrop_Naming
+# Expected contract: all chroma/backdrop IDs follow lower_case convention
+Is backdrop_naming_compliance = true

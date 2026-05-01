@@ -1,0 +1,3 @@
+Situation: Scene_Config_Coverage
+# Every path declared in extended_scenes must exist on disk
+Is extended_scenes_present = true

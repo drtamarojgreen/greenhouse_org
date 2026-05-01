@@ -1,0 +1,9 @@
+Situation: Movie9_Diagnostic
+# Expected facts for the Movie 9 production pipeline audit
+
+Is total_frames = 4800
+Is mandatory_entities_present = true
+Is unique_tags_verified = true
+Is naming_convention_followed = true
+Is frame_data_complete = true
+Is scene_configs_sequential = true

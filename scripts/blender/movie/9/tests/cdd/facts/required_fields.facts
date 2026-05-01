@@ -1,0 +1,5 @@
+Situation: Required_Fields
+# Every entity must have: id, type, default_pos
+# MESH entities must also have source_mesh
+# DYNAMIC entities must also have components
+Is entity_required_fields_present = true

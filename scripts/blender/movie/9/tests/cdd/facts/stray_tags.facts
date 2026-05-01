@@ -1,0 +1,3 @@
+Situation: Stray_Tags
+# Expected contract: all storyline targets must be declared entities or "ALL"
+Is storyline_targets_valid = true

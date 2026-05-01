@@ -1,0 +1,3 @@
+Situation: Sit_To_Hidden
+# Characters must not be hidden while in a sitting state
+Is characters_not_sit_hidden = true

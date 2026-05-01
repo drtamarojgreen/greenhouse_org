@@ -26,6 +26,8 @@ class TestProductionResilience(unittest.TestCase):
         cls.director.setup_environment()
         cls.director.setup_lighting()
         cls.director.setup_cinematics()
+        cls.director.compose_ensemble()
+        cls.director.position_protagonists()
 
     def test_res_fbx_rna_export(self):
         self.assertTrue(hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"))
@@ -53,7 +55,9 @@ class TestProductionResilience(unittest.TestCase):
         for obj in bpy.data.objects:
             if ".Body" in obj.name:
                 bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-                self.assertLess(abs(min(v.z for v in bbox)), 0.3)
+                min_z = min(v.z for v in bbox)
+                print(f"DEBUG Grounding: {obj.name} min_z={min_z}")
+                self.assertLess(abs(min_z), 0.3)
 
     def test_res_action_slot(self):
         for obj in bpy.data.objects:

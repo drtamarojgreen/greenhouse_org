@@ -18,7 +18,7 @@ class BackdropModeler(Modeler):
         cfg = params # chroma block
         size = cfg.get("size", 30)
         alpha = cfg.get("alpha", 0.8)
-        bg_images = self._load_v6_background_images(cfg.get("m6_root"))
+        bg_images = cfg.get("background_images", [])
 
         for i, wall in enumerate(cfg.get("walls", [])):
             bpy.ops.mesh.primitive_plane_add(size=size, location=wall["pos"])
@@ -35,56 +35,6 @@ class BackdropModeler(Modeler):
                 if c != coll: c.objects.unlink(obj)
 
         return None
-
-    def _load_v6_background_images(self, m6_root_override=None):
-        """Loads background image paths from Movie 6 config with robust resolution."""
-        from config import config
-        m9_root = os.path.dirname(os.path.dirname(__file__))
-        m6_root = m6_root_override or config.get("paths.m6_root") or os.path.join(m9_root, "..", "6")
-
-        m6_config_json = os.path.join(m6_root, "config.json")
-        images = []
-
-        if os.path.exists(m6_config_json):
-            try:
-                with open(m6_config_json, "r") as f:
-                    images = json.load(f).get("background_images", [])
-            except Exception as e:
-                print(f"Warning: Failed to load M6 config at {m6_config_json}: {e}")
-
-        # Resolve paths
-        resolved = []
-        for img in images:
-            if not img:
-                resolved.append(None)
-                continue
-
-            # Priority 1: As stored
-            if os.path.exists(img):
-                resolved.append(img)
-                continue
-
-            basename = os.path.basename(img)
-
-            # Priority 2: M6 assets
-            m6_assets = os.path.join(m6_root, "assets", basename)
-            if os.path.exists(m6_assets):
-                resolved.append(m6_assets)
-                continue
-
-            # Priority 3: M9 assets
-            m9_assets = os.path.join(m9_root, "assets", basename)
-            if os.path.exists(m9_assets):
-                resolved.append(m9_assets)
-                continue
-
-            print(f"Warning: Backdrop image not found: {img}")
-            resolved.append(None)
-
-        if not resolved:
-            print("Warning: No background images found in Movie 6 config. Falling back to chroma green.")
-
-        return resolved
 
     def _create_chroma_mat(self, name, alpha, bg_path=None):
         mat = bpy.data.materials.new(name=f"mat_{name}")

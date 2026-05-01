@@ -27,7 +27,7 @@ class TestWalkingV9(unittest.TestCase):
         bpy.ops.object.mode_set(mode='POSE')
 
         handler = AnimationHandler()
-        handler._animate_walk(rig, start=1, duration=40)
+        handler.apply_animation(rig, "walk", 1, 40)
 
         # Check a frame where Leg.L and Leg.R should be offset
         # Leg.L uses cos(phase * 2pi), Leg.R uses cos((phase + 0.5) * 2pi)

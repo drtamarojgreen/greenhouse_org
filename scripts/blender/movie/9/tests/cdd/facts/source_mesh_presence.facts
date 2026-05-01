@@ -1,0 +1,4 @@
+Situation: Source_Mesh_Presence
+# Every MESH entity must declare a non-empty, non-repeated source_mesh
+Is source_mesh_names_unique = true
+Is source_mesh_names_non_empty = true
