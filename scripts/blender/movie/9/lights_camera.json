@@ -1,0 +1,413 @@
+{
+  "focal_targets": [
+    {
+      "id": "focus_herbaceous",
+      "pos": [
+        -1.75,
+        -0.3,
+        2.5
+      ]
+    },
+    {
+      "id": "focus_arbor",
+      "pos": [
+        1.75,
+        0.3,
+        2.5
+      ]
+    },
+    {
+      "id": "lighting_midpoint",
+      "pos": [
+        0,
+        0,
+        2.2
+      ]
+    },
+    {
+      "id": "focus_exterior",
+      "pos": [
+        0,
+        -20.0,
+        1.5
+      ]
+    }
+  ],
+  "cameras": [
+    {
+      "id": "Wide",
+      "pos": [
+        0.0,
+        -8.0,
+        2.0
+      ],
+      "rot": [
+        90,
+        0,
+        0
+      ],
+      "lens": 35.0,
+      "target": "lighting_midpoint",
+      "animation": {
+        "points": [
+          [
+            0,
+            -8,
+            2
+          ],
+          [
+            0,
+            -150,
+            25
+          ],
+          [
+            0,
+            -8,
+            2
+          ]
+        ],
+        "end_frame": 12
+      }
+    },
+    {
+      "id": "Ots1",
+      "pos": [
+        13.5,
+        11.0,
+        6.0
+      ],
+      "lens": 50.0,
+      "target": "focus_herbaceous",
+      "animation": {
+        "points": [
+          [
+            13.5,
+            11.0,
+            6.0
+          ],
+          [
+            16.0,
+            13.5,
+            6.3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "Ots2",
+      "pos": [
+        -13.5,
+        -11.0,
+        6.0
+      ],
+      "lens": 50.0,
+      "target": "focus_arbor",
+      "animation": {
+        "points": [
+          [
+            -13.5,
+            -11.0,
+            6.0
+          ],
+          [
+            -16.0,
+            -13.5,
+            6.3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "Antag1",
+      "pos": [4.0, -4.5, 2.0],
+      "lens": 135.0,
+      "target": "Shadow_Weaver.Rig"
+    },
+    {
+      "id": "Antag2",
+      "pos": [1.0, -4.5, 2.0],
+      "lens": 135.0,
+      "target": "Verdant_Sprite.Rig"
+    },
+    {
+      "id": "Antag3",
+      "pos": [-1.0, -4.5, 2.0],
+      "lens": 135.0,
+      "target": "Emerald_Sentinel.Rig"
+    },
+    {
+      "id": "Antag4",
+      "pos": [-4.0, -4.5, 2.0],
+      "lens": 135.0,
+      "target": "Root_Guardian.Rig"
+    },
+    {
+      "id": "Exterior",
+      "pos": [
+        0,
+        -40,
+        5
+      ],
+      "lens": 50.0,
+      "target": "focus_exterior",
+      "animation": {
+        "points": [
+          [
+            -15,
+            -40,
+            5
+          ],
+          [
+            0,
+            -40,
+            5
+          ],
+          [
+            15,
+            -40,
+            5
+          ]
+        ],
+        "segments": [
+          {
+            "start": 1,
+            "end": 3
+          },
+          {
+            "start": 4151,
+            "end": 4200
+          }
+        ]
+      }
+    },
+    {
+      "id": "MobileCam",
+      "pos": [15.0, -35.0, 5.0],
+      "rot": [90, 0, 0],
+      "target": "GreenhouseMobile"
+    },
+    {
+      "id": "ForestCam",
+      "pos": [0, -10, 2.5],
+      "target": "GreenhouseMobile"
+    },
+    {
+      "id": "MountainCam",
+      "pos": [20.0, -70.0, 35.0],
+      "target": "Herbaceous.Rig"
+    },
+    {
+      "id": "Detail_CU",
+      "pos": [-1.0, -1.0, 2.8],
+      "lens": 85.0,
+      "target": "focus_herbaceous",
+      "_comment_": "Focuses on micro-expressions to symbolize the subtle shifts in neuroplasticity and emotional processing."
+    },
+    {
+      "id": "Hero_Track",
+      "pos": [0.0, -12.0, 1.8],
+      "lens": 35.0,
+      "target": "Herbaceous.Rig",
+      "_comment_": "A dynamic tracking shot that grounds the viewer in the character's journey through the mental landscape."
+    },
+    {
+      "id": "Low_Angle",
+      "pos": [0.0, -3.0, 0.5],
+      "lens": 24.0,
+      "target": "lighting_midpoint",
+      "_comment_": "An upward-looking perspective representing the protagonist's growing resilience and internal strength."
+    },
+    {
+      "id": "Bird_Eye",
+      "pos": [0.0, 0.0, 25.0],
+      "rot": [0, 0, 0],
+      "lens": 18.0,
+      "target": "lighting_midpoint",
+      "_comment_": "A high-altitude overview symbolizing objective meta-cognition and self-observation."
+    },
+    {
+      "id": "Clinical_TwoShot",
+      "pos": [-2.75, -12.0, 1.5],
+      "lens": 50.0,
+      "target": "lighting_midpoint",
+      "_comment_": "Framed specifically for the Clinical Exchange, capturing the interpersonal dynamic between the two protagonists."
+    }
+  ],
+  "lighting": {
+    "Rim": {
+      "type": "SPOT",
+      "pos": [
+        0,
+        -10,
+        10
+      ],
+      "energy": 1200.0,
+      "color": [
+        1.0,
+        0.9,
+        0.8
+      ],
+      "target": "lighting_midpoint"
+    },
+    "Key": {
+      "type": "SUN",
+      "rot": [
+        55,
+        0,
+        -40
+      ],
+      "energy": 3.0,
+      "color": [
+        0.95,
+        1.0,
+        1.0
+      ]
+    },
+    "Leg": {
+      "type": "SUN",
+      "rot": [
+        50,
+        0,
+        -40
+      ],
+      "energy": 2.0,
+      "color": [
+        1.0,
+        1.0,
+        0.95
+      ]
+    },
+    "Sun": {
+      "type": "SUN",
+      "pos": [
+        60,
+        -40,
+        120
+      ],
+      "rot": [
+        55,
+        0,
+        -40
+      ],
+      "energy": 3.0,
+      "color": [
+        1.0,
+        0.97,
+        0.88
+      ]
+    },
+    "Outro_Key": {
+      "type": "SUN",
+      "energy": 2.5,
+      "color": [1.0, 0.95, 0.85],
+      "rot": [50, 0, -30]
+    },
+    "Torch": {
+      "type": "POINT",
+      "energy": 450.0,
+      "color": [
+        1.0,
+        0.55,
+        0.1
+      ]
+    },
+    "MidLight": {
+      "type": "POINT",
+      "deprecated": true
+    }
+  },
+  "sequencing": {
+    "intro": {
+      "camera": "Exterior",
+      "start": 1,
+      "end": 3
+    },
+    "clinical_interaction": {
+      "camera": "Clinical_TwoShot",
+      "start": 1000,
+      "end": 1800
+    },
+    "main_open": {
+      "camera": "Wide",
+      "start": 4,
+      "end": 503
+    },
+    "cycle": {
+      "order": [
+        "Ots",
+        "Antag",
+        "Wide",
+        "Detail_CU",
+        "Low_Angle"
+      ],
+      "durations": {
+        "Ots": 60,
+        "Antag": 40,
+        "Wide": 80,
+        "Detail_CU": 45,
+        "Low_Angle": 50
+      },
+      "start": 504,
+      "end": 4150,
+      "_comment_": "Increased switching frequency and diverse camera angles for professional-grade narrative pacing."
+    },
+    "outro": {
+      "camera": "Exterior",
+      "start": 4151,
+      "end": 4800
+    }
+  },
+  "calligraphy": {
+    "name": "GreenhouseMD_Calligraphy",
+    "text": "GreenhouseMD",
+    "size": 0.36,
+    "extrude": 0.06,
+    "bevel_depth": 0.02,
+    "emission_strength": 6.0,
+    "intro_frames": [
+      1,
+      5
+    ],
+    "outro_frames": [4751, 4800],
+    "offset": [
+      0.0,
+      -0.1,
+      5.5
+    ],
+    "lighting": [
+      {
+        "id": "Calligraphy_Key",
+        "type": "SPOT",
+        "energy": 800.0,
+        "spot_size_deg": 30.0,
+        "color": [0.2, 0.8, 0.2],
+        "offset": [0.0, 1.8, 0.7],
+        "animate_sweep": true,
+        "sweep_axis": "X",
+        "sweep_amp_deg": 12.0,
+        "sweep_freq_hz": 0.4
+      },
+      {
+        "id": "Calligraphy_Fill",
+        "type": "SPOT",
+        "energy": 450.0,
+        "spot_size_deg": 45.0,
+        "color": [0.4, 0.9, 0.4],
+        "offset": [0.7, 2.1, 0.25],
+        "animate_sweep": true,
+        "sweep_axis": "Y",
+        "sweep_amp_deg": 8.0,
+        "sweep_freq_hz": 0.3
+      },
+      {
+        "id": "Calligraphy_Rim",
+        "type": "SPOT",
+        "energy": 350.0,
+        "spot_size_deg": 25.0,
+        "color": [0.1, 0.6, 0.1],
+        "offset": [-0.8, 1.9, 0.5],
+        "animate_sweep": false
+      }
+    ]
+  }
+}
