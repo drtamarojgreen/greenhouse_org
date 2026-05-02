@@ -86,7 +86,7 @@
   ],
   "camera_sequence": [
     {
-      "camera": "MobileCam",
+      "camera": "Mobilecam",
       "start": 4201,
       "end": 4400
     }

@@ -30,7 +30,6 @@ int main() {
 
     std::string line, current_id, current_type;
     bool in_entities = false;
-    bool has_source_rig = false, is_character_tagged = false;
     int character_count = 0;
     std::vector<std::string> failing;
 

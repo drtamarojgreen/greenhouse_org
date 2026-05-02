@@ -1,0 +1,6 @@
+Situation: Diagnostic_Scene_Visibility
+# Parameters for the diagnostic audit
+Is diagnostic_visibility_active = true
+Is visibility_threshold_dot = 0.85
+Is protagonist_ids = Herbaceous,Arbor,GreenhouseMobile
+Is vehicle_id = GreenhouseMobile

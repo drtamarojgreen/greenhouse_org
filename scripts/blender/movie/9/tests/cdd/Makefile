@@ -24,6 +24,9 @@ TARGETS = \
 	$(BIN_DIR)/CameraSequencingAudit \
 	$(BIN_DIR)/CharacterVisibilityAudit
 	$(BIN_DIR)/SourceRigConsistencyAudit
+	$(BIN_DIR)/SceneGeometryAudit \
+	$(BIN_DIR)/ProtagonistStructureAudit \
+	$(BIN_DIR)/DiagnosticSceneVisibilityAudit
 
 all: $(TARGETS)
 
@@ -47,6 +50,9 @@ run: all
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/PatrolPathReferenceAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/CameraSequencingAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/CharacterVisibilityAudit
+	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/SceneGeometryAudit
+	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/ProtagonistStructureAudit
+	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/DiagnosticSceneVisibilityAudit
 
 verify: run
 

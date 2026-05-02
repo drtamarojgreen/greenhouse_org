@@ -48,7 +48,7 @@
   ],
   "camera_sequence": [
     {
-      "camera": "ForestCam",
+      "camera": "Forestcam",
       "start": 4401,
       "end": 4650
     }

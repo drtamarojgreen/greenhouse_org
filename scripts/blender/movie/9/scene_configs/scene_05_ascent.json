@@ -81,7 +81,7 @@
   ],
   "camera_sequence": [
     {
-      "camera": "MountainCam",
+      "camera": "Mountaincam",
       "start": 4651,
       "end": 4800
     }

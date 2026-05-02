@@ -1,0 +1,5 @@
+Situation: Scene_Geometry
+Is scene_geometry_audited = true
+Is lighting_required_range = 1-4800
+Is characters_in_view_required = true
+Is camera_targets_required = true

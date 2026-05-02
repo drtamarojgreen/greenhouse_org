@@ -1,0 +1,6 @@
+Situation: Protagonist_Structure
+Is structure_verification_active = true
+Is herbaceous_required_type = DYNAMIC
+Is arbor_required_type = DYNAMIC
+Is plant_modeler_required = true
+Is universal_shader_required = true

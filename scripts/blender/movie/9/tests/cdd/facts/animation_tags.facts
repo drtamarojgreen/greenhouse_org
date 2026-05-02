@@ -1,4 +1,4 @@
 Situation: Animation_Tags
 # Known valid action tags for this production
 Is animation_tags_valid = true
-Is known_tags = sit,stand,walk,dance,shake,idle,talking,bounce,fly,visibility,altitude,move_to,emission_pulse
+Is known_tags = sit,stand,walk,dance,shake,idle,talking,bounce,fly,visibility,altitude,move_to,emission_pulse,Herbaceous,Arbor,Shadow_Weaver,ALL

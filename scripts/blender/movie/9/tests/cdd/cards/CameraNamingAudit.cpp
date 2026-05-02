@@ -16,8 +16,7 @@ void verify_camera_naming(const std::string& lc_path) {
     std::ifstream file(lc_path);
     bool all_ok = true;
     std::vector<std::string> failing;
-    // PascalCase or Title_Case (e.g. MobileCam, Clinical_TwoShot)
-    std::regex naming_regex("^([A-Z][a-zA-Z0-9]*)(_[A-Z][a-zA-Z0-9]*)*$");
+    std::regex sentence_case_regex("^[A-Z][a-z0-9]*(_[a-z0-9]+)*$");
 
     if (!file.is_open()) {
         std::cerr << "[ERROR] Cannot open " << lc_path << std::endl;
@@ -26,9 +25,12 @@ void verify_camera_naming(const std::string& lc_path) {
     }
 
     std::string line;
-    bool in_cameras = false;
+    bool in_cameras = false, in_lighting = false, in_calligraphy = false;
     while (std::getline(file, line)) {
-        if (line.find("\"cameras\":") != std::string::npos) in_cameras = true;
+        if (line.find("\"cameras\":") != std::string::npos) { in_cameras = true; in_lighting = false; in_calligraphy = false; }
+        if (line.find("\"lighting\":") != std::string::npos) { in_lighting = true; in_cameras = false; in_calligraphy = false; }
+        if (line.find("\"calligraphy\":") != std::string::npos) { in_calligraphy = true; in_lighting = false; in_cameras = false; }
+        
         if (in_cameras && line.find("\"id\":") != std::string::npos) {
             size_t open = line.find('\"', line.find(':')) + 1;
             size_t close = line.find('\"', open);
@@ -39,6 +41,9 @@ void verify_camera_naming(const std::string& lc_path) {
                 failing.push_back(id);
             }
         }
+        
+        // Stop camera block if we hit another top-level key
+        if (in_cameras && line.find("],") != std::string::npos) in_cameras = false;
     }
 
     if (!all_ok) {
