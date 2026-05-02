@@ -175,44 +175,44 @@
       }
     },
     {
-      "id": "MobileCam",
+      "id": "Mobile_cam",
       "pos": [15.0, -35.0, 5.0],
       "rot": [90, 0, 0],
       "target": "GreenhouseMobile"
     },
     {
-      "id": "ForestCam",
+      "id": "Forest_cam",
       "pos": [0, -10, 2.5],
       "target": "GreenhouseMobile"
     },
     {
-      "id": "MountainCam",
+      "id": "Mountain_cam",
       "pos": [20.0, -70.0, 35.0],
       "target": "Herbaceous.Rig"
     },
     {
-      "id": "Detail_CU",
+      "id": "Detail_cu",
       "pos": [-1.0, -1.0, 2.8],
       "lens": 85.0,
       "target": "focus_herbaceous",
       "_comment_": "Focuses on micro-expressions to symbolize the subtle shifts in neuroplasticity and emotional processing."
     },
     {
-      "id": "Hero_Track",
+      "id": "Hero_track",
       "pos": [0.0, -12.0, 1.8],
       "lens": 35.0,
       "target": "Herbaceous.Rig",
       "_comment_": "A dynamic tracking shot that grounds the viewer in the character's journey through the mental landscape."
     },
     {
-      "id": "Low_Angle",
+      "id": "Low_angle",
       "pos": [0.0, -3.0, 0.5],
       "lens": 24.0,
       "target": "lighting_midpoint",
       "_comment_": "An upward-looking perspective representing the protagonist's growing resilience and internal strength."
     },
     {
-      "id": "Bird_Eye",
+      "id": "Bird_eye",
       "pos": [0.0, 0.0, 25.0],
       "rot": [0, 0, 0],
       "lens": 18.0,
@@ -220,7 +220,7 @@
       "_comment_": "A high-altitude overview symbolizing objective meta-cognition and self-observation."
     },
     {
-      "id": "Clinical_TwoShot",
+      "id": "Clinical_twoshot",
       "pos": [-2.75, -12.0, 1.5],
       "lens": 50.0,
       "target": "lighting_midpoint",
@@ -317,7 +317,7 @@
       "end": 3
     },
     "clinical_interaction": {
-      "camera": "Clinical_TwoShot",
+      "camera": "Clinical_twoshot",
       "start": 1000,
       "end": 1800
     },
@@ -331,15 +331,15 @@
         "Ots",
         "Antag",
         "Wide",
-        "Detail_CU",
-        "Low_Angle"
+        "Detail_cu",
+        "Low_angle"
       ],
       "durations": {
         "Ots": 60,
         "Antag": 40,
         "Wide": 80,
-        "Detail_CU": 45,
-        "Low_Angle": 50
+        "Detail_cu": 45,
+        "Low_angle": 50
       },
       "start": 504,
       "end": 4150,
@@ -370,7 +370,7 @@
     ],
     "lighting": [
       {
-        "id": "Calligraphy_Key",
+        "id": "Calligraphy_key",
         "type": "SPOT",
         "energy": 800.0,
         "spot_size_deg": 30.0,
@@ -382,7 +382,7 @@
         "sweep_freq_hz": 0.4
       },
       {
-        "id": "Calligraphy_Fill",
+        "id": "Calligraphy_fill",
         "type": "SPOT",
         "energy": 450.0,
         "spot_size_deg": 45.0,
@@ -394,7 +394,7 @@
         "sweep_freq_hz": 0.3
       },
       {
-        "id": "Calligraphy_Rim",
+        "id": "Calligraphy_rim",
         "type": "SPOT",
         "energy": 350.0,
         "spot_size_deg": 25.0,

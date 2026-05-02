@@ -89,9 +89,14 @@ class CameraControls:
                 if not obj.animation_data: obj.animation_data_create()
                 if not obj.animation_data.action:
                     obj.animation_data.action = bpy.data.actions.new(name=f"Bounce_{obj.name}")
-                action = obj.animation_data.action
-                slot = action.slots[0] if action.slots else action.slots.new(name="Default")
-                slot.keyframe_insert(data_path="location", index=idx, frame=f)
+                
+                # In Blender 5.1+, ensure the object is assigned to a slot
+                if not obj.animation_data.action_slot:
+                    action = obj.animation_data.action
+                    slot = action.slots[0] if action.slots else action.slots.new(name="Default")
+                    obj.animation_data.action_slot = slot
+                
+                obj.keyframe_insert(data_path="location", index=idx, frame=f)
             else:
                 obj.keyframe_insert(data_path="location", index=idx, frame=f)
 

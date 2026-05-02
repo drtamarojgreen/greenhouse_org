@@ -59,10 +59,8 @@
     "entities": [
       {
         "id": "Herbaceous",
-        "type": "MESH",
-        "source_mesh": "Herbaceous_V5_Body",
-        "source_rig": "Herbaceous_V5_Rig",
-        "components": { "animation": "BakedAnimator" },
+        "type": "DYNAMIC",
+        "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
         "default_pos": [-1.2, 0.5, 0.0],
         "target_height": 3.0,
         "is_protagonist": true
