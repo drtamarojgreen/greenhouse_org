@@ -10,21 +10,20 @@
 - [x] UniqueEntityIdAudit
 - [x] StrayTagAudit
 - [x] FrameBoundaryAudit
-- [x] AnimationTagAudit: reads known_tags vocabulary from facts file, flags unknown tags with frequency
-- [x] SourceMeshPresenceAudit: detects empty and repeated source_mesh names across MESH entities
-- [x] SceneConfigCoverageAudit: probes disk for each path declared in extended_scenes
-- [x] SourceRigConsistencyAudit: verify each MESH entity with a source_mesh also declares a source_rig.
-- [x] BeatOverlapAudit: check if any two storyline beats have overlapping frame ranges.
-- [x] PatrolPathReferenceAudit: verify every entity patrol.path value matches a key declared in patrol_paths.
-- [x] CameraSequencingAudit: verify cameras and prefixes in sequencing exist in camera definitions.
-- [x] CharacterVisibilityAudit: validate visibility action targets and parameter presence.
+- [x] AnimationTagAudit
+- [x] SourceMeshPresenceAudit
+- [x] SceneConfigCoverageAudit
+- [x] SourceRigConsistencyAudit
+- [x] BeatOverlapAudit
+- [x] PatrolPathReferenceAudit
+- [x] CameraSequencingAudit
+- [x] CharacterVisibilityAudit
+- [x] PoseMarkerAudit: verify that all 'action' tags used in storyline have corresponding pose markers in the respective rigs.
+- [x] AssetVisibilityTimingAudit: reports and verifies environment and character visibility frame ranges.
+- [x] CameraDistanceAudit: reports distance from camera to each character in the scene.
 
 ## Open
 
-- [ ] PoseMarkerAudit: verify that all 'action' tags used in storyline have corresponding pose markers in the respective rigs.
-- [x] SourceRigConsistencyAudit: verify each MESH entity with a source_mesh also declares a source_rig; flags missing and empty rig references.
-
-## Open
-
-- [ ] BeatOverlapAudit: check if any two storyline beats have overlapping frame ranges (distinct from contiguity — catches beats that share frames unintentionally).
-- [ ] PatrolPathReferenceAudit: verify every entity patrol.path value (e.g. "perimeter", "perimeter_inner") matches a key declared in patrol_paths — stray path names will silently produce no animation.
+- [ ] LightingAndTargetAudit: implement frame-by-frame verification of lighting and camera targets.
+- [ ] ProtagonistStructureAudit: further automate comparison of protagonist DYNAMIC vs MESH structure against previous movie versions.
+- [ ] SceneGeometryAudit: verify that protagonists are within the camera frustum for key scene ranges.
