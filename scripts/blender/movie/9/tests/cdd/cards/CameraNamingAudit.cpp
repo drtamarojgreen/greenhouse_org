@@ -36,7 +36,7 @@ void verify_camera_naming(const std::string& lc_path) {
             size_t close = line.find('\"', open);
             std::string id = line.substr(open, close - open);
             if (id.find("focus_") == 0 || id.find("lighting_") == 0 || id.find("diag_") == 0) continue;
-            if (!std::regex_match(id, naming_regex)) {
+            if (!std::regex_match(id, sentence_case_regex)) {
                 all_ok = false;
                 failing.push_back(id);
             }

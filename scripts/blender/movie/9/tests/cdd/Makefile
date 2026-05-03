@@ -22,8 +22,11 @@ TARGETS = \
 	$(BIN_DIR)/BeatOverlapAudit \
 	$(BIN_DIR)/PatrolPathReferenceAudit \
 	$(BIN_DIR)/CameraSequencingAudit \
-	$(BIN_DIR)/CharacterVisibilityAudit
-	$(BIN_DIR)/SourceRigConsistencyAudit
+	$(BIN_DIR)/CharacterVisibilityAudit \
+	$(BIN_DIR)/PoseMarkerAudit \
+	$(BIN_DIR)/PropNamingAudit \
+	$(BIN_DIR)/AssetVisibilityTimingAudit \
+	$(BIN_DIR)/CameraDistanceAudit \
 	$(BIN_DIR)/SceneGeometryAudit \
 	$(BIN_DIR)/ProtagonistStructureAudit \
 	$(BIN_DIR)/DiagnosticSceneVisibilityAudit
@@ -50,6 +53,10 @@ run: all
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/PatrolPathReferenceAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/CameraSequencingAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/CharacterVisibilityAudit
+	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/PoseMarkerAudit
+	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/PropNamingAudit
+	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/AssetVisibilityTimingAudit
+	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/CameraDistanceAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/SceneGeometryAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/ProtagonistStructureAudit
 	@CHAI_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/DiagnosticSceneVisibilityAudit

@@ -1,0 +1,3 @@
+Situation: Rig_Pose_Markers
+Is pose_markers_valid = true
+Is rig_pose_markers = sit,stand,walk,dance,shake,idle,talking,bounce,fly
