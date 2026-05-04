@@ -3,9 +3,9 @@
 #include <string>
 #include <cmath>
 #include "../cpp/util/FactReader.hpp"
-#include "../../src/SceneNodes.hpp"
+#include "../../include/SceneNodes.hpp"
 
-// Templated Chai Cards for Data-Driven Architecture
+// Templated Sorrel Cards for Data-Driven Architecture
 
 // @Card: validate_scene_logic
 void validate_templated_card(const std::map<std::string, std::string>& facts) {

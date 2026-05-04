@@ -3,8 +3,8 @@
 #include <sstream>
 #include <iostream>
 
-namespace Chai {
-namespace Cdd {
+namespace Sorrel {
+namespace Sdd {
 namespace Util {
 
 std::map<std::string, std::string> FactReader::readFacts(const std::string& filepath) {
@@ -34,5 +34,5 @@ std::map<std::string, std::string> FactReader::readFacts(const std::string& file
 }
 
 } // Util
-} // Cdd
-} // Chai
+} // Sdd
+} // Sorrel

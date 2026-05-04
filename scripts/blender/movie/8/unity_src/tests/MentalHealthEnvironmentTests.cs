@@ -1,4 +1,4 @@
-// MentalHealthEnvironmentTests.cs - CDD tests for Mindscape components
+// MentalHealthEnvironmentTests.cs - SDD tests for Mindscape components
 
 using NUnit.Framework;
 using UnityEngine;

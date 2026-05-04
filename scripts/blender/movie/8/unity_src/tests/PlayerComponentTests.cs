@@ -1,4 +1,4 @@
-// PlayerComponentTests.cs - CDD tests for PlayerController component
+// PlayerComponentTests.cs - SDD tests for PlayerController component
 
 using NUnit.Framework;
 using UnityEngine;
