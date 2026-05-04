@@ -31,7 +31,7 @@
                 const p2 = projectedVertices[indices[1]];
                 const p3 = projectedVertices[indices[2]];
 
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
                     const cross = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
                     if (cross < 0) {

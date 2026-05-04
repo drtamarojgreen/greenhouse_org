@@ -283,7 +283,7 @@
             const faces = [];
             shell.faces.forEach((face) => {
                 const p1 = projected[face.indices[0]], p2 = projected[face.indices[1]], p3 = projected[face.indices[2]];
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     const cp = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
                     if (cp > 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;

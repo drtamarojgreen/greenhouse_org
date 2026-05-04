@@ -90,6 +90,9 @@
                     }
 
                     v.region = newRegion;
+                    if (!brain.regions[newRegion]) {
+                        brain.regions[newRegion] = { name: newRegion, color: 'rgba(160, 174, 192, 0.5)', vertices: [] };
+                    }
                     brain.regions[newRegion].vertices.push(i);
                 }
             });
@@ -138,7 +141,7 @@
         },
 
         drawBrainShell(ctx, brainShell, camera, projection, width, height, activeROI = null) {
-            if (!brainShell) return;
+            if (!brainShell || !brainShell.vertices || !brainShell.faces) return;
 
             // Robustly extract target region from activeROI
             let targetRegion = null;
@@ -175,7 +178,7 @@
                 const p2 = projectedVertices[indices[1]];
                 const p3 = projectedVertices[indices[2]];
 
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
                     const dx1 = p2.x - p1.x;
                     const dy1 = p2.y - p1.y;

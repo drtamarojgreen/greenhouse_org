@@ -41,7 +41,7 @@
                 const p2 = projectedVertices[indices[1]];
                 const p3 = projectedVertices[indices[2]];
 
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     const dx1 = p2.x - p1.x; const dy1 = p2.y - p1.y;
                     const dx2 = p3.x - p1.x; const dy2 = p3.y - p1.y;
                     if (dx1 * dy2 - dy1 * dx2 < 0) {

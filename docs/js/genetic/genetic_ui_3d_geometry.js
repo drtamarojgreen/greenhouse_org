@@ -330,7 +330,8 @@
             if (window.GreenhouseBrainMeshRealistic) {
                 const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 brainShell.vertices = realisticBrain.vertices;
-                brainShell.faces = realisticBrain.faces.map(face => ({ indices: face, region: null }));
+                // realisticBrain.faces already has the { indices: [...] } structure
+                brainShell.faces = realisticBrain.faces.map(face => ({ ...face, region: null }));
                 brainShell.regions = realisticBrain.regions;
                 this.computeRegionsAndBoundaries(brainShell);
                 return;
