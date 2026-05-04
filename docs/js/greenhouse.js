@@ -90,7 +90,7 @@
         /**
          * The path segment that identifies the Quizzes page.
          */
-        quizzesPagePath: '/quizzes/',
+        quizzesPagePath: '/quizzes',
         /**
          * The path segment that identifies the Dopamine signaling page.
          */
@@ -490,6 +490,7 @@
         if (path.includes(config.schedulePagePath)) await loadSchedulerApplication();
         else if (path.includes(config.booksPagePath)) await loadBooksApplication();
         else if (path.includes(config.newsPagePath)) await loadNewsApplication();
+        else if (path.includes(config.quizzesPagePath)) await loadQuizzesApplication();
         else if (path.includes(config.modelsPagePath)) pollAndLoad(config.selectors.models, loadModelsApplication);
         else if (path.includes(config.geneticPagePath)) pollAndLoad(config.selectors.genetic, loadGeneticApplication);
         else if (path.includes(config.techPagePath)) pollAndLoad(config.selectors.tech, loadTechApplication);
@@ -498,7 +499,6 @@
         else if (path.includes(config.pathwayPagePath)) pollAndLoad(config.selectors.pathway, loadPathwayApplication);
         else if (path.includes(config.dnaPagePath)) pollAndLoad(config.selectors.dna, loadDnaRepairApplication);
         else if (path.includes(config.rnaPagePath)) pollAndLoad(config.selectors.rna, loadRnaRepairApplication);
-        else if (path.includes(config.quizzesPagePath)) pollAndLoad(config.selectors.quizzes, loadQuizzesApplication);
         else if (path.includes(config.dopaminePagePath)) pollAndLoad(config.selectors.dopamine, loadDopamineApplication);
         else if (path.includes(config.serotoninPagePath)) pollAndLoad(config.selectors.serotonin, loadSerotoninApplication);
         else if (path.includes(config.emotionPagePath)) pollAndLoad(config.selectors.emotion, loadEmotionApplication);
