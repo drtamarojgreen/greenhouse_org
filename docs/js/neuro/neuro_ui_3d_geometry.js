@@ -444,9 +444,10 @@
         computeRegionsAndBoundaries(brainShell) {
             // 1. Assign Regions to Vertices
             brainShell.vertices.forEach((v, i) => {
+                if (v.region) return; // Preserve existing data from realistic generator
                 v.region = null;
-                for (const [name, data] of Object.entries(brainShell.regions)) {
-                    if (data.vertices.includes(i)) {
+                for (const [name, data] of Object.entries(brainShell.regions || {})) {
+                    if (data.vertices && data.vertices.includes(i)) {
                         v.region = name;
                         break;
                     }
@@ -457,20 +458,23 @@
             const edgeMap = new Map(); // "v1-v2" -> [faceIndex, faceIndex]
 
             brainShell.faces.forEach((face, faceIdx) => {
-                const v1 = brainShell.vertices[face.indices[0]];
-                const v2 = brainShell.vertices[face.indices[1]];
-                const v3 = brainShell.vertices[face.indices[2]];
+                const indices = face.indices || face;
+                if (!indices || indices.length < 3) return;
+
+                const v1 = brainShell.vertices[indices[0]];
+                const v2 = brainShell.vertices[indices[1]];
+                const v3 = brainShell.vertices[indices[2]];
 
                 if (!v1 || !v2 || !v3) return;
 
-                const region = v1.region || v2.region || v3.region;
+                const region = v1.region || v2.region || v3.region || "pfc";
                 face.region = region;
 
                 // Register Edges
                 const edges = [
-                    [Math.min(face.indices[0], face.indices[1]), Math.max(face.indices[0], face.indices[1])],
-                    [Math.min(face.indices[1], face.indices[2]), Math.max(face.indices[1], face.indices[2])],
-                    [Math.min(face.indices[2], face.indices[0]), Math.max(face.indices[2], face.indices[0])]
+                    [Math.min(indices[0], indices[1]), Math.max(indices[0], indices[1])],
+                    [Math.min(indices[1], indices[2]), Math.max(indices[1], indices[2])],
+                    [Math.min(indices[2], indices[0]), Math.max(indices[2], indices[0])]
                 ];
 
                 edges.forEach(edge => {

@@ -9,6 +9,13 @@
 
     const GreenhouseStressGeometry = {
         initializeBrainShell(brainShell) {
+            if (window.GreenhouseBrainMeshRealistic) {
+                const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+                brainShell.vertices = realisticBrain.vertices;
+                brainShell.faces = realisticBrain.faces.map(face => ({ ...face, region: null }));
+                brainShell.regions = realisticBrain.regions;
+                return;
+            }
             console.log("Stress Geometry: Generating Ultra-Smooth Anatomical Model...");
 
             const baseRadius = 200;

@@ -37,6 +37,8 @@
             const facesToDraw = [];
             faces.forEach(face => {
                 const indices = face.indices || face;
+                if (!indices || indices.length < 3) return;
+
                 const p1 = projectedVertices[indices[0]];
                 const p2 = projectedVertices[indices[1]];
                 const p3 = projectedVertices[indices[2]];
@@ -49,6 +51,8 @@
                         const v1 = vertices[indices[0]];
                         const v2 = vertices[indices[1]];
                         const v3 = vertices[indices[2]];
+
+                        if (!v1 || !v2 || !v3) return;
                         const ux = v2.x - v1.x; const uy = v2.y - v1.y; const uz = v2.z - v1.z;
                         const vx = v3.x - v1.x; const vy = v3.y - v1.y; const vz = v3.z - v1.z;
                         let nx = uy * vz - uz * vy; let ny = uz * vx - ux * vz; let nz = ux * vy - uy * vx;

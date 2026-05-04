@@ -15,22 +15,38 @@
                 vertices: [],
                 faces: [],
                 regions: {
-                    pfc: { name: 'Prefrontal Cortex (Frontal Lobe)', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    // Unified Registry supporting all model keys
+                    pfc: { name: 'Prefrontal Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    frontal: { name: 'Frontal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
                     motorCortex: { name: 'Motor Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
                     somatosensoryCortex: { name: 'Somatosensory Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
                     parietalLobe: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    parietal: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
                     temporalLobe: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    temporal: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
                     occipitalLobe: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    occipital: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
                     cerebellum: { name: 'Cerebellum', color: 'rgba(255, 182, 193, 0.2)', vertices: [] },
                     brainstem: { name: 'Brainstem', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
                     amygdala: { name: 'Amygdala', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
                     hippocampus: { name: 'Hippocampus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
                     thalamus: { name: 'Thalamus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
                     hypothalamus: { name: 'Hypothalamus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    striatum: { name: 'Striatum', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    basal_ganglia: { name: 'Basal Ganglia', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    insula: { name: 'Insula', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    cingulate: { name: 'Cingulate Cortex', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    vta: { name: 'Ventral Tegmental Area', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    vagus_nerve: { name: 'Vagus Nerve', color: 'rgba(0, 255, 128, 0.2)', vertices: [] },
+                    optic_nerve: { name: 'Optic Nerve', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
                     corpusCallosum: { name: 'Corpus Callosum', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
                     lateralVentricle: { name: 'Lateral Ventricle', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
                     pituitaryGland: { name: 'Pituitary Gland', color: 'rgba(30, 144, 255, 0.2)', vertices: [] },
-                    mammillaryBody: { name: 'Mammillary Body', color: 'rgba(255, 255, 255, 0.2)', vertices: [] }
+                    mammillaryBody: { name: 'Mammillary Body', color: 'rgba(255, 255, 255, 0.2)', vertices: [] },
+                    dlPFC: { name: 'Dorsolateral PFC', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    vmPFC: { name: 'Ventromedial PFC', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    ofc: { name: 'Orbitofrontal Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    acc: { name: 'Anterior Cingulate', color: 'rgba(165, 42, 42, 0.2)', vertices: [] }
                 }
             };
 
@@ -111,12 +127,30 @@
             // Precompute curvature maps
             this.computeCurvatureMap(brain);
 
-            // Populate region vertex indices
+            // Populate region vertex indices and calculate centroids
             brain.vertices.forEach((v, i) => {
                 if (v.region && brain.regions[v.region]) {
                     brain.regions[v.region].vertices.push(i);
                 }
             });
+
+            // Calculate Centroids for cross-model flow logic
+            for (const key in brain.regions) {
+                const reg = brain.regions[key];
+                if (reg.vertices.length > 0) {
+                    let cx = 0, cy = 0, cz = 0;
+                    reg.vertices.forEach(vIdx => {
+                        cx += brain.vertices[vIdx].x;
+                        cy += brain.vertices[vIdx].y;
+                        cz += brain.vertices[vIdx].z;
+                    });
+                    reg.centroid = {
+                        x: cx / reg.vertices.length,
+                        y: cy / reg.vertices.length,
+                        z: cz / reg.vertices.length
+                    };
+                }
+            }
 
             return brain;
         },
@@ -375,57 +409,87 @@
 
         /**
          * Determine brain region for a vertex
-         * Mapped to schematic_human_brain_t.jpg spatial relationships
+         * Mapped to schematic_human_brain_t.jpg spatial relationships and cross-model logic.
          */
         determineRegion(x, y, z, layerName) {
-            // Midline structures (Corpus Callosum, Ventricles, Thalamus, etc.)
-            if (Math.abs(x) < 0.4) {
-                // Pituitary Gland (hangs off hypothalamus at front)
-                if (y <= -0.3 && y > -0.8 && z > 0.1 && z < 0.8) return 'pituitaryGland';
+            // Normalize internal coordinates
+            const nx = x, ny = y, nz = z;
 
-                // Corpus Callosum (C-shape above thalamus)
-                const distToCallosumCenter = Math.sqrt((y - 0.2)**2 + (z - 0.1)**2);
-                if (distToCallosumCenter > 0.2 && distToCallosumCenter < 0.45 && y > 0.1 && z > -0.4 && z < 0.6) {
+            // Vagus Nerve (Thin procedural strand hanging down from brainstem)
+            if (Math.abs(nx) < 0.05 && ny < -0.7) return 'vagus_nerve';
+
+            // Optic Nerve (Small bilateral protrusions at front base)
+            if (Math.abs(nx) < 0.1 && nz > 0.4 && ny < -0.3) return 'optic_nerve';
+
+            // Midline structures (Corpus Callosum, Ventricles, Thalamus, etc.)
+            if (Math.abs(nx) < 0.4) {
+                // Pituitary Gland (hangs off hypothalamus at front)
+                if (ny <= -0.3 && ny > -0.8 && nz > 0.1 && nz < 0.8) return 'pituitaryGland';
+
+                // Cingulate Cortex (Above corpus callosum)
+                if (ny > 0.4 && ny < 0.7 && nz > -0.3 && nz < 0.6) return 'cingulate';
+                if (ny > 0.1 && ny < 0.4 && nz > 0.2 && nz < 0.6) return 'acc';
+
+                // Corpus Callosum (C-shape)
+                const distToCallosumCenter = Math.sqrt((ny - 0.2)**2 + (nz - 0.1)**2);
+                if (distToCallosumCenter > 0.2 && distToCallosumCenter < 0.45 && ny > 0.1 && nz > -0.4 && nz < 0.6) {
                     return 'corpusCallosum';
                 }
 
                 // Lateral Ventricle (just below callosum)
-                if (distToCallosumCenter < 0.2 && y > 0 && z > -0.2 && z < 0.4) {
+                if (distToCallosumCenter < 0.2 && ny > 0 && nz > -0.2 && nz < 0.4) {
                     return 'lateralVentricle';
                 }
 
                 // Thalamus (Central Egg shape)
-                const distToThalamus = Math.sqrt(x*x + (y + 0.1)**2 + (z - 0.1)**2);
+                const distToThalamus = Math.sqrt(nx*nx + (ny + 0.1)**2 + (nz - 0.1)**2);
                 if (distToThalamus < 0.35) return 'thalamus';
 
                 // Hypothalamus (below thalamus)
-                if (y <= -0.1 && y > -0.4 && z > 0 && z < 0.4) return 'hypothalamus';
+                if (ny <= -0.1 && ny > -0.4 && nz > 0 && nz < 0.4) return 'hypothalamus';
 
-                // Mammillary Body (small bump behind pituitary)
-                if (y <= -0.35 && y > -0.55 && z > 0 && z < 0.25) return 'mammillaryBody';
+                // VTA (Small area below/behind hypothalamus)
+                if (ny < -0.3 && ny > -0.5 && nz > -0.2 && nz < 0.1) return 'vta';
+
+                // Mammillary Body
+                if (ny <= -0.35 && ny > -0.55 && nz > 0 && nz < 0.25) return 'mammillaryBody';
 
                 // Brainstem (protruding downwards)
-                if (y < -0.4 && z < 0.2) return 'brainstem';
+                if (ny < -0.4 && nz < 0.2) return 'brainstem';
             }
 
             // Cerebellum (Lower posterior)
-            if (y < -0.2 && z < -0.4) return 'cerebellum';
+            if (ny < -0.2 && nz < -0.4) return 'cerebellum';
 
-            // Subcortical (deeper temporal)
-            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.6 && y < 0.1 && y > -0.5) {
-                if (z > -0.3 && z < 0.3) return 'hippocampus';
-                if (z > 0.2 && z < 0.6) return 'amygdala';
+            // Subcortical (deeper temporal / lateral midline)
+            if (Math.abs(nx) > 0.15 && Math.abs(nx) < 0.6 && ny < 0.2 && ny > -0.5) {
+                // Striatum (Lateral to thalamus)
+                if (Math.abs(nx) < 0.4 && nz > 0 && nz < 0.5 && ny > -0.2) {
+                    // Basal ganglia is the superset
+                    return Math.random() > 0.5 ? 'striatum' : 'basal_ganglia';
+                }
+                // Insula (Deep within Sylvian fissure)
+                if (Math.abs(nx) > 0.4 && nz > -0.2 && nz < 0.3) return 'insula';
+                // Limbic
+                if (nz > -0.3 && nz < 0.3 && ny < 0) return 'hippocampus';
+                if (nz > 0.2 && nz < 0.6 && ny < 0.1) return 'amygdala';
             }
 
-            // Cortex regions (Only if in Cortex layer or not caught above)
-            if (z > 0.6) return 'pfc';
-            if (y > 0.6) {
-                if (z > 0) return 'motorCortex';
+            // Cortex regions
+            if (nz > 0.6) {
+                // Frontal Lobe subdivisions
+                if (ny > 0.4) return 'dlPFC';
+                if (ny < 0.1 && ny > -0.3) return 'ofc';
+                if (Math.abs(nx) < 0.2) return 'vmPFC';
+                return Math.random() > 0.5 ? 'pfc' : 'frontal';
+            }
+            if (ny > 0.6) {
+                if (nz > 0) return 'motorCortex';
                 return 'somatosensoryCortex';
             }
-            if (y > 0.3 && z < -0.3) return 'parietalLobe';
-            if (z < -0.6) return 'occipitalLobe';
-            if (Math.abs(x) > 0.6 && y < 0.3) return 'temporalLobe';
+            if (ny > 0.3 && nz < -0.3) return Math.random() > 0.5 ? 'parietalLobe' : 'parietal';
+            if (nz < -0.6) return Math.random() > 0.5 ? 'occipitalLobe' : 'occipital';
+            if (Math.abs(nx) > 0.6 && ny < 0.3) return Math.random() > 0.5 ? 'temporalLobe' : 'temporal';
 
             return 'pfc';
         }
