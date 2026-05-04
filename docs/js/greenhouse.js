@@ -88,6 +88,10 @@
          */
         rnaPagePath: '/rna',
         /**
+         * The path segment that identifies the Quizzes page.
+         */
+        quizzesPagePath: '/quizzes/',
+        /**
          * The path segment that identifies the Dopamine signaling page.
          */
         dopaminePagePath: '/dopamine',
@@ -136,6 +140,7 @@
             cognition: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             inflammation: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             stress: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            quizzes: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div > section > div:nth-child(2) > div > section > div:nth-child(1)',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -164,7 +169,8 @@
             emotion: 'section.wixui-section',
             cognition: 'section.wixui-section',
             inflammation: 'section.wixui-section',
-            stress: 'section.wixui-section'
+            stress: 'section.wixui-section',
+            quizzes: 'section.wixui-section'
         }
     };
 
@@ -412,7 +418,7 @@
      * @description Loads the Quizzes application.
      */
     async function loadQuizzesApplication() {
-        await loadApplication('quizzes', 'quizzes.js', config.selectors.quizzes);
+        await loadApplication('quizzes', 'quizzes.js', config.selectors.quizzes, config.fallbackSelectors.quizzes);
     }
 
     /**
@@ -492,6 +498,7 @@
         else if (path.includes(config.pathwayPagePath)) pollAndLoad(config.selectors.pathway, loadPathwayApplication);
         else if (path.includes(config.dnaPagePath)) pollAndLoad(config.selectors.dna, loadDnaRepairApplication);
         else if (path.includes(config.rnaPagePath)) pollAndLoad(config.selectors.rna, loadRnaRepairApplication);
+        else if (path.includes(config.quizzesPagePath)) pollAndLoad(config.selectors.quizzes, loadQuizzesApplication);
         else if (path.includes(config.dopaminePagePath)) pollAndLoad(config.selectors.dopamine, loadDopamineApplication);
         else if (path.includes(config.serotoninPagePath)) pollAndLoad(config.selectors.serotonin, loadSerotoninApplication);
         else if (path.includes(config.emotionPagePath)) pollAndLoad(config.selectors.emotion, loadEmotionApplication);

@@ -266,6 +266,18 @@
 
             appState.isInitialized = true;
             console.log("✅ Quizzes app initialized with Data Bridge support");
+
+            // --- Resilience Hook ---
+            if (window.GreenhouseUtils && window.GreenhouseUtils.observeAndReinitializeApplication) {
+                window.GreenhouseUtils.observeAndReinitializeApplication({
+                    name: 'Quizzes',
+                    targetSelector: targetSelector,
+                    reinitFn: () => {
+                        appState.isInitialized = false;
+                        this.init(targetSelector, baseUrl);
+                    }
+                });
+            }
         }
     };
 
@@ -279,8 +291,8 @@
             GreenhouseQuizzes.init(targetSelector, baseUrl);
         } else {
             console.warn('Quizzes: Missing attributes, waiting for manual init');
-            window.GreenhouseQuizzes = GreenhouseQuizzes;
         }
+        window.GreenhouseQuizzes = GreenhouseQuizzes;
     }
 
     // Add required CSS animations
