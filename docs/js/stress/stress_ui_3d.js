@@ -20,7 +20,26 @@
         init(app) {
             this.app = app;
             // Initialize Brain Shell for Macro View
-            if (window.GreenhouseStressGeometry) {
+            if (window.GreenhouseBrainMeshRealistic) {
+                this.brainShell = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+                this.originalRegionColors = {};
+                for (const key in this.brainShell.regions) {
+                    const region = this.brainShell.regions[key];
+                    this.originalRegionColors[key] = region.color;
+                    if (region.vertices && region.vertices.length > 0) {
+                        let cx = 0, cy = 0, cz = 0;
+                        region.vertices.forEach(idx => {
+                            const v = this.brainShell.vertices[idx];
+                            cx += v.x; cy += v.y; cz += v.z;
+                        });
+                        region.centroid = {
+                            x: cx / region.vertices.length,
+                            y: cy / region.vertices.length,
+                            z: cz / region.vertices.length
+                        };
+                    }
+                }
+            } else if (window.GreenhouseStressGeometry) {
                 this.brainShell = { vertices: [], faces: [] };
                 window.GreenhouseStressGeometry.initializeBrainShell(this.brainShell);
 

@@ -85,17 +85,6 @@
                 }
             });
 
-            // Generate faces (triangles)
-            for (let lat = 0; lat < latBands; lat++) {
-                for (let lon = 0; lon < lonBands; lon++) {
-                    const first = lat * (lonBands + 1) + lon;
-                    const second = first + lonBands + 1;
-
-                    brain.faces.push([first, second, first + 1]);
-                    brain.faces.push([second, second + 1, first + 1]);
-                }
-            }
-
             // Recalculate vertex normals with angle weighting
             this.computeWeightedNormals(brain);
 

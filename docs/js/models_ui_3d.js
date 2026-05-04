@@ -324,14 +324,13 @@
                     const theta = Math.sqrt(count * Math.PI) * phi;
                     
                     // Vary radius slightly to create volume instead of just surface
-                    // Adjusted to fit within the realistic brain mesh (baseRadius 200)
-                    const r = 140 + (Math.random() - 0.5) * 60;
+                    const r = 250 + (Math.random() - 0.5) * 100;
 
                     this.neurons3D.push({
                         id: node.id || index,
                         type: node.type,
                         x: r * Math.sin(phi) * Math.cos(theta),
-                        y: r * 0.8 * Math.cos(phi), // Slightly flattened
+                        y: r * 0.7 * Math.cos(phi), // Flattened Y (height)
                         z: r * Math.sin(phi) * Math.sin(theta),
                         activation: node.activation || 0,
                         radius: 8 + Math.random() * 4
@@ -358,14 +357,219 @@
 
         /**
          * Initializes the 3D brain shell structure
-         * Uses the realistic brain mesh generator
+         * Creates a topographical representation of the brain
          */
         initializeBrainShell() {
-            if (window.GreenhouseBrainMeshRealistic) {
-                this.brainShell = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
-            } else {
-                console.warn('GreenhouseBrainMeshRealistic not found, 3D brain shell not initialized');
+            // Create a realistic brain shell using parametric equations
+            this.brainShell = {
+                vertices: [],
+                faces: []
+            };
+
+            const latitudeBands = 30; // Increased for smoother surface
+            const longitudeBands = 30;
+            const radiusX = 180; // Width
+            const radiusY = 200; // Height
+            const radiusZ = 160; // Depth
+
+            // Generate vertices with realistic brain topology
+            for (let lat = 0; lat <= latitudeBands; lat++) {
+                const theta = (lat * Math.PI) / latitudeBands;
+                const sinTheta = Math.sin(theta);
+                const cosTheta = Math.cos(theta);
+
+                for (let lon = 0; lon <= longitudeBands; lon++) {
+                    const phi = (lon * 2 * Math.PI) / longitudeBands;
+                    const sinPhi = Math.sin(phi);
+                    const cosPhi = Math.cos(phi);
+
+                    // Base ellipsoid shape
+                    let x = radiusX * cosPhi * sinTheta;
+                    let y = radiusY * cosTheta;
+                    let z = radiusZ * sinPhi * sinTheta;
+
+                    // Normalize position for calculations
+                    const normTheta = theta / Math.PI;
+                    const normPhi = phi / (2 * Math.PI);
+
+                    // Add realistic brain features
+
+                    // 1. Cerebral hemispheres - slight asymmetry
+                    if (x > 0) {
+                        x *= 1.08; // Right hemisphere slightly larger
+                    }
+
+                    // 2. Frontal lobe - prominent bulge at front
+                    if (z > 50 && normTheta > 0.2 && normTheta < 0.7) {
+                        const frontBulge = 1 + 0.2 * Math.cos((normTheta - 0.45) * Math.PI * 2);
+                        z *= frontBulge;
+                        x *= (1 + 0.05 * Math.cos((normTheta - 0.45) * Math.PI * 2));
+                    }
+
+                    // 3. Temporal lobes - bulges on sides
+                    if (Math.abs(x) > 100 && normTheta > 0.4 && normTheta < 0.7 && z < 50 && z > -50) {
+                        const temporalBulge = 1.15;
+                        x *= temporalBulge;
+                        z *= 0.95;
+                    }
+
+                    // 4. Occipital lobe - rounded back
+                    if (z < -50 && normTheta > 0.5) {
+                        const occipitalCurve = 1 - 0.15 * Math.pow((normTheta - 0.5) * 2, 2);
+                        z *= occipitalCurve;
+                        y *= (1 - 0.1 * Math.pow((normTheta - 0.5) * 2, 2));
+                    }
+
+                    // 5. Parietal lobe - top curve
+                    if (y > 100 && normTheta < 0.4) {
+                        const parietalCurve = 1 + 0.08 * Math.cos(normTheta * Math.PI * 2);
+                        y *= parietalCurve;
+                    }
+
+                    // 6. Longitudinal fissure - indent between hemispheres
+                    if (Math.abs(x) < 30 && y > 0) {
+                        const fissureDepth = 1 - 0.15 * (1 - Math.abs(x) / 30);
+                        y *= fissureDepth;
+                    }
+
+                    // 7. Sylvian fissure - lateral groove
+                    if (Math.abs(x) > 80 && Math.abs(x) < 140 &&
+                        z > -30 && z < 30 && y > -50 && y < 50) {
+                        const sylvianDepth = 0.92;
+                        const distFromCenter = Math.abs(y) / 50;
+                        y *= (1 - (1 - sylvianDepth) * (1 - distFromCenter));
+                    }
+
+                    // 8. Add subtle surface texture (gyri and sulci)
+                    const textureFreq = 8;
+                    const textureAmp = 3;
+                    const texture = Math.sin(normTheta * textureFreq * Math.PI) *
+                                  Math.sin(normPhi * textureFreq * Math.PI * 2) * textureAmp;
+
+                    const normal = Math.sqrt(x*x + y*y + z*z);
+                    if (normal > 0) {
+                        x += (x / normal) * texture;
+                        y += (y / normal) * texture;
+                        z += (z / normal) * texture;
+                    }
+
+                    this.brainShell.vertices.push({ x, y, z });
+                }
             }
+
+            // Generate faces (triangles)
+            for (let lat = 0; lat < latitudeBands; lat++) {
+                for (let lon = 0; lon < longitudeBands; lon++) {
+                    const first = lat * (longitudeBands + 1) + lon;
+                    const second = first + longitudeBands + 1;
+
+                    // Two triangles per quad
+                    this.brainShell.faces.push([first, second, first + 1]);
+                    this.brainShell.faces.push([second, second + 1, first + 1]);
+                }
+            }
+
+            // Add brain regions as monochromatic areas for accessibility
+            this.brainShell.regions = {
+                prefrontalCortex: {
+                    color: 'rgba(160, 174, 192, 0.4)', // Muted Gray-Blue
+                    vertices: this.getRegionVertices('pfc')
+                },
+                amygdala: {
+                    color: 'rgba(140, 150, 170, 0.4)',
+                    vertices: this.getRegionVertices('amygdala')
+                },
+                hippocampus: {
+                    color: 'rgba(150, 160, 180, 0.4)',
+                    vertices: this.getRegionVertices('hippocampus')
+                },
+                temporalLobe: {
+                    color: 'rgba(160, 170, 190, 0.4)',
+                    vertices: this.getRegionVertices('temporalLobe')
+                },
+                parietalLobe: {
+                    color: 'rgba(170, 180, 200, 0.4)',
+                    vertices: this.getRegionVertices('parietalLobe')
+                },
+                occipitalLobe: {
+                    color: 'rgba(180, 190, 210, 0.4)',
+                    vertices: this.getRegionVertices('occipitalLobe')
+                },
+                cerebellum: {
+                    color: 'rgba(190, 200, 220, 0.4)',
+                    vertices: this.getRegionVertices('cerebellum')
+                },
+                brainstem: {
+                    color: 'rgba(200, 210, 230, 0.4)',
+                    vertices: this.getRegionVertices('brainstem')
+                }
+            };
+        },
+
+        /**
+         * Gets vertices for specific brain regions
+         */
+        getRegionVertices(region) {
+            const indices = [];
+            const vertices = this.brainShell.vertices;
+
+            vertices.forEach((vertex, index) => {
+                switch (region) {
+                    case 'pfc': // Prefrontal cortex - front upper area
+                        if (vertex.z > 100 && vertex.y > 0 && vertex.y < 150) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'amygdala': // Amygdala - deep temporal area
+                        if (Math.abs(vertex.x) > 80 && Math.abs(vertex.x) < 120 &&
+                            vertex.y > -50 && vertex.y < 50 &&
+                            vertex.z > -50 && vertex.z < 0) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'hippocampus': // Hippocampus - medial temporal area
+                        if (Math.abs(vertex.x) > 60 && Math.abs(vertex.x) < 100 &&
+                            vertex.y > -80 && vertex.y < 0 &&
+                            vertex.z > -80 && vertex.z < -20) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'temporalLobe': // Temporal lobe - sides, middle-lower
+                        if (Math.abs(vertex.x) > 120 && Math.abs(vertex.x) < 180 &&
+                            vertex.y > -50 && vertex.y < 80 &&
+                            vertex.z > -40 && vertex.z < 40) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'parietalLobe': // Parietal lobe - top middle-back
+                        if (vertex.y > 120 && vertex.y < 200 &&
+                            vertex.z > -50 && vertex.z < 80 &&
+                            Math.abs(vertex.x) < 150) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'occipitalLobe': // Occipital lobe - back
+                        if (vertex.z < -80 && vertex.z > -160 &&
+                            vertex.y > -50 && vertex.y < 120) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'cerebellum': // Cerebellum - lower back
+                        if (vertex.z < -60 && vertex.y < -80 && vertex.y > -150 &&
+                            Math.abs(vertex.x) < 120) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'brainstem': // Brainstem - center bottom
+                        if (Math.abs(vertex.x) < 40 && vertex.y < -120 &&
+                            vertex.z > -40 && vertex.z < 20) {
+                            indices.push(index);
+                        }
+                        break;
+                }
+            });
+
+            return indices;
         },
 
         /**
@@ -493,13 +697,13 @@
 
             // Calculate face depths and sort
             const facesWithDepth = this.brainShell.faces.map(face => {
-                const v1 = projectedVertices[face[0]];
-                const v2 = projectedVertices[face[1]];
-                const v3 = projectedVertices[face[2]];
+                const v1 = projectedVertices[face.indices[0]];
+                const v2 = projectedVertices[face.indices[1]];
+                const v3 = projectedVertices[face.indices[2]];
                 const avgDepth = (v1.depth + v2.depth + v3.depth) / 3;
                 
                 return {
-                    face: face,
+                    face: face.indices,
                     depth: avgDepth,
                     vertices: [v1, v2, v3]
                 };
@@ -524,24 +728,43 @@
                     // Determine if this face is part of a monochromatic region
                     let faceColor = 'rgba(160, 174, 192, 0.15)'; // Default premium gray
                     let isHovered = false;
+                    let matchedRegionKey = null;
                     
-                    // Get region from vertex data
-                    const vertexIndex = face[0];
-                    const regionKey = this.brainShell.vertices[vertexIndex].region;
+                    // Check if any vertex is in a brain region
+                    for (const regionName in this.brainShell.regions) {
+                        const region = this.brainShell.regions[regionName];
+                        if (region.vertices.includes(face[0]) ||
+                            region.vertices.includes(face[1]) ||
+                            region.vertices.includes(face[2])) {
+                            faceColor = region.color;
 
-                    if (regionKey && this.brainShell.regions[regionKey]) {
-                        faceColor = this.brainShell.regions[regionKey].color;
-                        if (this.hoveredRegion === regionKey) {
-                            isHovered = true;
+                            // Map region names to keys used in 2D
+                            const regionKeyMap = {
+                                'prefrontalCortex': 'pfc',
+                                'amygdala': 'amygdala',
+                                'hippocampus': 'hippocampus',
+                                'temporalLobe': 'temporalLobe',
+                                'parietalLobe': 'parietalLobe',
+                                'occipitalLobe': 'occipitalLobe',
+                                'cerebellum': 'cerebellum',
+                                'brainstem': 'brainstem'
+                            };
+                            matchedRegionKey = regionKeyMap[regionName];
+
+                            // Check if this region is hovered in 2D
+                            if (this.hoveredRegion === matchedRegionKey) {
+                                isHovered = true;
+                            }
+                            break;
                         }
                     }
 
                     // Apply depth fog
-                    let alpha = GreenhouseModels3DMath.applyDepthFog(1.0, depth);
+                    let alpha = GreenhouseModels3DMath.applyDepthFog(0.3, depth);
                     
                     // Enhance alpha for hovered regions
                     if (isHovered) {
-                        alpha = Math.min(5, alpha * 3);
+                        alpha = Math.min(1, alpha * 3); // Triple the alpha for visibility
                     }
                     
                     const colorMatch = faceColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
@@ -573,9 +796,9 @@
 
                     // Draw wireframe edges for definition
                     ctx.strokeStyle = this.state.darkMode ? 
-                        `rgba(200, 200, 200, ${alpha * 0.05})` :
-                        `rgba(100, 100, 100, ${alpha * 0.05})`;
-                    ctx.lineWidth = isHovered ? 1 : 0.5;
+                        `rgba(200, 200, 200, ${alpha * 0.1})` :
+                        `rgba(100, 100, 100, ${alpha * 0.1})`;
+                    ctx.lineWidth = isHovered ? 1 : 0.5; // Thicker lines for hovered regions
                     ctx.stroke();
                 }
             });
