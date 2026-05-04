@@ -457,9 +457,12 @@
             const edgeMap = new Map(); // "v1-v2" -> [faceIndex, faceIndex]
 
             brainShell.faces.forEach((face, faceIdx) => {
-                const v1 = brainShell.vertices[face.indices[0]];
-                const v2 = brainShell.vertices[face.indices[1]];
-                const v3 = brainShell.vertices[face.indices[2]];
+                const indices = face.indices || face;
+                const v1 = brainShell.vertices[indices[0]];
+                const v2 = brainShell.vertices[indices[1]];
+                const v3 = brainShell.vertices[indices[2]];
+
+                if (!v1 || !v2 || !v3) return;
 
                 const region = v1.region || v2.region || v3.region;
                 face.region = region;

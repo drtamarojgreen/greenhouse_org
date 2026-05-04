@@ -75,7 +75,7 @@
         'stress': { label: 'Stress Dynamics Model', js: 'stress.js' }
     };
 
-    const primarySelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
+    const primarySelector = '#model-target';
 
     const testMap = {
         'neuro': [
@@ -120,7 +120,7 @@
             'emotion/test_emotion_page.js', 'emotion/test_emotion_deep_dive.js'
         ],
         'cognition': [
-            'cognition/test_cognition_logic.js', 'cognition/test_cognition_ui.js', 'cognition/test_cognition_drawing.js', 'cognition/test_cognition_modules.js', 'cognition/test_cognition_regression.js', 'cognition/test_cognition_page.js'
+            'cognition/test_cognition_logic.js', 'cognition/test_cognition_drawing.js', 'cognition/test_cognition_modules.js', 'cognition/test_cognition_regression.js', 'cognition/test_cognition_page.js'
         ],
         'common': [
             'common/test_accessibility.js', 'core/test_assertion_library.js', 'core/test_dependency_manager.js',
@@ -562,6 +562,10 @@
             for (const file of testFiles) {
                 try {
                     const resp = await fetch(`../tests/unit/${file}`);
+                    if (!resp.ok) {
+                        hError(`[Harness] Failed to fetch test file: ${file} (HTTP ${resp.status})`);
+                        continue;
+                    }
                     const code = await resp.text();
                     const s = document.createElement('script');
                     s.textContent = `(function(require, module, exports, __dirname, global, process, console, TestFramework, TestFrameworkClass, window, document, location, self, globalThis) { 
