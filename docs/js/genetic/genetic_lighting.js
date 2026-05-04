@@ -115,6 +115,21 @@
             return { r: Math.pow(c.r, 1 / 2.2), g: Math.pow(c.g, 1 / 2.2), b: Math.pow(c.b, 1 / 2.2) };
         },
 
+        toRGBA(color) {
+            return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${color.a})`;
+        },
+
+        parseColor(hex) {
+            if (typeof hex !== 'string') return hex;
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16),
+                a: 1
+            } : { r: 255, g: 255, b: 255, a: 1 };
+        },
+
         getDirectionalLight() {
             return this.lights.find(l => l.type === 'directional')?.direction || { x: 0.5, y: -0.5, z: 1 };
         }
