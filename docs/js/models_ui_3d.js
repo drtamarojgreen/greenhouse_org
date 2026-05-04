@@ -393,7 +393,7 @@
                     const normPhi = phi / (2 * Math.PI);
 
                     // Add realistic brain features
-                    
+
                     // 1. Cerebral hemispheres - slight asymmetry
                     if (x > 0) {
                         x *= 1.08; // Right hemisphere slightly larger
@@ -433,7 +433,7 @@
                     }
 
                     // 7. Sylvian fissure - lateral groove
-                    if (Math.abs(x) > 80 && Math.abs(x) < 140 && 
+                    if (Math.abs(x) > 80 && Math.abs(x) < 140 &&
                         z > -30 && z < 30 && y > -50 && y < 50) {
                         const sylvianDepth = 0.92;
                         const distFromCenter = Math.abs(y) / 50;
@@ -443,9 +443,9 @@
                     // 8. Add subtle surface texture (gyri and sulci)
                     const textureFreq = 8;
                     const textureAmp = 3;
-                    const texture = Math.sin(normTheta * textureFreq * Math.PI) * 
+                    const texture = Math.sin(normTheta * textureFreq * Math.PI) *
                                   Math.sin(normPhi * textureFreq * Math.PI * 2) * textureAmp;
-                    
+
                     const normal = Math.sqrt(x*x + y*y + z*z);
                     if (normal > 0) {
                         x += (x / normal) * texture;
@@ -471,7 +471,7 @@
 
             // Add brain regions as monochromatic areas for accessibility
             this.brainShell.regions = {
-                prefrontalCortex: {
+                pfc: {
                     color: 'rgba(160, 174, 192, 0.4)', // Muted Gray-Blue
                     vertices: this.getRegionVertices('pfc')
                 },
@@ -697,17 +697,21 @@
 
             // Calculate face depths and sort
             const facesWithDepth = this.brainShell.faces.map(face => {
-                const v1 = projectedVertices[face.indices[0]];
-                const v2 = projectedVertices[face.indices[1]];
-                const v3 = projectedVertices[face.indices[2]];
+                const indices = face.indices || face;
+                const v1 = projectedVertices[indices[0]];
+                const v2 = projectedVertices[indices[1]];
+                const v3 = projectedVertices[indices[2]];
+
+                if (!v1 || !v2 || !v3) return null;
+
                 const avgDepth = (v1.depth + v2.depth + v3.depth) / 3;
                 
                 return {
-                    face: face.indices,
+                    face: indices,
                     depth: avgDepth,
                     vertices: [v1, v2, v3]
                 };
-            });
+            }).filter(f => f);
 
             // Sort faces by depth (painter's algorithm)
             facesWithDepth.sort((a, b) => b.depth - a.depth);
@@ -733,14 +737,14 @@
                     // Check if any vertex is in a brain region
                     for (const regionName in this.brainShell.regions) {
                         const region = this.brainShell.regions[regionName];
-                        if (region.vertices.includes(face[0]) || 
-                            region.vertices.includes(face[1]) || 
+                        if (region.vertices.includes(face[0]) ||
+                            region.vertices.includes(face[1]) ||
                             region.vertices.includes(face[2])) {
                             faceColor = region.color;
-                            
+
                             // Map region names to keys used in 2D
                             const regionKeyMap = {
-                                'prefrontalCortex': 'pfc',
+                                'pfc': 'pfc',
                                 'amygdala': 'amygdala',
                                 'hippocampus': 'hippocampus',
                                 'temporalLobe': 'temporalLobe',
@@ -750,7 +754,7 @@
                                 'brainstem': 'brainstem'
                             };
                             matchedRegionKey = regionKeyMap[regionName];
-                            
+
                             // Check if this region is hovered in 2D
                             if (this.hoveredRegion === matchedRegionKey) {
                                 isHovered = true;
@@ -796,7 +800,7 @@
 
                     // Draw wireframe edges for definition
                     ctx.strokeStyle = this.state.darkMode ? 
-                        `rgba(200, 200, 200, ${alpha * 0.1})` : 
+                        `rgba(200, 200, 200, ${alpha * 0.1})` :
                         `rgba(100, 100, 100, ${alpha * 0.1})`;
                     ctx.lineWidth = isHovered ? 1 : 0.5; // Thicker lines for hovered regions
                     ctx.stroke();

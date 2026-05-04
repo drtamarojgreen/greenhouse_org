@@ -24,6 +24,7 @@
          * Enhances the base brain mesh with more granular regions for emotion modeling.
          */
         enhanceRegions(brain) {
+            if (!brain || !brain.regions) return;
             // Add new regions to the regions object
             const newRegions = {
                 dlPFC: {
@@ -90,6 +91,9 @@
                     }
 
                     v.region = newRegion;
+                    if (!brain.regions[newRegion]) {
+                        brain.regions[newRegion] = { name: newRegion, color: 'rgba(160, 174, 192, 0.5)', vertices: [] };
+                    }
                     brain.regions[newRegion].vertices.push(i);
                 }
             });
@@ -104,7 +108,7 @@
                 if (y > 0.4) return 'dlPFC';
                 if (y < 0.1 && y > -0.3) return 'ofc';
                 if (Math.abs(x) < 0.2) return 'vmPFC';
-                return 'prefrontalCortex';
+                return 'pfc';
             }
 
             // Anterior Cingulate Cortex (ACC)
@@ -130,8 +134,7 @@
             // For general cortex areas not caught above
             if (y > -0.2 && (z > 0.4 || Math.abs(x) > 0.5 || y > 0.5)) {
                 // If not one of the specific ones above, categorize as general cortex for visualization
-                const baseRegions = ['prefrontalCortex', 'motorCortex', 'somatosensoryCortex', 'parietalLobe', 'temporalLobe', 'occipitalLobe'];
-                // We'll return null to keep whatever the base generator assigned, unless we want to override it to 'cortex'
+                // Base regions use 'pfc' instead of 'prefrontalCortex'
                 return null;
             }
 
@@ -139,7 +142,7 @@
         },
 
         drawBrainShell(ctx, brainShell, camera, projection, width, height, activeROI = null) {
-            if (!brainShell) return;
+            if (!brainShell || !brainShell.vertices || !brainShell.faces) return;
 
             // Robustly extract target region from activeROI
             let targetRegion = null;
@@ -176,14 +179,14 @@
                 const p2 = projectedVertices[indices[1]];
                 const p3 = projectedVertices[indices[2]];
 
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
                     const dx1 = p2.x - p1.x;
                     const dy1 = p2.y - p1.y;
                     const dx2 = p3.x - p1.x;
                     const dy2 = p3.y - p1.y;
 
-                    if (dx1 * dy2 - dy1 * dx2 > 0) {
+                    if (dx1 * dy2 - dy1 * dx2 < 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
 
                         const v1 = vertices[indices[0]];
@@ -260,7 +263,7 @@
                     const litG = Math.min(255, 174 * lightIntensity + specular * 255);
                     const litB = Math.min(255, 192 * lightIntensity + specular * 255);
 
-                    const fog = GreenhouseModels3DMath.applyDepthFog(0.15, f.depth);
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.20, f.depth);
                     ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
 
                     ctx.beginPath();

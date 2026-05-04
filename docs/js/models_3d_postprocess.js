@@ -47,10 +47,15 @@
         },
 
         _applyTAA(taa) {
+            if (!this.canvas || this.canvas.width <= 0 || this.canvas.height <= 0) return;
+            if (!this._accumulationCanvas || this._accumulationCanvas.width <= 0 || this._accumulationCanvas.height <= 0) return;
+
             const ctx = this.ctx;
             const accCtx = this._accumulationCtx;
+
             accCtx.globalAlpha = 0.1;
             accCtx.drawImage(this.canvas, 0, 0);
+
             ctx.save();
             ctx.globalAlpha = 0.5;
             ctx.drawImage(this._accumulationCanvas, 0, 0);
@@ -58,12 +63,33 @@
         },
 
         _applyBloom(bloom) {
+            if (!this.canvas || this.canvas.width <= 0 || this.canvas.height <= 0) return;
             const ctx = this.ctx;
+
+            // Create temporary bloom buffer if needed
+            if (!this._bloomCanvas) {
+                this._bloomCanvas = document.createElement('canvas');
+            }
+            if (this._bloomCanvas.width !== this.canvas.width || this._bloomCanvas.height !== this.canvas.height) {
+                this._bloomCanvas.width = this.canvas.width;
+                this._bloomCanvas.height = this.canvas.height;
+            }
+
+            if (this._bloomCanvas.width <= 0 || this._bloomCanvas.height <= 0) return;
+            const bCtx = this._bloomCanvas.getContext('2d');
+
+            // Draw original to bloom buffer with filter
+            bCtx.clearRect(0, 0, this._bloomCanvas.width, this._bloomCanvas.height);
+            bCtx.save();
+            bCtx.filter = `blur(${bloom.radius}px) brightness(${1/bloom.threshold})`;
+            bCtx.drawImage(this.canvas, 0, 0);
+            bCtx.restore();
+
+            // Blend bloom buffer back to main
             ctx.save();
             ctx.globalCompositeOperation = 'screen';
             ctx.globalAlpha = bloom.intensity;
-            ctx.filter = `blur(${bloom.radius}px) brightness(${1/bloom.threshold})`;
-            ctx.drawImage(this.canvas, 0, 0);
+            ctx.drawImage(this._bloomCanvas, 0, 0);
             ctx.restore();
         },
 

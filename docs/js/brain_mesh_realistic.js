@@ -1,5 +1,6 @@
 // docs/js/brain_mesh_realistic.js
 // Anatomically Realistic Brain Mesh Generator
+// Updated to match reference schematic: schematic_human_brain_t.jpg
 
 (function () {
     'use strict';
@@ -13,157 +14,149 @@
             const brain = {
                 vertices: [],
                 faces: [],
-                regions: {}
+                regions: {
+                    // Unified Registry supporting all model keys
+                    pfc: { name: 'Prefrontal Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    frontal: { name: 'Frontal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    motorCortex: { name: 'Motor Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    somatosensoryCortex: { name: 'Somatosensory Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    parietalLobe: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    parietal: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    temporalLobe: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    temporal: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    occipitalLobe: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    occipital: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    cerebellum: { name: 'Cerebellum', color: 'rgba(255, 182, 193, 0.2)', vertices: [] },
+                    brainstem: { name: 'Brainstem', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
+                    amygdala: { name: 'Amygdala', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    hippocampus: { name: 'Hippocampus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    thalamus: { name: 'Thalamus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    hypothalamus: { name: 'Hypothalamus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    striatum: { name: 'Striatum', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    basal_ganglia: { name: 'Basal Ganglia', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    insula: { name: 'Insula', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    cingulate: { name: 'Cingulate Cortex', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    vta: { name: 'Ventral Tegmental Area', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    vagus_nerve: { name: 'Vagus Nerve', color: 'rgba(0, 255, 128, 0.2)', vertices: [] },
+                    optic_nerve: { name: 'Optic Nerve', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
+                    corpusCallosum: { name: 'Corpus Callosum', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
+                    lateralVentricle: { name: 'Lateral Ventricle', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    pituitaryGland: { name: 'Pituitary Gland', color: 'rgba(30, 144, 255, 0.2)', vertices: [] },
+                    mammillaryBody: { name: 'Mammillary Body', color: 'rgba(255, 255, 255, 0.2)', vertices: [] },
+                    dlPFC: { name: 'Dorsolateral PFC', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    vmPFC: { name: 'Ventromedial PFC', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    ofc: { name: 'Orbitofrontal Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    acc: { name: 'Anterior Cingulate', color: 'rgba(165, 42, 42, 0.2)', vertices: [] }
+                }
             };
 
             // Parameters for realistic brain shape
             const baseRadius = 200;
-            // Item 1: Increase base mesh resolution (80x80)
             const latBands = 80;
             const lonBands = 80;
 
-            // Generate base ellipsoid with anatomical proportions
-            for (let lat = 0; lat <= latBands; lat++) {
-                const theta = (lat * Math.PI) / latBands;
-                const sinTheta = Math.sin(theta);
-                const cosTheta = Math.cos(theta);
+            // Generate layers: Internal structures first, then Cortex
+            const layers = [
+                { name: 'Internal', radius: 0.45 * baseRadius, latBands: 40, lonBands: 40 },
+                { name: 'Cortex', radius: baseRadius, latBands: latBands, lonBands: lonBands }
+            ];
 
-                for (let lon = 0; lon <= lonBands; lon++) {
-                    const phi = (lon * 2 * Math.PI) / lonBands;
-                    const sinPhi = Math.sin(phi);
-                    const cosPhi = Math.cos(phi);
+            layers.forEach(layer => {
+                const startIdx = brain.vertices.length;
+                for (let lat = 0; lat <= layer.latBands; lat++) {
+                    const theta = (lat * Math.PI) / layer.latBands;
+                    const sinTheta = Math.sin(theta);
+                    const cosTheta = Math.cos(theta);
 
-                    // Start with unit sphere coordinates
-                    let x = cosPhi * sinTheta;
-                    let y = cosTheta;
-                    let z = sinPhi * sinTheta;
+                    for (let lon = 0; lon <= layer.lonBands; lon++) {
+                        const phi = (lon * 2 * Math.PI) / layer.lonBands;
+                        const sinPhi = Math.sin(phi);
+                        const cosPhi = Math.cos(phi);
 
-                    // Apply anatomical deformations
-                    const deformed = this.applyAnatomicalDeformations(x, y, z);
-                    x = deformed.x * baseRadius;
-                    y = deformed.y * baseRadius;
-                    z = deformed.z * baseRadius;
+                        let x = cosPhi * sinTheta;
+                        let y = cosTheta;
+                        let z = sinPhi * sinTheta;
 
-                    // Determine region
-                    let region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
+                        if (layer.name === 'Cortex') {
+                            const deformed = this.applyAnatomicalDeformations(x, y, z);
+                            x = deformed.x * layer.radius;
+                            y = deformed.y * layer.radius;
+                            z = deformed.z * layer.radius;
+                        } else {
+                            // Internal structures have simplified shape
+                            x *= layer.radius;
+                            y *= layer.radius;
+                            z *= layer.radius;
+                        }
 
-                    // Add cortical folds (gyri and sulci)
-                    const folds = this.addCorticalFolds(x, y, z, baseRadius, region);
-                    x += folds.x;
-                    y += folds.y;
-                    z += folds.z;
+                        let region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius, layer.name);
 
-                    // Calculate normal (approximate)
-                    const len = Math.sqrt(x * x + y * y + z * z);
-                    const normal = {
-                        x: x / len,
-                        y: y / len,
-                        z: z / len
-                    };
+                        if (layer.name === 'Cortex') {
+                            const folds = this.addCorticalFolds(x, y, z, baseRadius, region);
+                            x += folds.x;
+                            y += folds.y;
+                            z += folds.z;
+                            region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius, layer.name);
+                        }
 
-                    // Determine region
-                    region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
+                        const len = Math.sqrt(x * x + y * y + z * z);
+                        const normal = { x: x / len, y: y / len, z: z / len };
 
-                    brain.vertices.push({ x, y, z, normal, region });
+                        brain.vertices.push({ x, y, z, normal, region });
+                    }
                 }
-            }
 
-            // Generate faces (triangles)
-            for (let lat = 0; lat < latBands; lat++) {
-                for (let lon = 0; lon < lonBands; lon++) {
-                    const first = lat * (lonBands + 1) + lon;
-                    const second = first + lonBands + 1;
+                // Generate faces for this layer
+                for (let lat = 0; lat < layer.latBands; lat++) {
+                    for (let lon = 0; lon < layer.lonBands; lon++) {
+                        const first = startIdx + lat * (layer.lonBands + 1) + lon;
+                        const second = first + layer.lonBands + 1;
 
-                    brain.faces.push([first, second, first + 1]);
-                    brain.faces.push([second, second + 1, first + 1]);
+                        brain.faces.push({ indices: [first, second, first + 1] });
+                        brain.faces.push({ indices: [second, second + 1, first + 1] });
+                    }
                 }
-            }
+            });
 
-            // Item 3: Recalculate vertex normals with angle weighting
+            // Recalculate vertex normals with angle weighting
             this.computeWeightedNormals(brain);
 
-            // Item 2: Apply adaptive subdivision where curvature is high
-            this.applyAdaptiveSubdivision(brain, 0.15);
+            // Apply adaptive subdivision where curvature is high
+            this.applyAdaptiveSubdivision(brain, 0.12);
 
-            // Item 57: Precompute curvature maps
+            // Precompute curvature maps
             this.computeCurvatureMap(brain);
 
-            // Define regions with labels - Anatomically correct monochromatic hierarchy
-            brain.regions = {
-                pfc: {
-                    name: 'Prefrontal Cortex',
-                    color: 'rgba(224, 224, 224, 0.6)',
-                    vertices: []
-                },
-                motorCortex: {
-                    name: 'Motor Cortex',
-                    color: 'rgba(210, 210, 210, 0.6)',
-                    vertices: []
-                },
-                somatosensoryCortex: {
-                    name: 'Somatosensory Cortex',
-                    color: 'rgba(200, 200, 200, 0.6)',
-                    vertices: []
-                },
-                parietalLobe: {
-                    name: 'Parietal Lobe',
-                    color: 'rgba(190, 190, 190, 0.6)',
-                    vertices: []
-                },
-                temporalLobe: {
-                    name: 'Temporal Lobe',
-                    color: 'rgba(180, 180, 180, 0.6)',
-                    vertices: []
-                },
-                occipitalLobe: {
-                    name: 'Occipital Lobe',
-                    color: 'rgba(140, 140, 140, 0.6)',
-                    vertices: []
-                },
-                cerebellum: {
-                    name: 'Cerebellum',
-                    color: 'rgba(120, 120, 120, 0.6)',
-                    vertices: []
-                },
-                brainstem: {
-                    name: 'Brainstem',
-                    color: 'rgba(100, 100, 100, 0.6)',
-                    vertices: []
-                },
-                amygdala: {
-                    name: 'Amygdala',
-                    color: 'rgba(160, 160, 160, 0.6)',
-                    vertices: []
-                },
-                hippocampus: {
-                    name: 'Hippocampus',
-                    color: 'rgba(160, 160, 160, 0.6)',
-                    vertices: []
-                },
-                thalamus: {
-                    name: 'Thalamus',
-                    color: 'rgba(150, 150, 150, 0.6)',
-                    vertices: []
-                },
-                hypothalamus: {
-                    name: 'Hypothalamus',
-                    color: 'rgba(150, 150, 150, 0.6)',
-                    vertices: []
-                }
-            };
-
-            // Populate region vertex indices
+            // Populate region vertex indices and calculate centroids
             brain.vertices.forEach((v, i) => {
                 if (v.region && brain.regions[v.region]) {
                     brain.regions[v.region].vertices.push(i);
                 }
             });
 
+            // Calculate Centroids for cross-model flow logic
+            for (const key in brain.regions) {
+                const reg = brain.regions[key];
+                if (reg.vertices.length > 0) {
+                    let cx = 0, cy = 0, cz = 0;
+                    reg.vertices.forEach(vIdx => {
+                        cx += brain.vertices[vIdx].x;
+                        cy += brain.vertices[vIdx].y;
+                        cz += brain.vertices[vIdx].z;
+                    });
+                    reg.centroid = {
+                        x: cx / reg.vertices.length,
+                        y: cy / reg.vertices.length,
+                        z: cz / reg.vertices.length
+                    };
+                }
+            }
+
             return brain;
         },
 
         /**
-         * Item 57: Precompute curvature map for stylistic overlays
+         * Precompute curvature map for stylistic overlays
          */
         computeCurvatureMap(brain) {
             const { vertices, faces } = brain;
@@ -172,7 +165,8 @@
             const edgeCounts = new Array(vertices.length).fill(0);
 
             faces.forEach(f => {
-                const pairs = [[f[0], f[1]], [f[1], f[2]], [f[2], f[0]]];
+                const indices = f.indices || f;
+                const pairs = [[indices[0], indices[1]], [indices[1], indices[2]], [indices[2], indices[0]]];
                 pairs.forEach(([i1, i2]) => {
                     const v1 = vertices[i1];
                     const v2 = vertices[i2];
@@ -191,7 +185,7 @@
         },
 
         /**
-         * Item 2: Apply adaptive subdivision where curvature exceeds a threshold
+         * Apply adaptive subdivision where curvature exceeds a threshold
          */
         applyAdaptiveSubdivision(brain, threshold) {
             const { vertices, faces } = brain;
@@ -200,7 +194,8 @@
 
             for (let i = 0; i < faces.length; i++) {
                 const f = faces[i];
-                const i0 = f[0], i1 = f[1], i2 = f[2];
+                const indices = f.indices || f;
+                const i0 = indices[0], i1 = indices[1], i2 = indices[2];
                 const v0 = vertices[i0], v1 = vertices[i1], v2 = vertices[i2];
 
                 const dot01 = v0.normal.x * v1.normal.x + v0.normal.y * v1.normal.y + v0.normal.z * v1.normal.z;
@@ -226,7 +221,7 @@
                                 y: (va.normal.y + vb.normal.y) / 2,
                                 z: (va.normal.z + vb.normal.z) / 2
                             },
-                            region: va.region
+                            region: va.region || vb.region
                         };
                         const l = Math.sqrt(midV.normal.x**2 + midV.normal.y**2 + midV.normal.z**2);
                         if (l > 0) { midV.normal.x /= l; midV.normal.y /= l; midV.normal.z /= l; }
@@ -241,19 +236,19 @@
                     const m12 = getMidpoint(i1, i2);
                     const m20 = getMidpoint(i2, i0);
 
-                    newFaces.push([i0, m01, m20]);
-                    newFaces.push([i1, m12, m01]);
-                    newFaces.push([i2, m20, m12]);
-                    newFaces.push([m01, m12, m20]);
+                    newFaces.push({ indices: [i0, m01, m20] });
+                    newFaces.push({ indices: [i1, m12, m01] });
+                    newFaces.push({ indices: [i2, m20, m12] });
+                    newFaces.push({ indices: [m01, m12, m20] });
                 } else {
-                    newFaces.push(f);
+                    newFaces.push({ indices: indices });
                 }
             }
             brain.faces = newFaces;
         },
 
         /**
-         * Item 3: Compute vertex normals using angle-weighted averaging
+         * Compute vertex normals using angle-weighted averaging
          */
         computeWeightedNormals(brain) {
             const { vertices, faces } = brain;
@@ -262,7 +257,8 @@
             });
 
             faces.forEach(f => {
-                const i0 = f[0], i1 = f[1], i2 = f[2];
+                const indices = f.indices || f;
+                const i0 = indices[0], i1 = indices[1], i2 = indices[2];
                 const v0 = vertices[i0], v1 = vertices[i1], v2 = vertices[i2];
 
                 const e10 = { x: v1.x - v0.x, y: v1.y - v0.y, z: v1.z - v0.z };
@@ -311,47 +307,63 @@
          * Apply anatomical deformations to create realistic brain shape
          */
         applyAnatomicalDeformations(x, y, z) {
-            x *= 1.0; y *= 1.15; z *= 1.1;
+            // Proportional scaling for human brain (longer Z, wider X than sphere)
+            x *= 1.15; y *= 1.25; z *= 1.4;
 
-            if (y > 0.2) {
-                const fissureDepth = Math.exp(-Math.abs(x) * 8) * 0.15;
-                y *= (1 - fissureDepth);
+            // 1. Longitudinal fissure (Deep indent between hemispheres)
+            const fissureEffect = Math.exp(-Math.abs(x) * 10) * 0.35;
+            if (y > -0.6) {
+                y *= (1 - fissureEffect);
             }
 
-            if (z > 0.5 && y > -0.2) {
-                const bulgeFactor = (z - 0.5) * 0.3;
-                z *= (1 + bulgeFactor);
-                y *= (1 + bulgeFactor * 0.2);
-            }
-
-            if (z < -0.4 && y > -0.1) {
-                const bulgeFactor = (-z - 0.4) * 0.25;
-                z *= (1 + bulgeFactor);
-            }
-
-            if (Math.abs(x) > 0.5 && y < 0.2 && y > -0.4 && z > -0.3 && z < 0.3) {
-                const bulgeFactor = (Math.abs(x) - 0.5) * 0.4;
-                x *= (1 + bulgeFactor * Math.sign(x));
-                z *= (1 + bulgeFactor * 0.3);
-            }
-
-            if (y < -0.2 && z < -0.3) {
-                const dist = Math.sqrt((y + 0.4)**2 + (z + 0.5)**2);
-                if (dist < 0.4) {
-                    const bulgeFactor = (0.4 - dist) * 0.8;
-                    y *= (1 + bulgeFactor);
-                    z *= (1 + bulgeFactor);
-                    x *= (1 + bulgeFactor * 0.5);
+            // 2. Lateral Sulcus (Sylvian Fissure) - Indent on sides
+            if (Math.abs(y) < 0.4 && z > -0.3 && z < 0.6) {
+                const sulcusEffect = Math.exp(-Math.abs(y + 0.05) * 5) * 0.25;
+                if (Math.abs(x) > 0.45) {
+                    x *= (1 - sulcusEffect);
                 }
             }
 
-            if (y < -0.5 && Math.abs(x) < 0.25 && Math.abs(z) < 0.25) {
-                const taper = (y + 0.5) / -0.5;
-                x *= (1 - taper * 0.6);
-                z *= (1 - taper * 0.6);
+            // 3. Frontal Lobe (Broad bulge at front)
+            if (z > 0.35) {
+                const frontalShift = (z - 0.35) * 0.55;
+                z *= (1 + frontalShift);
+                x *= (1 + frontalShift * 0.25);
+                y *= (1 + frontalShift * 0.15);
             }
 
-            if (y < -0.6) y *= 0.85;
+            // 4. Temporal Lobes (Hang down and bulge sideways)
+            if (Math.abs(x) > 0.55 && z > -0.4 && z < 0.6 && y < 0.3) {
+                const tempBulge = (Math.abs(x) - 0.55) * 0.75;
+                x *= (1 + tempBulge);
+                y -= tempBulge * 0.5; // Hanging down
+            }
+
+            // 5. Occipital Lobe (Tapered back)
+            if (z < -0.45) {
+                const occipitalTaper = (-z - 0.45) * 0.45;
+                x *= (1 - occipitalTaper);
+                y *= (1 - occipitalTaper * 0.4);
+                z *= (1 + occipitalTaper * 0.15);
+            }
+
+            // 6. Cerebellum (Separate bulbous structure at lower back)
+            if (y < -0.3 && z < -0.4) {
+                const distToCerebCenter = Math.sqrt(x*x + (y+0.6)**2 + (z+0.7)**2);
+                if (distToCerebCenter < 0.6) {
+                    const cerebBulge = (0.6 - distToCerebCenter) * 0.7;
+                    x *= (1 + cerebBulge);
+                    y *= (1 + cerebBulge);
+                    z *= (1 + cerebBulge);
+                }
+            }
+
+            // 7. Brainstem (Downward protrusion from center)
+            if (Math.abs(x) < 0.35 && Math.abs(z) < 0.35 && y < -0.5) {
+                const stemTaper = (-y - 0.5) * 0.6;
+                x *= (1 - stemTaper);
+                z *= (1 - stemTaper);
+            }
 
             return { x, y, z };
         },
@@ -360,7 +372,9 @@
          * Add cortical folds (gyri and sulci) for realistic appearance
          */
         addCorticalFolds(x, y, z, baseRadius, region) {
-            if (y < -0.2 * baseRadius && region !== 'cerebellum') {
+            // No folds for internal structures or brainstem
+            const internalRegions = ['corpusCallosum', 'lateralVentricle', 'thalamus', 'hypothalamus', 'pituitaryGland', 'mammillaryBody', 'brainstem'];
+            if (internalRegions.includes(region)) {
                 return { x: 0, y: 0, z: 0 };
             }
 
@@ -369,7 +383,6 @@
 
             switch (region) {
                 case 'pfc':
-                case 'prefrontalCortex':
                     freqMult = 1.2; ampMult = 1.1; break;
                 case 'cerebellum':
                     freqMult = 3.0; ampMult = 0.5; break;
@@ -379,9 +392,9 @@
                     freqMult = 1.5; ampMult = 0.8; break;
             }
 
-            displacement += Math.sin(nx * 4 * freqMult + nz * 3 * freqMult) * Math.cos(ny * 3 * freqMult) * 0.08 * ampMult;
-            displacement += Math.sin(nx * 8 * freqMult + nz * 6 * freqMult) * Math.cos(ny * 7 * freqMult) * 0.04 * ampMult;
-            displacement += Math.sin(nx * 16 * freqMult + nz * 12 * freqMult) * Math.cos(ny * 14 * freqMult) * 0.02 * ampMult;
+            displacement += Math.sin(nx * 4 * freqMult + nz * 3 * freqMult) * Math.cos(ny * 3 * freqMult) * 0.12 * ampMult;
+            displacement += Math.sin(nx * 8 * freqMult + nz * 6 * freqMult) * Math.cos(ny * 7 * freqMult) * 0.06 * ampMult;
+            displacement += Math.sin(nx * 16 * freqMult + nz * 12 * freqMult) * Math.cos(ny * 14 * freqMult) * 0.03 * ampMult;
 
             const len = Math.sqrt(nx**2 + ny**2 + nz**2);
             if (len > 0) {
@@ -396,20 +409,88 @@
 
         /**
          * Determine brain region for a vertex
+         * Mapped to schematic_human_brain_t.jpg spatial relationships and cross-model logic.
          */
-        determineRegion(x, y, z) {
-            if (z > 0.4 && y > 0.1) return 'pfc';
-            if (y > 0.5 && z > 0 && z < 0.4) return 'motorCortex';
-            if (y > 0.5 && z < 0 && z > -0.3) return 'somatosensoryCortex';
-            if (y > 0.3 && z < -0.3) return 'parietalLobe';
-            if (z < -0.5 && y > -0.2) return 'occipitalLobe';
-            if (Math.abs(x) > 0.5 && y < 0.2 && y > -0.4 && z > -0.4 && z < 0.4) return 'temporalLobe';
-            if (y < -0.2 && z < -0.3) return 'cerebellum';
-            if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) return 'brainstem';
-            if (Math.abs(x) < 0.2 && y < 0.2 && y > -0.1 && Math.abs(z) < 0.2) return 'thalamus';
-            if (Math.abs(x) < 0.15 && y <= -0.1 && y > -0.3 && Math.abs(z) < 0.15) return 'hypothalamus';
-            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.4 && y < 0.1 && y > -0.3 && Math.abs(z) < 0.2) return 'amygdala';
-            if (Math.abs(x) > 0.3 && Math.abs(x) < 0.5 && y < 0 && y > -0.3 && z > -0.3 && z < 0.1) return 'hippocampus';
+        determineRegion(x, y, z, layerName) {
+            // Normalize internal coordinates
+            const nx = x, ny = y, nz = z;
+
+            // Vagus Nerve (Thin procedural strand hanging down from brainstem)
+            if (Math.abs(nx) < 0.05 && ny < -0.7) return 'vagus_nerve';
+
+            // Optic Nerve (Small bilateral protrusions at front base)
+            if (Math.abs(nx) < 0.1 && nz > 0.4 && ny < -0.3) return 'optic_nerve';
+
+            // Midline structures (Corpus Callosum, Ventricles, Thalamus, etc.)
+            if (Math.abs(nx) < 0.4) {
+                // Pituitary Gland (hangs off hypothalamus at front)
+                if (ny <= -0.3 && ny > -0.8 && nz > 0.1 && nz < 0.8) return 'pituitaryGland';
+
+                // Cingulate Cortex (Above corpus callosum)
+                if (ny > 0.4 && ny < 0.7 && nz > -0.3 && nz < 0.6) return 'cingulate';
+                if (ny > 0.1 && ny < 0.4 && nz > 0.2 && nz < 0.6) return 'acc';
+
+                // Corpus Callosum (C-shape)
+                const distToCallosumCenter = Math.sqrt((ny - 0.2)**2 + (nz - 0.1)**2);
+                if (distToCallosumCenter > 0.2 && distToCallosumCenter < 0.45 && ny > 0.1 && nz > -0.4 && nz < 0.6) {
+                    return 'corpusCallosum';
+                }
+
+                // Lateral Ventricle (just below callosum)
+                if (distToCallosumCenter < 0.2 && ny > 0 && nz > -0.2 && nz < 0.4) {
+                    return 'lateralVentricle';
+                }
+
+                // Thalamus (Central Egg shape)
+                const distToThalamus = Math.sqrt(nx*nx + (ny + 0.1)**2 + (nz - 0.1)**2);
+                if (distToThalamus < 0.35) return 'thalamus';
+
+                // Hypothalamus (below thalamus)
+                if (ny <= -0.1 && ny > -0.4 && nz > 0 && nz < 0.4) return 'hypothalamus';
+
+                // VTA (Small area below/behind hypothalamus)
+                if (ny < -0.3 && ny > -0.5 && nz > -0.2 && nz < 0.1) return 'vta';
+
+                // Mammillary Body
+                if (ny <= -0.35 && ny > -0.55 && nz > 0 && nz < 0.25) return 'mammillaryBody';
+
+                // Brainstem (protruding downwards)
+                if (ny < -0.4 && nz < 0.2) return 'brainstem';
+            }
+
+            // Cerebellum (Lower posterior)
+            if (ny < -0.2 && nz < -0.4) return 'cerebellum';
+
+            // Subcortical (deeper temporal / lateral midline)
+            if (Math.abs(nx) > 0.15 && Math.abs(nx) < 0.6 && ny < 0.2 && ny > -0.5) {
+                // Striatum (Lateral to thalamus)
+                if (Math.abs(nx) < 0.4 && nz > 0 && nz < 0.5 && ny > -0.2) {
+                    // Basal ganglia is the superset
+                    return Math.random() > 0.5 ? 'striatum' : 'basal_ganglia';
+                }
+                // Insula (Deep within Sylvian fissure)
+                if (Math.abs(nx) > 0.4 && nz > -0.2 && nz < 0.3) return 'insula';
+                // Limbic
+                if (nz > -0.3 && nz < 0.3 && ny < 0) return 'hippocampus';
+                if (nz > 0.2 && nz < 0.6 && ny < 0.1) return 'amygdala';
+            }
+
+            // Cortex regions
+            if (nz > 0.6) {
+                // Frontal Lobe subdivisions
+                if (ny > 0.4) return 'dlPFC';
+                if (ny < 0.1 && ny > -0.3) return 'ofc';
+                if (Math.abs(nx) < 0.2) return 'vmPFC';
+                return Math.random() > 0.5 ? 'pfc' : 'frontal';
+            }
+            if (ny > 0.6) {
+                if (nz > 0) return 'motorCortex';
+                return 'somatosensoryCortex';
+            }
+            if (ny > 0.3 && nz < -0.3) return Math.random() > 0.5 ? 'parietalLobe' : 'parietal';
+            if (nz < -0.6) return Math.random() > 0.5 ? 'occipitalLobe' : 'occipital';
+            if (Math.abs(nx) > 0.6 && ny < 0.3) return Math.random() > 0.5 ? 'temporalLobe' : 'temporal';
+
             return 'pfc';
         }
     };

@@ -330,7 +330,8 @@
             if (window.GreenhouseBrainMeshRealistic) {
                 const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 brainShell.vertices = realisticBrain.vertices;
-                brainShell.faces = realisticBrain.faces.map(face => ({ indices: face, region: null }));
+                // realisticBrain.faces already has the { indices: [...] } structure
+                brainShell.faces = realisticBrain.faces.map(face => ({ ...face, region: null }));
                 brainShell.regions = realisticBrain.regions;
                 this.computeRegionsAndBoundaries(brainShell);
                 return;
@@ -441,16 +442,30 @@
         },
 
         computeRegionsAndBoundaries(brainShell) {
+            if (!brainShell || !brainShell.vertices) return;
+
             brainShell.vertices.forEach((v, i) => {
+                if (v.region) return; // Keep existing regional data from realistic generator
                 v.region = null;
-                for (const [name, data] of Object.entries(brainShell.regions)) {
-                    if (data.vertices.includes(i)) { v.region = name; break; }
+                for (const [name, data] of Object.entries(brainShell.regions || {})) {
+                    if (data.vertices && data.vertices.includes(i)) { v.region = name; break; }
                 }
             });
+
             const edgeMap = new Map();
             brainShell.faces.forEach((face, idx) => {
-                face.region = brainShell.vertices[face.indices[0]].region || brainShell.vertices[face.indices[1]].region || brainShell.vertices[face.indices[2]].region;
-                [[face.indices[0], face.indices[1]], [face.indices[1], face.indices[2]], [face.indices[2], face.indices[0]]].forEach(e => {
+                const indices = face.indices || face;
+                if (!indices || indices.length < 3) return;
+
+                const v0 = brainShell.vertices[indices[0]];
+                const v1 = brainShell.vertices[indices[1]];
+                const v2 = brainShell.vertices[indices[2]];
+
+                if (!v0 || !v1 || !v2) return;
+
+                face.region = v0.region || v1.region || v2.region;
+
+                [[indices[0], indices[1]], [indices[1], indices[2]], [indices[2], indices[0]]].forEach(e => {
                     const key = `${Math.min(e[0], e[1])}-${Math.max(e[0], e[1])}`;
                     if (!edgeMap.has(key)) edgeMap.set(key, []);
                     edgeMap.get(key).push(idx);

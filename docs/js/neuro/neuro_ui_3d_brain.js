@@ -19,7 +19,7 @@
             const projectedVertices = [];
             for (let i = 0; i < brainShell.vertices.length; i++) {
                 const v = brainShell.vertices[i];
-                const p = GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
+                const p = GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
                 projectedVertices.push(p);
             }
 
@@ -31,7 +31,7 @@
                 const p2 = projectedVertices[indices[1]];
                 const p3 = projectedVertices[indices[2]];
 
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
                     const cross = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
                     if (cross < 0) {
@@ -55,7 +55,7 @@
                     roughness: 0.5,
                     metalness: 0.1,
                     sss: true,
-                    alpha: 0.15
+                    alpha: 0.20
                 };
 
                 const center = {
@@ -92,21 +92,28 @@
             });
 
             // HUD Overlays
-            this.drawSurfaceGrid(ctx, projectedVertices);
+            this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
             this.drawOrientationWidget(ctx, camera, width, height);
         },
 
-        drawSurfaceGrid(ctx, projectedVertices) {
+        drawSurfaceGrid(ctx, projectedVertices, brainShell) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+            ctx.lineWidth = 0.3;
             ctx.beginPath();
-            // Simplified grid rendering
-            for (let i = 0; i < projectedVertices.length; i += 10) {
-                const p = projectedVertices[i];
-                if (p && p.scale > 0) {
-                    ctx.moveTo(p.x, p.y);
-                    ctx.arc(p.x, p.y, 0.5, 0, Math.PI * 2);
+
+            const latBands = brainShell.latBands || 40;
+            const lonBands = brainShell.lonBands || 40;
+            const step = Math.floor(latBands / 10) || 4;
+
+            for (let lat = 0; lat <= latBands; lat += step) {
+                for (let lon = 0; lon <= lonBands; lon++) {
+                    const i = lat * (lonBands + 1) + lon;
+                    const p = projectedVertices[i];
+                    if (p && p.scale > 0) {
+                        if (lon === 0) ctx.moveTo(p.x, p.y);
+                        else ctx.lineTo(p.x, p.y);
+                    }
                 }
             }
             ctx.stroke();
