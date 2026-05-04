@@ -32,7 +32,10 @@
             const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
-            const projectedVertices = vertices.map(v => GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection));
+            const projectedVertices = vertices.map(v => {
+                if (!v) return null;
+                return GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
+            });
 
             const facesToDraw = [];
             faces.forEach(face => {

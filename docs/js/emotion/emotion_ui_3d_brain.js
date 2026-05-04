@@ -78,6 +78,7 @@
 
             // Re-categorize vertices using more granular logic
             brain.vertices.forEach((v, i) => {
+                if (!v) return;
                 const nx = v.x / 200; // Assuming baseRadius 200
                 const ny = v.y / 200;
                 const nz = v.z / 200;
@@ -94,7 +95,9 @@
                     if (!brain.regions[newRegion]) {
                         brain.regions[newRegion] = { name: newRegion, color: 'rgba(160, 174, 192, 0.5)', vertices: [] };
                     }
-                    brain.regions[newRegion].vertices.push(i);
+                    if (brain.regions[newRegion].vertices) {
+                        brain.regions[newRegion].vertices.push(i);
+                    }
                 }
             });
         },
@@ -192,6 +195,7 @@
                         const v1 = vertices[indices[0]];
                         const v2 = vertices[indices[1]];
                         const v3 = vertices[indices[2]];
+                        if (!v1 || !v2 || !v3) return;
 
                         const ux = v2.x - v1.x;
                         const uy = v2.y - v1.y;
@@ -349,10 +353,11 @@
 
                 faces.forEach(face => {
                     const indices = face.indices || (Array.isArray(face) ? face : null);
-                    if (!indices) return;
+                    if (!indices || indices.length < 3) return;
                     const v1 = vertices[indices[0]];
                     const v2 = vertices[indices[1]];
                     const v3 = vertices[indices[2]];
+                    if (!v1 || !v2 || !v3) return;
 
                     const s1 = v1[axis] > threshold;
                     const s2 = v2[axis] > threshold;

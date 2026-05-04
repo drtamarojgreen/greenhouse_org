@@ -384,6 +384,7 @@
             const tension = Math.max(0, Math.min(1, state.tension ?? 0));
 
             geometry.vertices.forEach((v, idx) => {
+                if (!v) return;
                 if (v.baseX === undefined) {
                     v.baseX = v.x;
                     v.baseY = v.y;
@@ -403,7 +404,9 @@
 
         getRegionVertices(brainShell, regionKey) {
             const indices = [];
+            if (!brainShell || !brainShell.vertices) return indices;
             brainShell.vertices.forEach((v, i) => {
+                if (!v) return;
                 let match = false;
                 // Normalize coords for region checking
                 const x = v.x / 200;
@@ -442,8 +445,10 @@
         },
 
         computeRegionsAndBoundaries(brainShell) {
+            if (!brainShell || !brainShell.vertices) return;
             // 1. Assign Regions to Vertices
             brainShell.vertices.forEach((v, i) => {
+                if (!v) return;
                 if (v.region) return; // Preserve existing data from realistic generator
                 v.region = null;
                 for (const [name, data] of Object.entries(brainShell.regions || {})) {
