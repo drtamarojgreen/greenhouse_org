@@ -112,7 +112,7 @@
                     const z = Math.sin(angle + offset) * radius;
                     const y = yBase + (t * height);
 
-                    const p = Math3D.project3DTo2D(x, -y, z, camera, projection);
+                    const p = Math3D.project3DTo2D(x, y, z, camera, projection);
                     if (p.scale > 0) {
                         const alpha = Math3D.applyDepthFog(0.6, p.depth, 0.1, 0.9);
                         ctx.fillStyle = hasVariant ? `rgba(224, 224, 224, ${alpha})` : `rgba(160, 174, 192, ${alpha})`;
@@ -123,7 +123,7 @@
                         ctx.fill();
 
                         if (i % 3 === 0) {
-                            const p2 = Math3D.project3DTo2D(Math.cos(angle + offset + Math.PI) * radius, -y, Math.sin(angle + offset + Math.PI) * radius, camera, projection);
+                            const p2 = Math3D.project3DTo2D(Math.cos(angle + offset + Math.PI) * radius, y, Math.sin(angle + offset + Math.PI) * radius, camera, projection);
                             if (p2.scale > 0) {
                                 ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.2})`;
                                 ctx.lineWidth = 0.5;
@@ -154,7 +154,7 @@
 
             if (this.particles.length < 50 + load * 100) {
                 this.particles.push({
-                    x: hypothalamus.x, y: -hypothalamus.y, z: hypothalamus.z,
+                    x: hypothalamus.x, y: hypothalamus.y, z: hypothalamus.z,
                     vx: (Math.random() - 0.5) * 2, vy: -1 - Math.random() * 2, vz: (Math.random() - 0.5) * 2,
                     life: 1.0, type: Math.random() > 0.3 ? 'cortisol' : 'tryptophan'
                 });
@@ -194,7 +194,7 @@
                 const fy = 300 + row * 150;
                 const fz = 0;
 
-                const p = Math3D.project3DTo2D(fx, -fy, fz, camera, projection);
+                const p = Math3D.project3DTo2D(fx, fy, fz, camera, projection);
                 if (p.scale > 0) {
                     const alpha = Math3D.applyDepthFog(0.8, p.depth, 0.2, 0.9);
 
@@ -202,7 +202,7 @@
                     if (fid.includes('sleep') || fid.includes('work')) target = ui3d.brainShell.regions.pfc.centroid || target;
                     else if (fid.includes('noise') || fid.includes('serotonin')) target = ui3d.brainShell.regions.amygdala.centroid || target;
 
-                    const tp = Math3D.project3DTo2D(target.x, -target.y, target.z, camera, projection);
+                    const tp = Math3D.project3DTo2D(target.x, target.y, target.z, camera, projection);
                     const pulse = (Date.now() % 1000) / 1000;
                     const px = p.x + (tp.x - p.x) * pulse;
                     const py = p.y + (tp.y - p.y) * pulse;
@@ -267,11 +267,12 @@
             const len = Math.sqrt(lightDir.x ** 2 + lightDir.y ** 2 + lightDir.z ** 2);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
-            const projected = shell.vertices.map(v => Math3D.project3DTo2D(v.x, -v.y, v.z, camera, projection));
+            const projected = shell.vertices.map(v => Math3D.project3DTo2D(v.x, v.y, v.z, camera, projection));
             const faces = [];
             shell.faces.forEach((face) => {
-                const p1 = projected[face.indices[0]], p2 = projected[face.indices[1]], p3 = projected[face.indices[2]];
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                const indices = face.indices || face;
+                const p1 = projected[indices[0]], p2 = projected[indices[1]], p3 = projected[indices[2]];
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     const cp = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
                     if (cp > 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
@@ -350,7 +351,7 @@
                     const vIdx = region.vertices[Math.floor(Math.random() * region.vertices.length)];
                     const v = shell.vertices[vIdx];
                     this.neuralSparks.push({
-                        x: v.x, y: -v.y, z: v.z,
+                        x: v.x, y: v.y, z: v.z,
                         color: region.color || '#fff',
                         life: 1.0,
                         size: 1 + Math.random() * 2
@@ -396,7 +397,7 @@
             // Simulate major arteries (Circle of Willis simplified)
             const brainstem = ui3d.brainShell.regions.brainstem.centroid || { x: 0, y: 0, z: 0 };
             const arteries = [
-                { start: { x: 0, y: -20, z: 0 }, end: { x: brainstem.x, y: -brainstem.y, z: brainstem.z } }, // Carotid Path to Stem
+                { start: { x: 0, y: -20, z: 0 }, end: { x: brainstem.x, y: brainstem.y, z: brainstem.z } }, // Carotid Path to Stem
                 { start: { x: -60, y: -20, z: 40 }, end: { x: 60, y: -20, z: 40 } }, // Connective
                 { start: { x: 0, y: -20, z: 50 }, end: { x: 0, y: 150, z: 120 } } // Anterior Path
             ];
@@ -434,8 +435,8 @@
             for (const key in ui3d.brainShell.regions) {
                 const region = ui3d.brainShell.regions[key];
                 if (region.centroid && key !== 'cortex' && key !== 'brainstem') {
-                    const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
-                    const dot = (region.centroid.x * camForward.x + (-region.centroid.y) * camForward.y + region.centroid.z * camForward.z);
+                    const p = Math3D.project3DTo2D(region.centroid.x, region.centroid.y, region.centroid.z, camera, projection);
+                    const dot = (region.centroid.x * camForward.x + region.centroid.y * camForward.y + region.centroid.z * camForward.z);
 
                     if (p.scale > 0 && dot > 0.3) {
                         const alpha = Math3D.applyDepthFog(0.7, p.depth, 0.4, 0.9);

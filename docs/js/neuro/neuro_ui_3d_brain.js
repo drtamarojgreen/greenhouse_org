@@ -17,10 +17,16 @@
 
             // Project all vertices
             const projectedVertices = [];
-            for (let i = 0; i < brainShell.vertices.length; i++) {
-                const v = brainShell.vertices[i];
-                const p = GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
-                projectedVertices.push(p);
+            if (brainShell.vertices) {
+                for (let i = 0; i < brainShell.vertices.length; i++) {
+                    const v = brainShell.vertices[i];
+                    if (!v) {
+                        projectedVertices.push(null);
+                        continue;
+                    }
+                    const p = GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
+                    projectedVertices.push(p);
+                }
             }
 
             const facesToDraw = [];
@@ -38,6 +44,7 @@
                         const v1 = brainShell.vertices[indices[0]];
                         const v2 = brainShell.vertices[indices[1]];
                         const v3 = brainShell.vertices[indices[2]];
+                        if (!v1 || !v2 || !v3) continue;
                         const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
                         facesToDraw.push({ indices, p1, p2, p3, depth, normal, region: face.region || v1.region });
@@ -55,17 +62,21 @@
                     roughness: 0.5,
                     metalness: 0.1,
                     sss: true,
-                    alpha: 0.15
+                    alpha: 0.20
                 };
 
+                const v0 = brainShell.vertices[f.indices[0]];
+                const v1 = brainShell.vertices[f.indices[1]];
+                const v2 = brainShell.vertices[f.indices[2]];
+                if (!v0 || !v1 || !v2) return;
+
                 const center = {
-                    x: (brainShell.vertices[f.indices[0]].x + brainShell.vertices[f.indices[1]].x + brainShell.vertices[f.indices[2]].x) / 3,
-                    y: (brainShell.vertices[f.indices[0]].y + brainShell.vertices[f.indices[1]].y + brainShell.vertices[f.indices[2]].y) / 3,
-                    z: (brainShell.vertices[f.indices[0]].z + brainShell.vertices[f.indices[1]].z + brainShell.vertices[f.indices[2]].z) / 3
+                    x: (v0.x + v1.x + v2.x) / 3,
+                    y: (v0.y + v1.y + v2.y) / 3,
+                    z: (v0.z + v1.z + v2.z) / 3
                 };
 
                 // Item 6: Ambient Occlusion (using Curvature as a proxy for Sulcal Depth)
-                const v0 = brainShell.vertices[f.indices[0]];
                 const ao = 1.0 - (v0.curvature || 0) * 2.0;
 
                 const color = GreenhouseNeuroLighting.calculateLighting(f.normal, center, camera, material);
@@ -92,21 +103,28 @@
             });
 
             // HUD Overlays
-            this.drawSurfaceGrid(ctx, projectedVertices);
+            this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
             this.drawOrientationWidget(ctx, camera, width, height);
         },
 
-        drawSurfaceGrid(ctx, projectedVertices) {
+        drawSurfaceGrid(ctx, projectedVertices, brainShell) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+            ctx.lineWidth = 0.3;
             ctx.beginPath();
-            // Simplified grid rendering
-            for (let i = 0; i < projectedVertices.length; i += 10) {
-                const p = projectedVertices[i];
-                if (p && p.scale > 0) {
-                    ctx.moveTo(p.x, p.y);
-                    ctx.arc(p.x, p.y, 0.5, 0, Math.PI * 2);
+
+            const latBands = brainShell.latBands || 40;
+            const lonBands = brainShell.lonBands || 40;
+            const step = Math.floor(latBands / 10) || 4;
+
+            for (let lat = 0; lat <= latBands; lat += step) {
+                for (let lon = 0; lon <= lonBands; lon++) {
+                    const i = lat * (lonBands + 1) + lon;
+                    const p = projectedVertices[i];
+                    if (p && p.scale > 0) {
+                        if (lon === 0) ctx.moveTo(p.x, p.y);
+                        else ctx.lineTo(p.x, p.y);
+                    }
                 }
             }
             ctx.stroke();

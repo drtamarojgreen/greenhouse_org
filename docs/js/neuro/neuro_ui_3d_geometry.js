@@ -196,8 +196,8 @@
             if (window.GreenhouseBrainMeshRealistic) {
                 const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 brainShell.vertices = realisticBrain.vertices;
-                // Convert faces to the new object structure to ensure compatibility
-                brainShell.faces = realisticBrain.faces.map(face => ({ indices: face, region: null }));
+                // realisticBrain.faces already has the { indices: [...] } structure
+                brainShell.faces = realisticBrain.faces.map(face => ({ ...face, region: null }));
                 brainShell.regions = realisticBrain.regions;
 
                 // Compute boundaries
@@ -384,6 +384,7 @@
             const tension = Math.max(0, Math.min(1, state.tension ?? 0));
 
             geometry.vertices.forEach((v, idx) => {
+                if (!v) return;
                 if (v.baseX === undefined) {
                     v.baseX = v.x;
                     v.baseY = v.y;
@@ -403,7 +404,9 @@
 
         getRegionVertices(brainShell, regionKey) {
             const indices = [];
+            if (!brainShell || !brainShell.vertices) return indices;
             brainShell.vertices.forEach((v, i) => {
+                if (!v) return;
                 let match = false;
                 // Normalize coords for region checking
                 const x = v.x / 200;
@@ -442,11 +445,14 @@
         },
 
         computeRegionsAndBoundaries(brainShell) {
+            if (!brainShell || !brainShell.vertices) return;
             // 1. Assign Regions to Vertices
             brainShell.vertices.forEach((v, i) => {
+                if (!v) return;
+                if (v.region) return; // Preserve existing data from realistic generator
                 v.region = null;
-                for (const [name, data] of Object.entries(brainShell.regions)) {
-                    if (data.vertices.includes(i)) {
+                for (const [name, data] of Object.entries(brainShell.regions || {})) {
+                    if (data.vertices && data.vertices.includes(i)) {
                         v.region = name;
                         break;
                     }
@@ -463,15 +469,22 @@
                 const v3 = brainShell.vertices[indices[2]];
 
                 if (!v1 || !v2 || !v3) return;
+                if (!indices || indices.length < 3) return;
 
-                const region = v1.region || v2.region || v3.region;
+                const v1 = brainShell.vertices[indices[0]];
+                const v2 = brainShell.vertices[indices[1]];
+                const v3 = brainShell.vertices[indices[2]];
+
+                if (!v1 || !v2 || !v3) return;
+
+                const region = v1.region || v2.region || v3.region || "pfc";
                 face.region = region;
 
                 // Register Edges
                 const edges = [
-                    [Math.min(face.indices[0], face.indices[1]), Math.max(face.indices[0], face.indices[1])],
-                    [Math.min(face.indices[1], face.indices[2]), Math.max(face.indices[1], face.indices[2])],
-                    [Math.min(face.indices[2], face.indices[0]), Math.max(face.indices[2], face.indices[0])]
+                    [Math.min(indices[0], indices[1]), Math.max(indices[0], indices[1])],
+                    [Math.min(indices[1], indices[2]), Math.max(indices[1], indices[2])],
+                    [Math.min(indices[2], indices[0]), Math.max(indices[2], indices[0])]
                 ];
 
                 edges.forEach(edge => {

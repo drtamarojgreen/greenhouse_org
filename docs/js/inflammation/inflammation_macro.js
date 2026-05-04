@@ -113,7 +113,7 @@
                 const y = fromComp.renderBounds.y + (toComp.renderBounds.y - fromComp.renderBounds.y) * p.progress;
                 const z = fromComp.renderBounds.z + (toComp.renderBounds.z - fromComp.renderBounds.z) * p.progress;
 
-                const proj = Math3D.project3DTo2D(x, -y, z, camera, projection);
+                const proj = Math3D.project3DTo2D(x, y, z, camera, projection);
                 if (proj.scale > 0 && p.progress <= 1.0) {
                     ctx.fillStyle = '#A0AEC0'; // Muted Gray
                     ctx.shadowBlur = p.molId === 'QUIN' ? 8 : 0;
@@ -174,7 +174,7 @@
             // Compartment Labels
             if (showComps) {
                 graph.compartments.forEach(c => {
-                    const p = Math3D.project3DTo2D(c.renderBounds.x, -c.renderBounds.y, c.renderBounds.z, camera, projection);
+                    const p = Math3D.project3DTo2D(c.renderBounds.x, c.renderBounds.y, c.renderBounds.z, camera, projection);
                     if (p.scale > 0) {
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                         ctx.font = 'bold 9px Quicksand';
@@ -194,7 +194,7 @@
                         const mx = (f.renderBounds.x + t.renderBounds.x) / 2;
                         const my = (f.renderBounds.y + t.renderBounds.y) / 2;
                         const mz = (f.renderBounds.z + t.renderBounds.z) / 2;
-                        const p = Math3D.project3DTo2D(mx, -my, mz, camera, projection);
+                        const p = Math3D.project3DTo2D(mx, my, mz, camera, projection);
                         if (p.scale > 0) {
                             ctx.fillStyle = '#A0AEC0';
                             ctx.font = 'italic 8px monospace';
@@ -220,12 +220,12 @@
                 const fy = 200 + row * 150;
                 const fz = 0;
 
-                const p = Math3D.project3DTo2D(fx, -fy, fz, camera, projection);
+                const p = Math3D.project3DTo2D(fx, fy, fz, camera, projection);
                 if (p.scale > 0) {
                     const alpha = Math3D.applyDepthFog(0.8, p.depth, 0.2, 0.9);
 
                     const target = ui3d.brainShell.regions.hypothalamus.centroid || { x: 0, y: 0, z: 0 };
-                    const tp = Math3D.project3DTo2D(target.x, -target.y, target.z, camera, projection);
+                    const tp = Math3D.project3DTo2D(target.x, target.y, target.z, camera, projection);
 
                     // Infiltration Line
                     ctx.beginPath();
@@ -279,11 +279,12 @@
             const len = Math.sqrt(lightDir.x ** 2 + lightDir.y ** 2 + lightDir.z ** 2);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
-            const projected = shell.vertices.map(v => Math3D.project3DTo2D(v.x, -v.y, v.z, camera, projection));
+            const projected = shell.vertices.map(v => Math3D.project3DTo2D(v.x, v.y, v.z, camera, projection));
             const faces = [];
             shell.faces.forEach((face) => {
-                const p1 = projected[face.indices[0]], p2 = projected[face.indices[1]], p3 = projected[face.indices[2]];
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                const indices = face.indices || face;
+                const p1 = projected[indices[0]], p2 = projected[indices[1]], p3 = projected[indices[2]];
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     const cp = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
                     if (cp > 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
@@ -371,8 +372,8 @@
             for (const key in ui3d.brainShell.regions) {
                 const region = ui3d.brainShell.regions[key];
                 if (region.centroid && key !== 'cortex') {
-                    const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
-                    const dot = (region.centroid.x * camForward.x + (-region.centroid.y) * camForward.y + region.centroid.z * camForward.z);
+                    const p = Math3D.project3DTo2D(region.centroid.x, region.centroid.y, region.centroid.z, camera, projection);
+                    const dot = (region.centroid.x * camForward.x + region.centroid.y * camForward.y + region.centroid.z * camForward.z);
 
                     if (p.scale > 0 && dot > 0.4) {
                         const alpha = Math3D.applyDepthFog(0.7, p.depth, 0.4, 0.9);
@@ -408,7 +409,7 @@
                     }
                 });
                 if (count > 0) {
-                    const cp = Math3D.project3DTo2D(lx/count, -(ly/count), lz/count, camera, projection);
+                    const cp = Math3D.project3DTo2D(lx/count, ly/count, lz/count, camera, projection);
                     if (cp.scale > 0) {
                         ctx.strokeStyle = lobe.color.replace('0.2', '0.5');
                         ctx.setLineDash([5, 5]);
@@ -441,7 +442,7 @@
                 regions.forEach(r => {
                     const reg = ui3d.brainShell.regions[r];
                     if (reg && reg.centroid) {
-                        const p = Math3D.project3DTo2D(reg.centroid.x, -reg.centroid.y, reg.centroid.z, camera, projection);
+                        const p = Math3D.project3DTo2D(reg.centroid.x, reg.centroid.y, reg.centroid.z, camera, projection);
                         if (p.scale > 0) {
                             ctx.beginPath();
                             ctx.arc(p.x, p.y, 30 * p.scale, 0, Math.PI * 2);

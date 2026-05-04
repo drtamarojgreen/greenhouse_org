@@ -24,15 +24,28 @@
 
         init(app) {
             this.app = app;
-            if (window.GreenhouseInflammationGeometry) {
+            if (window.GreenhouseBrainMeshRealistic) {
+                this.brainShell = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+                this.originalRegionColors = {};
+                for (const key in this.brainShell.regions) {
+                    const region = this.brainShell.regions[key];
+                    this.originalRegionColors[key] = region.color;
+                    if (region.vertices && region.vertices.length > 0) {
+                        let cx = 0, cy = 0, cz = 0;
+                        region.vertices.forEach(idx => {
+                            const v = this.brainShell.vertices[idx];
+                            cx += v.x; cy += v.y; cz += v.z;
+                        });
+                        region.centroid = { x: cx / region.vertices.length, y: cy / region.vertices.length, z: cz / region.vertices.length };
+                    }
+                }
+            } else if (window.GreenhouseInflammationGeometry) {
                 this.brainShell = { vertices: [], faces: [] };
                 window.GreenhouseInflammationGeometry.initializeBrainShell(this.brainShell);
                 this.originalRegionColors = {};
                 if (this.brainShell.regions) {
                     for (const key in this.brainShell.regions) {
                         const region = this.brainShell.regions[key];
-                        // Shift to monochromatic premium palette
-                        region.color = 'rgba(160, 174, 192, 0.4)';
                         this.originalRegionColors[key] = region.color;
                         if (region.vertices && region.vertices.length > 0) {
                             let cx = 0, cy = 0, cz = 0;

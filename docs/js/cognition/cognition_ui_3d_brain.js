@@ -24,7 +24,7 @@
             // Project all vertices first
             const projectedVertices = vertices.map(v => {
                 // Using GreenhouseModels3DMath which should be globally available
-                return GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
+                return GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
             });
 
             // Prepare Faces with Depth and Normals
@@ -46,7 +46,7 @@
                     const dx2 = p3.x - p1.x;
                     const dy2 = p3.y - p1.y;
 
-                    if (dx1 * dy2 - dy1 * dx2 > 0) {
+                    if (dx1 * dy2 - dy1 * dx2 < 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
 
                         // Calculate Normal (World Space)
@@ -132,7 +132,7 @@
                     const litR = Math.min(255, 160 * lightIntensity + specular * 255);
                     const litG = Math.min(255, 174 * lightIntensity + specular * 255);
                     const litB = Math.min(255, 192 * lightIntensity + specular * 255);
-                    const fog = GreenhouseModels3DMath.applyDepthFog(0.15, f.depth);
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.20, f.depth);
                     ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
 
                     ctx.beginPath();
@@ -142,7 +142,7 @@
 
                 // Intrinsic Structural Signatures (Accessibility)
                 ctx.save();
-                if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
+                if (f.region === 'pfc') {
                     // PFC - Executive Grid Pattern with high-frequency noise
                     ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
                     ctx.setLineDash([1, 2]);
@@ -185,7 +185,7 @@
             const faces = brainShell.faces;
 
             const projectedVertices = vertices.map(v => {
-                return GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
+                return GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
             });
 
             const hits = [];
@@ -286,7 +286,7 @@
                                     y: va.y + t * (vb.y - va.y),
                                     z: va.z + t * (vb.z - va.z)
                                 };
-                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, -inter.y, inter.z, camera, projection);
+                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
                                 if (proj.scale > 0 && proj.depth < 0.8) {
                                     points.push(proj);
                                 }
@@ -345,8 +345,8 @@
                     const from = centroids[regions[i]];
                     const to = centroids[regions[j]];
                     if (from && to) {
-                        const p1 = GreenhouseModels3DMath.project3DTo2D(from.x, -from.y, from.z, camera, projection);
-                        const p2 = GreenhouseModels3DMath.project3DTo2D(to.x, -to.y, to.z, camera, projection);
+                        const p1 = GreenhouseModels3DMath.project3DTo2D(from.x, from.y, from.z, camera, projection);
+                        const p2 = GreenhouseModels3DMath.project3DTo2D(to.x, to.y, to.z, camera, projection);
                         if (p1.scale > 0 && p2.scale > 0) {
                             ctx.beginPath();
                             ctx.moveTo(p1.x, p1.y);
@@ -373,7 +373,7 @@
 
             for (const regionId in centroids) {
                 const center = centroids[regionId];
-                const proj = GreenhouseModels3DMath.project3DTo2D(center.x, -center.y, center.z, camera, projection);
+                const proj = GreenhouseModels3DMath.project3DTo2D(center.x, center.y, center.z, camera, projection);
 
                 // Only draw labels for the front half of the brain
                 if (proj.scale > 0 && proj.depth < 0.6) {
@@ -404,7 +404,7 @@
         drawPulses(ctx, pulses, camera, projection) {
             ctx.save();
             pulses.forEach(p => {
-                const proj = GreenhouseModels3DMath.project3DTo2D(p.x, -p.y, p.z, camera, projection);
+                const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, camera, projection);
                 if (proj.scale > 0) {
                     const size = (p.size || 3) * proj.scale;
                     const alpha = (p.alpha || 1.0) * GreenhouseModels3DMath.applyDepthFog(1, proj.depth);
