@@ -461,6 +461,8 @@
                 const v2 = brainShell.vertices[face.indices[1]];
                 const v3 = brainShell.vertices[face.indices[2]];
 
+                if (!v1 || !v2 || !v3) return;
+
                 const region = v1.region || v2.region || v3.region;
                 face.region = region;
 

@@ -24,6 +24,7 @@
          * Enhances the base brain mesh with more granular regions for emotion modeling.
          */
         enhanceRegions(brain) {
+            if (!brain || !brain.regions) return;
             // Add new regions to the regions object
             const newRegions = {
                 dlPFC: {

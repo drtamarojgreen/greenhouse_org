@@ -311,7 +311,7 @@
                 const p1 = projected[faceIndices[1]];
                 const p2 = projected[faceIndices[2]];
 
-                if (p0.scale <= 0 || p1.scale <= 0 || p2.scale <= 0) return; // Don't draw if behind camera
+                if (!p0 || !p1 || !p2 || p0.scale <= 0 || p1.scale <= 0 || p2.scale <= 0) return; // Don't draw if behind camera
 
                 // Backface culling (simple 2D cross product check)
                 const crossProduct = (p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x);

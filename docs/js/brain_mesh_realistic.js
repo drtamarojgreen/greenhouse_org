@@ -14,7 +14,24 @@
             const brain = {
                 vertices: [],
                 faces: [],
-                regions: {}
+                regions: {
+                    pfc: { name: 'Prefrontal Cortex (Frontal Lobe)', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    motorCortex: { name: 'Motor Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    somatosensoryCortex: { name: 'Somatosensory Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    parietalLobe: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    temporalLobe: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    occipitalLobe: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    cerebellum: { name: 'Cerebellum', color: 'rgba(255, 182, 193, 0.2)', vertices: [] },
+                    brainstem: { name: 'Brainstem', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
+                    amygdala: { name: 'Amygdala', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    hippocampus: { name: 'Hippocampus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    thalamus: { name: 'Thalamus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    hypothalamus: { name: 'Hypothalamus', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    corpusCallosum: { name: 'Corpus Callosum', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
+                    lateralVentricle: { name: 'Lateral Ventricle', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
+                    pituitaryGland: { name: 'Pituitary Gland', color: 'rgba(30, 144, 255, 0.2)', vertices: [] },
+                    mammillaryBody: { name: 'Mammillary Body', color: 'rgba(255, 255, 255, 0.2)', vertices: [] }
+                }
             };
 
             // Parameters for realistic brain shape
@@ -94,91 +111,6 @@
             // Precompute curvature maps
             this.computeCurvatureMap(brain);
 
-            // Define regions with labels - Anatomically correct hierarchy with 20% alpha
-            // Colors mapped from schematic_human_brain_t.jpg
-            brain.regions = {
-                pfc: {
-                    name: 'Prefrontal Cortex (Frontal Lobe)',
-                    color: 'rgba(245, 230, 200, 0.2)', // Beige/Cream
-                    vertices: []
-                },
-                motorCortex: {
-                    name: 'Motor Cortex',
-                    color: 'rgba(245, 230, 200, 0.2)', // Beige/Cream
-                    vertices: []
-                },
-                somatosensoryCortex: {
-                    name: 'Somatosensory Cortex',
-                    color: 'rgba(245, 230, 200, 0.2)', // Beige/Cream
-                    vertices: []
-                },
-                parietalLobe: {
-                    name: 'Parietal Lobe',
-                    color: 'rgba(245, 230, 200, 0.2)', // Beige/Cream
-                    vertices: []
-                },
-                temporalLobe: {
-                    name: 'Temporal Lobe',
-                    color: 'rgba(245, 230, 200, 0.2)', // Beige/Cream
-                    vertices: []
-                },
-                occipitalLobe: {
-                    name: 'Occipital Lobe',
-                    color: 'rgba(245, 230, 200, 0.2)', // Beige/Cream
-                    vertices: []
-                },
-                cerebellum: {
-                    name: 'Cerebellum',
-                    color: 'rgba(255, 182, 193, 0.2)', // Pink
-                    vertices: []
-                },
-                brainstem: {
-                    name: 'Brainstem',
-                    color: 'rgba(135, 206, 250, 0.2)', // Light Blue
-                    vertices: []
-                },
-                amygdala: {
-                    name: 'Amygdala',
-                    color: 'rgba(165, 42, 42, 0.2)', // Reddish-brown (mapped to internal color)
-                    vertices: []
-                },
-                hippocampus: {
-                    name: 'Hippocampus',
-                    color: 'rgba(165, 42, 42, 0.2)', // Reddish-brown (mapped to internal color)
-                    vertices: []
-                },
-                thalamus: {
-                    name: 'Thalamus',
-                    color: 'rgba(165, 42, 42, 0.2)', // Reddish-brown
-                    vertices: []
-                },
-                hypothalamus: {
-                    name: 'Hypothalamus',
-                    color: 'rgba(165, 42, 42, 0.2)', // Reddish-brown
-                    vertices: []
-                },
-                corpusCallosum: {
-                    name: 'Corpus Callosum',
-                    color: 'rgba(135, 206, 250, 0.2)', // Light Blue
-                    vertices: []
-                },
-                lateralVentricle: {
-                    name: 'Lateral Ventricle',
-                    color: 'rgba(165, 42, 42, 0.2)', // Reddish-brown in schematic
-                    vertices: []
-                },
-                pituitaryGland: {
-                    name: 'Pituitary Gland',
-                    color: 'rgba(30, 144, 255, 0.2)', // Bright Blue
-                    vertices: []
-                },
-                mammillaryBody: {
-                    name: 'Mammillary Body',
-                    color: 'rgba(255, 255, 255, 0.2)', // White
-                    vertices: []
-                }
-            };
-
             // Populate region vertex indices
             brain.vertices.forEach((v, i) => {
                 if (v.region && brain.regions[v.region]) {
@@ -255,7 +187,7 @@
                                 y: (va.normal.y + vb.normal.y) / 2,
                                 z: (va.normal.z + vb.normal.z) / 2
                             },
-                            region: va.region
+                            region: va.region || vb.region
                         };
                         const l = Math.sqrt(midV.normal.x**2 + midV.normal.y**2 + midV.normal.z**2);
                         if (l > 0) { midV.normal.x /= l; midV.normal.y /= l; midV.normal.z /= l; }
