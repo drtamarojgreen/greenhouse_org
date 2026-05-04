@@ -1,0 +1,3 @@
+Situation: Genetic_UI_Interface
+Is genetic_ui_methods_valid = true
+Is required_methods = init, setupDOM, shouldEvolve, render, resize, startAnimation, updateData

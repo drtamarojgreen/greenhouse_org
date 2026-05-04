@@ -1,0 +1,9 @@
+Situation: JS_Quality_Constraints
+Is naming_compliance_enabled = true
+Is global_object_pattern = ^GreenhouseGenetic[A-Z][a-zA-Z0-9]*$
+Is local_variable_pattern = ^[a-z][a-zA-Z0-9]*$
+Is empty_catch_prohibited = true
+Is unused_symbols_prohibited = true
+Is meaningful_assertions_required = true
+Is magic_number_threshold = 100
+Is duplication_check_enabled = true
