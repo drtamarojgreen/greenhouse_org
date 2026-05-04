@@ -170,6 +170,8 @@
                 pairs.forEach(([i1, i2]) => {
                     const v1 = vertices[i1];
                     const v2 = vertices[i2];
+                    if (!v1 || !v2 || !v1.normal || !v2.normal) return;
+
                     const dot = v1.normal.x * v2.normal.x + v1.normal.y * v2.normal.y + v1.normal.z * v2.normal.z;
                     const diff = 1.0 - Math.max(-1, Math.min(1, dot));
                     v1.curvature += diff;
@@ -197,6 +199,11 @@
                 const indices = f.indices || f;
                 const i0 = indices[0], i1 = indices[1], i2 = indices[2];
                 const v0 = vertices[i0], v1 = vertices[i1], v2 = vertices[i2];
+
+                if (!v0 || !v1 || !v2 || !v0.normal || !v1.normal || !v2.normal) {
+                    newFaces.push(f);
+                    continue;
+                }
 
                 const dot01 = v0.normal.x * v1.normal.x + v0.normal.y * v1.normal.y + v0.normal.z * v1.normal.z;
                 const dot12 = v1.normal.x * v2.normal.x + v1.normal.y * v2.normal.y + v1.normal.z * v2.normal.z;

@@ -137,7 +137,8 @@
             // For general cortex areas not caught above
             if (y > -0.2 && (z > 0.4 || Math.abs(x) > 0.5 || y > 0.5)) {
                 // If not one of the specific ones above, categorize as general cortex for visualization
-                // Base regions use 'pfc' instead of 'prefrontalCortex'
+                const baseRegions = ['pfc', 'motorCortex', 'somatosensoryCortex', 'parietalLobe', 'temporalLobe', 'occipitalLobe'];
+                // We'll return null to keep whatever the base generator assigned, unless we want to override it to 'cortex'
                 return null;
             }
 
@@ -285,7 +286,7 @@
                         ctx.fillStyle = 'rgba(255,255,255,0.3)';
                         ctx.fillRect(sx, sy, 1, 1);
                     }
-                } else if (f.region === 'dlPFC' || f.region === 'ofc' || f.region === 'vmPFC' || f.region === 'prefrontalCortex') {
+                } else if (f.region === 'dlPFC' || f.region === 'ofc' || f.region === 'vmPFC' || f.region === 'pfc') {
                     // PFC Subdivisions - Executive Grid Pattern with high-frequency noise
                     ctx.strokeStyle = 'rgba(255,255,255,0.2)';
                     ctx.setLineDash([1, 2]);
