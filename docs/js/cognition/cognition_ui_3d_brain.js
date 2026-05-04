@@ -142,7 +142,7 @@
 
                 // Intrinsic Structural Signatures (Accessibility)
                 ctx.save();
-                if (f.region === 'pfc' || f.region === 'pfc') {
+                if (f.region === 'pfc') {
                     // PFC - Executive Grid Pattern with high-frequency noise
                     ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
                     ctx.setLineDash([1, 2]);
