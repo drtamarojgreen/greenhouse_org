@@ -33,6 +33,12 @@
                 return;
             }
 
+            // Guard against missing proteinCache
+            if (!proteinCache) {
+                console.warn('[drawProteinView] proteinCache is missing.');
+                return;
+            }
+
             // Initialize Protein Cache if needed
             let protein = proteinCache[activeGene.id];
             if (!protein && window.GreenhouseGeneticGeometry) {

@@ -30,6 +30,7 @@
         brainShell: null,
         activeGeneIndex: 0,
         mainCameraController: null,
+        proteinCache: {},
 
         init(container, algo, selector = null) {
             if (algo && typeof algo !== 'string') this.algo = algo;
