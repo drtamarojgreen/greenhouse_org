@@ -1,11 +1,13 @@
 # JS Genetic SDD — Sorrel Checkouts
 # Tracks completed and verified work for lifecycle traceability.
 
-## Verified (Structural Implementation)
+## Empirical Observations (2024-05-04)
 
-- **GeneticUIMethodAudit**: Source code implemented and verified via `read_file`.
-- **JSGlobalNamespaceAudit**: Source code implemented and verified via `read_file`.
-- **JSNamingConventionAudit**: Source code implemented and verified via `read_file`.
-- **JSUnusedSymbolAudit**: Source code implemented and verified via `read_file`.
-- **JSEmptyCatchAudit**: Source code implemented and verified via `read_file`.
-- **JSMeaninglessAssertionAudit**: Source code implemented and verified via `read_file`.
+- **GeneticUIMethodAudit**: Reports 7 found methods in `genetic_ui_3d.js`.
+- **JSGlobalNamespaceAudit**: Reports 0 namespace violations across 13 files.
+- **JSNamingConventionAudit**: Reports 0 naming violations across 13 files.
+- **JSMeaninglessAssertionAudit**: Reports 0 meaningless assertions.
+- **JSUnusedSymbolAudit**: Reports potential unused symbols (observed 6).
+- **JSEmptyCatchAudit**: Reports 0 empty catch blocks (following multiline refinement).
+- **JSHardcodedValueAudit**: Reports 266 magic numbers and 7 un-parameterized strings.
+- **JSCodeDuplicationAudit**: Reports 0 identical 5-line cross-file chunks.

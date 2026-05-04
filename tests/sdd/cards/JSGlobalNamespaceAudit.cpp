@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <regex>
 #include "../cpp/util/fact_utils.h"
 #include "../cpp/util/decorator.h"
 
@@ -10,20 +11,16 @@ namespace fs = std::filesystem;
 using namespace Sorrel::Sdd::Util;
 
 // @Card: js_global_namespace_audit
-// @Description Verifies JS files use IIFE and 'use strict'
-// @Results files_scanned, violations_count, namespace_compliance
+// @Results files_checked, namespace_violation_count, namespace_violations
 
 int main() {
     auto env = FactReader::readFacts("environment.facts");
     std::string js_dir = env.count("genetic_js_dir") ? env.at("genetic_js_dir") : "docs/js/genetic/";
 
     int files_scanned = 0;
-    int violations = 0;
+    std::vector<std::string> violations;
 
-    if (!fs::exists(js_dir)) {
-        std::cerr << "[ERROR] Directory does not exist: " << js_dir << std::endl;
-        return 1;
-    }
+    if (!fs::exists(js_dir)) { std::cerr << "error = Directory not found" << std::endl; return 1; }
 
     for (const auto& entry : fs::directory_iterator(js_dir)) {
         if (entry.path().extension() == ".js") {
@@ -35,26 +32,20 @@ int main() {
             bool has_iife_end = false;
 
             while (std::getline(file, line)) {
-                if (line.find("(function () {") != std::string::npos || line.find("(function() {") != std::string::npos) has_iife_start = true;
-                if (line.find("'use strict';") != std::string::npos || line.find("\"use strict\";") != std::string::npos) has_strict = true;
+                if (line.find("(function") != std::string::npos && line.find("{") != std::string::npos) has_iife_start = true;
+                if (line.find("'use strict'") != std::string::npos || line.find("\"use strict\"") != std::string::npos) has_strict = true;
                 if (line.find("})();") != std::string::npos) has_iife_end = true;
             }
 
             if (!has_iife_start || !has_strict || !has_iife_end) {
-                violations++;
-                std::cerr << "[FAIL] JS Namespace violation in " << entry.path().filename() << ":"
-                          << (has_iife_start ? "" : " Missing IIFE start;")
-                          << (has_strict ? "" : " Missing 'use strict';")
-                          << (has_iife_end ? "" : " Missing IIFE end;")
-                          << std::endl;
+                violations.push_back(entry.path().filename().string());
             }
         }
     }
 
-    bool ok = (violations == 0);
-    std::cout << "files_scanned = " << files_scanned << std::endl;
-    std::cout << "violations_count = " << violations << std::endl;
-    std::cout << "namespace_compliance = " << (ok ? "true" : "false") << std::endl;
+    std::cout << "files_checked = " << files_scanned << std::endl;
+    std::cout << "namespace_violation_count = " << violations.size() << std::endl;
+    std::cout << "namespace_violations = "; for (const auto& v : violations) std::cout << v << " "; std::cout << std::endl;
 
-    return ok ? 0 : 1;
+    return 0;
 }

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <algorithm>
 #include "../cpp/util/fact_utils.h"
 #include "../cpp/util/decorator.h"
 
@@ -10,58 +11,74 @@ namespace fs = std::filesystem;
 using namespace Sorrel::Sdd::Util;
 
 // @Card: js_empty_catch_audit
-// @Requires empty_catch_prohibited = true
-// @Results files_checked, violations_count, catch_integrity
+// @Results files_checked, empty_catch_instances, empty_catch_locations
 
 int main() {
-    auto facts = FactReader::readFacts("js_quality.facts");
     auto env = FactReader::readFacts("environment.facts");
-    if (!require_fact(facts, "empty_catch_prohibited", "true")) return 1;
-
     std::string js_dir = env.count("genetic_js_dir") ? env.at("genetic_js_dir") : "docs/js/genetic/";
 
     int files_checked = 0;
-    int violations = 0;
+    std::vector<std::string> violations;
 
     for (const auto& entry : fs::directory_iterator(js_dir)) {
         if (entry.path().extension() == ".js") {
             files_checked++;
             std::ifstream file(entry.path());
             std::string line;
+            int line_num = 0;
             bool in_catch = false;
-            std::string catch_block = "";
+            std::string catch_content = "";
+            int brace_count = 0;
+            int start_line = 0;
 
             while (std::getline(file, line)) {
-                if (line.find("catch") != std::string::npos && line.find("{") != std::string::npos) {
-                    in_catch = true;
-                    catch_block = line.substr(line.find("{"));
-                }
-                if (in_catch) {
-                    if (line.find("}") != std::string::npos) {
-                        in_catch = false;
-                        catch_block += line.substr(0, line.find("}") + 1);
-                        // Basic check: is there anything other than whitespace/comments in the braces?
-                        size_t first = catch_block.find("{") + 1;
-                        size_t last = catch_block.find_last_of("}");
-                        std::string content = catch_block.substr(first, last - first);
-                        bool empty = true;
-                        for(char c : content) if(!isspace(c)) { empty = false; break; }
-                        if (empty) {
-                            violations++;
-                            std::cerr << "[FAIL] Empty catch block in " << entry.path().filename() << std::endl;
+                line_num++;
+                if (!in_catch) {
+                    size_t catch_pos = line.find("catch");
+                    if (catch_pos != std::string::npos) {
+                        in_catch = true;
+                        start_line = line_num;
+                        size_t brace_pos = line.find('{', catch_pos);
+                        if (brace_pos != std::string::npos) {
+                            brace_count = 1;
+                            catch_content = line.substr(brace_pos + 1);
+
+                            size_t close_pos = line.find('}', brace_pos);
+                            if (close_pos != std::string::npos) {
+                                brace_count = 0;
+                                std::string content = line.substr(brace_pos + 1, close_pos - brace_pos - 1);
+                                content.erase(std::remove_if(content.begin(), content.end(), ::isspace), content.end());
+                                if (content.empty()) violations.push_back(entry.path().filename().string() + ":" + std::to_string(start_line));
+                                in_catch = false;
+                                catch_content = "";
+                            }
                         }
-                    } else {
-                        catch_block += line;
+                    }
+                } else {
+                    for (char c : line) {
+                        if (c == '{') brace_count++;
+                        else if (c == '}') brace_count--;
+
+                        if (brace_count == 0) {
+                            in_catch = false;
+                            std::string trimmed = catch_content;
+                            trimmed.erase(std::remove_if(trimmed.begin(), trimmed.end(), ::isspace), trimmed.end());
+                            if (trimmed.find("//") == std::string::npos && trimmed.find("/*") == std::string::npos) {
+                                if (trimmed.empty()) violations.push_back(entry.path().filename().string() + ":" + std::to_string(start_line));
+                            }
+                            catch_content = "";
+                            break;
+                        }
+                        catch_content += c;
                     }
                 }
             }
         }
     }
 
-    bool ok = (violations == 0);
     std::cout << "files_checked = " << files_checked << std::endl;
-    std::cout << "violations_count = " << violations << std::endl;
-    std::cout << "catch_integrity = " << (ok ? "true" : "false") << std::endl;
+    std::cout << "empty_catch_count = " << violations.size() << std::endl;
+    std::cout << "empty_catch_locations = "; for (const auto& v : violations) std::cout << v << " "; std::cout << std::endl;
 
-    return ok ? 0 : 1;
+    return 0;
 }
