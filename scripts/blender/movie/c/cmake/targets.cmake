@@ -1,12 +1,12 @@
 # Define tests and benchmark targets
 # For each test file in tests/cards/, add an executable
-file(GLOB CHAI_TEST_CARDS "tests/cards/*.cpp")
+file(GLOB SORREL_TEST_CARDS "tests/cards/*.cpp")
 
 # Shared utility for tests
 add_library(test_util STATIC tests/cpp/util/fact_utils.cpp)
 target_include_directories(test_util PUBLIC tests/cpp/util include)
 
-foreach(CARD_SRC ${CHAI_TEST_CARDS})
+foreach(CARD_SRC ${SORREL_TEST_CARDS})
     get_filename_component(CARD_NAME ${CARD_SRC} NAME_WE)
     add_executable(${CARD_NAME} ${CARD_SRC})
     target_link_libraries(${CARD_NAME} PRIVATE test_util)

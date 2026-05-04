@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include "../cpp/util/FactReader.hpp"
-#include "../../src/MeshLoader.hpp"
+#include "../../include/MeshLoader.hpp"
 
 // @Card: validate_gmesh_loader
 void validate_gmesh_card(const std::map<std::string, std::string>& facts) {

@@ -3,8 +3,8 @@
 #include <string>
 #include <cmath>
 #include "../cpp/util/FactReader.hpp"
-#include "../../src/MathCore.hpp"
-#include "../../src/SceneNodes.hpp"
+#include "../../include/MathCore.hpp"
+#include "../../include/SceneNodes.hpp"
 
 // @Card: validate_retreat_ramp
 void validate_ramp_card(const std::map<std::string, std::string>& facts) {

@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include "../cpp/util/FactReader.hpp"
-#include "../../src/SceneNodes.hpp"
+#include "../../include/SceneNodes.hpp"
 
 // @Card: validate_credits_scroll
 void validate_credits_scroll_card(const std::map<std::string, std::string>& facts) {

@@ -60,7 +60,7 @@ namespace Movie8.Tests
             // When: Target movement is set (simulated via reflection or Update loop)
             var moveVelocityField = typeof(PlayerController).GetField("moveVelocity", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-            // Then: The movement should start at zero and increase (verified in CDD tests)
+            // Then: The movement should start at zero and increase (verified in SDD tests)
             Vector3 initialVelocity = (Vector3)moveVelocityField.GetValue(player);
             Assert.AreEqual(Vector3.zero, initialVelocity, "Player should start stationary.");
 

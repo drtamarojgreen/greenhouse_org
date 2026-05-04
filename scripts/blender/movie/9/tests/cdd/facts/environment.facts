@@ -1,5 +1,0 @@
-Situation: Environment
-# Relative paths to config files, resolved from the cdd/ working directory
-Is config_path = ../../movie_config.json
-Is lights_camera_path = ../../lights_camera.json
-Is m9_root = ../../

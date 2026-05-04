@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include "../cpp/util/FactReader.hpp"
-#include "../../src/SceneNodes.hpp"
+#include "../../include/SceneNodes.hpp"
 
 // @Card: validate_facial_props
 void validate_facial_card(const std::map<std::string, std::string>& facts) {

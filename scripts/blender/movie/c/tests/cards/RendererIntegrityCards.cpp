@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include "../cpp/util/FactReader.hpp"
-#include "../../src/Renderer.hpp"
+#include "../../include/Renderer.hpp"
 
 // @Card: validate_renderer_init
 void validate_init_card(const std::map<std::string, std::string>& facts) {
