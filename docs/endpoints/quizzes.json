@@ -1,0 +1,151 @@
+{
+  "quizzes": [
+    {
+      "id": "adhd_neurobiology",
+      "title": "ADHD Neurobiology & Systems Quiz",
+      "description": "A comprehensive quiz on ADHD neurobiology, metabolism, and therapeutic systems based on Greenhouse Research.",
+      "questions": [
+        {
+          "id": 1,
+          "question": "Which neurotransmitters are highlighted as central to ADHD's catecholamine regulation?",
+          "choices": ["Serotonin and GABA", "Dopamine and Norepinephrine", "Glutamate and Glycine", "Histamine and Acetylcholine"],
+          "answer": 1,
+          "explanation": "Dopamine and norepinephrine are the primary catecholamines involved in focus, motivation, and executive function, which are often dysregulated in ADHD."
+        },
+        {
+          "id": 2,
+          "question": "Which brain regions are described as the 'air traffic controllers' of focus and movement in ADHD?",
+          "choices": ["Amygdala and Hippocampus", "Cingulate cortex, medial prefrontal cortex, and left basal ganglia", "Occipital and Temporal lobes", "Cerebellum and Brainstem"],
+          "answer": 1,
+          "explanation": "These specific regions (cingulate cortex, mPFC, and basal ganglia) work together to manage attention, impulse control, and motor coordination."
+        },
+        {
+          "id": 3,
+          "question": "Which metabolite is described as a major ketone body involved in ADHD‑related energy metabolism?",
+          "choices": ["L‑kynurenine", "3‑hydroxybutyrate", "Ceramide", "Linoleic acid"],
+          "answer": 1,
+          "explanation": "3-hydroxybutyrate is a key ketone body that provides an alternative energy source for the brain, playing a role in stabilizing neuroenergetic levels."
+        },
+        {
+          "id": 4,
+          "question": "Which pathway is responsible for producing neuroprotective and neurotoxic metabolites from tryptophan?",
+          "choices": ["Serotonin pathway", "Kynurenine pathway", "Glycolysis pathway", "Fatty acid oxidation pathway"],
+          "answer": 1,
+          "explanation": "The Kynurenine pathway is the main route for tryptophan metabolism, branching into either protective or toxic metabolites that affect brain health."
+        },
+        {
+          "id": 5,
+          "question": "Which metabolite is described as neuroprotective in the kynurenine pathway?",
+          "choices": ["Quinolinic acid", "Kynurenic acid", "N‑acetylornithine", "Docosahexaenoic acid"],
+          "answer": 1,
+          "explanation": "Kynurenic acid acts as an antagonist at glutamate receptors, helping to protect neurons from over-excitation and damage."
+        },
+        {
+          "id": 6,
+          "question": "Which cells act as the brain’s 'neighborhood watch' in ADHD‑related inflammation?",
+          "choices": ["Oligodendrocytes and Schwann cells", "Microglia and astrocytes", "Endothelial cells and pericytes", "Neurons and interneurons"],
+          "answer": 1,
+          "explanation": "Microglia and astrocytes are the primary immune and support cells in the brain, monitoring for threats and managing inflammatory responses."
+        },
+        {
+          "id": 7,
+          "question": "Which structure is described as the brain’s 'grand central station' for sensory and cognitive integration?",
+          "choices": ["Thalamus", "Striatum", "Cerebellum", "Hippocampus"],
+          "answer": 1,
+          "explanation": "The striatum is a critical node in the basal ganglia that processes inputs from the cortex to coordinate movement and complex behaviors."
+        },
+        {
+          "id": 8,
+          "question": "Which barrier is responsible for regulating what enters the brain from the bloodstream?",
+          "choices": ["Myelin sheath", "Blood‑brain barrier", "Cortical mantle", "Ventricular system"],
+          "answer": 1,
+          "explanation": "The blood-brain barrier is a highly selective semipermeable border that protects the brain from circulating toxins and pathogens."
+        },
+        {
+          "id": 9,
+          "question": "Which fatty acids are described as essential fuel for the brain’s signaling processes?",
+          "choices": ["Palmitic and stearic acid", "Docosahexaenoic and eicosapentaenoic acid", "Oleic and linoleic acid", "Ceramides and sphingomyelins"],
+          "answer": 1,
+          "explanation": "DHA and EPA (Omega-3 fatty acids) are structural components of brain cell membranes and are vital for efficient signal transmission and neuroprotection."
+        },
+        {
+          "id": 10,
+          "question": "Which therapeutic approach is described as improving gaze stability, postural control, and oculomotor regulation?",
+          "choices": ["Cognitive behavioral therapy", "Sensory‑motor base training", "Pharmacological intervention", "Neurofeedback training"],
+          "answer": 1,
+          "explanation": "Sensorimotor training targets the integration of sensory inputs and motor outputs, helping to stabilize physical and cognitive control systems."
+        },
+        {
+          "id": 11,
+          "question": "Which brain region is associated with emotional regulation and irritability in neurodevelopmental disorders?",
+          "choices": ["Amygdala", "Hippocampus", "Cerebellum", "Occipital lobe"],
+          "answer": 0,
+          "explanation": "The amygdala is responsible for emotional responses such as irritability, anger, and defiant behavior."
+        },
+        {
+          "id": 12,
+          "question": "Hypo-connectivity between the amygdala and which cortical region contributes to aggressive or irritable behavior?",
+          "choices": ["Right prefrontal cortex", "Primary motor cortex", "Visual cortex", "Temporal pole"],
+          "answer": 0,
+          "explanation": "Reduced connectivity between the amygdala and the right prefrontal cortex weakens emotional regulation."
+        },
+        {
+          "id": 13,
+          "question": "Which white matter structure connects the two hemispheres of the brain?",
+          "choices": ["Corpus callosum", "Internal capsule", "Cerebellar peduncle", "Fornix"],
+          "answer": 0,
+          "explanation": "The corpus callosum is the major white matter tract linking the left and right hemispheres."
+        },
+        {
+          "id": 14,
+          "question": "Methylphenidate increases synaptic dopamine and norepinephrine by blocking which transporters?",
+          "choices": ["Serotonin transporters", "Dopamine and norepinephrine transporters", "GABA transporters", "Glutamate transporters"],
+          "answer": 1,
+          "explanation": "Methylphenidate blocks dopamine and norepinephrine reuptake, increasing their availability in the synapse."
+        },
+        {
+          "id": 15,
+          "question": "Amphetamines interact with which transporter to release dopamine from storage vesicles?",
+          "choices": ["VMAT2", "GLUT1", "LAT1", "OATP"],
+          "answer": 0,
+          "explanation": "Amphetamines act on VMAT2 to push dopamine out of vesicles and into the synaptic space."
+        },
+        {
+          "id": 16,
+          "question": "Which type of medication calms sympathetic outflow by acting on alpha-2 adrenergic receptors?",
+          "choices": ["Stimulants", "Alpha-2 agonists", "SSRIs", "Beta blockers"],
+          "answer": 1,
+          "explanation": "Alpha-2 agonists like clonidine and guanfacine reduce sympathetic activity and improve signal clarity."
+        },
+        {
+          "id": 17,
+          "question": "Which immune cell type releases histamine, tryptase, and heparin during degranulation?",
+          "choices": ["Mast cells", "Microglia", "Neutrophils", "Oligodendrocytes"],
+          "answer": 0,
+          "explanation": "Mast cells release inflammatory mediators such as histamine and tryptase when activated."
+        },
+        {
+          "id": 18,
+          "question": "Which antioxidant system is central to managing oxidative stress in the brain?",
+          "choices": ["Glutathione system", "Melanin system", "Keratin system", "Elastin system"],
+          "answer": 0,
+          "explanation": "Glutathione and its associated enzymes neutralize reactive oxygen species and protect brain cells."
+        },
+        {
+          "id": 19,
+          "question": "Sulforaphane supports cellular defense by activating which pathway?",
+          "choices": ["Nrf2 pathway", "mTOR pathway", "JAK-STAT pathway", "MAPK pathway"],
+          "answer": 0,
+          "explanation": "Sulforaphane activates the Nrf2 pathway, which boosts antioxidant and detoxification enzymes."
+        },
+        {
+          "id": 20,
+          "question": "Which glial cells can produce cytokines and contribute to neuroinflammation when overactivated?",
+          "choices": ["Astrocytes and microglia", "Neurons and interneurons", "Endothelial cells", "Purkinje cells"],
+          "answer": 0,
+          "explanation": "Astrocytes and microglia release cytokines and inflammatory molecules when activated."
+        }
+      ]
+    }
+  ]
+}

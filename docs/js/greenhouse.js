@@ -408,6 +408,14 @@
     }
 
     /**
+     * @function loadQuizzesApplication
+     * @description Loads the Quizzes application.
+     */
+    async function loadQuizzesApplication() {
+        await loadApplication('quizzes', 'quizzes.js', config.selectors.quizzes);
+    }
+
+    /**
      * @function loadRnaRepairApplication
      * @description Loads the RNA repair simulation application.
      */
