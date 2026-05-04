@@ -1,0 +1,3 @@
+Situation: JS_Environment
+Is js_source_dir = docs/js/
+Is genetic_js_dir = docs/js/genetic/
