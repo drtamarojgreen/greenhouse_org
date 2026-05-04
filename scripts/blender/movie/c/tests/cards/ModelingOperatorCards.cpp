@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include "../cpp/util/FactReader.hpp"
-#include "../../src/GeometryOps.hpp"
+#include "../../include/GeometryOps.hpp"
 
 // @Card: validate_extrude_operator
 void validate_extrude_card(const std::map<std::string, std::string>& facts) {

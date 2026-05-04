@@ -133,6 +133,7 @@
             'mobile/test_mobile_ui_interactions.js', 'mobile/test_mobile_viewer.js', 'common/test_model_sync.js',
             'common/test_patient_app_unit.js', 'common/test_dashboard_app_unit.js', 'common/test_meditation_app.js',
             'common/test_scheduler_logic.js', 'common/test_tech_canvas.js', 'common/test_inspiration_logic.js',
+            'common/test_quizzes_logic.js',
             'common/test_kegg_parser.js', 'common/test_models_page_new.js', 'common/test_layout_parity.js',
             'test_production_resilience.js'
         ]
@@ -219,7 +220,7 @@
             'models_ui_environment_therapy.js', 'models_ui_environment.js', 'models_3d_math.js',
             'models_ui_3d.js', 'models_ui.js', 'models_ux.js', 'labeling_system.js',
             'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js',
-            'inspiration.js', 'kegg_parser.js', 'models_toc.js', 'GreenhouseMobile.js',
+            'inspiration.js', 'quizzes.js', 'kegg_parser.js', 'models_toc.js', 'GreenhouseMobile.js',
             'GreenhouseReactCompatibility.js', 'V8GraphRenderer.js'
         ]
     };

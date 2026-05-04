@@ -1,8 +1,8 @@
 # Greenhouse Movie Engine: Verification & Validation Suite
 
-## Overview: Chai-Driven Development (CDD)
+## Overview: Sorrel-Driven Development (SDD): Standardizing of Resilient and Reliable Equipment Learning
 
-The Greenhouse Movie Engine utilizes a rigorous **Chai-Driven Development (CDD)** methodology to ensure the mathematical and logical integrity of our 15,000-frame cinematic production. CDD operates on the principle of **Logical State Verification**, where high-level production requirements (Facts) are systematically compared against low-level C++ kernel outputs (Cards).
+The Greenhouse Movie Engine utilizes a rigorous **Sorrel-Driven Development (SDD): Standardizing of Resilient and Reliable Equipment Learning** methodology to ensure the mathematical and logical integrity of our 15,000-frame cinematic production. SDD operates on the principle of **Logical State Verification**, where high-level production requirements (Facts) are systematically compared against low-level C++ kernel outputs (Cards).
 
 ## Verification Methodology
 
@@ -19,7 +19,7 @@ We maintain strict parity between the Blender/Python acting scripts and our acce
 
 ## Scope and Limitations
 
-While CDD provides a robust foundation for logical correctness, it is essential to understand the boundaries of the current verification layer:
+While SDD provides a robust foundation for logical correctness, it is essential to understand the boundaries of the current verification layer:
 - **Logical vs. Visual Truth**: The suite validates positional and property-based data. It does not perform visual regression testing (e.g., shader artifacts, lighting inaccuracies, or rasterization glitches).
 - **Static Ground Truth**: The `.facts` corpus represents the canonical production requirements. Changes to cinematic intent must be reflected in the fact-set to maintain the "Closed Loop" verification cycle.
 - **Performance Benchmarking**: Logical pass/fail criteria are independent of execution latency. Performance engineering is handled via a separate microbenchmark harness in the `bench/` directory.

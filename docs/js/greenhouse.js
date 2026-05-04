@@ -88,6 +88,10 @@
          */
         rnaPagePath: '/rna',
         /**
+         * The path segment that identifies the Quizzes page.
+         */
+        quizzesPagePath: '/quizzes',
+        /**
          * The path segment that identifies the Dopamine signaling page.
          */
         dopaminePagePath: '/dopamine',
@@ -136,6 +140,7 @@
             cognition: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             inflammation: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             stress: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            quizzes: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div > section > div:nth-child(2) > div > section > div:nth-child(1)',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -164,7 +169,8 @@
             emotion: 'section.wixui-section',
             cognition: 'section.wixui-section',
             inflammation: 'section.wixui-section',
-            stress: 'section.wixui-section'
+            stress: 'section.wixui-section',
+            quizzes: 'section.wixui-section'
         }
     };
 
@@ -408,6 +414,14 @@
     }
 
     /**
+     * @function loadQuizzesApplication
+     * @description Loads the Quizzes application.
+     */
+    async function loadQuizzesApplication() {
+        await loadApplication('quizzes', 'quizzes.js', config.selectors.quizzes, config.fallbackSelectors.quizzes);
+    }
+
+    /**
      * @function loadRnaRepairApplication
      * @description Loads the RNA repair simulation application.
      */
@@ -476,6 +490,7 @@
         if (path.includes(config.schedulePagePath)) await loadSchedulerApplication();
         else if (path.includes(config.booksPagePath)) await loadBooksApplication();
         else if (path.includes(config.newsPagePath)) await loadNewsApplication();
+        else if (path.includes(config.quizzesPagePath)) await loadQuizzesApplication();
         else if (path.includes(config.modelsPagePath)) pollAndLoad(config.selectors.models, loadModelsApplication);
         else if (path.includes(config.geneticPagePath)) pollAndLoad(config.selectors.genetic, loadGeneticApplication);
         else if (path.includes(config.techPagePath)) pollAndLoad(config.selectors.tech, loadTechApplication);
