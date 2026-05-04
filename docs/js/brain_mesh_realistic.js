@@ -56,14 +56,14 @@
                             z *= layer.radius;
                         }
 
-                        let region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
+                        let region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius, layer.name);
 
                         if (layer.name === 'Cortex') {
                             const folds = this.addCorticalFolds(x, y, z, baseRadius, region);
                             x += folds.x;
                             y += folds.y;
                             z += folds.z;
-                            region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
+                            region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius, layer.name);
                         }
 
                         const len = Math.sqrt(x * x + y * y + z * z);
@@ -338,54 +338,63 @@
          * Apply anatomical deformations to create realistic brain shape
          */
         applyAnatomicalDeformations(x, y, z) {
-            // Proportional scaling
-            x *= 1.0; y *= 1.15; z *= 1.1;
+            // Proportional scaling for human brain (longer Z, wider X than sphere)
+            x *= 1.1; y *= 1.2; z *= 1.35;
 
-            // Longitudinal fissure (indent between hemispheres)
-            if (y > 0.2) {
-                const fissureDepth = Math.exp(-Math.abs(x) * 8) * 0.15;
-                y *= (1 - fissureDepth);
+            // 1. Longitudinal fissure (Deep indent between hemispheres)
+            const fissureEffect = Math.exp(-Math.abs(x) * 12) * 0.25;
+            if (y > -0.5) {
+                y *= (1 - fissureEffect);
             }
 
-            // Frontal lobe bulge
-            if (z > 0.5 && y > -0.2) {
-                const bulgeFactor = (z - 0.5) * 0.3;
-                z *= (1 + bulgeFactor);
-                y *= (1 + bulgeFactor * 0.2);
-            }
-
-            // Occipital lobe rounding
-            if (z < -0.4 && y > -0.1) {
-                const bulgeFactor = (-z - 0.4) * 0.25;
-                z *= (1 + bulgeFactor);
-            }
-
-            // Temporal lobe bulge
-            if (Math.abs(x) > 0.5 && y < 0.2 && y > -0.4 && z > -0.3 && z < 0.3) {
-                const bulgeFactor = (Math.abs(x) - 0.5) * 0.4;
-                x *= (1 + bulgeFactor * Math.sign(x));
-                z *= (1 + bulgeFactor * 0.3);
-            }
-
-            // Cerebellum protrusion
-            if (y < -0.2 && z < -0.3) {
-                const dist = Math.sqrt((y + 0.4)**2 + (z + 0.5)**2);
-                if (dist < 0.4) {
-                    const bulgeFactor = (0.4 - dist) * 0.8;
-                    y *= (1 + bulgeFactor);
-                    z *= (1 + bulgeFactor);
-                    x *= (1 + bulgeFactor * 0.5);
+            // 2. Lateral Sulcus (Sylvian Fissure) - Indent on sides
+            if (Math.abs(y) < 0.3 && z > -0.4 && z < 0.5) {
+                const sulcusEffect = Math.exp(-Math.abs(y + 0.1) * 6) * 0.12;
+                if (Math.abs(x) > 0.4) {
+                    x *= (1 - sulcusEffect);
                 }
             }
 
-            // Brainstem taper
-            if (y < -0.5 && Math.abs(x) < 0.25 && Math.abs(z) < 0.25) {
-                const taper = (y + 0.5) / -0.5;
-                x *= (1 - taper * 0.6);
-                z *= (1 - taper * 0.6);
+            // 3. Frontal Lobe (Broad bulge at front)
+            if (z > 0.4) {
+                const frontalShift = (z - 0.4) * 0.45;
+                z *= (1 + frontalShift);
+                x *= (1 + frontalShift * 0.2);
+                y *= (1 + frontalShift * 0.1);
             }
 
-            if (y < -0.6) y *= 0.85;
+            // 4. Temporal Lobes (Hang down and bulge sideways)
+            if (Math.abs(x) > 0.6 && z > -0.3 && z < 0.5 && y < 0.2) {
+                const tempBulge = (Math.abs(x) - 0.6) * 0.6;
+                x *= (1 + tempBulge);
+                y -= tempBulge * 0.4; // Hanging down
+            }
+
+            // 5. Occipital Lobe (Tapered back)
+            if (z < -0.5) {
+                const occipitalTaper = (-z - 0.5) * 0.35;
+                x *= (1 - occipitalTaper);
+                y *= (1 - occipitalTaper * 0.5);
+                z *= (1 + occipitalTaper * 0.1);
+            }
+
+            // 6. Cerebellum (Separate bulbous structure at lower back)
+            if (y < -0.3 && z < -0.4) {
+                const distToCerebCenter = Math.sqrt(x*x + (y+0.6)**2 + (z+0.7)**2);
+                if (distToCerebCenter < 0.6) {
+                    const cerebBulge = (0.6 - distToCerebCenter) * 0.7;
+                    x *= (1 + cerebBulge);
+                    y *= (1 + cerebBulge);
+                    z *= (1 + cerebBulge);
+                }
+            }
+
+            // 7. Brainstem (Downward protrusion from center)
+            if (Math.abs(x) < 0.35 && Math.abs(z) < 0.35 && y < -0.5) {
+                const stemTaper = (-y - 0.5) * 0.6;
+                x *= (1 - stemTaper);
+                z *= (1 - stemTaper);
+            }
 
             return { x, y, z };
         },
@@ -433,51 +442,55 @@
          * Determine brain region for a vertex
          * Mapped to schematic_human_brain_t.jpg spatial relationships
          */
-        determineRegion(x, y, z) {
-            // Internal structures first (higher priority as they are inside)
-            // Increased X threshold to capture some volume
+        determineRegion(x, y, z, layerName) {
+            // Midline structures (Corpus Callosum, Ventricles, Thalamus, etc.)
             if (Math.abs(x) < 0.4) {
-                // Midline structures (Corpus Callosum is "C" shaped)
-                // Using scaled coordinates for region logic
-                const distToCallosumCenter = Math.sqrt((y-0.1)**2 + (z - 0.05)**2);
-                if (distToCallosumCenter > 0.15 && distToCallosumCenter < 0.35 && y > 0.1) {
+                // Pituitary Gland (hangs off hypothalamus at front)
+                if (y <= -0.3 && y > -0.8 && z > 0.1 && z < 0.8) return 'pituitaryGland';
+
+                // Corpus Callosum (C-shape above thalamus)
+                const distToCallosumCenter = Math.sqrt((y - 0.2)**2 + (z - 0.1)**2);
+                if (distToCallosumCenter > 0.2 && distToCallosumCenter < 0.45 && y > 0.1 && z > -0.4 && z < 0.6) {
                     return 'corpusCallosum';
                 }
 
-                // Lateral Ventricle (inside callosum)
-                if (distToCallosumCenter < 0.15 && y > 0.1 && z > -0.1 && z < 0.2) {
+                // Lateral Ventricle (just below callosum)
+                if (distToCallosumCenter < 0.2 && y > 0 && z > -0.2 && z < 0.4) {
                     return 'lateralVentricle';
                 }
 
-                // Thalamus (below ventricle)
-                if (y > -0.15 && y <= 0.3 && Math.abs(z) < 0.25) return 'thalamus';
+                // Thalamus (Central Egg shape)
+                const distToThalamus = Math.sqrt(x*x + (y + 0.1)**2 + (z - 0.1)**2);
+                if (distToThalamus < 0.35) return 'thalamus';
 
                 // Hypothalamus (below thalamus)
-                if (y <= -0.15 && y > -0.35 && Math.abs(z) < 0.25) return 'hypothalamus';
-
-                // Pituitary Gland (hangs off hypothalamus at front)
-                if (y <= -0.35 && y > -0.55 && z > 0.2 && z < 0.4) return 'pituitaryGland';
+                if (y <= -0.1 && y > -0.4 && z > 0 && z < 0.4) return 'hypothalamus';
 
                 // Mammillary Body (small bump behind pituitary)
-                if (y <= -0.3 && y > -0.5 && z > -0.1 && z < 0.15) return 'mammillaryBody';
+                if (y <= -0.35 && y > -0.55 && z > 0 && z < 0.25) return 'mammillaryBody';
+
+                // Brainstem (protruding downwards)
+                if (y < -0.4 && z < 0.2) return 'brainstem';
             }
 
-            // Lower structures
-            if (y < -0.2 && z < -0.3) return 'cerebellum';
-            if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) return 'brainstem';
-
-            // Cortex regions
-            if (z > 0.4 && y > 0.1) return 'pfc';
+            // Cerebellum (Lower posterior)
+            if (y < -0.2 && z < -0.4) return 'cerebellum';
 
             // Subcortical (deeper temporal)
-            if (Math.abs(x) > 0.3 && Math.abs(x) < 0.6 && y < 0.1 && y > -0.4 && z > -0.2 && z < 0.2) return 'hippocampus';
-            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.5 && y < 0.2 && y > -0.2 && z > 0.1 && z < 0.4) return 'amygdala';
+            if (Math.abs(x) > 0.2 && Math.abs(x) < 0.6 && y < 0.1 && y > -0.5) {
+                if (z > -0.3 && z < 0.3) return 'hippocampus';
+                if (z > 0.2 && z < 0.6) return 'amygdala';
+            }
 
-            if (y > 0.5 && z > 0 && z < 0.4) return 'motorCortex';
-            if (y > 0.5 && z < 0 && z > -0.3) return 'somatosensoryCortex';
+            // Cortex regions (Only if in Cortex layer or not caught above)
+            if (z > 0.6) return 'pfc';
+            if (y > 0.6) {
+                if (z > 0) return 'motorCortex';
+                return 'somatosensoryCortex';
+            }
             if (y > 0.3 && z < -0.3) return 'parietalLobe';
-            if (z < -0.5 && y > -0.2) return 'occipitalLobe';
-            if (Math.abs(x) > 0.5 && y < 0.2 && y > -0.4 && z > -0.4 && z < 0.4) return 'temporalLobe';
+            if (z < -0.6) return 'occipitalLobe';
+            if (Math.abs(x) > 0.6 && y < 0.3) return 'temporalLobe';
 
             return 'pfc';
         }

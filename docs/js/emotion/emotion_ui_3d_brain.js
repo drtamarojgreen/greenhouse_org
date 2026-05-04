@@ -104,7 +104,7 @@
                 if (y > 0.4) return 'dlPFC';
                 if (y < 0.1 && y > -0.3) return 'ofc';
                 if (Math.abs(x) < 0.2) return 'vmPFC';
-                return 'prefrontalCortex';
+                return 'pfc';
             }
 
             // Anterior Cingulate Cortex (ACC)
@@ -130,8 +130,7 @@
             // For general cortex areas not caught above
             if (y > -0.2 && (z > 0.4 || Math.abs(x) > 0.5 || y > 0.5)) {
                 // If not one of the specific ones above, categorize as general cortex for visualization
-                const baseRegions = ['prefrontalCortex', 'motorCortex', 'somatosensoryCortex', 'parietalLobe', 'temporalLobe', 'occipitalLobe'];
-                // We'll return null to keep whatever the base generator assigned, unless we want to override it to 'cortex'
+                // Base regions use 'pfc' instead of 'prefrontalCortex'
                 return null;
             }
 

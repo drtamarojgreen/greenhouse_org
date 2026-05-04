@@ -29,7 +29,7 @@
         },
         // Focused regions for the Emotion model
         regions: {
-            prefrontalCortex: {
+            pfc: {
                 name: 'emotion_reg_pfc_name',
                 color: 'rgba(160, 174, 192, 0.2)',
                 description: 'emotion_reg_pfc_desc',
@@ -161,7 +161,7 @@
             { id: 'p2', name: 'emotion_phil_buddhism_name', description: 'emotion_phil_buddhism_desc', regions: ['insula', 'vmPFC', 'hippocampus'], wellnessFocus: 'emotion_phil_buddhism_well', conditionMapping: 'emotion_phil_buddhism_cond' },
             { id: 'p3', name: 'emotion_phil_existentialism_name', description: 'emotion_phil_existentialism_desc', regions: ['ofc', 'acc'], wellnessFocus: 'emotion_phil_existentialism_well', conditionMapping: 'emotion_phil_existentialism_cond' },
             { id: 'p4', name: 'emotion_phil_taoism_name', description: 'emotion_phil_taoism_desc', regions: ['thalamus', 'hypothalamus'], wellnessFocus: 'emotion_phil_taoism_well', conditionMapping: 'emotion_phil_taoism_cond' },
-            { id: 'p5', name: 'emotion_phil_nihilism_name', description: 'emotion_phil_nihilism_desc', regions: ['striatum', 'prefrontalCortex'], wellnessFocus: 'emotion_phil_nihilism_well', conditionMapping: 'emotion_phil_nihilism_cond' },
+            { id: 'p5', name: 'emotion_phil_nihilism_name', description: 'emotion_phil_nihilism_desc', regions: ['striatum', 'pfc'], wellnessFocus: 'emotion_phil_nihilism_well', conditionMapping: 'emotion_phil_nihilism_cond' },
             { id: 'p6', name: 'emotion_phil_epicureanism_name', description: 'emotion_phil_epicureanism_desc', regions: ['nucleusAccumbens', 'striatum'], wellnessFocus: 'emotion_phil_epicureanism_well', conditionMapping: 'emotion_phil_epicureanism_cond' }
         ]
     };

@@ -471,7 +471,7 @@
 
             // Add brain regions as monochromatic areas for accessibility
             this.brainShell.regions = {
-                prefrontalCortex: {
+                pfc: {
                     color: 'rgba(160, 174, 192, 0.4)', // Muted Gray-Blue
                     vertices: this.getRegionVertices('pfc')
                 },
@@ -740,7 +740,7 @@
 
                             // Map region names to keys used in 2D
                             const regionKeyMap = {
-                                'prefrontalCortex': 'pfc',
+                                'pfc': 'pfc',
                                 'amygdala': 'amygdala',
                                 'hippocampus': 'hippocampus',
                                 'temporalLobe': 'temporalLobe',
