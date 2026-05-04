@@ -562,6 +562,10 @@
             for (const file of testFiles) {
                 try {
                     const resp = await fetch(`../tests/unit/${file}`);
+                    if (!resp.ok) {
+                        hError(`Failed to load test file: ${file} (HTTP ${resp.status})`);
+                        continue;
+                    }
                     const code = await resp.text();
                     const s = document.createElement('script');
                     s.textContent = `(function(require, module, exports, __dirname, global, process, console, TestFramework, TestFrameworkClass, window, document, location, self, globalThis) { 
