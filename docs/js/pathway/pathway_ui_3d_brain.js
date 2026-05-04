@@ -3,16 +3,16 @@
 
     const GreenhousePathwayBrain = {
         regionColors: {
-            'gut': 'rgba(160, 174, 192, 0.15)',
-            'blood_stream': 'rgba(160, 174, 192, 0.2)',
-            'liver': 'rgba(160, 174, 192, 0.15)',
-            'heart': 'rgba(160, 174, 192, 0.15)',
-            'adrenals': 'rgba(160, 174, 192, 0.15)',
-            'pfc': 'rgba(160, 174, 192, 0.15)',
-            'hypothalamus': 'rgba(160, 174, 192, 0.15)',
-            'pituitary': 'rgba(160, 174, 192, 0.15)',
-            'brain_stem': 'rgba(160, 174, 192, 0.15)',
-            'spinal_cord': 'rgba(160, 174, 192, 0.15)'
+            'gut': 'rgba(160, 174, 192, 0.20)',
+            'blood_stream': 'rgba(160, 174, 192, 0.20)',
+            'liver': 'rgba(160, 174, 192, 0.20)',
+            'heart': 'rgba(160, 174, 192, 0.20)',
+            'adrenals': 'rgba(160, 174, 192, 0.20)',
+            'pfc': 'rgba(160, 174, 192, 0.20)',
+            'hypothalamus': 'rgba(160, 174, 192, 0.20)',
+            'pituitary': 'rgba(160, 174, 192, 0.20)',
+            'brain_stem': 'rgba(160, 174, 192, 0.20)',
+            'spinal_cord': 'rgba(160, 174, 192, 0.20)'
         },
 
         drawBrain(ctx, brainShell, camera, projection, width, height, options = {}) {
@@ -36,18 +36,19 @@
 
             const facesToDraw = [];
             faces.forEach(face => {
-                const p1 = projectedVertices[face.indices[0]];
-                const p2 = projectedVertices[face.indices[1]];
-                const p3 = projectedVertices[face.indices[2]];
+                const indices = face.indices || face;
+                const p1 = projectedVertices[indices[0]];
+                const p2 = projectedVertices[indices[1]];
+                const p3 = projectedVertices[indices[2]];
 
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     const dx1 = p2.x - p1.x; const dy1 = p2.y - p1.y;
                     const dx2 = p3.x - p1.x; const dy2 = p3.y - p1.y;
                     if (dx1 * dy2 - dy1 * dx2 < 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
-                        const v1 = vertices[face.indices[0]];
-                        const v2 = vertices[face.indices[1]];
-                        const v3 = vertices[face.indices[2]];
+                        const v1 = vertices[indices[0]];
+                        const v2 = vertices[indices[1]];
+                        const v3 = vertices[indices[2]];
                         const ux = v2.x - v1.x; const uy = v2.y - v1.y; const uz = v2.z - v1.z;
                         const vx = v3.x - v1.x; const vy = v3.y - v1.y; const vz = v3.z - v1.z;
                         let nx = uy * vz - uz * vy; let ny = uz * vx - ux * vz; let nz = ux * vy - uy * vx;
@@ -90,6 +91,13 @@
                 if (isHighlighted) {
                     ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.8})`;
                     ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                // Grid detail pass
+                if (f.depth < 0.5) {
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.1})`;
+                    ctx.lineWidth = 0.5;
                     ctx.stroke();
                 }
 

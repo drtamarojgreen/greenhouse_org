@@ -182,7 +182,7 @@
                     const dx2 = p3.x - p1.x;
                     const dy2 = p3.y - p1.y;
 
-                    if (dx1 * dy2 - dy1 * dx2 > 0) {
+                    if (dx1 * dy2 - dy1 * dx2 < 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
 
                         const v1 = vertices[indices[0]];
@@ -259,7 +259,7 @@
                     const litG = Math.min(255, 174 * lightIntensity + specular * 255);
                     const litB = Math.min(255, 192 * lightIntensity + specular * 255);
 
-                    const fog = GreenhouseModels3DMath.applyDepthFog(0.15, f.depth);
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.20, f.depth);
                     ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
 
                     ctx.beginPath();

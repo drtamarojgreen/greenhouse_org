@@ -47,11 +47,15 @@
         },
 
         _applyTAA(taa) {
-            if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) return;
+            if (!this.canvas || this.canvas.width <= 0 || this.canvas.height <= 0) return;
+            if (!this._accumulationCanvas || this._accumulationCanvas.width <= 0 || this._accumulationCanvas.height <= 0) return;
+
             const ctx = this.ctx;
             const accCtx = this._accumulationCtx;
+
             accCtx.globalAlpha = 0.1;
             accCtx.drawImage(this.canvas, 0, 0);
+
             ctx.save();
             ctx.globalAlpha = 0.5;
             ctx.drawImage(this._accumulationCanvas, 0, 0);
@@ -59,7 +63,7 @@
         },
 
         _applyBloom(bloom) {
-            if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) return;
+            if (!this.canvas || this.canvas.width <= 0 || this.canvas.height <= 0) return;
             const ctx = this.ctx;
 
             // Create temporary bloom buffer if needed
@@ -70,6 +74,8 @@
                 this._bloomCanvas.width = this.canvas.width;
                 this._bloomCanvas.height = this.canvas.height;
             }
+
+            if (this._bloomCanvas.width <= 0 || this._bloomCanvas.height <= 0) return;
             const bCtx = this._bloomCanvas.getContext('2d');
 
             // Draw original to bloom buffer with filter

@@ -79,8 +79,8 @@
                         const first = startIdx + lat * (layer.lonBands + 1) + lon;
                         const second = first + layer.lonBands + 1;
 
-                        brain.faces.push([first, second, first + 1]);
-                        brain.faces.push([second, second + 1, first + 1]);
+                        brain.faces.push({ indices: [first, second, first + 1] });
+                        brain.faces.push({ indices: [second, second + 1, first + 1] });
                     }
                 }
             });
@@ -89,7 +89,7 @@
             this.computeWeightedNormals(brain);
 
             // Apply adaptive subdivision where curvature is high
-            this.applyAdaptiveSubdivision(brain, 0.15);
+            this.applyAdaptiveSubdivision(brain, 0.12);
 
             // Precompute curvature maps
             this.computeCurvatureMap(brain);
@@ -199,7 +199,8 @@
             const edgeCounts = new Array(vertices.length).fill(0);
 
             faces.forEach(f => {
-                const pairs = [[f[0], f[1]], [f[1], f[2]], [f[2], f[0]]];
+                const indices = f.indices || f;
+                const pairs = [[indices[0], indices[1]], [indices[1], indices[2]], [indices[2], indices[0]]];
                 pairs.forEach(([i1, i2]) => {
                     const v1 = vertices[i1];
                     const v2 = vertices[i2];
@@ -227,7 +228,8 @@
 
             for (let i = 0; i < faces.length; i++) {
                 const f = faces[i];
-                const i0 = f[0], i1 = f[1], i2 = f[2];
+                const indices = f.indices || f;
+                const i0 = indices[0], i1 = indices[1], i2 = indices[2];
                 const v0 = vertices[i0], v1 = vertices[i1], v2 = vertices[i2];
 
                 const dot01 = v0.normal.x * v1.normal.x + v0.normal.y * v1.normal.y + v0.normal.z * v1.normal.z;
@@ -268,12 +270,12 @@
                     const m12 = getMidpoint(i1, i2);
                     const m20 = getMidpoint(i2, i0);
 
-                    newFaces.push([i0, m01, m20]);
-                    newFaces.push([i1, m12, m01]);
-                    newFaces.push([i2, m20, m12]);
-                    newFaces.push([m01, m12, m20]);
+                    newFaces.push({ indices: [i0, m01, m20] });
+                    newFaces.push({ indices: [i1, m12, m01] });
+                    newFaces.push({ indices: [i2, m20, m12] });
+                    newFaces.push({ indices: [m01, m12, m20] });
                 } else {
-                    newFaces.push(f);
+                    newFaces.push({ indices: indices });
                 }
             }
             brain.faces = newFaces;
@@ -289,7 +291,8 @@
             });
 
             faces.forEach(f => {
-                const i0 = f[0], i1 = f[1], i2 = f[2];
+                const indices = f.indices || f;
+                const i0 = indices[0], i1 = indices[1], i2 = indices[2];
                 const v0 = vertices[i0], v1 = vertices[i1], v2 = vertices[i2];
 
                 const e10 = { x: v1.x - v0.x, y: v1.y - v0.y, z: v1.z - v0.z };
@@ -339,43 +342,43 @@
          */
         applyAnatomicalDeformations(x, y, z) {
             // Proportional scaling for human brain (longer Z, wider X than sphere)
-            x *= 1.1; y *= 1.2; z *= 1.35;
+            x *= 1.15; y *= 1.25; z *= 1.4;
 
             // 1. Longitudinal fissure (Deep indent between hemispheres)
-            const fissureEffect = Math.exp(-Math.abs(x) * 12) * 0.25;
-            if (y > -0.5) {
+            const fissureEffect = Math.exp(-Math.abs(x) * 10) * 0.35;
+            if (y > -0.6) {
                 y *= (1 - fissureEffect);
             }
 
             // 2. Lateral Sulcus (Sylvian Fissure) - Indent on sides
-            if (Math.abs(y) < 0.3 && z > -0.4 && z < 0.5) {
-                const sulcusEffect = Math.exp(-Math.abs(y + 0.1) * 6) * 0.12;
-                if (Math.abs(x) > 0.4) {
+            if (Math.abs(y) < 0.4 && z > -0.3 && z < 0.6) {
+                const sulcusEffect = Math.exp(-Math.abs(y + 0.05) * 5) * 0.25;
+                if (Math.abs(x) > 0.45) {
                     x *= (1 - sulcusEffect);
                 }
             }
 
             // 3. Frontal Lobe (Broad bulge at front)
-            if (z > 0.4) {
-                const frontalShift = (z - 0.4) * 0.45;
+            if (z > 0.35) {
+                const frontalShift = (z - 0.35) * 0.55;
                 z *= (1 + frontalShift);
-                x *= (1 + frontalShift * 0.2);
-                y *= (1 + frontalShift * 0.1);
+                x *= (1 + frontalShift * 0.25);
+                y *= (1 + frontalShift * 0.15);
             }
 
             // 4. Temporal Lobes (Hang down and bulge sideways)
-            if (Math.abs(x) > 0.6 && z > -0.3 && z < 0.5 && y < 0.2) {
-                const tempBulge = (Math.abs(x) - 0.6) * 0.6;
+            if (Math.abs(x) > 0.55 && z > -0.4 && z < 0.6 && y < 0.3) {
+                const tempBulge = (Math.abs(x) - 0.55) * 0.75;
                 x *= (1 + tempBulge);
-                y -= tempBulge * 0.4; // Hanging down
+                y -= tempBulge * 0.5; // Hanging down
             }
 
             // 5. Occipital Lobe (Tapered back)
-            if (z < -0.5) {
-                const occipitalTaper = (-z - 0.5) * 0.35;
+            if (z < -0.45) {
+                const occipitalTaper = (-z - 0.45) * 0.45;
                 x *= (1 - occipitalTaper);
-                y *= (1 - occipitalTaper * 0.5);
-                z *= (1 + occipitalTaper * 0.1);
+                y *= (1 - occipitalTaper * 0.4);
+                z *= (1 + occipitalTaper * 0.15);
             }
 
             // 6. Cerebellum (Separate bulbous structure at lower back)
@@ -423,9 +426,9 @@
                     freqMult = 1.5; ampMult = 0.8; break;
             }
 
-            displacement += Math.sin(nx * 4 * freqMult + nz * 3 * freqMult) * Math.cos(ny * 3 * freqMult) * 0.08 * ampMult;
-            displacement += Math.sin(nx * 8 * freqMult + nz * 6 * freqMult) * Math.cos(ny * 7 * freqMult) * 0.04 * ampMult;
-            displacement += Math.sin(nx * 16 * freqMult + nz * 12 * freqMult) * Math.cos(ny * 14 * freqMult) * 0.02 * ampMult;
+            displacement += Math.sin(nx * 4 * freqMult + nz * 3 * freqMult) * Math.cos(ny * 3 * freqMult) * 0.12 * ampMult;
+            displacement += Math.sin(nx * 8 * freqMult + nz * 6 * freqMult) * Math.cos(ny * 7 * freqMult) * 0.06 * ampMult;
+            displacement += Math.sin(nx * 16 * freqMult + nz * 12 * freqMult) * Math.cos(ny * 14 * freqMult) * 0.03 * ampMult;
 
             const len = Math.sqrt(nx**2 + ny**2 + nz**2);
             if (len > 0) {
