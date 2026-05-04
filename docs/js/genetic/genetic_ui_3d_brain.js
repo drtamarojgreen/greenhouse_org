@@ -52,7 +52,7 @@
                         facesToDraw.push({ indices, p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: face.region || v1.region });
                     }
                 }
-            });
+            }
 
             facesToDraw.sort((a, b) => b.depth - a.depth);
 

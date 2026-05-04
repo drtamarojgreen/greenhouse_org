@@ -120,6 +120,10 @@
             container.appendChild(overlay);
         },
 
+        shouldEvolve() {
+            return this.isEvolving;
+        },
+
         resize() {
             if (!this.canvas) return;
             this.canvas.width = this.canvas.offsetWidth;
