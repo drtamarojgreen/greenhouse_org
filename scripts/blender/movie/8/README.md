@@ -60,8 +60,8 @@ blender --background --python scripts/blender/movie/8/tests/unit/test_exporter.p
 # Performance & Optimization Tests
 blender --background --python scripts/blender/movie/8/tests/unit/test_performance.py
 
-# CDD Component Tests
-blender --background --python scripts/blender/movie/8/tests/cdd/test_environment_components.py
+# SDD Component Tests
+blender --background --python scripts/blender/movie/8/tests/sdd/test_environment_components.py
 
 # Master Runner (All Python Tests)
 blender --background --python scripts/blender/movie/8/tests/run_all_v8_tests.py
@@ -79,7 +79,7 @@ The Movie 8 Game features a multi-layered C# testing architecture located in `un
 **Included Test Suites:**
 - **Unit Tests**: `DataModelTests`, `UtilityTests`, `DialogueSystemTests`. Granular validation of serialization and extension logic.
 - **BDD Scenarios**: `EnvironmentFlowTests`, `InteractionScenarios`. Behavioral verification of user-centric flows like Mindscape switching and organic movement.
-- **CDD Tests**: `MentalHealthEnvironmentTests`, `PlayerComponentTests`. Isolated validation of specialized environment controllers and player components.
+- **SDD Tests**: `MentalHealthEnvironmentTests`, `PlayerComponentTests`. Isolated validation of specialized environment controllers and player components.
 
 ## 📊 Performance Benchmarks & Validation
 

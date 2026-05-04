@@ -30,7 +30,7 @@ The project uses CMake for cross-platform builds.
 
 ## 🧪 Testing and Verification
 
-We utilize **Chai-Driven Development (CDD)** to maintain strict parity between cinematic vision and logical implementation.
+We utilize **Sorrel-Driven Development (SDD): Standardizing of Resilient and Reliable Equipment Learning** to maintain strict parity between cinematic vision and logical implementation.
 
 ### 1. Running the Full Suite
 From the `build/` directory, you can run all unit tests:
@@ -38,8 +38,8 @@ From the `build/` directory, you can run all unit tests:
 ./core_unit_tests
 ```
 
-### 2. Executing Chai Verification Cards
-Chai cards are specialized test executables that validate logic against `.facts` ground truth files.
+### 2. Executing Sorrel Verification Cards
+Sorrel cards are specialized test executables that validate logic against `.facts` ground truth files.
 
 **Example: Validate Camera Cinematography**
 ```bash
@@ -65,7 +65,7 @@ To run the microbenchmark suite and verify kernel optimizations:
 ## 📂 Directory Structure
 - `src/`: Core engine implementation.
 - `include/`: Public headers and shared interfaces.
-- `tests/cards/`: Chai verification card implementations.
+- `tests/cards/`: Sorrel verification card implementations.
 - `tests/facts/`: Data-driven ground truth definitions.
 - `bench/`: Performance microbenchmarks.
 - `cmake/`: Modular build configurations.
