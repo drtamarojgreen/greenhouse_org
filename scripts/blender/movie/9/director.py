@@ -65,8 +65,8 @@ class Director:
         """Builds static and dynamic environment assets from configuration."""
         is_global = (start_f is None and end_f is None)
         
-        # Only purge if it's the root/global setup call
-        if is_global:
+        # Purge for global setup and explicit forced context switches.
+        if is_global or force:
             env_coll = bpy.data.collections.get(config.config.coll_environment)
             if env_coll:
                 def purge_coll(c):
@@ -80,11 +80,14 @@ class Director:
             return
 
         # Determine frame range
-        if start_f is None: start_f = self.scene_cfg.get("start_frame", 1)
+        # Global environment should be visible from frame 1 so intro beats (frames 1-3)
+        # never render against an empty scene.
+        if start_f is None:
+            start_f = 1 if is_global else self.scene_cfg.get("start_frame", 1)
         if end_f is None: end_f = self.scene_cfg.get("end_frame", config.config.total_frames)
 
         e_type = env_cfg.get("type", "exterior")
-        context_name = "greenhouse" if e_type == "interior" else e_type
+        context_name = env_cfg.get("context", ("greenhouse" if e_type == "interior" else e_type))
 
         # Build appropriate environment
         modeler_id = "ExteriorModeler" if e_type in ["exterior", "interior"] else ("ForestRoadModeler" if e_type == "forest_road" else "MountainBaseModeler")
@@ -118,11 +121,12 @@ class Director:
 
             current_f = bpy.context.scene.frame_current
             
-            # 1. Start of movie: Hidden
-            bpy.context.scene.frame_set(1)
-            set_visibility_recursive(env_root, True)
-            
-            # 2. Start of scene: Visible
+            # 1/2. Visibility window for the scene block.
+            # Avoid inserting contradictory keys on the same frame (frame 1),
+            # which can leave the environment hidden during intro renders.
+            if start_f > 1:
+                bpy.context.scene.frame_set(1)
+                set_visibility_recursive(env_root, True)
             bpy.context.scene.frame_set(start_f)
             set_visibility_recursive(env_root, False)
             
@@ -285,6 +289,7 @@ class Director:
         if end_f is None: end_f = config.config.total_frames
         constraints = config.config.get("context_constraints", {}).get(context_name, {})
         disallowed = constraints.get("disallowed_assets", [])
+        disallowed_prefixes = constraints.get("disallowed_prefixes", [])
         
         # We need to consider ALL assets that COULD be disallowed in OTHER contexts too,
         # to ensure they are visible when they ARE allowed.
@@ -294,11 +299,12 @@ class Director:
             all_possibly_disallowed.update(ctx.get("disallowed_assets", []))
 
         for asset_id in all_possibly_disallowed:
+            targets = []
             obj = bpy.data.objects.get(asset_id)
             if obj:
-                is_disallowed = asset_id in disallowed
-                
-                # Set visibility for this scene range
+                targets.append(obj)
+            is_disallowed = asset_id in disallowed
+            for obj in targets:
                 obj.hide_render = is_disallowed
                 obj.hide_viewport = is_disallowed
                 obj.keyframe_insert(data_path="hide_render", frame=start_f)
@@ -309,6 +315,14 @@ class Director:
                     child.hide_viewport = is_disallowed
                     child.keyframe_insert(data_path="hide_render", frame=start_f)
                     child.keyframe_insert(data_path="hide_viewport", frame=start_f)
+
+        # Data-driven prefix constraints (e.g. procedurally generated ext_* trees).
+        for prefix in disallowed_prefixes:
+            for obj in [o for o in bpy.data.objects if o.name.startswith(prefix)]:
+                obj.hide_render = True
+                obj.hide_viewport = True
+                obj.keyframe_insert(data_path="hide_render", frame=start_f)
+                obj.keyframe_insert(data_path="hide_viewport", frame=start_f)
 
     def apply_storyline(self):
         """Compatibility wrapper for modular event execution."""

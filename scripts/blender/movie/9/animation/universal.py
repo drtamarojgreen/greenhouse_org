@@ -36,9 +36,15 @@ class BakedAnimator(Animator):
     def apply_action(self, rig, tag, frame, params):
         if not rig.animation_data: rig.animation_data_create()
         
-        # Look for action with name matching the tag (e.g. Herbaceous_V5_Rig_walk)
-        action_name = params.get("action_name", tag)
-        action = bpy.data.actions.get(action_name)
+        # Prioritize explicit mapping, then character-scoped action naming.
+        action_name = params.get("action_name")
+        candidates = []
+        if action_name:
+            candidates.append(action_name)
+        base_name = rig.name.replace(".Rig", "")
+        candidates.extend([f"{base_name}_{tag}", f"{base_name}.{tag}", tag])
+
+        action = next((bpy.data.actions.get(name) for name in candidates if bpy.data.actions.get(name)), None)
         if not action:
             # Fuzzy match
             action = next((a for a in bpy.data.actions if tag.lower() in a.name.lower()), None)

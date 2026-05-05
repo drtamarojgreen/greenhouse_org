@@ -25,8 +25,8 @@ class TestExtendedActs(unittest.TestCase):
 
         # Check camera marker
         markers = bpy.context.scene.timeline_markers
-        shot_marker = next((m for m in markers if "Shot_ForestCam" in m.name), None)
-        self.assertIsNotNone(shot_marker, "ForestCam marker missing")
+        shot_marker = next((m for m in markers if "Shot_Forest_cam" in m.name), None)
+        self.assertIsNotNone(shot_marker, "Forest_cam marker missing")
         self.assertEqual(shot_marker.frame, 4401)
 
     def test_scene_10_environment_switch(self):
@@ -43,8 +43,8 @@ class TestExtendedActs(unittest.TestCase):
 
         # Check camera marker
         markers = bpy.context.scene.timeline_markers
-        shot_marker = next((m for m in markers if "Shot_MountainCam" in m.name), None)
-        self.assertIsNotNone(shot_marker, "MountainCam marker missing")
+        shot_marker = next((m for m in markers if "Shot_Mountain_cam" in m.name), None)
+        self.assertIsNotNone(shot_marker, "Mountain_cam marker missing")
         self.assertEqual(shot_marker.frame, 4651)
 
 if __name__ == "__main__":
