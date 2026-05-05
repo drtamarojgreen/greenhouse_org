@@ -121,11 +121,12 @@ class Director:
 
             current_f = bpy.context.scene.frame_current
             
-            # 1. Start of movie: Hidden
-            bpy.context.scene.frame_set(1)
-            set_visibility_recursive(env_root, True)
-            
-            # 2. Start of scene: Visible
+            # 1/2. Visibility window for the scene block.
+            # Avoid inserting contradictory keys on the same frame (frame 1),
+            # which can leave the environment hidden during intro renders.
+            if start_f > 1:
+                bpy.context.scene.frame_set(1)
+                set_visibility_recursive(env_root, True)
             bpy.context.scene.frame_set(start_f)
             set_visibility_recursive(env_root, False)
             
@@ -297,11 +298,16 @@ class Director:
             all_possibly_disallowed.update(ctx.get("disallowed_assets", []))
 
         for asset_id in all_possibly_disallowed:
+            targets = []
             obj = bpy.data.objects.get(asset_id)
             if obj:
-                is_disallowed = asset_id in disallowed
-                
-                # Set visibility for this scene range
+                targets.append(obj)
+            # Vegetation can be generated as many ext_* objects; include those too.
+            if asset_id == "vegetation":
+                targets.extend([o for o in bpy.data.objects if o.name.startswith("ext_")])
+
+            is_disallowed = asset_id in disallowed
+            for obj in targets:
                 obj.hide_render = is_disallowed
                 obj.hide_viewport = is_disallowed
                 obj.keyframe_insert(data_path="hide_render", frame=start_f)
