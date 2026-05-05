@@ -80,7 +80,10 @@ class Director:
             return
 
         # Determine frame range
-        if start_f is None: start_f = self.scene_cfg.get("start_frame", 1)
+        # Global environment should be visible from frame 1 so intro beats (frames 1-3)
+        # never render against an empty scene.
+        if start_f is None:
+            start_f = 1 if is_global else self.scene_cfg.get("start_frame", 1)
         if end_f is None: end_f = self.scene_cfg.get("end_frame", config.config.total_frames)
 
         e_type = env_cfg.get("type", "exterior")
