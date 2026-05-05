@@ -71,8 +71,14 @@ class Character:
         if self.rig and self.cfg.get("target_height"):
             manager.normalize_character(self.rig, self.cfg["target_height"])
 
-        if self.rig: manager.apply_standard_renaming(self.rig, self.char_id, is_rig=True)
-        if self.mesh: manager.apply_standard_renaming(self.mesh, self.char_id, is_rig=False)
+        if self.rig:
+            manager.apply_standard_renaming(self.rig, self.char_id, is_rig=True)
+        if self.mesh:
+            # Keep standalone dynamic assets (e.g. GreenhouseMobile) discoverable by their entity id.
+            if self.rig:
+                manager.apply_standard_renaming(self.mesh, self.char_id, is_rig=False)
+            else:
+                self.mesh.name = self.char_id
 
         # 6. Main character tagging for director/cinematic logic
         if self.rig:

@@ -27,6 +27,8 @@ class ExteriorModeler(Modeler):
         coll = bpy.data.collections.get("9b.ENVIRONMENT") or bpy.data.collections.new("9b.ENVIRONMENT")
         if coll.name not in bpy.context.scene.collection.children:
             bpy.context.scene.collection.children.link(coll)
+        env_root = bpy.data.objects.new(char_id, None)
+        coll.objects.link(env_root)
 
         env_cfg = params # passed from Director/CharacterBuilder
 
@@ -61,7 +63,13 @@ class ExteriorModeler(Modeler):
         if "vegetation" in env_cfg:
             self._scatter_vegetation(coll, env_cfg.get("vegetation", {}), env_cfg.get("floor", {}).get("size", 60)/2)
 
-        return None
+        # Parent environment objects to a single root so Director visibility keyframes
+        # can consistently show/hide the whole set for scene timing.
+        for obj in list(coll.objects):
+            if obj != env_root and obj.parent is None:
+                obj.parent = env_root
+
+        return env_root
 
     def _create_floor(self, coll, name, size, color, type='PLANE'):
         if type == 'PLANE':
@@ -192,7 +200,7 @@ class ExteriorModeler(Modeler):
             y -= spacing; idx += 1
 
     def _create_mountain_range(self, coll, cfg):
-        name = "mountains"
+        name = "mountain_range"
         if bpy.data.objects.get(name): return
         mesh = bpy.data.meshes.new(name); obj = bpy.data.objects.new(name, mesh); coll.objects.link(obj)
         bm = bmesh.new(); num, rad = cfg.get("count", 24), cfg.get("radius", 250)

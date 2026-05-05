@@ -65,8 +65,8 @@ class Director:
         """Builds static and dynamic environment assets from configuration."""
         is_global = (start_f is None and end_f is None)
         
-        # Only purge if it's the root/global setup call
-        if is_global:
+        # Purge for global setup and explicit forced context switches.
+        if is_global or force:
             env_coll = bpy.data.collections.get(config.config.coll_environment)
             if env_coll:
                 def purge_coll(c):
