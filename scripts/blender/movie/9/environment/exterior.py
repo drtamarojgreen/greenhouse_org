@@ -27,6 +27,8 @@ class ExteriorModeler(Modeler):
         coll = bpy.data.collections.get("9b.ENVIRONMENT") or bpy.data.collections.new("9b.ENVIRONMENT")
         if coll.name not in bpy.context.scene.collection.children:
             bpy.context.scene.collection.children.link(coll)
+        env_root = bpy.data.objects.new(char_id, None)
+        coll.objects.link(env_root)
 
         env_cfg = params # passed from Director/CharacterBuilder
 
@@ -61,7 +63,13 @@ class ExteriorModeler(Modeler):
         if "vegetation" in env_cfg:
             self._scatter_vegetation(coll, env_cfg.get("vegetation", {}), env_cfg.get("floor", {}).get("size", 60)/2)
 
-        return None
+        # Parent environment objects to a single root so Director visibility keyframes
+        # can consistently show/hide the whole set for scene timing.
+        for obj in list(coll.objects):
+            if obj != env_root and obj.parent is None:
+                obj.parent = env_root
+
+        return env_root
 
     def _create_floor(self, coll, name, size, color, type='PLANE'):
         if type == 'PLANE':
@@ -192,7 +200,7 @@ class ExteriorModeler(Modeler):
             y -= spacing; idx += 1
 
     def _create_mountain_range(self, coll, cfg):
-        name = "mountains"
+        name = "mountain_range"
         if bpy.data.objects.get(name): return
         mesh = bpy.data.meshes.new(name); obj = bpy.data.objects.new(name, mesh); coll.objects.link(obj)
         bm = bmesh.new(); num, rad = cfg.get("count", 24), cfg.get("radius", 250)
@@ -207,6 +215,11 @@ class ExteriorModeler(Modeler):
         apply_mat(obj, "mat_mountains", cfg.get("color", (0.05, 0.05, 0.08, 1.0)))
 
     def _scatter_vegetation(self, coll, cfg, half):
+        veg_root = bpy.data.objects.get("vegetation")
+        if veg_root is None:
+            veg_root = bpy.data.objects.new("vegetation", None)
+            coll.objects.link(veg_root)
+
         shades = cfg.get("shades", [(0.04, 0.22, 0.04)])
         leaf_cfg = cfg.get("leaf_material", {})
         tree_types = ['evergreen', 'maple', 'oak', 'bush']; weights = [0.30, 0.25, 0.25, 0.20]
@@ -220,6 +233,9 @@ class ExteriorModeler(Modeler):
             elif kind == 'maple': create_branching_tree(f"ext_maple_{placed}", loc, scale, coll, shades, 'round', leaf_cfg)
             elif kind == 'oak': create_branching_tree(f"ext_oak_{placed}", loc, scale, coll, shades, 'wide', leaf_cfg)
             else: create_bush(f"ext_bush_{placed}", loc, scale * 0.5, coll, shades, leaf_cfg)
+            created = bpy.data.objects.get(f"ext_evergreen_{placed}") or bpy.data.objects.get(f"ext_maple_{placed}") or bpy.data.objects.get(f"ext_oak_{placed}") or bpy.data.objects.get(f"ext_bush_{placed}")
+            if created and created.parent is None:
+                created.parent = veg_root
             placed += 1
 
     def _link_to_coll(self, obj, coll):

@@ -65,14 +65,13 @@ class Director:
         """Builds static and dynamic environment assets from configuration."""
         is_global = (start_f is None and end_f is None)
         
-        # Only purge if it's the root/global setup call
-        if is_global:
-            env_coll = bpy.data.collections.get(config.config.coll_environment)
-            if env_coll:
-                def purge_coll(c):
-                    for sub in list(c.children): purge_coll(sub)
-                    for obj in list(c.objects): bpy.data.objects.remove(obj, do_unlink=True)
-                purge_coll(env_coll)
+        # Scene-isolated build: always purge environment assets before rebuilding.
+        env_coll = bpy.data.collections.get(config.config.coll_environment)
+        if env_coll:
+            def purge_coll(c):
+                for sub in list(c.children): purge_coll(sub)
+                for obj in list(c.objects): bpy.data.objects.remove(obj, do_unlink=True)
+            purge_coll(env_coll)
 
         env_cfg = self.scene_cfg.get("environment", config.config.get("environment", {}))
         if not env_cfg:
@@ -80,11 +79,14 @@ class Director:
             return
 
         # Determine frame range
-        if start_f is None: start_f = self.scene_cfg.get("start_frame", 1)
+        # Global environment should be visible from frame 1 so intro beats (frames 1-3)
+        # never render against an empty scene.
+        if start_f is None:
+            start_f = 1 if is_global else self.scene_cfg.get("start_frame", 1)
         if end_f is None: end_f = self.scene_cfg.get("end_frame", config.config.total_frames)
 
         e_type = env_cfg.get("type", "exterior")
-        context_name = "greenhouse" if e_type == "interior" else e_type
+        context_name = env_cfg.get("context", ("greenhouse" if e_type == "interior" else e_type))
 
         # Build appropriate environment
         modeler_id = "ExteriorModeler" if e_type in ["exterior", "interior"] else ("ForestRoadModeler" if e_type == "forest_road" else "MountainBaseModeler")
@@ -107,31 +109,6 @@ class Director:
         # If no root returned, look for generic 'Env' or 'Interior'
         if not env_root:
             env_root = bpy.data.objects.get("Env") or bpy.data.objects.get("Interior")
-
-        if env_root:
-            # Hide everywhere else, show only in range
-            def set_visibility_recursive(obj, hidden):
-                obj.hide_render = hidden; obj.hide_viewport = hidden
-                obj.keyframe_insert(data_path="hide_render", frame=bpy.context.scene.frame_current)
-                obj.keyframe_insert(data_path="hide_viewport", frame=bpy.context.scene.frame_current)
-                for child in obj.children: set_visibility_recursive(child, hidden)
-
-            current_f = bpy.context.scene.frame_current
-            
-            # 1. Start of movie: Hidden
-            bpy.context.scene.frame_set(1)
-            set_visibility_recursive(env_root, True)
-            
-            # 2. Start of scene: Visible
-            bpy.context.scene.frame_set(start_f)
-            set_visibility_recursive(env_root, False)
-            
-            # 3. End of scene: Hidden
-            if end_f < config.config.total_frames:
-                bpy.context.scene.frame_set(end_f + 1)
-                set_visibility_recursive(env_root, True)
-            
-            bpy.context.scene.frame_set(current_f)
 
         self.apply_context_constraints(context_name, start_f, end_f)
 
@@ -281,10 +258,11 @@ class Director:
                 self.lighting_manager.setup_lights(override_type=override, start_f=start)
 
     def apply_context_constraints(self, context_name, start_f=1, end_f=None):
-        """Hides disallowed assets based on context constraints in movie_config using keyframes."""
+        """Enforces context constraints by removing disallowed assets for scene-isolated builds."""
         if end_f is None: end_f = config.config.total_frames
         constraints = config.config.get("context_constraints", {}).get(context_name, {})
         disallowed = constraints.get("disallowed_assets", [])
+        disallowed_prefixes = constraints.get("disallowed_prefixes", [])
         
         # We need to consider ALL assets that COULD be disallowed in OTHER contexts too,
         # to ensure they are visible when they ARE allowed.
@@ -294,21 +272,21 @@ class Director:
             all_possibly_disallowed.update(ctx.get("disallowed_assets", []))
 
         for asset_id in all_possibly_disallowed:
+            targets = []
             obj = bpy.data.objects.get(asset_id)
             if obj:
-                is_disallowed = asset_id in disallowed
-                
-                # Set visibility for this scene range
-                obj.hide_render = is_disallowed
-                obj.hide_viewport = is_disallowed
-                obj.keyframe_insert(data_path="hide_render", frame=start_f)
-                obj.keyframe_insert(data_path="hide_viewport", frame=start_f)
-                
-                for child in obj.children_recursive:
-                    child.hide_render = is_disallowed
-                    child.hide_viewport = is_disallowed
-                    child.keyframe_insert(data_path="hide_render", frame=start_f)
-                    child.keyframe_insert(data_path="hide_viewport", frame=start_f)
+                targets.append(obj)
+            is_disallowed = asset_id in disallowed
+            if is_disallowed:
+                for obj in targets:
+                    if obj.name in bpy.data.objects:
+                        bpy.data.objects.remove(obj, do_unlink=True)
+
+        # Data-driven prefix constraints (e.g. procedurally generated ext_* trees).
+        for prefix in disallowed_prefixes:
+            for obj in [o for o in bpy.data.objects if o.name.startswith(prefix)]:
+                if obj.name in bpy.data.objects:
+                    bpy.data.objects.remove(obj, do_unlink=True)
 
     def apply_storyline(self):
         """Compatibility wrapper for modular event execution."""
