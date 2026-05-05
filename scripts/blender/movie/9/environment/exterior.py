@@ -215,6 +215,11 @@ class ExteriorModeler(Modeler):
         apply_mat(obj, "mat_mountains", cfg.get("color", (0.05, 0.05, 0.08, 1.0)))
 
     def _scatter_vegetation(self, coll, cfg, half):
+        veg_root = bpy.data.objects.get("vegetation")
+        if veg_root is None:
+            veg_root = bpy.data.objects.new("vegetation", None)
+            coll.objects.link(veg_root)
+
         shades = cfg.get("shades", [(0.04, 0.22, 0.04)])
         leaf_cfg = cfg.get("leaf_material", {})
         tree_types = ['evergreen', 'maple', 'oak', 'bush']; weights = [0.30, 0.25, 0.25, 0.20]
@@ -228,6 +233,9 @@ class ExteriorModeler(Modeler):
             elif kind == 'maple': create_branching_tree(f"ext_maple_{placed}", loc, scale, coll, shades, 'round', leaf_cfg)
             elif kind == 'oak': create_branching_tree(f"ext_oak_{placed}", loc, scale, coll, shades, 'wide', leaf_cfg)
             else: create_bush(f"ext_bush_{placed}", loc, scale * 0.5, coll, shades, leaf_cfg)
+            created = bpy.data.objects.get(f"ext_evergreen_{placed}") or bpy.data.objects.get(f"ext_maple_{placed}") or bpy.data.objects.get(f"ext_oak_{placed}") or bpy.data.objects.get(f"ext_bush_{placed}")
+            if created and created.parent is None:
+                created.parent = veg_root
             placed += 1
 
     def _link_to_coll(self, obj, coll):

@@ -87,7 +87,7 @@ class Director:
         if end_f is None: end_f = self.scene_cfg.get("end_frame", config.config.total_frames)
 
         e_type = env_cfg.get("type", "exterior")
-        context_name = "greenhouse" if e_type == "interior" else e_type
+        context_name = env_cfg.get("context", ("greenhouse" if e_type == "interior" else e_type))
 
         # Build appropriate environment
         modeler_id = "ExteriorModeler" if e_type in ["exterior", "interior"] else ("ForestRoadModeler" if e_type == "forest_road" else "MountainBaseModeler")
