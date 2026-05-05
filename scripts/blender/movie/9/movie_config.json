@@ -61,6 +61,15 @@
         "id": "Herbaceous",
         "type": "DYNAMIC",
         "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
+        "parameters": {
+          "seed": 42,
+          "materials": { "primary": { "color": [0.15, 0.1, 0.05] }, "secondary": { "color": [0.1, 0.5, 0.1] }, "accent": { "color": [0.2, 0.4, 0.8] } },
+          "animation": {
+            "talking": { "bone": "Head", "freq": 0.45, "amp": 0.04 },
+            "idle": { "bone": "Torso", "freq": 0.08, "amp": 0.015 },
+            "dance": { "bone": "Torso", "freq": 0.25, "amp": 0.12 }
+          }
+        },
         "default_pos": [-1.2, 0.5, 0.0],
         "target_height": 3.0,
         "is_protagonist": true
@@ -71,7 +80,12 @@
         "components": { "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator" },
         "parameters": {
           "seed": 1337,
-          "materials": { "primary": { "color": [0.2, 0.12, 0.08] }, "secondary": { "color": [0.2, 0.6, 0.1] } }
+          "materials": { "primary": { "color": [0.2, 0.12, 0.08] }, "secondary": { "color": [0.2, 0.6, 0.1] }, "accent": { "color": [0.36, 0.24, 0.62] } },
+          "animation": {
+            "talking": { "bone": "Head", "freq": 0.5, "amp": 0.05 },
+            "idle": { "bone": "Torso", "freq": 0.1, "amp": 0.02 },
+            "dance": { "bone": "Torso", "freq": 0.3, "amp": 0.1 }
+          }
         },
         "default_pos": [1.2, 0.5, 0.0],
         "target_height": 3.0,
@@ -266,6 +280,7 @@
     ]
   },
   "environment": {
+    "type": "interior",
     "floor": { "size": 40, "interior_color": [0.22, 0.12, 0.05, 1.0], "exterior_radius": 300, "exterior_color": [0.02, 0.15, 0.02, 1.0] },
     "roof": { "size": 42, "height": 30, "color": [0.7, 0.85, 1.0, 0.2] },
     "pillars": {

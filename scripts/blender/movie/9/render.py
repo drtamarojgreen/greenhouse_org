@@ -66,6 +66,10 @@ def build_scene():
 
     # Extended Scenes
     extended = config.config.get("extended_scenes", [])
+    # Add clinical scene explicitly if not in list to ensure it builds its interior environment
+    if "scene_configs/scene_03_clinical.json" not in extended:
+        extended = ["scene_configs/scene_03_clinical.json"] + extended
+
     for scene_path in extended:
         print(f"  Integrating Extended Scene: {scene_path}...")
         director.apply_extended_scene(scene_path)

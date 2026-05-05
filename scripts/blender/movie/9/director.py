@@ -63,49 +63,76 @@ class Director:
 
     def setup_environment(self, force=False, start_f=None, end_f=None):
         """Builds static and dynamic environment assets from configuration."""
-        # Purge existing environment for clean rebuild (critical for test parity)
-        env_coll = bpy.data.collections.get(config.config.coll_environment)
-        if env_coll:
-            # Recursively remove all objects in the collection and sub-collections
-            def purge_coll(c):
-                for sub in list(c.children): purge_coll(sub)
-                for obj in list(c.objects): bpy.data.objects.remove(obj, do_unlink=True)
-            purge_coll(env_coll)
+        is_global = (start_f is None and end_f is None)
+        
+        # Only purge if it's the root/global setup call
+        if is_global:
+            env_coll = bpy.data.collections.get(config.config.coll_environment)
+            if env_coll:
+                def purge_coll(c):
+                    for sub in list(c.children): purge_coll(sub)
+                    for obj in list(c.objects): bpy.data.objects.remove(obj, do_unlink=True)
+                purge_coll(env_coll)
 
         env_cfg = self.scene_cfg.get("environment", config.config.get("environment", {}))
         if not env_cfg:
             print("Warning: No environment configuration found in scene JSON.")
             return
 
-        # Use frames from scene_cfg if not provided
+        # Determine frame range
         if start_f is None: start_f = self.scene_cfg.get("start_frame", 1)
         if end_f is None: end_f = self.scene_cfg.get("end_frame", config.config.total_frames)
 
         e_type = env_cfg.get("type", "exterior")
-        # Map 'interior' environment type to 'greenhouse' context for constraints
         context_name = "greenhouse" if e_type == "interior" else e_type
 
-        # Select modeler based on type
-        # Interior greenhouse scenes use ExteriorModeler to get the greenhouse shell (pillars/roof)
-        if e_type in ["exterior", "interior"]:
-            modeler_id = "ExteriorModeler"
-        elif e_type == "forest_road":
-            modeler_id = "ForestRoadModeler"
-        else:
-            modeler_id = "MountainBaseModeler"
-
+        # Build appropriate environment
+        modeler_id = "ExteriorModeler" if e_type in ["exterior", "interior"] else ("ForestRoadModeler" if e_type == "forest_road" else "MountainBaseModeler")
         modeler_cls = registry.get_modeling(modeler_id)
+        
+        env_root = None
         if modeler_cls:
-            modeler_cls().build_mesh("Env", env_cfg)
+            # Pass start_f to modeler to create unique object names if needed
+            modeler_cls().build_mesh(f"Env_{e_type}_{start_f}", env_cfg)
+            env_root = bpy.data.objects.get(f"Env_{e_type}_{start_f}")
 
-        # Interior Furnishing (if exists)
-        # Always attempt build if we are in Movie 9 to ensure test parity
+        # Interior
         interior_cfg = self.scene_cfg.get("interior", config.config.get("interior", {}))
         int_cls = registry.get_modeling("InteriorModeler")
-        if int_cls:
-            int_cls().build_mesh("Interior", interior_cfg)
+        if int_cls and (interior_cfg or e_type == "interior"):
+            int_cls().build_mesh(f"Interior_{start_f}", interior_cfg)
+            if not env_root: env_root = bpy.data.objects.get(f"Interior_{start_f}")
 
-        # Apply context constraints (visibility) AFTER building assets
+        # Apply visibility keyframing for this environment block
+        # If no root returned, look for generic 'Env' or 'Interior'
+        if not env_root:
+            env_root = bpy.data.objects.get("Env") or bpy.data.objects.get("Interior")
+
+        if env_root:
+            # Hide everywhere else, show only in range
+            def set_visibility_recursive(obj, hidden):
+                obj.hide_render = hidden; obj.hide_viewport = hidden
+                obj.keyframe_insert(data_path="hide_render", frame=bpy.context.scene.frame_current)
+                obj.keyframe_insert(data_path="hide_viewport", frame=bpy.context.scene.frame_current)
+                for child in obj.children: set_visibility_recursive(child, hidden)
+
+            current_f = bpy.context.scene.frame_current
+            
+            # 1. Start of movie: Hidden
+            bpy.context.scene.frame_set(1)
+            set_visibility_recursive(env_root, True)
+            
+            # 2. Start of scene: Visible
+            bpy.context.scene.frame_set(start_f)
+            set_visibility_recursive(env_root, False)
+            
+            # 3. End of scene: Hidden
+            if end_f < config.config.total_frames:
+                bpy.context.scene.frame_set(end_f + 1)
+                set_visibility_recursive(env_root, True)
+            
+            bpy.context.scene.frame_set(current_f)
+
         self.apply_context_constraints(context_name, start_f, end_f)
 
         # Backdrop
@@ -226,8 +253,32 @@ class Director:
 
     # --- Compatibility Wrappers for Legacy Tests ---
     def setup_lighting(self):
-        """Compatibility wrapper for modular LightingManager."""
+        """Orchestrates lighting across all scenes, applying overrides where specified."""
+        # 1. Base/Global Lighting
         self.lighting_manager.setup_lights()
+        
+        # 2. Scene-specific Overrides (Keyframed)
+        beats = self.scene_cfg.get("story_beats", config.config.get("storyline", []))
+        extended = config.config.get("extended_scenes", [])
+        
+        all_scene_configs = []
+        for path in extended:
+            full_path = os.path.join(M9_ROOT, path)
+            if os.path.exists(full_path):
+                with open(full_path, 'r') as f: all_scene_configs.append(json.load(f))
+        
+        # Add clinical if not in extended but present in configs
+        clin_path = os.path.join(M9_ROOT, "scene_configs/scene_03_clinical.json")
+        if os.path.exists(clin_path):
+            with open(clin_path, 'r') as f:
+                c_cfg = json.load(f)
+                if c_cfg not in all_scene_configs: all_scene_configs.append(c_cfg)
+
+        for sc in all_scene_configs:
+            override = sc.get("environment", {}).get("lighting_override")
+            if override:
+                start = sc.get("start_frame", 1)
+                self.lighting_manager.setup_lights(override_type=override, start_f=start)
 
     def apply_context_constraints(self, context_name, start_f=1, end_f=None):
         """Hides disallowed assets based on context constraints in movie_config using keyframes."""

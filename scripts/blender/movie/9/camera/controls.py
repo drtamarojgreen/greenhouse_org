@@ -124,9 +124,16 @@ class CameraControls:
         con.use_fixed_location = True
         
         # Keyframe evaluation time across duration or specific segments
-        dur = anim_cfg.get("end_frame", 250)
-        con.offset_factor = 0.0; con.keyframe_insert(data_path="offset_factor", frame=1)
-        con.offset_factor = 1.0; con.keyframe_insert(data_path="offset_factor", frame=dur)
+        segments = anim_cfg.get("segments")
+        if segments:
+            for seg in segments:
+                s, e = seg["start"], seg["end"]
+                con.offset_factor = 0.0; con.keyframe_insert(data_path="offset_factor", frame=s)
+                con.offset_factor = 1.0; con.keyframe_insert(data_path="offset_factor", frame=e)
+        else:
+            dur = anim_cfg.get("end_frame", 250)
+            con.offset_factor = 0.0; con.keyframe_insert(data_path="offset_factor", frame=1)
+            con.offset_factor = 1.0; con.keyframe_insert(data_path="offset_factor", frame=dur)
 
     def _ensure_collection(self, name):
         coll = bpy.data.collections.get(name) or bpy.data.collections.new(name)
