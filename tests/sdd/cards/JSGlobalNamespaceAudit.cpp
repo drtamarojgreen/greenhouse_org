@@ -14,31 +14,34 @@ using namespace Sorrel::Sdd::Util;
 
 int main() {
     auto env = FactReader::readFacts("environment.facts");
-    if (env.count("genetic_js_dir") == 0) { std::cerr << "error = fact missing genetic_js_dir" << std::endl; return 1; }
-    std::string js_dir = env.at("genetic_js_dir");
+    std::vector<std::string> scan_dirs;
+    if (env.count("genetic_js_dir")) scan_dirs.push_back(env.at("genetic_js_dir"));
+    if (env.count("models_js_dir")) scan_dirs.push_back(env.at("models_js_dir"));
 
     int files_scanned = 0;
     std::vector<std::string> violations;
 
-    if (!fs::exists(js_dir)) { std::cerr << "error = directory missing " << js_dir << std::endl; return 1; }
+    for (const auto& js_dir : scan_dirs) {
+        if (!fs::exists(js_dir)) continue;
 
-    for (const auto& entry : fs::directory_iterator(js_dir)) {
-        if (entry.path().extension() == ".js") {
-            files_scanned++;
-            std::ifstream file(entry.path());
-            std::string line;
-            bool has_iife_start = false;
-            bool has_strict = false;
-            bool has_iife_end = false;
+        for (const auto& entry : fs::directory_iterator(js_dir)) {
+            if (entry.path().extension() == ".js") {
+                files_scanned++;
+                std::ifstream file(entry.path());
+                std::string line;
+                bool has_iife_start = false;
+                bool has_strict = false;
+                bool has_iife_end = false;
 
-            while (std::getline(file, line)) {
-                if (line.find("(function") != std::string::npos && line.find("{") != std::string::npos) has_iife_start = true;
-                if (line.find("'use strict'") != std::string::npos || line.find("\"use strict\"") != std::string::npos) has_strict = true;
-                if (line.find("})();") != std::string::npos) has_iife_end = true;
-            }
+                while (std::getline(file, line)) {
+                    if (line.find("(function") != std::string::npos && line.find("{") != std::string::npos) has_iife_start = true;
+                    if (line.find("'use strict'") != std::string::npos || line.find("\"use strict\"") != std::string::npos) has_strict = true;
+                    if (line.find("})();") != std::string::npos || line.find("}) (") != std::string::npos) has_iife_end = true;
+                }
 
-            if (!has_iife_start || !has_strict || !has_iife_end) {
-                violations.push_back(entry.path().filename().string());
+                if (!has_iife_start || !has_strict || !has_iife_end) {
+                    violations.push_back(entry.path().filename().string());
+                }
             }
         }
     }

@@ -15,7 +15,9 @@ TARGETS = \
 	$(BIN_DIR)/JSEmptyCatchAudit \
 	$(BIN_DIR)/JSMeaninglessAssertionAudit \
 	$(BIN_DIR)/JSHardcodedValueAudit \
-	$(BIN_DIR)/JSCodeDuplicationAudit
+	$(BIN_DIR)/JSCodeDuplicationAudit \
+	$(BIN_DIR)/JSFileLengthAudit \
+	$(BIN_DIR)/JSLongTaskAudit
 
 all: $(TARGETS)
 
@@ -32,6 +34,8 @@ run: all
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSMeaninglessAssertionAudit
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSHardcodedValueAudit
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSCodeDuplicationAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSFileLengthAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSLongTaskAudit
 
 verify: run
 

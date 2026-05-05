@@ -1,3 +1,5 @@
 Situation: JS_Environment
 Is js_source_dir = ../../docs/js/
 Is genetic_js_dir = ../../docs/js/genetic/
+Is models_js_dir = ../../docs/js/
+Is genetic_ui_target_file = ../../docs/js/genetic/genetic_ui_3d.js
