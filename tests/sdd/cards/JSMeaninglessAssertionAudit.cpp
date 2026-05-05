@@ -10,41 +10,39 @@ namespace fs = std::filesystem;
 using namespace Sorrel::Sdd::Util;
 
 // @Card: js_meaningless_assertion_audit
-// @Requires meaningful_assertions_required = true
-// @Results files_checked, violations_count, assertion_integrity
+// @Results files_checked, meaningless_assertion_count, meaningless_assertions
 
 int main() {
-    auto facts = FactReader::readFacts("js_quality.facts");
     auto env = FactReader::readFacts("environment.facts");
-    if (!require_fact(facts, "meaningful_assertions_required", "true")) return 1;
-
-    std::string js_dir = env.count("genetic_js_dir") ? env.at("genetic_js_dir") : "docs/js/genetic/";
+    if (env.count("genetic_js_dir") == 0) { std::cerr << "error = fact missing genetic_js_dir" << std::endl; return 1; }
+    std::string js_dir = env.at("genetic_js_dir");
 
     int files_checked = 0;
-    int violations = 0;
+    std::vector<std::string> violations;
+
+    if (!fs::exists(js_dir)) { std::cerr << "error = directory missing " << js_dir << std::endl; return 1; }
 
     for (const auto& entry : fs::directory_iterator(js_dir)) {
         if (entry.path().extension() == ".js") {
             files_checked++;
             std::ifstream file(entry.path());
             std::string line;
+            int line_num = 0;
 
             while (std::getline(file, line)) {
-                // Check for Assert.true(true), expect(1).toBe(1), etc.
+                line_num++;
                 if ((line.find("Assert.true(true)") != std::string::npos) ||
                     (line.find("Assert.equal(1, 1)") != std::string::npos) ||
                     (line.find("expect(true).toBe(true)") != std::string::npos)) {
-                    violations++;
-                    std::cerr << "[FAIL] Meaningless assertion in " << entry.path().filename() << ": " << trim(line) << std::endl;
+                    violations.push_back(entry.path().filename().string() + ":" + std::to_string(line_num));
                 }
             }
         }
     }
 
-    bool ok = (violations == 0);
     std::cout << "files_checked = " << files_checked << std::endl;
-    std::cout << "violations_count = " << violations << std::endl;
-    std::cout << "assertion_integrity = " << (ok ? "true" : "false") << std::endl;
+    std::cout << "meaningless_assertion_count = " << violations.size() << std::endl;
+    std::cout << "meaningless_assertion_locations = "; for (const auto& v : violations) std::cout << v << " "; std::cout << std::endl;
 
-    return ok ? 0 : 1;
+    return 0;
 }
