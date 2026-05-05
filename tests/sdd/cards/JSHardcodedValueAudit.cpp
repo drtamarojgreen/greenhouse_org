@@ -15,7 +15,8 @@ using namespace Sorrel::Sdd::Util;
 
 int main() {
     auto env = FactReader::readFacts("environment.facts");
-    std::string js_dir = env.count("genetic_js_dir") ? env.at("genetic_js_dir") : "docs/js/genetic/";
+    if (env.count("genetic_js_dir") == 0) { std::cerr << "error = fact missing genetic_js_dir" << std::endl; return 1; }
+    std::string js_dir = env.at("genetic_js_dir");
 
     std::regex magic_number_regex("\\b([1-9][0-9]{2,})\\b"); // 3+ digits
     std::regex unparam_string_regex("\"([^\"]{20,})\""); // Long strings often need translation
@@ -23,6 +24,8 @@ int main() {
     int files_checked = 0;
     int magic_numbers = 0;
     int long_strings = 0;
+
+    if (!fs::exists(js_dir)) { std::cerr << "error = directory missing " << js_dir << std::endl; return 1; }
 
     for (const auto& entry : fs::directory_iterator(js_dir)) {
         if (entry.path().extension() == ".js") {

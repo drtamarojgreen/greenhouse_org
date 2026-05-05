@@ -15,13 +15,16 @@ using namespace Sorrel::Sdd::Util;
 
 int main() {
     auto env = FactReader::readFacts("environment.facts");
-    std::string js_dir = env.count("genetic_js_dir") ? env.at("genetic_js_dir") : "docs/js/genetic/";
+    if (env.count("genetic_js_dir") == 0) { std::cerr << "error = fact missing genetic_js_dir" << std::endl; return 1; }
+    std::string js_dir = env.at("genetic_js_dir");
 
     std::regex decl_regex("(?:const|let|var|function)\\s+([a-zA-Z0-9_]+)");
 
     int unused_count = 0;
     int files_checked = 0;
     std::vector<std::string> unused_list;
+
+    if (!fs::exists(js_dir)) { std::cerr << "error = directory missing " << js_dir << std::endl; return 1; }
 
     for (const auto& entry : fs::directory_iterator(js_dir)) {
         if (entry.path().extension() == ".js") {

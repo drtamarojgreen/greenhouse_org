@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <filesystem>
-#include <regex>
 #include "../cpp/util/fact_utils.h"
 #include "../cpp/util/decorator.h"
 
@@ -15,12 +14,13 @@ using namespace Sorrel::Sdd::Util;
 
 int main() {
     auto env = FactReader::readFacts("environment.facts");
-    std::string js_dir = env.count("genetic_js_dir") ? env.at("genetic_js_dir") : "docs/js/genetic/";
+    if (env.count("genetic_js_dir") == 0) { std::cerr << "error = fact missing genetic_js_dir" << std::endl; return 1; }
+    std::string js_dir = env.at("genetic_js_dir");
 
     int files_scanned = 0;
     std::vector<std::string> violations;
 
-    if (!fs::exists(js_dir)) { std::cerr << "error = Directory not found" << std::endl; return 1; }
+    if (!fs::exists(js_dir)) { std::cerr << "error = directory missing " << js_dir << std::endl; return 1; }
 
     for (const auto& entry : fs::directory_iterator(js_dir)) {
         if (entry.path().extension() == ".js") {

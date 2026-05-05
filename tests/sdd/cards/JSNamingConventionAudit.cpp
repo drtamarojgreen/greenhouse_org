@@ -14,10 +14,12 @@ using namespace Sorrel::Sdd::Util;
 // @Results files_checked, naming_violation_count, naming_violations
 
 int main() {
-    auto facts = FactReader::readFacts("js_quality.facts");
     auto env = FactReader::readFacts("environment.facts");
+    auto facts = FactReader::readFacts("js_quality.facts");
 
-    std::string js_dir = env.count("genetic_js_dir") ? env.at("genetic_js_dir") : "docs/js/genetic/";
+    if (env.count("genetic_js_dir") == 0) { std::cerr << "error = fact missing genetic_js_dir" << std::endl; return 1; }
+    std::string js_dir = env.at("genetic_js_dir");
+
     std::string global_pattern = facts.count("global_object_pattern") ? facts.at("global_object_pattern") : "^GreenhouseGenetic[A-Z].*$";
 
     std::regex global_regex(global_pattern);
@@ -25,6 +27,8 @@ int main() {
 
     int files_checked = 0;
     std::vector<std::string> violations;
+
+    if (!fs::exists(js_dir)) { std::cerr << "error = directory missing " << js_dir << std::endl; return 1; }
 
     for (const auto& entry : fs::directory_iterator(js_dir)) {
         if (entry.path().extension() == ".js") {

@@ -24,10 +24,11 @@ int main() {
     auto env   = FactReader::readFacts("environment.facts");
     auto facts = FactReader::readFacts("genetic_ui.facts");
 
-    std::string js_dir = env.count("genetic_js_dir") ? env.at("genetic_js_dir") : "docs/js/genetic/";
-    std::string file_path = js_dir + "genetic_ui_3d.js";
+    if (env.count("genetic_ui_target_file") == 0) { std::cerr << "error = fact missing genetic_ui_target_file" << std::endl; return 1; }
+
+    std::string file_path = env.at("genetic_ui_target_file");
     std::ifstream file(file_path);
-    if (!file.is_open()) { std::cerr << "error_message = Cannot open " << file_path << std::endl; return 1; }
+    if (!file.is_open()) { std::cerr << "error = cannot open " << file_path << std::endl; return 1; }
 
     std::set<std::string> required;
     if (facts.count("required_methods")) required = parse_required_methods(facts.at("required_methods"));
