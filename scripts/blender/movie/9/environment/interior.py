@@ -40,22 +40,23 @@ class InteriorModeler(Modeler):
         with open(config_path, 'r') as f:
             assets_cfg = json.load(f)
 
-        # Build categories
-        self._build_racks(coll, assets_cfg.get("racks", []))
-        self._build_racks(coll, assets_cfg.get("forward_racks", []))
-        self._build_flower_beds(coll, assets_cfg.get("flower_beds", []))
-        self._build_potted_plants(coll, assets_cfg.get("potted_plants", []))
-        self._build_chairs(coll, assets_cfg.get("chairs", []))
-        self._build_end_tables(coll, assets_cfg.get("end_tables", []))
-        self._build_floor_lamps(coll, assets_cfg.get("floor_lamps", []))
+        # Build categories using generic lookup
+        category_map = {
+            "racks": self._build_racks,
+            "forward_racks": self._build_racks,
+            "flower_beds": self._build_flower_beds,
+            "potted_plants": self._build_potted_plants,
+            "chairs": self._build_chairs,
+            "end_tables": self._build_end_tables,
+            "floor_lamps": self._build_floor_lamps,
+            "television_stand": self._build_television_stand,
+            "television": lambda c, cfg: self._build_television(c, cfg, assets_cfg.get("logo", {}))
+        }
 
-        stand_cfg = assets_cfg.get("television_stand")
-        if stand_cfg:
-            self._build_television_stand(coll, stand_cfg)
-
-        tv_cfg = assets_cfg.get("television")
-        if tv_cfg:
-            self._build_television(coll, tv_cfg, assets_cfg.get("logo", {}))
+        for key, builder in category_map.items():
+            cfg_data = assets_cfg.get(key)
+            if cfg_data:
+                builder(coll, cfg_data)
 
         return None
 

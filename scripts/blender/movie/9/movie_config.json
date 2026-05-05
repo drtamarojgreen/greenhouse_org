@@ -1,5 +1,15 @@
 {
-  "production": { "title": "Movie 9", "total_frames": 4800, "start_frame": 1 },
+  "production": {
+    "title": "Movie 9",
+    "total_frames": 4800,
+    "start_frame": 1,
+    "render_settings": {
+      "engine": "BLENDER_EEVEE",
+      "file_format": "PNG",
+      "samples": 32,
+      "integrity_threshold": 2
+    }
+  },
   "text_overlays": {
     "intro": [
       {
@@ -52,10 +62,32 @@
     "equipment_dir": "/home/tamarojgreen/Documents/Movie_Equipment/",
     "assets_blend": "MHD2_animation133.blend",
     "output_dir": "scripts/blender/movie/9/assets/",
-    "m6_root": "scripts/blender/movie/6/"
+    "m6_root": "scripts/blender/movie/6/",
+    "clinical_scene": "scene_configs/scene_03_clinical.json"
   },
   "collections": { "assets": "9a.ASSETS", "environment": "9b.ENVIRONMENT", "cameras": "SETTINGS.CAMERAS" },
+  "registry_mappings": {
+    "environment_modelers": {
+      "exterior": "ExteriorModeler",
+      "interior": "ExteriorModeler",
+      "forest_road": "ForestRoadModeler",
+      "mountain_base": "MountainBaseModeler"
+    },
+    "default_components": {
+      "modeling": "PlantModeler",
+      "rigging": "PlantRigger",
+      "shading": "UniversalShader",
+      "animation": "ProceduralAnimator"
+    }
+  },
   "ensemble": {
+    "protagonists": ["Herbaceous", "Arbor"],
+    "layout": {
+      "fan_width": 0.95,
+      "fan_dist": 12.0,
+      "var_dist": 3.5,
+      "center_y": 15.0
+    },
     "entities": [
       {
         "id": "Herbaceous",
@@ -148,7 +180,7 @@
       { "id": "Phoenix_Herald", "type": "MESH", "target_height": 3.0, "default_pos": [-6.0, 8.0, 0.0], "source_mesh": "Leonardo_Phoenix textured 3D model", "source_rig": "skeleton" },
       { "id": "Golden_Phoenix", "type": "MESH", "target_height": 3.0, "default_pos": [0.0, 8.8, 0.0], "source_mesh": "Leonardo_Phoenix textured 3D model.001", "source_rig": "skeleton.001" },
       {
-        "id": "WaterCan", "type": "DYNAMIC",
+        "id": "water_can", "type": "DYNAMIC",
         "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
         "structure": {
            "geometry": [
@@ -160,7 +192,7 @@
         "default_pos": [3, 3, 0.5]
       },
       {
-        "id": "GardenHose", "type": "DYNAMIC",
+        "id": "garden_hose", "type": "DYNAMIC",
         "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
         "structure": {
            "geometry": [
@@ -171,7 +203,7 @@
         "default_pos": [-3, 3, 0.5]
       },
       {
-        "id": "GreenhouseMobile",
+        "id": "greenhouse_mobile",
         "type": "DYNAMIC",
         "components": {
           "modeling": "GreenhouseMobileModeler",
@@ -199,7 +231,7 @@
         "default_pos": [8.0, -18.0, 0.0]
     },
     {
-      "id": "ClinicalDesk",
+      "id": "clinical_desk",
       "type": "DYNAMIC",
       "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
       "structure": {
@@ -221,7 +253,7 @@
       "_comment_": "Desk: Symbolizes cognitive structure and the processing of internal data."
     },
     {
-      "id": "PatientChair",
+      "id": "patient_chair",
       "type": "DYNAMIC",
       "components": { "modeling": "ProceduralModeler", "shading": "UniversalShader" },
       "structure": {
@@ -264,20 +296,58 @@
          { "target": "Arbor", "action": "animate", "start": 1540, "params": { "tag": "sit", "duration": 40 } }
       ]},
       { "beat": "Blessing", "start": 1800, "end": 3000, "events": [
-         { "target": "WaterCan", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } },
-         { "target": "GardenHose", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } }
+         { "target": "water_can", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } },
+         { "target": "garden_hose", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } }
       ]},
       { "beat": "Final Ascent", "start": 3000, "end": 4200, "events": [
          { "target": "ALL", "action": "animate", "params": { "tag": "dance", "duration": 1200 } }
       ]},
       { "beat": "Outro Gather", "start": 4200, "end": 4800, "events": [
         { "target": "ALL", "action": "move_to", "start": 4200, "params": { "destination_pos": [0, 2, 0], "formation": "arc", "duration_frames": 150 } },
-        { "target": "GreenhouseMobile", "action": "move_to", "start": 4200, "params": { "destination_pos": [0, -12, 0], "duration_frames": 150 } },
+        { "target": "greenhouse_mobile", "action": "move_to", "start": 4200, "params": { "destination_pos": [0, -12, 0], "duration_frames": 150 } },
         { "target": "Radiant_Aura", "action": "altitude", "params": { "height": 0.5, "frames": 4500 } },
-        { "target": "WaterCan", "action": "visibility", "params": { "hidden_at": 4200 } },
-        { "target": "GardenHose", "action": "visibility", "params": { "hidden_at": 4200 } }
+        { "target": "water_can", "action": "visibility", "params": { "hidden_at": 4200 } },
+        { "target": "garden_hose", "action": "visibility", "params": { "hidden_at": 4200 } }
       ]}
     ]
+  },
+  "animations": {
+    "bone_name_map": {
+      "Head": "mixamorig:Head",
+      "Neck": "mixamorig:Neck",
+      "Torso": "mixamorig:Spine2",
+      "Tail": "mixamorig:Hips",
+      "Hand.L": "mixamorig:LeftHand",
+      "Hand.R": "mixamorig:RightHand",
+      "Foot.L": "mixamorig:LeftFoot",
+      "Foot.R": "mixamorig:RightFoot",
+      "Leg.L": "mixamorig:LeftUpLeg",
+      "Leg.R": "mixamorig:RightUpLeg",
+      "Lip.Lower": "Lip.Lower",
+      "Lip.Corner.Ctrl.L": "Lip.Corner.Ctrl.L",
+      "Lip.Corner.Ctrl.R": "Lip.Corner.Ctrl.R",
+      "Jaw.Ctrl": "Jaw.Ctrl",
+      "Pupil.Ctrl.L": "Pupil.Ctrl.L",
+      "Pupil.Ctrl.R": "Pupil.Ctrl.R",
+      "Eyelid.Ctrl.Upper.L": "Eyelid.Ctrl.Upper.L",
+      "Eyelid.Ctrl.Upper.R": "Eyelid.Ctrl.Upper.R",
+      "Eyelid.Ctrl.Lower.L": "Eyelid.Ctrl.Lower.L",
+      "Eyelid.Ctrl.Lower.R": "Eyelid.Ctrl.Lower.R"
+    },
+    "tag_mappings": {
+      "talking": { "func": "animation.talking.animate_talking", "signature": "standard" },
+      "idle":    { "func": "animation.gestures.animate_idle",   "signature": "standard" },
+      "nod":     { "func": "animation.gestures.animate_nod",    "signature": "fixed_duration" },
+      "shake":   { "func": "animation.gestures.animate_shake",  "signature": "fixed_duration" },
+      "dance":   { "func": "animation.gestures.animate_dance",  "signature": "standard" },
+      "blink":   { "func": "animation.gestures.animate_blink",  "signature": "blink" },
+      "walk":    { "func": "animation.movement.animate_walk",   "signature": "standard" },
+      "shiver":  { "func": "animation.gestures.animate_shiver", "signature": "standard" },
+      "smile":   { "func": "animation.talking.animate_smile",   "signature": "standard" },
+      "sit":     { "func": "animation.movement.animate_sit",    "signature": "standard" },
+      "stand":   { "func": "animation.movement.animate_stand",  "signature": "standard" },
+      "climb":   { "func": "animation.movement.animate_climb",  "signature": "standard" }
+    }
   },
   "environment": {
     "type": "interior",
@@ -352,7 +422,7 @@
   "context_constraints": {
     "greenhouse": {
       "disallowed_assets": ["mountains", "rock_path"],
-      "required_assets": ["pillars", "roof", "ClinicalDesk", "PatientChair"],
+      "required_assets": ["pillars", "roof", "clinical_desk", "patient_chair"],
       "_comment_": "Ensures structural integrity of the greenhouse metaphor by excluding incompatible exterior assets."
     },
     "exterior": {

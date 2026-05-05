@@ -33,11 +33,10 @@ def validate_scene_integrity():
         fallbacks = len([o for o in actual_rigs_objs if o.get("fallback_built")])
         if fallbacks > 0:
             print(f"INFO: Detected {fallbacks} fallback rigs. Adjusting expected count.")
-            # Note: The logic above might already count fallbacks if DYNAMIC was used as fallback
-            # but LinkedCharacter fallbacks might not be in the initial expected_rigs count.
 
+        threshold = config.config.get("production.render_settings.integrity_threshold", 2)
         print(f"WARNING: Integrity check: expected {expected_rigs} armatures, found {actual_rigs}.")
-        if abs(actual_rigs - expected_rigs) > 2: # Allow small deviation for safety/fallbacks
+        if abs(actual_rigs - expected_rigs) > threshold:
              raise RuntimeError(f"Integrity validation failed significantly: Aborting render.")
 
 def build_scene():
@@ -66,9 +65,9 @@ def build_scene():
 
     # Extended Scenes
     extended = config.config.get("extended_scenes", [])
-    # Add clinical scene explicitly if not in list to ensure it builds its interior environment
-    if "scene_configs/scene_03_clinical.json" not in extended:
-        extended = ["scene_configs/scene_03_clinical.json"] + extended
+    clinical = config.config.get("paths.clinical_scene")
+    if clinical and clinical not in extended:
+        extended = [clinical] + extended
 
     for scene_path in extended:
         print(f"  Integrating Extended Scene: {scene_path}...")
@@ -94,9 +93,10 @@ def main():
     try:
         build_scene()
 
-        bpy.context.scene.render.engine = 'BLENDER_EEVEE'
-        bpy.context.scene.render.image_settings.file_format = 'PNG'
-        bpy.context.scene.cycles.samples = 32
+        r_cfg = config.config.get("production.render_settings", {})
+        bpy.context.scene.render.engine = r_cfg.get("engine", 'BLENDER_EEVEE')
+        bpy.context.scene.render.image_settings.file_format = r_cfg.get("file_format", 'PNG')
+        bpy.context.scene.cycles.samples = r_cfg.get("samples", 32)
 
         out_dir = os.path.join(M9_ROOT, "renders")
         os.makedirs(out_dir, exist_ok=True)

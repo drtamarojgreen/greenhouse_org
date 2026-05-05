@@ -20,8 +20,6 @@ import rigging.plant
 import shading.universal
 import animation.universal
 
-MAIN_CHARACTER_IDS = ["Herbaceous", "Arbor"]
-
 class Character:
     """
     Strictly OO Character container following Composition over Inheritance.
@@ -122,11 +120,12 @@ class LinkedCharacter(Character):
         # Fallback to procedural build if linking failed (ensures test suite and pipeline stability)
         if (self.rig is None or self.mesh is None):
             print(f"INFO: Asset link failed for {self.char_id}, falling back to procedural generation.")
-            # Resolve components for procedural fallback
-            self.modeler = registry.get_modeling("PlantModeler")()
-            self.rigger = registry.get_rigging("PlantRigger")()
-            self.shader = registry.get_shading("UniversalShader")()
-            self.animator = registry.get_animation("ProceduralAnimator")()
+            # Resolve components for procedural fallback from config
+            defaults = config.config.get("registry_mappings.default_components", {})
+            self.modeler = registry.get_modeling(defaults.get("modeling", "PlantModeler"))()
+            self.rigger = registry.get_rigging(defaults.get("rigging", "PlantRigger"))()
+            self.shader = registry.get_shading(defaults.get("shading", "UniversalShader"))()
+            self.animator = registry.get_animation(defaults.get("animation", "ProceduralAnimator"))()
             
             params = self.cfg.get("parameters", {}).copy()
             if self.rigger: self.rig = self.rigger.build_rig(self.char_id, params)
@@ -158,7 +157,8 @@ class LinkedCharacter(Character):
                 arm_mod.object = self.rig
 
         # Only mark as linked_asset if it was ACTUALLY loaded (not fallback)
-        if self.rig and not (self.char_id in MAIN_CHARACTER_IDS and not objs):
+        protag_ids = config.config.get("ensemble.protagonists", [])
+        if self.rig and not (self.char_id in protag_ids and not objs):
             self.rig["linked_asset"] = True
         if self.rig and self.cfg.get("target_height"):
             manager.normalize_character(self.rig, self.cfg["target_height"])
@@ -180,12 +180,12 @@ class CharacterBuilder:
         resolved_cfg = dict(cfg)
         # Ensure default components for registry resolution
         if "components" not in resolved_cfg:
-            resolved_cfg["components"] = {
+            resolved_cfg["components"] = config.config.get("registry_mappings.default_components", {
                 "modeling": "PlantModeler",
                 "rigging": "PlantRigger",
                 "shading": "UniversalShader",
                 "animation": "ProceduralAnimator"
-            }
+            })
         ctype = resolved_cfg.get("type", "MESH")
         if ctype == "DYNAMIC": return Character(char_id, resolved_cfg)
         return LinkedCharacter(char_id, resolved_cfg)
