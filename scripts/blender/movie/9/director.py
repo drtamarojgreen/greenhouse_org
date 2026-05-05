@@ -289,6 +289,7 @@ class Director:
         if end_f is None: end_f = config.config.total_frames
         constraints = config.config.get("context_constraints", {}).get(context_name, {})
         disallowed = constraints.get("disallowed_assets", [])
+        disallowed_prefixes = constraints.get("disallowed_prefixes", [])
         
         # We need to consider ALL assets that COULD be disallowed in OTHER contexts too,
         # to ensure they are visible when they ARE allowed.
@@ -302,10 +303,6 @@ class Director:
             obj = bpy.data.objects.get(asset_id)
             if obj:
                 targets.append(obj)
-            # Vegetation can be generated as many ext_* objects; include those too.
-            if asset_id == "vegetation":
-                targets.extend([o for o in bpy.data.objects if o.name.startswith("ext_")])
-
             is_disallowed = asset_id in disallowed
             for obj in targets:
                 obj.hide_render = is_disallowed
@@ -318,6 +315,14 @@ class Director:
                     child.hide_viewport = is_disallowed
                     child.keyframe_insert(data_path="hide_render", frame=start_f)
                     child.keyframe_insert(data_path="hide_viewport", frame=start_f)
+
+        # Data-driven prefix constraints (e.g. procedurally generated ext_* trees).
+        for prefix in disallowed_prefixes:
+            for obj in [o for o in bpy.data.objects if o.name.startswith(prefix)]:
+                obj.hide_render = True
+                obj.hide_viewport = True
+                obj.keyframe_insert(data_path="hide_render", frame=start_f)
+                obj.keyframe_insert(data_path="hide_viewport", frame=start_f)
 
     def apply_storyline(self):
         """Compatibility wrapper for modular event execution."""

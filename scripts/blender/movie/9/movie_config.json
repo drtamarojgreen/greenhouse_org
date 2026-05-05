@@ -352,11 +352,13 @@
   "context_constraints": {
     "greenhouse": {
       "disallowed_assets": ["mountain_range", "vegetation", "rock_path"],
+      "disallowed_prefixes": ["ext_"],
       "required_assets": ["pillars", "roof", "ClinicalDesk", "PatientChair"],
       "_comment_": "Ensures structural integrity of the greenhouse metaphor by excluding incompatible exterior assets."
     },
     "exterior": {
       "disallowed_assets": ["interior_floor"],
+      "disallowed_prefixes": [],
       "required_assets": ["mountain_range", "vegetation"],
       "_comment_": "Defines the open, expansive nature of the exterior mental frontier."
     }
