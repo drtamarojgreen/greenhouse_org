@@ -61,7 +61,7 @@ class Director:
         total_f = self.scene_cfg.get("total_frames", config.config.total_frames)
         CalligraphyDirector(self.lc_cfg, total_f, M9_ROOT).apply()
 
-    def setup_environment(self, force=False):
+    def setup_environment(self, force=False, start_f=None, end_f=None):
         """Builds static and dynamic environment assets from configuration."""
         # Purge existing environment for clean rebuild (critical for test parity)
         env_coll = bpy.data.collections.get(config.config.coll_environment)
@@ -77,12 +77,23 @@ class Director:
             print("Warning: No environment configuration found in scene JSON.")
             return
 
-        e_type = env_cfg.get("type", "exterior")
-        # Apply context constraints (visibility)
-        self.apply_context_constraints(e_type)
+        # Use frames from scene_cfg if not provided
+        if start_f is None: start_f = self.scene_cfg.get("start_frame", 1)
+        if end_f is None: end_f = self.scene_cfg.get("end_frame", config.config.total_frames)
 
         e_type = env_cfg.get("type", "exterior")
-        modeler_id = "ExteriorModeler" if e_type == "exterior" else ("ForestRoadModeler" if e_type == "forest_road" else "MountainBaseModeler")
+        # Map 'interior' environment type to 'greenhouse' context for constraints
+        context_name = "greenhouse" if e_type == "interior" else e_type
+
+        # Select modeler based on type
+        # Interior greenhouse scenes use ExteriorModeler to get the greenhouse shell (pillars/roof)
+        if e_type in ["exterior", "interior"]:
+            modeler_id = "ExteriorModeler"
+        elif e_type == "forest_road":
+            modeler_id = "ForestRoadModeler"
+        else:
+            modeler_id = "MountainBaseModeler"
+
         modeler_cls = registry.get_modeling(modeler_id)
         if modeler_cls:
             modeler_cls().build_mesh("Env", env_cfg)
@@ -93,6 +104,9 @@ class Director:
         int_cls = registry.get_modeling("InteriorModeler")
         if int_cls:
             int_cls().build_mesh("Interior", interior_cfg)
+
+        # Apply context constraints (visibility) AFTER building assets
+        self.apply_context_constraints(context_name, start_f, end_f)
 
         # Backdrop
         from environment.backdrop import BackdropModeler
@@ -200,7 +214,9 @@ class Director:
         character_placement.load_extended_scene(scene_path, self)
         # Re-apply context constraints for the new environment
         env_cfg = self.scene_cfg.get("environment", {})
-        self.apply_context_constraints(env_cfg.get("type", "exterior"))
+        start_f = self.scene_cfg.get("start_frame", 1)
+        end_f = self.scene_cfg.get("end_frame", config.config.total_frames)
+        self.apply_context_constraints(env_cfg.get("type", "exterior"), start_f, end_f)
 
     def _ensure_collection(self, name):
         coll = bpy.data.collections.get(name) or bpy.data.collections.new(name)
@@ -213,18 +229,35 @@ class Director:
         """Compatibility wrapper for modular LightingManager."""
         self.lighting_manager.setup_lights()
 
-    def apply_context_constraints(self, context_name):
-        """Hides disallowed assets based on context constraints in movie_config."""
+    def apply_context_constraints(self, context_name, start_f=1, end_f=None):
+        """Hides disallowed assets based on context constraints in movie_config using keyframes."""
+        if end_f is None: end_f = config.config.total_frames
         constraints = config.config.get("context_constraints", {}).get(context_name, {})
         disallowed = constraints.get("disallowed_assets", [])
-        for asset_id in disallowed:
+        
+        # We need to consider ALL assets that COULD be disallowed in OTHER contexts too,
+        # to ensure they are visible when they ARE allowed.
+        all_contexts = config.config.get("context_constraints", {})
+        all_possibly_disallowed = set()
+        for ctx in all_contexts.values():
+            all_possibly_disallowed.update(ctx.get("disallowed_assets", []))
+
+        for asset_id in all_possibly_disallowed:
             obj = bpy.data.objects.get(asset_id)
             if obj:
-                obj.hide_render = True
-                obj.hide_viewport = True
+                is_disallowed = asset_id in disallowed
+                
+                # Set visibility for this scene range
+                obj.hide_render = is_disallowed
+                obj.hide_viewport = is_disallowed
+                obj.keyframe_insert(data_path="hide_render", frame=start_f)
+                obj.keyframe_insert(data_path="hide_viewport", frame=start_f)
+                
                 for child in obj.children_recursive:
-                    child.hide_render = True
-                    child.hide_viewport = True
+                    child.hide_render = is_disallowed
+                    child.hide_viewport = is_disallowed
+                    child.keyframe_insert(data_path="hide_render", frame=start_f)
+                    child.keyframe_insert(data_path="hide_viewport", frame=start_f)
 
     def apply_storyline(self):
         """Compatibility wrapper for modular event execution."""

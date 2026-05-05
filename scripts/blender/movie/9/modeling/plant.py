@@ -59,7 +59,8 @@ class PlantModeler(Modeler):
         l_cfg = self.p_cfg["limbs"]
         for side, sx in [("L", 1), ("R", -1)]:
             # Arms
-            s_loc = [l_cfg["arm_shoulder_pos"][0] * sx, l_cfg["arm_shoulder_pos"][1], l_cfg["arm_shoulder_pos"][2] * torso_h/1.5]
+            # Shoulder position should match the rig's shoulder height
+            s_loc = [l_cfg["arm_shoulder_pos"][0] * sx, l_cfg["arm_shoulder_pos"][1], l_cfg["arm_shoulder_pos"][2] * torso_h]
             seg = l_cfg["arm_segments"]
             self._add_joint_bulb(bm, mesh_obj, dlayer, s_loc, 0.16, f"Arm.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.14, 0.11, seg[0], (s_loc[0], s_loc[1], s_loc[2]-seg[0]/2), f"Arm.{side}")
@@ -74,6 +75,8 @@ class PlantModeler(Modeler):
 
             # Legs
             hip_loc = [l_cfg["leg_hip_pos"][0] * sx, l_cfg["leg_hip_pos"][1], l_cfg["leg_hip_pos"][2]]
+            # Ensure hips are scaled if height_scale is significant
+            hip_loc[2] *= height_scale
             lseg = l_cfg["leg_segments"]
             self._add_joint_bulb(bm, mesh_obj, dlayer, hip_loc, 0.18, f"Thigh.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.16, 0.13, lseg[0], (hip_loc[0], hip_loc[1], hip_loc[2]-lseg[0]/2), f"Thigh.{side}")
@@ -87,14 +90,18 @@ class PlantModeler(Modeler):
             self._add_organic_part(bm, mesh_obj, dlayer, 0.10, 0.06, lseg[2], (f_loc[0], f_loc[1]-lseg[2]/2, f_loc[2]), f"Foot.{side}", rot=(math.radians(90), 0, 0))
 
             # Fingers (Simplified for modular rig compatibility)
+            # Offset to tail of hand bone
+            fing_base_z = h_loc[2] - 0.15 
             for i in range(1, 4):
                 f_name = f"Finger.{i}.{side}"
-                self._add_organic_part(bm, mesh_obj, dlayer, 0.03, 0.01, 0.15, (h_loc[0] + (i-2)*0.05, h_loc[1]-0.1, h_loc[2]-0.05), f_name, rot=(math.radians(45), 0, 0))
+                self._add_organic_part(bm, mesh_obj, dlayer, 0.03, 0.01, 0.15, (h_loc[0] + (i-2)*0.05, h_loc[1], fing_base_z - 0.07), f_name, rot=(math.radians(0), 0, 0))
             
             # Toes
+            # Offset to tail of foot bone
+            toe_base_y = f_loc[1] - 0.15
             for i in range(1, 4):
                 t_name = f"Toe.{i}.{side}"
-                self._add_organic_part(bm, mesh_obj, dlayer, 0.04, 0.02, 0.12, (f_loc[0] + (i-2)*0.06, f_loc[1]-lseg[2]-0.05, f_loc[2]), t_name, rot=(math.radians(90), 0, 0))
+                self._add_organic_part(bm, mesh_obj, dlayer, 0.04, 0.02, 0.12, (f_loc[0] + (i-2)*0.06, toe_base_y - 0.06, f_loc[2]), t_name, rot=(math.radians(90), 0, 0))
 
         # Facial Features (Eyes/Iris/Pupil for High-Fidelity Test)
         head_c = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
@@ -122,14 +129,33 @@ class PlantModeler(Modeler):
             angle = (i/f_cfg["head_count"])*math.pi*2
             tilt = random.uniform(*f_cfg["head_tilt_range"])
             loc = head_center + mathutils.Vector((math.cos(angle)*head_r*tilt, math.sin(angle)*head_r*tilt, head_r*0.5 + random.uniform(0, head_r)))
-            
+
             b_len = random.uniform(*f_cfg["branch_len_range"])
             matrix = mathutils.Matrix.Translation(loc) @ mathutils.Matrix.Rotation(angle, 4, 'Z')
             ret = bmesh.ops.create_cone(bm, segments=6, radius1=0.04, radius2=0, depth=b_len, matrix=matrix)
             for v in ret['verts']:
                 v[dlayer][foliage_vg.index] = 1.0
 
+        # Limb Foliage (Limbs and Leaves logic ported from Movie 7)
+        limbs_foliage = ["Arm.L", "Arm.R", "Elbow.L", "Elbow.R", "Thigh.L", "Thigh.R", "Knee.L", "Knee.R"]
+        density = f_cfg.get("limb_foliage_density", 6)
+        for bone_name in limbs_foliage:
+            vg = mesh_obj.vertex_groups.get(bone_name)
+            if not vg: continue
+            vg_verts = [v for v in bm.verts if vg.index in v[dlayer] and v[dlayer][vg.index] > 0.5]
+            if not vg_verts: continue
+            for _ in range(density):
+                v_target = random.choice(vg_verts)
+                l_loc = v_target.co + v_target.normal * 0.04
+                l_size = random.uniform(*f_cfg.get("leaf_size_range", [0.2, 0.4]))
+                l_rot = mathutils.Euler((random.random()*6, 0, random.random()*6)).to_matrix().to_4x4()
+                l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=l_size, matrix=mathutils.Matrix.Translation(l_loc) @ l_rot)
+                for v in l_ret['verts']:
+                    v[dlayer][vg.index] = 1.0
+                    v[dlayer][foliage_vg.index] = 0.6
+
         # Material Index Assignment for Shading (0: Bark, 1: Foliage/Leaf)
+
         for face in bm.faces:
             is_foliage = any(v[dlayer].get(foliage_vg.index, 0) > 0.5 for v in face.verts)
             face.material_index = 1 if is_foliage else 0

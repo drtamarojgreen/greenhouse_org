@@ -77,6 +77,7 @@ class PlantRigger(Rigger):
             "Nose": ((0, -head_r*0.97, torso_h+neck_h+head_r*1.05), (0, -head_r*1.07, torso_h+neck_h+head_r*1.05), "Head"),
             "Lip.Upper": ((0, -head_r*0.96, torso_h+neck_h+head_r*0.82), (0, -head_r*1.06, torso_h+neck_h+head_r*0.82), "Head"),
             "Lip.Lower": ((0, -head_r*0.95, torso_h+neck_h+head_r*0.76), (0, -head_r*1.05, torso_h+neck_h+head_r*0.76), "Head"),
+            "Foliage":   ((0, 0, torso_h+neck_h+head_r), (0, 0, torso_h+neck_h+head_r+0.5), "Head"),
             "Finger.1.L": ((0.4, 0, torso_h*0.9-0.95), (0.45,0, torso_h*0.9-1.1),  "Hand.L"),
             "Finger.2.L": ((0.4, 0, torso_h*0.9-0.95), (0.4, 0.05, torso_h*0.9-1.1), "Hand.L"),
             "Finger.3.L": ((0.4, 0, torso_h*0.9-0.95), (0.35,0, torso_h*0.9-1.1),  "Hand.L"),

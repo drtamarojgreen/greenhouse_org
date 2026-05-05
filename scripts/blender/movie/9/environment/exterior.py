@@ -192,7 +192,7 @@ class ExteriorModeler(Modeler):
             y -= spacing; idx += 1
 
     def _create_mountain_range(self, coll, cfg):
-        name = "mountain_range"
+        name = "mountains"
         if bpy.data.objects.get(name): return
         mesh = bpy.data.meshes.new(name); obj = bpy.data.objects.new(name, mesh); coll.objects.link(obj)
         bm = bmesh.new(); num, rad = cfg.get("count", 24), cfg.get("radius", 250)
