@@ -13,6 +13,8 @@
 - [x] JSCodeDuplicationAudit: Reports identical code blocks across files.
 - [x] JSFileLengthAudit: Reports files exceeding max line threshold.
 - [x] JSLongTaskAudit: Detects unthrottled listeners and deep loop nesting.
+- [x] JSComplexityAudit: Reports heuristic cyclomatic complexity scores.
+- [x] JSVarUsageAudit: Reports usage of 'var' instead of 'const'/'let'.
 
 ## Open
 

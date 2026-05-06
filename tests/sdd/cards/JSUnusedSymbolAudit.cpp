@@ -70,7 +70,7 @@ int main() {
                     size_t absolute_pos = cumulative_offset + match.position();
                     std::string prefix = line.substr(0, absolute_pos);
 
-                    // Simple check if the word is NOT being declared or assigned as a property here
+                    // Improved check: word is preceded by decl keyword (with potential whitespace)
                     std::regex keyword_regex("\\b(const|let|var|function)\\s+$");
                     std::regex prop_decl_regex("([a-zA-Z0-9_]+):\\s*$");
 
