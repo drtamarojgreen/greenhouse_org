@@ -9,8 +9,8 @@
 namespace fs = std::filesystem;
 using namespace Sorrel::Sdd::Util;
 
-// @Card: js_meaningless_assertion_audit
-// @Results files_checked, meaningless_assertion_count, assertion_locations
+// @Card: js_var_usage_audit
+// @Results files_checked, var_usage_count, var_locations
 
 int main() {
     auto env = FactReader::readFacts("environment.facts");
@@ -32,9 +32,8 @@ int main() {
                 int line_num = 0;
                 while (std::getline(file, line)) {
                     line_num++;
-                    if (line.find("Assert.Pass()") != std::string::npos ||
-                        line.find("expect(true).to.be.true") != std::string::npos ||
-                        line.find("assert.equal(1, 1)") != std::string::npos) {
+                    // Avoid false positives in comments
+                    if (line.find("var ") != std::string::npos && line.find("//") == std::string::npos) {
                         violations.push_back(entry.path().filename().string() + ":" + std::to_string(line_num));
                     }
                 }
@@ -43,8 +42,8 @@ int main() {
     }
 
     std::cout << "files_checked = " << files_checked << std::endl;
-    std::cout << "meaningless_assertion_count = " << violations.size() << std::endl;
-    std::cout << "assertion_locations = "; for (const auto& v : violations) std::cout << v << " "; std::cout << std::endl;
+    std::cout << "var_usage_count = " << violations.size() << std::endl;
+    std::cout << "var_locations = "; for (const auto& v : violations) std::cout << v << " "; std::cout << std::endl;
 
     return 0;
 }
