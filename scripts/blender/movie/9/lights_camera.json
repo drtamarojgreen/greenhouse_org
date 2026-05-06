@@ -334,12 +334,17 @@
         "Detail_cu",
         "Low_angle"
       ],
+      "variations": {
+        "Ots": ["Ots1", "Ots2"],
+        "Antag": ["Antag1", "Antag2", "Antag3", "Antag4"]
+      },
       "durations": {
         "Ots": 60,
         "Antag": 40,
         "Wide": 80,
         "Detail_cu": 45,
-        "Low_angle": 50
+        "Low_angle": 50,
+        "default": 60
       },
       "start": 504,
       "end": 4150,

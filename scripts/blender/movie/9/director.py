@@ -86,8 +86,9 @@ class Director:
         e_type = env_cfg.get("type", "exterior")
         context_name = "greenhouse" if e_type == "interior" else e_type
 
-        # Build appropriate environment
-        modeler_id = "ExteriorModeler" if e_type in ["exterior", "interior"] else ("ForestRoadModeler" if e_type == "forest_road" else "MountainBaseModeler")
+        # Build appropriate environment from registry mappings
+        mappings = config.config.get("registry_mappings.environment_modelers", {})
+        modeler_id = mappings.get(e_type, "ExteriorModeler")
         modeler_cls = registry.get_modeling(modeler_id)
         
         env_root = None
@@ -144,6 +145,8 @@ class Director:
     def initialize_entities(self):
         """Data-driven initialization of scene entities (protagonists, vehicles, etc)."""
         entities = self.scene_cfg.get("entities", [])
+        protag_ids = config.config.get("ensemble.protagonists", [])
+
         for ent in entities:
             e_id = ent["id"]
             e_type = ent["type"]
@@ -156,7 +159,9 @@ class Director:
                 obj.location = ent.get("pos", (0,0,0))
                 obj.rotation_euler = ent.get("rot", (0,0,0))
                 obj.scale = [ent.get("scale", 1.0)] * 3
-                if ent.get("is_protagonist"):
+
+                is_protag = ent.get("is_protagonist") or (e_id in protag_ids)
+                if is_protag:
                     obj["is_protagonist"] = True
                 character_placement.ground_to_zero(obj)
 
@@ -187,6 +192,13 @@ class Director:
         # 2. Apply the procedural cycle (respecting existing named markers)
         cycle = seq.get("cycle")
         if cycle:
+            variations = cycle.get("variations", {})
+            durs = cycle.get("durations", {})
+            default_dur = durs.get("default", 60)
+
+            # Track variant indices per camera type
+            variant_counters = {k: 0 for k in cycle["order"]}
+
             # Gather frames occupied by named sequence blocks to avoid overlap
             occupied_frames = []
             for key, cfg_s in seq.items():
@@ -194,7 +206,7 @@ class Director:
                 if "start" in cfg_s and "end" in cfg_s:
                     occupied_frames.append((cfg_s["start"], cfg_s["end"]))
 
-            frame, end, order, durs, c_idx = cycle["start"], cycle["end"], cycle["order"], cycle["durations"], 0
+            frame, end, order, c_idx = cycle["start"], cycle["end"], cycle["order"], 0
             while frame < end:
                 skip = False
                 for start_occ, end_occ in occupied_frames:
@@ -203,16 +215,23 @@ class Director:
                         skip = True; break
                 if skip: continue
 
-                c_type = order[c_idx % len(order)]; cam_name = c_type
-                if c_type == "Ots": cam_name = "Ots1" if (c_idx // len(order)) % 2 == 0 else "Ots2"
-                if c_type == "Antag": cam_name = f"Antag{(c_idx // len(order)) % 4 + 1}"
+                c_type = order[c_idx % len(order)]
+
+                # Resolve cam_name from variations or use type directly
+                cam_variants = variations.get(c_type, [])
+                if cam_variants:
+                    v_idx = variant_counters[c_type] % len(cam_variants)
+                    cam_name = cam_variants[v_idx]
+                    variant_counters[c_type] += 1
+                else:
+                    cam_name = c_type
 
                 cam_obj = bpy.data.objects.get(cam_name)
                 if cam_obj:
                     m = scene.timeline_markers.new(f"Shot_{cam_name}_{frame}", frame=frame); m.camera = cam_obj
 
-                # Pacing: Increment frame based on duration configuration (defaults to 60 for professional cuts)
-                frame += durs.get(c_type, 60); c_idx += 1
+                # Pacing: Increment frame based on duration configuration
+                frame += durs.get(c_type, default_dur); c_idx += 1
 
     def compose_ensemble(self):
         """Delegates ensemble composition to character_placement module."""
@@ -258,22 +277,17 @@ class Director:
         self.lighting_manager.setup_lights()
         
         # 2. Scene-specific Overrides (Keyframed)
-        beats = self.scene_cfg.get("story_beats", config.config.get("storyline", []))
         extended = config.config.get("extended_scenes", [])
-        
+        clinical = config.config.get("paths.clinical_scene")
+        if clinical and clinical not in extended:
+            extended = [clinical] + extended
+
         all_scene_configs = []
         for path in extended:
             full_path = os.path.join(M9_ROOT, path)
             if os.path.exists(full_path):
                 with open(full_path, 'r') as f: all_scene_configs.append(json.load(f))
         
-        # Add clinical if not in extended but present in configs
-        clin_path = os.path.join(M9_ROOT, "scene_configs/scene_03_clinical.json")
-        if os.path.exists(clin_path):
-            with open(clin_path, 'r') as f:
-                c_cfg = json.load(f)
-                if c_cfg not in all_scene_configs: all_scene_configs.append(c_cfg)
-
         for sc in all_scene_configs:
             override = sc.get("environment", {}).get("lighting_override")
             if override:

@@ -41,11 +41,13 @@ int main() {
             }
             if (line.find("\"start\":") != std::string::npos) {
                 size_t start_pos = line.find(':') + 1;
-                current.start = std::stoi(line.substr(start_pos, line.find(',', start_pos) - start_pos));
+                std::string sub = line.substr(start_pos, line.find_first_of(",}", start_pos) - start_pos);
+                try { current.start = std::stoi(sub); } catch(...) {}
             }
             if (line.find("\"end\":") != std::string::npos) {
                 size_t end_pos = line.find(':') + 1;
-                current.end = std::stoi(line.substr(end_pos, line.find_first_of(",}", end_pos) - end_pos));
+                std::string sub = line.substr(end_pos, line.find_first_of(",}", end_pos) - end_pos);
+                try { current.end = std::stoi(sub); } catch(...) {}
             }
         }
     }
