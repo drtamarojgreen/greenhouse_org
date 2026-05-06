@@ -17,7 +17,7 @@ class TestCinematicsV9(unittest.TestCase):
     def test_camera_variety(self):
         """Verifies that Movie 9 has a professional variety of cameras."""
         camera_ids = [c["id"] for c in self.lc_cfg.get("cameras", [])]
-        required = ["Detail_CU", "Hero_Track", "Low_Angle", "Bird_Eye"]
+        required = ["Detail_cu", "Hero_track", "Low_angle", "Bird_eye"]
         for r in required:
             self.assertIn(r, camera_ids, f"Movie 9 missing required professional camera: {r}")
 

@@ -20,15 +20,15 @@ class TestCinematicsDynamicV9(unittest.TestCase):
         cls.director.apply_sequencing()
 
     def test_clinical_camera_activation(self):
-        """Verifies Clinical_TwoShot is active during the exchange."""
+        """Verifies Clinical_twoshot is active during the exchange."""
         # Beat starts at 1000
         bpy.context.scene.frame_set(1005)
 
         # Check active camera
         active_cam = bpy.context.scene.camera
         self.assertIsNotNone(active_cam)
-        self.assertEqual(active_cam.name, "Clinical_TwoShot",
-                         f"Incorrect camera at frame 1005: expected Clinical_TwoShot, got {active_cam.name}")
+        self.assertEqual(active_cam.name, "Clinical_twoshot",
+                         f"Incorrect camera at frame 1005: expected Clinical_twoshot, got {active_cam.name}")
 
     def test_sequencing_cut_density(self):
         """Verifies professional-grade rapid cutting in the cycle."""

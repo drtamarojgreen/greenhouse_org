@@ -21,6 +21,9 @@
 - [x] PoseMarkerAudit: verify that all 'action' tags used in storyline have corresponding pose markers in the respective rigs.
 - [x] AssetVisibilityTimingAudit: reports and verifies environment and character visibility frame ranges.
 - [x] CameraDistanceAudit: reports distance from camera to each character in the scene.
+- [x] DirectorEnvironmentLifecycleAudit: prevents accidental per-block purges and stored environment hide-keyframes.
+- [x] GreenhouseAssetIsolationAudit: ensures greenhouse scenes disallow exterior mountains, vegetation, paths, and ext_* generated assets.
+- [x] IntroRenderContinuityAudit: verifies story and camera coverage begins at frame 1 and continues through the first 2000 frames.
 
 ## Open
 

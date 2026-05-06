@@ -1,0 +1,4 @@
+Situation: Intro_Render_Continuity
+# The movie must have story and camera coverage from frame 1 through the first 2000 frames.
+Is intro_render_continuity_required = true
+Is intro_required_visible_until = 2000

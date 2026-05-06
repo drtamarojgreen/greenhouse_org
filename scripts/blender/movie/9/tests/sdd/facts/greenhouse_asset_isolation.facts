@@ -1,0 +1,3 @@
+Situation: Greenhouse_Asset_Isolation
+# Greenhouse frames must exclude exterior mountains/trees/paths by generated object names.
+Is greenhouse_asset_isolation_required = true

@@ -1,0 +1,3 @@
+Situation: Environment_Lifecycle
+# Director must not purge the environment on every scene block because that blanks earlier timeline ranges.
+Is scene_environment_lifecycle_guard = true
