@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <regex>
 #include "../cpp/util/fact_utils.h"
 #include "../cpp/util/decorator.h"
 
@@ -29,27 +30,18 @@ int main() {
     std::vector<Beat> beats;
     std::string line;
     bool in_storyline = false;
-    Beat current{};
+    std::regex beat_re("\\\"beat\\\"\\s*:\\s*\\\"([^\\\"]+)\\\".*\\\"start\\\"\\s*:\\s*([0-9]+).*\\\"end\\\"\\s*:\\s*([0-9]+)");
 
     while (std::getline(file, line)) {
-        if (line.find("\"storyline\":") != std::string::npos) in_storyline = true;
-        if (in_storyline) {
-            if (line.find("\"beat\":") != std::string::npos) {
-                if (!current.name.empty()) beats.push_back(current);
-                size_t open = line.find('\"', line.find(':')) + 1;
-                current.name = line.substr(open, line.find('\"', open) - open);
-            }
-            if (line.find("\"start\":") != std::string::npos) {
-                size_t start_pos = line.find(':') + 1;
-                current.start = std::stoi(line.substr(start_pos, line.find(',', start_pos) - start_pos));
-            }
-            if (line.find("\"end\":") != std::string::npos) {
-                size_t end_pos = line.find(':') + 1;
-                current.end = std::stoi(line.substr(end_pos, line.find_first_of(",}", end_pos) - end_pos));
-            }
+        if (line.find("\"storyline\":") != std::string::npos) { in_storyline = true; continue; }
+        if (in_storyline && line.find("\"environment\":") != std::string::npos) break;
+        if (!in_storyline) continue;
+
+        std::smatch match;
+        if (std::regex_search(line, match, beat_re)) {
+            beats.push_back({match[1].str(), std::stoi(match[2].str()), std::stoi(match[3].str())});
         }
     }
-    if (!current.name.empty()) beats.push_back(current);
 
     int overlap_count = 0;
     std::vector<std::string> overlaps;
@@ -64,7 +56,7 @@ int main() {
         }
     }
 
-    bool ok = overlap_count == 0;
+    bool ok = overlap_count == 0 && !beats.empty();
     std::cout << "beat_count = " << beats.size() << std::endl;
     std::cout << "overlap_count = " << overlap_count << std::endl;
     if (!overlaps.empty()) { std::cout << "overlaps = "; for (const auto& o : overlaps) std::cout << "[" << o << "] "; std::cout << std::endl; }

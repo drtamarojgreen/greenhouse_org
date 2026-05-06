@@ -29,7 +29,10 @@ TARGETS = \
 	$(BIN_DIR)/CameraDistanceAudit \
 	$(BIN_DIR)/SceneGeometryAudit \
 	$(BIN_DIR)/ProtagonistStructureAudit \
-	$(BIN_DIR)/DiagnosticSceneVisibilityAudit
+	$(BIN_DIR)/DiagnosticSceneVisibilityAudit \
+	$(BIN_DIR)/DirectorEnvironmentLifecycleAudit \
+	$(BIN_DIR)/GreenhouseAssetIsolationAudit \
+	$(BIN_DIR)/IntroRenderContinuityAudit
 
 all: $(TARGETS)
 
@@ -60,6 +63,9 @@ run: all
 	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/SceneGeometryAudit
 	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/ProtagonistStructureAudit
 	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/DiagnosticSceneVisibilityAudit
+	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/DirectorEnvironmentLifecycleAudit
+	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/GreenhouseAssetIsolationAudit
+	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/IntroRenderContinuityAudit
 
 verify: run
 

@@ -65,9 +65,11 @@ class Director:
         """Builds static and dynamic environment assets from configuration."""
         is_global = (start_f is None and end_f is None)
         
-        # Scene-isolated build: always purge environment assets before rebuilding.
+        # Purge for global setup and explicit context switches.
+        # Avoid purging on every scene block or we end up with only the last-built
+        # environment visible across the timeline.
         env_coll = bpy.data.collections.get(config.config.coll_environment)
-        if env_coll:
+        if env_coll and (is_global or force):
             def purge_coll(c):
                 for sub in list(c.children): purge_coll(sub)
                 for obj in list(c.objects): bpy.data.objects.remove(obj, do_unlink=True)
