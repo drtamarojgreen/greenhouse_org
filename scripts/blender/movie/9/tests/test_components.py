@@ -1,4 +1,3 @@
-import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -8,6 +7,7 @@ import sys
 M9_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_DIR not in sys.path:
     sys.path.append(M9_DIR)
+import movie_configuration as mc
 
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder

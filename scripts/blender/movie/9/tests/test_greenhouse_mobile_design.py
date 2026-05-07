@@ -1,4 +1,3 @@
-import movie_configuration as mc
 import unittest
 import bpy
 import bmesh
@@ -7,6 +6,7 @@ import sys
 
 # Add script directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import movie_configuration as mc
 
 from modeling.greenhouse_mobile import GreenhouseMobileModeler
 from asset_manager import AssetManager

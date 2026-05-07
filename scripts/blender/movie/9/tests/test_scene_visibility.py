@@ -1,4 +1,3 @@
-import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -9,6 +8,7 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 M9_ROOT = os.path.dirname(TEST_DIR)
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
+import movie_configuration as mc
 
 from render import build_scene
 

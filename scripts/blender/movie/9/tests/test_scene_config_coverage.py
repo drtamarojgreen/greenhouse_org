@@ -1,4 +1,3 @@
-import movie_configuration as mc
 import unittest
 import os
 import json
@@ -8,6 +7,7 @@ import sys
 M9_ROOT = "/home/tamarojgreen/development/LLM/greenhouse_org/scripts/blender/movie/9"
 if M9_ROOT not in sys.path:
     sys.path.append(M9_ROOT)
+import movie_configuration as mc
 
 class TestMovie9ConfigCoverage(unittest.TestCase):
     def test_frame_range_coverage(self):
