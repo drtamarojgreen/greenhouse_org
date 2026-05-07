@@ -1,7 +1,7 @@
 import bpy
 import math
 import random
-import config
+import movie_configuration
 import base
 from registry import registry
 

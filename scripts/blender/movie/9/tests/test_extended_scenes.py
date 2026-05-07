@@ -11,13 +11,13 @@ if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
 from director import Director
-import config
+import movie_configuration
 
 class TestMovie9ExtendedScenes(unittest.TestCase):
     def test_extended_scene_loading(self):
         """Verifies that extended scene JSONs (8, 9, 10) can be parsed and markers added."""
         director = Director()
-        extended = config.config.get("extended_scenes", [])
+        extended = movie_configuration.get("extended_scenes", [])
         self.assertGreater(len(extended), 0)
 
         # Test loading one scene

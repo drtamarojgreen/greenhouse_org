@@ -21,8 +21,8 @@ class TestMovie9OOCharacters(unittest.TestCase):
 
     def test_character_oo_composition(self):
         """Verifies composition and component resolution."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        from movie_configuration import movie_configuration
+        cfg = movie_configuration.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
 
         self.assertIsNotNone(char.modeler)

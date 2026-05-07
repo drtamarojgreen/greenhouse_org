@@ -46,8 +46,8 @@ class TestMovie9Robustness(unittest.TestCase):
 
     def test_normalization_bounds(self):
         """Verifies normalization metrics calculation doesn't crash on simple geometry."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous").copy()
+        from movie_configuration import movie_configuration
+        cfg = movie_configuration.get_character_config("Herbaceous").copy()
         cfg["type"] = "DYNAMIC"
         cfg.setdefault("components", {"modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator"})
         char = CharacterBuilder.create("Simple", cfg)

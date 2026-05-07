@@ -8,7 +8,7 @@ M9_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_DIR not in sys.path:
     sys.path.append(M9_DIR)
 
-from config import config
+from movie_configuration import movie_configuration
 from asset_manager import AssetManager
 from director import Director
 from registry import registry
@@ -25,7 +25,7 @@ class TestMovie9Modularity(unittest.TestCase):
 
     def test_universal_build_data_driven(self):
         """Verifies that a character is built purely from geometry and props data."""
-        cfg = config.get_character_config("Herbaceous")
+        cfg = movie_configuration.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
@@ -34,20 +34,20 @@ class TestMovie9Modularity(unittest.TestCase):
         self.assertTrue(any("Eye_L" in n for n in prop_names))
 
     def test_environment_modular_build(self):
-        """Verifies that ExteriorModeler creates complex environment from config."""
+        """Verifies that ExteriorModeler creates complex environment from movie_configuration."""
         from environment.exterior import ExteriorModeler
         mod = ExteriorModeler()
-        mod.build_mesh("TestEnv", config.get("environment", {}))
+        mod.build_mesh("TestEnv", movie_configuration.get("environment", {}))
 
         self.assertIn("interior_floor", bpy.data.objects)
         self.assertIn("mountain_range", bpy.data.objects)
         self.assertIn("greenhouse_roof", bpy.data.objects)
 
     def test_backdrop_modular_build(self):
-        """Verifies Chroma backdrops are built from config."""
+        """Verifies Chroma backdrops are built from movie_configuration."""
         from environment.backdrop import BackdropModeler
         mod = BackdropModeler()
-        mod.build_mesh("Chroma", config.get("chroma", {}))
+        mod.build_mesh("Chroma", movie_configuration.get("chroma", {}))
         self.assertIn("chroma_backdrop_wide", bpy.data.objects)
 
     def test_director_cinematics_full(self):

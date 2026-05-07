@@ -21,8 +21,8 @@ class TestMovie9Fidelity(unittest.TestCase):
 
     def test_mesh_smoothness(self):
         """Verifies that all generated faces are set to smooth."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        from movie_configuration import movie_configuration
+        cfg = movie_configuration.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
@@ -31,8 +31,8 @@ class TestMovie9Fidelity(unittest.TestCase):
 
     def test_prop_attachment_fidelity(self):
         """Verifies that props are correctly parented to bones."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        from movie_configuration import movie_configuration
+        cfg = movie_configuration.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 

@@ -23,8 +23,8 @@ class TestMovie9Parity(unittest.TestCase):
 
     def test_structural_parity(self):
         """Verifies that the built character has the expected structural complexity."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        from movie_configuration import movie_configuration
+        cfg = movie_configuration.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 

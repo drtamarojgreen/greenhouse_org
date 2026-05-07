@@ -21,8 +21,8 @@ class TestMovie9V5Parity(unittest.TestCase):
 
     def test_vertex_group_naming_parity(self):
         """Verifies that vertex groups match bone names (standard for V5/V6 parity)."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        from movie_configuration import movie_configuration
+        cfg = movie_configuration.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 

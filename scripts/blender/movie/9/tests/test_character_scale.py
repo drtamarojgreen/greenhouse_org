@@ -13,7 +13,7 @@ if M9_ROOT not in sys.path:
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
-import config
+import movie_configuration
 
 class TestMovie9CharacterScale(unittest.TestCase):
     def setUp(self):
@@ -22,7 +22,7 @@ class TestMovie9CharacterScale(unittest.TestCase):
 
     def test_procedural_scaling(self):
         """Verifies that the AssetManager correctly scales a character based on target_height."""
-        cfg = config.config.get("ensemble.entities", [])
+        cfg = movie_configuration.get("ensemble.entities", [])
         herb_cfg = next((c for c in cfg if c["id"] == "Herbaceous"), {"id": "Herbaceous", "target_height": 3.0}).copy()
         herb_cfg["type"] = "DYNAMIC"
         # Ensure components are set even if ID is not Herbaceous

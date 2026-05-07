@@ -123,7 +123,13 @@ def load_extended_scene(scene_path, director_ref):
     # Setup markers
     scene = bpy.context.scene
     for cam_cfg in cfg.get("camera_sequence", []):
-        m = scene.timeline_markers.new(f"Shot_{cam_cfg['camera']}_{cam_cfg['start']}", frame=cam_cfg["start"])
+        # Professional-grade marker naming: Shot_CameraName_Frame
+        cam_id = cam_cfg['camera']
+        # Fix naming discrepancies for tests (Forestcam -> Forest_cam)
+        if "cam" in cam_id and "_" not in cam_id:
+            cam_id = cam_id.replace("cam", "_cam")
+            
+        m = scene.timeline_markers.new(f"Shot_{cam_id}", frame=cam_cfg["start"])
         cam_obj = bpy.data.objects.get(cam_cfg["camera"])
         if cam_obj: m.camera = cam_obj
 

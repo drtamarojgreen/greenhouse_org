@@ -9,7 +9,7 @@ M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
-import config
+import movie_configuration
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 from director import Director
@@ -19,7 +19,7 @@ class TestProductionResilience(unittest.TestCase):
     def setUpClass(cls):
         bpy.ops.wm.read_factory_settings(use_empty=True)
         cls.manager = AssetManager()
-        entities = config.config.get("ensemble.entities", [])
+        entities = movie_configuration.get("ensemble.entities", [])
         for ent_cfg in entities:
             CharacterBuilder.create(ent_cfg["id"], ent_cfg).build(cls.manager)
         cls.director = Director()

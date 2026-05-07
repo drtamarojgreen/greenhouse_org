@@ -1,4 +1,4 @@
-import config
+import movie_configuration
 from registry import registry
 # Data-driven components
 import modeling.procedural

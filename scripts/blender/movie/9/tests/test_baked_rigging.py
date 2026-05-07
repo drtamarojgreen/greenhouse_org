@@ -13,7 +13,7 @@ if M9_ROOT not in sys.path:
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
-from config import config
+from movie_configuration import movie_configuration
 
 class TestMovie9BakedRigging(unittest.TestCase):
     def setUp(self):
@@ -23,7 +23,7 @@ class TestMovie9BakedRigging(unittest.TestCase):
     def test_baked_action_assignment(self):
         """Verifies that BakedAnimator can correctly assign actions linked with characters."""
         # We'll use Herbaceous as it's configured for BakedAnimator now
-        cfg = config.get_character_config("Herbaceous")
+        cfg = movie_configuration.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
@@ -40,7 +40,7 @@ class TestMovie9BakedRigging(unittest.TestCase):
 
     def test_linked_rig_integrity(self):
         """Verifies that linked rigs maintain their bone hierarchy and visibility."""
-        cfg = config.get_character_config("Root_Guardian")
+        cfg = movie_configuration.get_character_config("Root_Guardian")
         char = CharacterBuilder.create("Root_Guardian", cfg)
         char.build(self.manager)
 

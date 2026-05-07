@@ -1,11 +1,11 @@
 import bpy
 import math
 import mathutils
-import config
+import movie_configuration
 
 def apply_patrol(rig, patrol_cfg, total_frames):
     """Applies path-following patrol animation to a rig."""
-    paths = config.config.get("patrol_paths", {})
+    paths = movie_configuration.get("patrol_paths", {})
     waypts = paths.get(patrol_cfg["path"], {}).get("waypoints", [])
     if not waypts: return
 

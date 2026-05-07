@@ -21,8 +21,8 @@ class TestMovie9Comprehensive(unittest.TestCase):
 
     def test_full_production_cycle(self):
         """Verifies build, pose, and animate sequence."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        from movie_configuration import movie_configuration
+        cfg = movie_configuration.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
         char.apply_pose()
@@ -33,9 +33,9 @@ class TestMovie9Comprehensive(unittest.TestCase):
 
     def test_multiple_characters(self):
         """Verifies that building multiple characters doesn't cross-pollinate data."""
-        from config import config
-        h_cfg = config.get_character_config("Herbaceous")
-        a_cfg = config.get_character_config("Arbor")
+        from movie_configuration import movie_configuration
+        h_cfg = movie_configuration.get_character_config("Herbaceous")
+        a_cfg = movie_configuration.get_character_config("Arbor")
 
         h_char = CharacterBuilder.create("Herbaceous", h_cfg)
         a_char = CharacterBuilder.create("Arbor", a_cfg)

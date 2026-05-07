@@ -8,7 +8,7 @@ M9_ROOT = os.path.dirname(os.path.abspath(__file__))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
-import config
+import movie_configuration
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
@@ -16,7 +16,7 @@ from director import Director
 
 def validate_scene_integrity():
     """Hard gate before rendering: armature count must match character expectations."""
-    entities = config.config.get("ensemble.entities", [])
+    entities = movie_configuration.get("ensemble.entities", [])
     expected_rigs = 0
     for entity in entities:
         if entity.get("type") == "DYNAMIC":
@@ -51,7 +51,7 @@ def build_scene():
     manager = AssetManager(); manager.clear_scene()
 
     print("Building Characters...")
-    for entity in config.config.get("ensemble.entities", []):
+    for entity in movie_configuration.get("ensemble.entities", []):
         print(f"  Building {entity['id']}..."); char = CharacterBuilder.create(entity["id"], entity)
         char.build(manager); char.apply_pose()
 
@@ -65,7 +65,7 @@ def build_scene():
     director.apply_scene_animations(); director.apply_storyline(); director.apply_sequencing()
 
     # Extended Scenes
-    extended = config.config.get("extended_scenes", [])
+    extended = movie_configuration.get("extended_scenes", [])
     # Add clinical scene explicitly if not in list to ensure it builds its interior environment
     if "scene_configs/scene_03_clinical.json" not in extended:
         extended = ["scene_configs/scene_03_clinical.json"] + extended
@@ -103,7 +103,7 @@ def main():
 
         # Detect total frame range from markers
         markers = sorted(bpy.context.scene.timeline_markers, key=lambda m: m.frame)
-        total_max = config.config.total_frames
+        total_max = movie_configuration.total_frames
         if markers: total_max = max(total_max, markers[-1].frame)
 
         start_f = 1; end_f = 1
