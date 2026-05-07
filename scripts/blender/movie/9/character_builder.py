@@ -48,27 +48,30 @@ class CharacterBuilder:
 
         # 3. Shading
         shade_id = c_cfg.get("shading")
+        if not shade_id and self.cfg.get("is_protagonist"):
+             shade_id = "UniversalShader"
+
         shader_cls = registry.get_shading(shade_id)
         if shader_cls and (self.body or self.rig):
             if self.body:
                 self.body["is_protagonist"] = self.cfg.get("is_protagonist", False)
             shader_cls().apply_materials(self.body or self.rig, self.cfg.get("parameters", {}))
 
-        # 4. Initialization (Position/Rotation)
+        # Handle MESH-type (linked) assets
+        if self.cfg.get("type") == "MESH" and not self.rig:
+            self._build_linked_asset(manager)
+
+        # 4. Normalization (Scaling & Grounding)
+        if self.rig:
+            manager.normalize_character(self.rig, self.cfg.get("target_height", 2.0))
+
+        # 5. Initialization (Position/Rotation) - MUST be after normalization
         target = self.rig or self.body
         if target:
             if "default_pos" in self.cfg:
                 target.location = self.cfg["default_pos"]
             if "default_rot" in self.cfg:
                 target.rotation_euler = self.cfg["default_rot"]
-
-        # Handle MESH-type (linked) assets
-        if self.cfg.get("type") == "MESH" and not self.rig:
-            self._build_linked_asset(manager)
-
-        # 5. Normalization (Scaling & Grounding)
-        if self.rig:
-            manager.normalize_character(self.rig, self.cfg.get("target_height", 2.0))
         
         return self.rig or self.body
 

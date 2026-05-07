@@ -166,6 +166,9 @@ class PlantModeler(Modeler):
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.004)
         bm.to_mesh(mesh_data); bm.free()
 
+        for poly in mesh_data.polygons:
+            poly.use_smooth = True
+
         # Modifiers
         m_cfg = self.p_cfg["modifiers"]
         disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')

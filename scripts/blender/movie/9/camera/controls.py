@@ -80,25 +80,22 @@ class CameraControls:
                         if hasattr(slot, "curves"): slot.curves.remove(fc)
                         elif hasattr(slot, "fcurves"): slot.fcurves.remove(fc)
 
+        if not obj.animation_data: obj.animation_data_create()
+        if not obj.animation_data.action:
+            obj.animation_data.action = bpy.data.actions.new(name=f"Bounce_{obj.name}")
+
+        # Support both legacy and Slotted Actions in Blender 5.1+
+        if hasattr(bpy.types, "ActionSlot"):
+            # In Blender 5.1+, ensure the object is assigned to a slot
+            if not obj.animation_data.action_slot:
+                action = obj.animation_data.action
+                slot = action.slots[0] if action.slots else action.slots.new(name="Default")
+                obj.animation_data.action_slot = slot
+
         for f in range(1, total_frames + 1, 40):
             val = math.sin(f * freq) * amp
             setattr(obj.location, axis.lower(), val)
-            
-            # Support both legacy and Slotted Actions in Blender 5.1+
-            if hasattr(bpy.types, "ActionSlot"):
-                if not obj.animation_data: obj.animation_data_create()
-                if not obj.animation_data.action:
-                    obj.animation_data.action = bpy.data.actions.new(name=f"Bounce_{obj.name}")
-                
-                # In Blender 5.1+, ensure the object is assigned to a slot
-                if not obj.animation_data.action_slot:
-                    action = obj.animation_data.action
-                    slot = action.slots[0] if action.slots else action.slots.new(name="Default")
-                    obj.animation_data.action_slot = slot
-                
-                obj.keyframe_insert(data_path="location", index=idx, frame=f)
-            else:
-                obj.keyframe_insert(data_path="location", index=idx, frame=f)
+            obj.keyframe_insert(data_path="location", index=idx, frame=f)
 
     def _setup_camera_path(self, cam, anim_cfg):
         """Creates a bezier curve and attaches the camera to it via follow-path."""

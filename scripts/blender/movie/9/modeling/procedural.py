@@ -39,6 +39,9 @@ class ProceduralModeler(base.Modeler):
         bm.to_mesh(mesh_data)
         bm.free()
 
+        for poly in mesh_data.polygons:
+            poly.use_smooth = True
+
         # 2. Build props (attachments)
         if rig:
             mesh_obj.parent = rig

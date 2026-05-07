@@ -270,6 +270,7 @@
   "environment": {
     "type": "interior",
     "floor": { "size": 40 },
+    "roof": { "height": 10 },
     "mountains": { "radius": 250, "count": 24 },
     "vegetation": { "count": 50 },
     "rock_path": { "length": 40, "width": 2.5 }
