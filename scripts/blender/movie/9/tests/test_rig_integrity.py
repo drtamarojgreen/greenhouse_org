@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -20,9 +21,8 @@ class TestMovie9RigIntegrity(unittest.TestCase):
         self.manager = AssetManager(); self.manager.clear_scene()
 
     def test_procedural_rig_bone_hierarchy(self):
-        """Verifies that the rigger builds the correct parent-child relationships from movie_configuration."""
-        from movie_configuration import movie_configuration
-        cfg = movie_configuration.get_character_config("Herbaceous")
+        """Verifies that the rigger builds the correct parent-child relationships from mc."""
+        cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
@@ -36,8 +36,7 @@ class TestMovie9RigIntegrity(unittest.TestCase):
 
     def test_rig_rotation_mode_xyz(self):
         """Ensures all bones are in XYZ mode for procedural animation compatibility."""
-        from movie_configuration import movie_configuration
-        cfg = movie_configuration.get_character_config("Herbaceous")
+        cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
@@ -45,9 +44,8 @@ class TestMovie9RigIntegrity(unittest.TestCase):
             self.assertEqual(pb.rotation_mode, 'XYZ', f"Bone {pb.name} is not in XYZ mode.")
 
     def test_deform_flags(self):
-        """Verifies use_deform flags are correctly set from movie_configuration."""
-        from movie_configuration import movie_configuration
-        cfg = movie_configuration.get_character_config("Herbaceous")
+        """Verifies use_deform flags are correctly set from mc."""
+        cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 

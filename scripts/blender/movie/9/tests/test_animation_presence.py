@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -20,9 +21,8 @@ class TestMovie9AnimationPresence(unittest.TestCase):
         self.manager = AssetManager(); self.manager.clear_scene()
 
     def test_procedural_animation_presence(self):
-        """Verifies that the animator correctly targets bones from movie_configuration."""
-        from movie_configuration import movie_configuration
-        cfg = movie_configuration.get_character_config("Herbaceous")
+        """Verifies that the animator correctly targets bones from mc."""
+        cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 

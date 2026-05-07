@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -8,7 +9,6 @@ M9_ROOT = os.path.dirname(os.path.abspath(os.path.join(__file__, "../..")))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
-import movie_configuration
 from director import Director
 from asset_manager import AssetManager
 import components
@@ -26,7 +26,7 @@ class TestNarrativeContinuityV9(unittest.TestCase):
 
     def test_narrative_beat_visibility(self):
         """Audits asset visibility across all defined narrative beats."""
-        storyline = movie_configuration.get("ensemble.storyline", [])
+        storyline = mc.get("ensemble.storyline", [])
 
         # Test frames for each beat
         for beat in storyline:
@@ -55,7 +55,7 @@ class TestNarrativeContinuityV9(unittest.TestCase):
     def test_context_asset_exclusion_audit(self):
         """Verifies that exterior assets are excluded from the greenhouse context."""
         context = "greenhouse"
-        constraints = movie_configuration.get("context_constraints", {}).get(context, {})
+        constraints = mc.get("context_constraints", {}).get(context, {})
         disallowed = constraints.get("disallowed_assets", [])
 
         for asset_id in disallowed:

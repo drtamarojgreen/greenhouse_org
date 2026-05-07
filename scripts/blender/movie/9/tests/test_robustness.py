@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -29,7 +30,10 @@ class TestMovie9Robustness(unittest.TestCase):
             "components": {"modeling": "NonExistent"}
         }
         char = CharacterBuilder.create("Broken", cfg)
-        self.assertIsNone(char.modeler)
+        # In M9, CharacterBuilder doesn't have a .modeler attribute, it resolves it during .build()
+        # To test "graceful failure", we check if .body remains None after build.
+        char.build(self.manager)
+        self.assertIsNone(char.body)
 
     def test_missing_geometry_structure(self):
         """Verifies that ProceduralModeler fails gracefully with missing structure."""
@@ -41,13 +45,12 @@ class TestMovie9Robustness(unittest.TestCase):
         }
         char = CharacterBuilder.create("NoStructure", cfg)
         char.build(self.manager)
-        self.assertIsNotNone(char.mesh)
-        self.assertEqual(len(char.mesh.data.vertices), 0)
+        self.assertIsNotNone(char.body)
+        self.assertEqual(len(char.body.data.vertices), 0)
 
     def test_normalization_bounds(self):
         """Verifies normalization metrics calculation doesn't crash on simple geometry."""
-        from movie_configuration import movie_configuration
-        cfg = movie_configuration.get_character_config("Herbaceous").copy()
+        cfg = mc.get_character_config("Herbaceous").copy()
         cfg["type"] = "DYNAMIC"
         cfg.setdefault("components", {"modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader", "animation": "ProceduralAnimator"})
         char = CharacterBuilder.create("Simple", cfg)

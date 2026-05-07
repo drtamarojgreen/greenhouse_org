@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -11,13 +12,12 @@ if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
 from director import Director
-import movie_configuration
 
 class TestMovie9ExtendedScenes(unittest.TestCase):
     def test_extended_scene_loading(self):
         """Verifies that extended scene JSONs (8, 9, 10) can be parsed and markers added."""
         director = Director()
-        extended = movie_configuration.get("extended_scenes", [])
+        extended = mc.get("extended_scenes", [])
         self.assertGreater(len(extended), 0)
 
         # Test loading one scene

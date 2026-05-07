@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -21,8 +22,7 @@ class TestMovie9GreenhouseMobile(unittest.TestCase):
 
     def test_mobile_asset_generation(self):
         """Verifies that the GreenhouseMobile vehicle is built with correct sub-components."""
-        from movie_configuration import movie_configuration
-        cfg = movie_configuration.get_character_config("GreenhouseMobile")
+        cfg = mc.get_character_config("GreenhouseMobile")
         self.assertIsNotNone(cfg)
 
         char = CharacterBuilder.create("GreenhouseMobile", cfg)

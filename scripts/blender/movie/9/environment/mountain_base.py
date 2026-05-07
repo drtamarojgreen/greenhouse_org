@@ -3,6 +3,7 @@ import bmesh
 import math
 import mathutils
 import random
+import movie_configuration as mc
 from base import Modeler
 from environment.vegetation_utils import create_bush, apply_mat
 
@@ -13,7 +14,7 @@ class MountainBaseModeler(Modeler):
     """
 
     def build_mesh(self, char_id, params, rig=None):
-        coll = self._ensure_collection("10.MOUNTAIN")
+        coll = self._ensure_collection(mc.coll_environment)
         
         # Explicit root container for the mountain environment block
         env_root = bpy.data.objects.new(char_id, None)

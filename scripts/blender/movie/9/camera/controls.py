@@ -16,7 +16,7 @@ class CameraControls:
         self.coll_env = coll_env
 
     def setup_cinematics(self, total_frames):
-        """Constructs focal targets, cameras, and paths from movie_configuration."""
+        """Constructs focal targets, cameras, and paths from mc."""
         self._ensure_collection(self.coll_env)
         cam_coll = self._ensure_collection(self.coll_cameras)
 

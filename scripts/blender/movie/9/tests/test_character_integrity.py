@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -8,7 +9,6 @@ M9_ROOT = os.path.dirname(TEST_DIR)
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
-import movie_configuration
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
@@ -21,7 +21,7 @@ class TestCharacterIntegrity(unittest.TestCase):
         self.manager.clear_scene()
 
     def test_armature_count_matches_ensemble(self):
-        entities = movie_configuration.get("ensemble.entities", [])
+        entities = mc.get("ensemble.entities", [])
         expected_rigs = 0
         for ent in entities:
             if ent.get("type") == "DYNAMIC":

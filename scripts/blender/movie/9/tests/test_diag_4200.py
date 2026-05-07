@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -9,7 +10,6 @@ M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
-import movie_configuration
 from render import build_scene
 
 class TestDiagnostic4200(unittest.TestCase):
@@ -46,7 +46,7 @@ class TestDiagnostic4200(unittest.TestCase):
             print("Active Camera: NONE")
 
         # 2. Character Audit
-        entities = [e["id"] for e in movie_configuration.get("ensemble.entities", [])]
+        entities = [e["id"] for e in mc.get("ensemble.entities", [])]
         for char_id in entities:
             rig = bpy.data.objects.get(f"{char_id}.Rig")
             if rig:

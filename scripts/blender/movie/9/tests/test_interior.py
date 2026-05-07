@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -67,7 +68,7 @@ class TestInteriorFurnishing(unittest.TestCase):
         self.assertIsNotNone(emit, "Logo material must have an Emission node.")
 
     def test_interior_animation_presence(self):
-        """Verifies that the logo animation is keyed if 'animate' is true in movie_configuration."""
+        """Verifies that the logo animation is keyed if 'animate' is true in mc."""
         from environment.interior import InteriorModeler
 
         # Load the real assets file to modify it for the test

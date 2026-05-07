@@ -4,7 +4,7 @@ import math
 import random
 import mathutils
 from base import Modeler
-import movie_configuration
+import movie_configuration as mc
 from environment.vegetation_utils import create_branching_tree, create_bush, apply_mat
 
 class ExteriorModeler(Modeler):

@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import bpy
 import os
 import sys

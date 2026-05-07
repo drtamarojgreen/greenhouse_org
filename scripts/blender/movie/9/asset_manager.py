@@ -1,7 +1,7 @@
+import movie_configuration as mc
 import bpy
 import mathutils
 import os
-import movie_configuration
 
 class AssetManager:
     """
@@ -11,7 +11,7 @@ class AssetManager:
     """
 
     def __init__(self):
-        self.coll_assets = movie_configuration.coll_assets
+        self.coll_assets = mc.coll_assets
 
     def ensure_collection(self, name):
         coll = bpy.data.collections.get(name) or bpy.data.collections.new(name)
@@ -69,10 +69,10 @@ class AssetManager:
         """Geometric normalization matching Movie 6 standards."""
         if not rig or rig.type != 'ARMATURE': return
         is_linked_asset = bool(rig.get("linked_asset", False))
-        if movie_configuration.get("normalization.enable_origin_reset", True) and not is_linked_asset:
+        if mc.get("normalization.enable_origin_reset", True) and not is_linked_asset:
             self.execute_origin_reset(rig)
         self.normalize_scale(rig, target_height)
-        if movie_configuration.get("normalization.enable_culling", True) and not is_linked_asset:
+        if mc.get("normalization.enable_culling", True) and not is_linked_asset:
             self.execute_balanced_culling(rig)
 
     def execute_origin_reset(self, rig):

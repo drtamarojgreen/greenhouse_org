@@ -1,6 +1,6 @@
+import movie_configuration as mc
 import bpy
 import mathutils
-import movie_configuration
 
 class AuditManager:
     """
@@ -39,7 +39,7 @@ class AuditManager:
 
     def generate_visibility_table(self):
         """Prints a table showing which entities are visible to which cameras."""
-        entities = [e["id"] for e in movie_configuration.get("ensemble.entities", [])]
+        entities = [e["id"] for e in mc.get("ensemble.entities", [])]
         cameras = [o for o in bpy.data.objects if o.type == 'CAMERA']
         
         header = f"{'Camera':<12} | " + " | ".join([f"{e[:4]:<4}" for e in entities])
@@ -82,7 +82,7 @@ class AuditManager:
         grid[zy][zx] = "o"
 
     def _map_entities(self, grid):
-        entities = movie_configuration.get("ensemble.entities", [])
+        entities = mc.get("ensemble.entities", [])
         for ent in entities:
             e_id = ent["id"]
             obj = bpy.data.objects.get(f"{e_id}.Rig") or bpy.data.objects.get(e_id)

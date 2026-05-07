@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -9,7 +10,6 @@ M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
-from movie_configuration import movie_configuration
 from render import build_scene
 
 class TestVisibilityAudit(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestVisibilityAudit(unittest.TestCase):
         grid[oy][ox] = "O"
 
         # 2. Plot Entities
-        entities = movie_configuration.get("ensemble.entities", [])
+        entities = mc.get("ensemble.entities", [])
         for ent in entities:
             e_id = ent["id"]
             obj = bpy.data.objects.get(f"{e_id}.Rig") or bpy.data.objects.get(e_id)
@@ -75,7 +75,7 @@ class TestVisibilityAudit(unittest.TestCase):
 
     def test_visibility_matrix(self):
         """Generates a matrix showing entity visibility per camera."""
-        entities = [e["id"] for e in movie_configuration.get("ensemble.entities", [])]
+        entities = [e["id"] for e in mc.get("ensemble.entities", [])]
         cameras = [o for o in bpy.data.objects if o.type == 'CAMERA']
         
         print("\n--- ENTITY VISIBILITY MATRIX ---")

@@ -1,8 +1,8 @@
+import movie_configuration as mc
 import bpy
 import os
 import json
 import math
-import movie_configuration
 from calligraphy import CalligraphyDirector
 from camera.controls import CameraControls
 from camera.lighting import LightingManager
@@ -41,7 +41,7 @@ class Director:
         """Assembles environment by filtering parameters based on context."""
         self._clear_environment_collection()
         
-        raw_params = self.scene_cfg.get("environment", movie_configuration.get("environment", {}))
+        raw_params = self.scene_cfg.get("environment", mc.get("environment", {}))
         env_type = raw_params.get("type", "exterior")
         context = raw_params.get("context", "greenhouse" if env_type == "interior" else "exterior")
         
@@ -56,7 +56,7 @@ class Director:
         self._build_ancillary_systems(start_f, env_type)
 
     def _filter_params(self, params, context):
-        disallowed = movie_configuration.get(f"context_constraints.{context}.disallowed_assets", [])
+        disallowed = mc.get(f"context_constraints.{context}.disallowed_assets", [])
         return {k: v for k, v in params.items() if k not in disallowed}
 
     def _resolve_modeler_id(self, env_type):
@@ -78,7 +78,7 @@ class Director:
             character_placement.set_eyeline_alignment(arbor, herb)
 
     def _clear_environment_collection(self):
-        coll = bpy.data.collections.get(movie_configuration.coll_environment)
+        coll = bpy.data.collections.get(mc.coll_environment)
         if coll: self._recursive_purge(coll)
 
     def _recursive_purge(self, coll):
@@ -87,19 +87,19 @@ class Director:
 
     def _build_ancillary_systems(self, start_f, env_type):
         # Interior Model
-        int_cfg = self.scene_cfg.get("interior", movie_configuration.get("interior", {}))
+        int_cfg = self.scene_cfg.get("interior", mc.get("interior", {}))
         int_cls = registry.get_modeling("InteriorModeler")
         if int_cls and (int_cfg or env_type == "interior"):
             int_cls().build_mesh(f"Interior_{start_f}", int_cfg)
         
         # Backdrop
         from environment.backdrop import BackdropModeler
-        chroma_cfg = movie_configuration.get("chroma", {})
+        chroma_cfg = mc.get("chroma", {})
         if chroma_cfg: BackdropModeler().build_mesh("Chroma", chroma_cfg)
 
     def apply_sequencing(self):
         """Sets timeline markers, prioritizing fixed beats over cycle logic."""
-        self.camera_controls.setup_cinematics(movie_configuration.total_frames)
+        self.camera_controls.setup_cinematics(mc.total_frames)
         scene = bpy.context.scene; scene.timeline_markers.clear()
         
         # Resolve fixed beats from config
@@ -153,7 +153,7 @@ class Director:
 
     # Required Shims for Test Compatibility
     def setup_cinematics(self): self.apply_sequencing()
-    def setup_calligraphy(self): CalligraphyDirector(self.lc_cfg, movie_configuration.total_frames, M9_ROOT).apply()
+    def setup_calligraphy(self): CalligraphyDirector(self.lc_cfg, mc.total_frames, M9_ROOT).apply()
     def initialize_entities(self):
         for ent in self.scene_cfg.get("entities", []):
             obj = bpy.data.objects.get(f"{ent['id']}.Rig") or bpy.data.objects.get(ent['id'])
@@ -162,16 +162,16 @@ class Director:
                 character_placement.ground_to_zero(obj)
     def compose_ensemble(self):
         spirits = [o for o in bpy.data.objects if ".Rig" in o.name and not o.get("is_protagonist")]
-        character_placement.compose_ensemble(spirits, movie_configuration.get("ensemble.entities", []))
+        character_placement.compose_ensemble(spirits, mc.get("ensemble.entities", []))
     def apply_scene_animations(self):
         from animation.patrol import apply_patrol
-        for ent in movie_configuration.get("ensemble.entities", []):
+        for ent in mc.get("ensemble.entities", []):
             p = ent.get("patrol")
             if p and p.get("enabled"):
                 rig = bpy.data.objects.get(f"{ent['id']}.Rig")
-                if rig: apply_patrol(rig, p, movie_configuration.total_frames)
+                if rig: apply_patrol(rig, p, mc.total_frames)
     def apply_storyline(self):
-        beats = self.scene_cfg.get("storyline", movie_configuration.get("storyline", []))
+        beats = self.scene_cfg.get("storyline", mc.get("storyline", []))
         for beat in beats:
             for event in beat.get("events", []):
                 character_placement.execute_event(event, context_director=self)

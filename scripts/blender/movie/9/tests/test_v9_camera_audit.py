@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -7,7 +8,6 @@ import mathutils
 M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path: sys.path.insert(0, M9_ROOT)
 
-from movie_configuration import movie_configuration
 from director import Director
 from render import build_scene
 
@@ -31,7 +31,7 @@ class TestMovie9CameraAudit(unittest.TestCase):
     def test_antagonist_camera_coverage(self):
         """Reports which antagonists have dedicated cameras tracking them."""
         print("\n--- ANTAGONIST CAMERA COVERAGE REPORT ---")
-        antags = [e["id"] for e in movie_configuration.get("ensemble.entities", []) if e.get("is_antagonist")]
+        antags = [e["id"] for e in mc.get("ensemble.entities", []) if e.get("is_antagonist")]
         cams = [o for o in bpy.data.objects if o.type == 'CAMERA']
         
         for antag in antags:
@@ -57,7 +57,7 @@ class TestMovie9CameraAudit(unittest.TestCase):
         print("\n--- CHARACTER FRUSTUM VISIBILITY REPORT ---")
         from bpy_extras.object_utils import world_to_camera_view
         scene = bpy.context.scene
-        entities = [e["id"] for e in movie_configuration.get("ensemble.entities", [])]
+        entities = [e["id"] for e in mc.get("ensemble.entities", [])]
         cam = bpy.data.objects.get("Wide")
         if not cam: return
         scene.camera = cam; bpy.context.view_layer.update()
@@ -78,7 +78,7 @@ class TestMovie9CameraAudit(unittest.TestCase):
             gy = int(((pos.y - yr[0]) / (yr[1] - yr[0])) * (height - 1))
             return max(0, min(width-1, gx)), height - 1 - max(0, min(height-1, gy))
         ox, oy = to_grid(mathutils.Vector((0,0,0))); grid[oy][ox] = "o"
-        for ent in movie_configuration.get("ensemble.entities", []):
+        for ent in mc.get("ensemble.entities", []):
             obj = bpy.data.objects.get(f"{ent['id']}.Rig") or bpy.data.objects.get(ent['id'])
             if obj: gx, gy = to_grid(obj.location); grid[gy][gx] = "+" if ent.get("is_protagonist") else "@"
         for cam in [o for o in bpy.data.objects if o.type == 'CAMERA']:
@@ -93,7 +93,7 @@ class TestMovie9CameraAudit(unittest.TestCase):
     def test_visibility_audit_table(self):
         """Generates a visibility matrix for entities from each camera's perspective."""
         print("\n--- VISIBILITY AUDIT TABLE ---")
-        entities = [e["id"] for e in movie_configuration.get("ensemble.entities", [])]
+        entities = [e["id"] for e in mc.get("ensemble.entities", [])]
         cameras = [o.name for o in bpy.data.objects if o.type == 'CAMERA']
         header = f"{'Camera':<12} | " + " | ".join([f"{e[:4]:<4}" for e in entities])
         print(header); print("-" * len(header))
@@ -111,7 +111,7 @@ class TestMovie9CameraAudit(unittest.TestCase):
         if not markers: print("No markers found. Sequencing might not be initialized."); return
         print(f"{'Frame Range':<15} | {'Active Camera':<20} | {'Shot Label'}")
         print("-" * 55)
-        total_f = movie_configuration.total_frames
+        total_f = mc.total_frames
         for i, m in enumerate(markers):
             start = m.frame; end = markers[i+1].frame - 1 if i+1 < len(markers) else total_f
             cam_name = m.camera.name if m.camera else "NONE"

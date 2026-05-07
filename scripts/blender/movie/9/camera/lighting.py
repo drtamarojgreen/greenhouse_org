@@ -9,7 +9,7 @@ class LightingManager:
         self.lc_cfg = lc_cfg
 
     def setup_lights(self, override_type=None, start_f=1):
-        """Constructs/Updates lights based on movie_configuration."""
+        """Constructs/Updates lights based on mc."""
         light_cfg = self.lc_cfg.get("lighting", {})
         if override_type:
             # Simple multiplier for overrides (e.g. 'Clinical' might be brighter)

@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -10,7 +11,6 @@ if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
 from director import Director
-import movie_configuration
 
 class TestContextConstraintsV9(unittest.TestCase):
     def test_asset_filtering(self):
@@ -25,7 +25,7 @@ class TestContextConstraintsV9(unittest.TestCase):
         # process a hypothetical environment config block.
 
         context = "greenhouse"
-        constraints = movie_configuration.get("context_constraints", {}).get(context, {})
+        constraints = mc.get("context_constraints", {}).get(context, {})
         disallowed = constraints.get("disallowed_assets", [])
 
         test_env = {

@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -9,7 +10,6 @@ M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
-import movie_configuration
 from director import Director
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
@@ -24,7 +24,7 @@ class TestClinicalTransitionV9(unittest.TestCase):
 
         # Build necessary entities for testing
         for eid in ["Herbaceous", "Arbor", "ClinicalDesk", "PatientChair"]:
-            ent = movie_configuration.get_character_config(eid)
+            ent = mc.get_character_config(eid)
             if ent:
                 char = CharacterBuilder.create(eid, ent)
                 char.build(cls.manager)
@@ -38,7 +38,7 @@ class TestClinicalTransitionV9(unittest.TestCase):
 
     def test_clinical_beat_timing(self):
         """Verifies 'Clinical Exchange' beat configuration."""
-        storyline = movie_configuration.get("ensemble.storyline", [])
+        storyline = mc.get("ensemble.storyline", [])
         clinical_beat = next((b for b in storyline if b["beat"] == "Clinical Exchange"), None)
         self.assertIsNotNone(clinical_beat)
         self.assertEqual(clinical_beat["start"], 1000)

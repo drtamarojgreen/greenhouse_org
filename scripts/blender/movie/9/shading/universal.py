@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import bpy
 from base import Shader
 from registry import registry

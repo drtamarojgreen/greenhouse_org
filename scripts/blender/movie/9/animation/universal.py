@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import bpy
 import math
 from base import Animator, Action, ProceduralAction

@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import unittest
 import bpy
 import os
@@ -11,13 +12,12 @@ if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
 from director import Director
-import movie_configuration
 
 class TestMovie9AntagonistPatrol(unittest.TestCase):
     def test_patrol_path_assignment(self):
         """Verifies that antagonist patrol paths are correctly loaded and applied."""
         director = Director()
-        patrol_dict = movie_configuration.get("patrol_paths", {})
+        patrol_dict = mc.get("patrol_paths", {})
         if not patrol_dict:
             self.skipTest("No patrol_paths defined in movie_config.json")
 

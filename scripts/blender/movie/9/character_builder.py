@@ -1,7 +1,7 @@
+import movie_configuration as mc
 import bpy
 import os
 import json
-import movie_configuration
 from registry import registry
 
 class CharacterBuilder:
@@ -20,9 +20,9 @@ class CharacterBuilder:
 
     @staticmethod
     def create(char_id, cfg=None):
-        """Factory method to instantiate a CharacterBuilder from movie_configuration."""
+        """Factory method to instantiate a CharacterBuilder from mc."""
         if cfg is None:
-            cfg = movie_configuration.get_character_config(char_id)
+            cfg = mc.get_character_config(char_id)
         
         if cfg is None:
             print(f"WARNING: No config found for character {char_id}. Falling back to default.")
@@ -50,7 +50,9 @@ class CharacterBuilder:
         shade_id = c_cfg.get("shading")
         shader_cls = registry.get_shading(shade_id)
         if shader_cls and (self.body or self.rig):
-            shader_cls().apply(self.body or self.rig, self.cfg.get("parameters", {}).get("materials", {}))
+            if self.body:
+                self.body["is_protagonist"] = self.cfg.get("is_protagonist", False)
+            shader_cls().apply_materials(self.body or self.rig, self.cfg.get("parameters", {}).get("materials", {}))
 
         # Handle MESH-type (linked) assets
         if self.cfg.get("type") == "MESH" and not self.rig:
@@ -63,7 +65,7 @@ class CharacterBuilder:
         return self.rig or self.body
 
     def _build_linked_asset(self, manager):
-        blend = movie_configuration.assets_blend
+        blend = mc.assets_blend
         targets = [self.cfg.get("source_mesh"), self.cfg.get("source_rig")]
         objs = manager.link_assets(blend, [t for t in targets if t])
         
