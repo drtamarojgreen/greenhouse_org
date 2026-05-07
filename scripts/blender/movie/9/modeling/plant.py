@@ -36,7 +36,9 @@ class PlantModeler(Modeler):
         mesh_obj = bpy.data.objects.new(f"{char_id}.Body", mesh_data)
         bpy.context.scene.collection.objects.link(mesh_obj)
 
-        if rig: mesh_obj.parent = rig
+        if rig:
+            mesh_obj.parent = rig
+            mesh_obj.matrix_parent_inverse.identity()
 
         bm = bmesh.new()
         dlayer = bm.verts.layers.deform.verify()

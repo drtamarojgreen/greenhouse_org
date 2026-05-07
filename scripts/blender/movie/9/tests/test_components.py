@@ -23,7 +23,11 @@ class TestComponentParity(unittest.TestCase):
             "id": "CompChar",
             "type": "MESH",
             "is_protagonist": True,
-            "components": { "modeling": "PlantModeler", "rigging": "PlantRigger" }
+            "components": {
+                "modeling": "PlantModeler",
+                "rigging": "PlantRigger",
+                "shading": "UniversalShader"
+            }
         }
         char = CharacterBuilder.create("CompChar", entity)
         char.build(self.manager)

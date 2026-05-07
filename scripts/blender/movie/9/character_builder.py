@@ -52,13 +52,21 @@ class CharacterBuilder:
         if shader_cls and (self.body or self.rig):
             if self.body:
                 self.body["is_protagonist"] = self.cfg.get("is_protagonist", False)
-            shader_cls().apply_materials(self.body or self.rig, self.cfg.get("parameters", {}).get("materials", {}))
+            shader_cls().apply_materials(self.body or self.rig, self.cfg.get("parameters", {}))
+
+        # 4. Initialization (Position/Rotation)
+        target = self.rig or self.body
+        if target:
+            if "default_pos" in self.cfg:
+                target.location = self.cfg["default_pos"]
+            if "default_rot" in self.cfg:
+                target.rotation_euler = self.cfg["default_rot"]
 
         # Handle MESH-type (linked) assets
         if self.cfg.get("type") == "MESH" and not self.rig:
             self._build_linked_asset(manager)
 
-        # 4. Normalization (Scaling & Grounding)
+        # 5. Normalization (Scaling & Grounding)
         if self.rig:
             manager.normalize_character(self.rig, self.cfg.get("target_height", 2.0))
         
@@ -80,6 +88,10 @@ class CharacterBuilder:
         if self.body:
             manager.apply_standard_renaming(self.body, self.char_id, is_rig=False)
 
+        if self.rig and self.body:
+            self.body.parent = self.rig
+            self.body.matrix_parent_inverse.identity()
+
     def apply_pose(self):
         """Applies the default rest pose based on configuration."""
         if self.rig:
@@ -91,9 +103,11 @@ class CharacterBuilder:
                 bone.location = (0,0,0)
             bpy.ops.object.mode_set(mode='OBJECT')
 
-    def animate(self, tag, frame):
+    def animate(self, tag, frame, params=None):
         """Applies an animation action to the character."""
         anim_id = self.cfg.get("components", {}).get("animation")
         animator_cls = registry.get_animation(anim_id)
         if animator_cls and self.rig:
-            animator_cls().apply_action(self.rig, tag, frame, self.cfg.get("parameters", {}))
+            p = self.cfg.get("parameters", {}).copy()
+            if params: p.update(params)
+            animator_cls().apply_action(self.rig, tag, frame, p)

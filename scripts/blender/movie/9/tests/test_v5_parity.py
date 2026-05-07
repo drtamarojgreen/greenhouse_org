@@ -26,7 +26,7 @@ class TestMovie9V5Parity(unittest.TestCase):
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
-        vg_names = {vg.name for vg in char.mesh.vertex_groups}
+        vg_names = {vg.name for vg in char.body.vertex_groups}
         for bone in char.rig.data.bones:
             if bone.use_deform:
                 self.assertIn(bone.name, vg_names)

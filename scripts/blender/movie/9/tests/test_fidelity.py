@@ -26,7 +26,7 @@ class TestMovie9Fidelity(unittest.TestCase):
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
-        for poly in char.mesh.data.polygons:
+        for poly in char.body.data.polygons:
             self.assertTrue(poly.use_smooth)
 
     def test_prop_attachment_fidelity(self):

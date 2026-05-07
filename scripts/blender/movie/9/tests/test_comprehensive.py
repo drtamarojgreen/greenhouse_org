@@ -42,7 +42,7 @@ class TestMovie9Comprehensive(unittest.TestCase):
         h_char.build(self.manager)
         a_char.build(self.manager)
 
-        self.assertNotEqual(h_char.mesh.name, a_char.mesh.name)
+        self.assertNotEqual(h_char.body.name, a_char.body.name)
         self.assertNotEqual(h_char.rig.name, a_char.rig.name)
 
 if __name__ == "__main__":

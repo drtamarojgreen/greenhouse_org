@@ -30,7 +30,7 @@ class TestMovie9Modularity(unittest.TestCase):
         char.build(self.manager)
 
         # Verify prop objects exist (from structure.props)
-        prop_names = [o.name for o in char.rig.children if o != char.mesh]
+        prop_names = [o.name for o in char.rig.children if o != char.body]
         self.assertTrue(any("Eye_L" in n for n in prop_names))
 
     def test_environment_modular_build(self):

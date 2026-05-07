@@ -24,11 +24,10 @@ class TestMovie9OOCharacters(unittest.TestCase):
         """Verifies composition and component resolution."""
         cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
+        char.build(self.manager)
 
-        self.assertIsNotNone(char.modeler)
-        self.assertIsNotNone(char.rigger)
-        self.assertIsNotNone(char.shader)
-        self.assertIsNotNone(char.animator)
+        self.assertIsNotNone(char.body)
+        self.assertIsNotNone(char.rig)
 
 if __name__ == "__main__":
     unittest.main()

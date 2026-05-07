@@ -42,6 +42,7 @@ class ProceduralModeler(base.Modeler):
         # 2. Build props (attachments)
         if rig:
             mesh_obj.parent = rig
+            mesh_obj.matrix_parent_inverse.identity()
             for prop in structure.get("props", []):
                 self._add_prop(char_id, rig, prop)
 

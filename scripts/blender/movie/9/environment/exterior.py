@@ -44,8 +44,8 @@ class ExteriorModeler(Modeler):
         self._create_floor(coll, root, "interior_floor", f_cfg.get("size", 60), f_cfg.get("interior_color", (0.22, 0.12, 0.05, 1.0)), 'PLANE')
         self._create_floor(coll, root, "exterior_floor", f_cfg.get("exterior_radius", 300), f_cfg.get("exterior_color", (0.02, 0.15, 0.02, 1.0)), 'CIRCLE')
         
-        r_cfg = params.get("roof", {})
-        if r_cfg: self._create_roof(coll, root, r_cfg)
+        r_cfg = params.get("roof")
+        if r_cfg is not None: self._create_roof(coll, root, r_cfg)
 
     def _build_architecture(self, coll, root, params):
         p_cfg = params.get("pillars", {})
