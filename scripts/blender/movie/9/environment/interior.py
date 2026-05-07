@@ -25,7 +25,7 @@ class InteriorModeler(Modeler):
             bpy.context.scene.collection.children.link(coll)
 
         # Resolve config path
-        from config import config
+        from movie_configuration import movie_configuration
         m9_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         default_json = os.path.join(m9_root, "environment", "interior_assets.json")
         config_path = params.get("config_path", default_json)
@@ -248,8 +248,8 @@ class InteriorModeler(Modeler):
         n_emit.inputs['Color'].default_value = (*cfg.get("color", [0,1,0]), 1.0); n_emit.inputs['Strength'].default_value = cfg.get("emission_strength", 8.0)
         mat.node_tree.links.new(n_emit.outputs['Emission'], n_out.inputs['Surface']); font_obj.data.materials.append(mat)
         if cfg.get("animate"):
-            from config import config
-            total_f = config.total_frames; freq = cfg.get("pulse_freq", 0.5); amp = cfg.get("pulse_amp", 2.0); base_strength = cfg.get("emission_strength", 8.0)
+            from movie_configuration import movie_configuration
+            total_f = movie_configuration.total_frames; freq = cfg.get("pulse_freq", 0.5); amp = cfg.get("pulse_amp", 2.0); base_strength = cfg.get("emission_strength", 8.0)
             for f in range(1, total_f + 1, 5):
                 t = f / 24.0; strength = base_strength + amp * math.sin(2 * math.pi * freq * t)
                 n_emit.inputs['Strength'].default_value = strength; n_emit.inputs['Strength'].keyframe_insert(data_path="default_value", frame=f)
