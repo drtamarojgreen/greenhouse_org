@@ -9,14 +9,18 @@
 namespace fs = std::filesystem;
 using namespace Sorrel::Sdd::Util;
 
-// @Card: js_meaningless_assertion_audit
-// @Results files_checked, meaningless_assertion_count, assertion_locations
+// @Card: js_file_length_audit
+// @Results files_checked, long_file_count, long_files
 
 int main() {
     auto env = FactReader::readFacts("environment.facts");
+    auto facts = FactReader::readFacts("js_quality.facts");
+
     std::vector<std::string> scan_dirs;
     if (env.count("genetic_js_dir")) scan_dirs.push_back(env.at("genetic_js_dir"));
     if (env.count("models_js_dir")) scan_dirs.push_back(env.at("models_js_dir"));
+
+    int max_lines = facts.count("max_file_lines") ? std::stoi(facts.at("max_file_lines")) : 1000;
 
     int files_checked = 0;
     std::vector<std::string> violations;
@@ -28,23 +32,22 @@ int main() {
             if (entry.path().extension() == ".js") {
                 files_checked++;
                 std::ifstream file(entry.path());
+                int line_count = 0;
                 std::string line;
-                int line_num = 0;
                 while (std::getline(file, line)) {
-                    line_num++;
-                    if (line.find("Assert.Pass()") != std::string::npos ||
-                        line.find("expect(true).to.be.true") != std::string::npos ||
-                        line.find("assert.equal(1, 1)") != std::string::npos) {
-                        violations.push_back(entry.path().filename().string() + ":" + std::to_string(line_num));
-                    }
+                    line_count++;
+                }
+
+                if (line_count > max_lines) {
+                    violations.push_back(entry.path().filename().string() + ":" + std::to_string(line_count));
                 }
             }
         }
     }
 
     std::cout << "files_checked = " << files_checked << std::endl;
-    std::cout << "meaningless_assertion_count = " << violations.size() << std::endl;
-    std::cout << "assertion_locations = "; for (const auto& v : violations) std::cout << v << " "; std::cout << std::endl;
+    std::cout << "long_file_count = " << violations.size() << std::endl;
+    std::cout << "long_files = "; for (const auto& v : violations) std::cout << v << " "; std::cout << std::endl;
 
     return 0;
 }

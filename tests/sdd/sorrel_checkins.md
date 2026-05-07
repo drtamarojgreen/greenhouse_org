@@ -11,8 +11,13 @@
 - [x] JSMeaninglessAssertionAudit: Reports assertions with constant values.
 - [x] JSHardcodedValueAudit: Reports magic numbers and un-parameterized strings.
 - [x] JSCodeDuplicationAudit: Reports identical code blocks across files.
+- [x] JSFileLengthAudit: Reports files exceeding max line threshold.
+- [x] JSLongTaskAudit: Detects unthrottled listeners and deep loop nesting.
+- [x] JSComplexityAudit: Reports heuristic cyclomatic complexity scores.
+- [x] JSVarUsageAudit: Reports usage of 'var' instead of 'const'/'let'.
 
 ## Open
 
 - [ ] Refine JSUnusedSymbolAudit: Further reduce false positives for global library objects.
 - [ ] Refine JSCodeDuplicationAudit: Implement fuzzy matching for near-duplicate code blocks.
+- [ ] Expand models JS evaluation: Evaluate all files in `docs/js/` for quality compliance.

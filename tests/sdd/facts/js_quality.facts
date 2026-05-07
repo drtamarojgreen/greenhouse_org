@@ -2,3 +2,5 @@ Situation: JS_Quality_Constraints
 Is global_object_pattern = ^GreenhouseGenetic[A-Z][a-zA-Z0-9]*$
 Is local_variable_pattern = ^[a-z][a-zA-Z0-9]*$
 Is magic_number_threshold = 100
+Is max_file_lines = 1000
+Is models_global_pattern = ^GreenhouseModels[A-Z][a-zA-Z0-9]*$

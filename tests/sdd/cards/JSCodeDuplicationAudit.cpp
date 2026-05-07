@@ -15,31 +15,34 @@ using namespace Sorrel::Sdd::Util;
 
 int main() {
     auto env = FactReader::readFacts("environment.facts");
-    if (env.count("genetic_js_dir") == 0) { std::cerr << "error = fact missing genetic_js_dir" << std::endl; return 1; }
-    std::string js_dir = env.at("genetic_js_dir");
+    std::vector<std::string> scan_dirs;
+    if (env.count("genetic_js_dir")) scan_dirs.push_back(env.at("genetic_js_dir"));
+    if (env.count("models_js_dir")) scan_dirs.push_back(env.at("models_js_dir"));
 
     std::map<std::string, std::vector<std::pair<std::string, int>>> chunks;
     int files_checked = 0;
     int duplications = 0;
 
-    if (!fs::exists(js_dir)) { std::cerr << "error = directory missing " << js_dir << std::endl; return 1; }
+    for (const auto& js_dir : scan_dirs) {
+        if (!fs::exists(js_dir)) continue;
 
-    for (const auto& entry : fs::directory_iterator(js_dir)) {
-        if (entry.path().extension() == ".js") {
-            files_checked++;
-            std::vector<std::string> lines;
-            std::ifstream file(entry.path());
-            std::string line;
-            while (std::getline(file, line)) {
-                std::string trimmed = trim(line);
-                if (trimmed.length() > 20) lines.push_back(trimmed);
-            }
+        for (const auto& entry : fs::directory_iterator(js_dir)) {
+            if (entry.path().extension() == ".js") {
+                files_checked++;
+                std::vector<std::string> lines;
+                std::ifstream file(entry.path());
+                std::string line;
+                while (std::getline(file, line)) {
+                    std::string trimmed = trim(line);
+                    if (trimmed.length() > 20) lines.push_back(trimmed);
+                }
 
-            if (lines.size() >= 5) {
-                for (size_t i = 0; i <= lines.size() - 5; ++i) {
-                    std::string chunk = "";
-                    for (int k = 0; k < 5; ++k) chunk += lines[i + k];
-                    chunks[chunk].push_back({entry.path().filename().string(), (int)i});
+                if (lines.size() >= 5) {
+                    for (size_t i = 0; i <= lines.size() - 5; ++i) {
+                        std::string chunk = "";
+                        for (int k = 0; k < 5; ++k) chunk += lines[i + k];
+                        chunks[chunk].push_back({entry.path().filename().string(), (int)i});
+                    }
                 }
             }
         }
