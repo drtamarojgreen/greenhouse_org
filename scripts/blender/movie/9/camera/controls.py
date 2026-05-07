@@ -89,7 +89,7 @@ class CameraControls:
             # In Blender 5.1+, ensure the object is assigned to a slot
             if not obj.animation_data.action_slot:
                 action = obj.animation_data.action
-                slot = action.slots[0] if action.slots else action.slots.new(name="Default")
+                slot = action.slots[0] if len(action.slots) > 0 else action.slots.new(name="Default")
                 obj.animation_data.action_slot = slot
 
         for f in range(1, total_frames + 1, 40):

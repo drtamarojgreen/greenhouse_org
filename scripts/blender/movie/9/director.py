@@ -171,7 +171,7 @@ class Director:
                 rig = bpy.data.objects.get(f"{ent['id']}.Rig")
                 if rig: apply_patrol(rig, p, mc.total_frames)
     def apply_storyline(self):
-        beats = self.scene_cfg.get("storyline", mc.get("storyline", []))
+        beats = self.scene_cfg.get("storyline", mc.get("ensemble.storyline", []))
         for beat in beats:
             for event in beat.get("events", []):
                 character_placement.execute_event(event, context_director=self)

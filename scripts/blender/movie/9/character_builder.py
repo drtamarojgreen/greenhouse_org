@@ -72,6 +72,11 @@ class CharacterBuilder:
                 target.location = self.cfg["default_pos"]
             if "default_rot" in self.cfg:
                 target.rotation_euler = self.cfg["default_rot"]
+
+            # Ensure frame 1 state is recorded for clinical transition tests
+            if not target.animation_data: target.animation_data_create()
+            target.keyframe_insert(data_path="location", frame=1)
+            target.keyframe_insert(data_path="rotation_euler", frame=1)
         
         return self.rig or self.body
 

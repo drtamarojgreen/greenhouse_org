@@ -52,11 +52,12 @@ class TestProductionResilience(unittest.TestCase):
             if obj.type == 'MESH': self.assertGreater(obj.scale.x, 0.001)
 
     def test_res_grounding(self):
+        bpy.context.scene.frame_set(1)
         for obj in bpy.data.objects:
             if ".Body" in obj.name:
                 bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
                 # High-fidelity assets might have slight offsets; allow up to 0.5 for stability
-                self.assertLess(abs(min(v.z for v in bbox)), 0.5)
+                self.assertLess(abs(min(v.z for v in bbox)), 0.5, f"Object {obj.name} not grounded correctly at frame 1")
 
     def test_res_action_slot(self):
         for obj in bpy.data.objects:

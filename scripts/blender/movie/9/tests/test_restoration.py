@@ -134,8 +134,17 @@ class TestRestorationComprehensive(unittest.TestCase):
                     fcurves_list.extend(list(slot_curves))
             
             fcurve = next((fc for fc in fcurves_list if fc.data_path == "location" and fc.array_index == 0), None)
+
+            # Additional check for Blender 5.1+ Slotted Actions
+            if fcurve is None and hasattr(wide.animation_data, "action_slot"):
+                slot = wide.animation_data.action_slot
+                curves = getattr(slot, "curves", getattr(slot, "fcurves", []))
+                fcurve = next((fc for fc in curves if fc.data_path == "location" and fc.array_index == 0), None)
+
             self.assertIsNotNone(fcurve, f"Wide camera missing X-location animation (bounce). Paths: {[fc.data_path for fc in fcurves_list]}")
-            self.assertGreater(len(fcurve.keyframe_points), 2, "Wide camera bounce should have multiple keyframes")
+            # keyframe_points for legacy, points for some 5.1 curves
+            kp = getattr(fcurve, "keyframe_points", getattr(fcurve, "points", []))
+            self.assertGreater(len(kp), 2, "Wide camera bounce should have multiple keyframes")
 
     def test_winds_way_modifier(self):
         """Verifies WindSway (WAVE) modifier settings."""

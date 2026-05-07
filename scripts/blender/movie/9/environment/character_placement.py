@@ -74,12 +74,14 @@ def execute_event(event, context_director=None):
                     if "visible_at" in params:
                         c.hide_render = False; c.keyframe_insert(data_path="hide_render", frame=params["visible_at"])
         elif action == "altitude":
+            if not obj.animation_data: obj.animation_data_create()
             obj.location.z = 0; obj.keyframe_insert(data_path="location", index=2, frame=1)
             obj.location.z = params["height"]; obj.keyframe_insert(data_path="location", index=2, frame=params["frames"])
         elif action == "animate":
             from animation_handler import AnimationHandler
             AnimationHandler().apply_animation(obj, params["tag"], event.get("start", 1), params.get("duration", 100))
         elif action == "move_to":
+            if not obj.animation_data: obj.animation_data_create()
             start_f = event.get("start", 1); duration = params.get("duration_frames", 60)
             dest = mathutils.Vector(params["destination_pos"])
             obj.keyframe_insert(data_path="location", frame=start_f)

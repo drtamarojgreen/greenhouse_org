@@ -119,7 +119,9 @@ class AssetManager:
             bm = bmesh.new(); bm.from_mesh(mesh.data); bm.verts.ensure_lookup_table()
             verts_to_remove = [bm.verts[i] for i in target_indices if i < len(bm.verts)]
             bmesh.ops.delete(bm, geom=verts_to_remove, context='VERTS')
-            bm.to_mesh(mesh.data); bm.free(); mesh.data.update()
+            bm.to_mesh(mesh.data); bm.free()
+            for p in mesh.data.polygons: p.use_smooth = True
+            mesh.data.update()
 
     def _get_metrics(self, rig):
         if rig is None: return None

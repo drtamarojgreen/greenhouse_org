@@ -22,7 +22,9 @@ class TestMovie9AnimationPresence(unittest.TestCase):
 
     def test_procedural_animation_presence(self):
         """Verifies that the animator correctly targets bones from mc."""
-        cfg = mc.get_character_config("Herbaceous")
+        cfg = mc.get_character_config("Herbaceous").copy()
+        # Force ProceduralAnimator to avoid baked action missing warnings
+        cfg["components"]["animation"] = "ProceduralAnimator"
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
