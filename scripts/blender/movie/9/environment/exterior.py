@@ -11,6 +11,7 @@ class ExteriorModeler(Modeler):
     """
     OO Universal Modeler for Exterior/Greenhouse Shell.
     Standardizes object naming to ensure registry-based context filtering and test parity.
+    Restored features from Movie 7: Torches, Lavender, Statues, Fog.
     """
 
     def build_mesh(self, char_id, params, rig=None):
@@ -24,12 +25,23 @@ class ExteriorModeler(Modeler):
         # 2. Mental Architecture (Pillars and Path)
         self._build_architecture(coll, env_root, params)
 
-        # 3. Environmental Detail (Mountains and Vegetation)
+        # 3. Features
+        self._create_lavender_beds(coll, env_root, params.get("lavender", {}), params.get("floor", {}).get("size", 60)/2)
+
+        torches_cfg = params.get("torches", {})
+        if torches_cfg:
+            self._create_path_torches(coll, env_root, params.get("floor", {}).get("size", 60)/2, params.get("rock_path", {}), torches_cfg)
+
+        # 4. Environmental Detail (Mountains and Vegetation)
         if "mountains" in params:
             self._create_mountain_range(coll, env_root, params["mountains"])
         
         if "vegetation" in params:
             self._scatter_vegetation(coll, env_root, params["vegetation"])
+
+        # 5. Fog
+        if "fog" in params:
+            self._setup_fog(params["fog"])
 
         return env_root
 
@@ -51,7 +63,12 @@ class ExteriorModeler(Modeler):
         p_cfg = params.get("pillars", {})
         if p_cfg:
             size = params.get("floor", {}).get("size", 60)
-            self._create_pillars(coll, root, p_cfg, size / 2)
+            h = p_cfg.get("height")
+            if h is None and "derive_from" in p_cfg:
+                h = mc.get(p_cfg["derive_from"], 10.0)
+            elif h is None:
+                h = 10.0
+            self._create_pillars_and_statues(coll, root, p_cfg, size / 2, h)
 
         path_cfg = params.get("rock_path", {})
         if path_cfg:
@@ -69,15 +86,69 @@ class ExteriorModeler(Modeler):
         obj = bpy.context.active_object; obj.name = "greenhouse_roof"; obj.parent = root
         apply_mat(obj, "mat_roof", cfg.get("color", (0.7, 0.85, 1.0, 0.2)), alpha=True)
 
-    def _create_pillars(self, coll, root, cfg, half):
+    def _create_pillars_and_statues(self, coll, root, cfg, half, h):
         corners = [(-half, -half), (half, -half), (-half, half), (half, half)]
-        radius, height = cfg.get("radius", 0.8), cfg.get("height", 10.0)
+        radius = cfg.get("radius", 0.8)
         for i, pos in enumerate(corners):
             mesh = bpy.data.meshes.new(f"pillar_{i}"); obj = bpy.data.objects.new(f"pillar_{i}", mesh)
             coll.objects.link(obj); obj.parent = root; obj.location = (pos[0], pos[1], 0)
-            bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=16, radius1=radius, radius2=radius, depth=height, matrix=mathutils.Matrix.Translation((0,0,height/2)))
+            bm = bmesh.new()
+            # Complex pillar geometry from Movie 7
+            bmesh.ops.create_cone(bm, segments=16, radius1=radius*1.4, radius2=radius*1.4, depth=0.5, matrix=mathutils.Matrix.Translation((0,0,0.25)))
+            bmesh.ops.create_cone(bm, segments=16, radius1=radius, radius2=radius*0.9, depth=h-1.0, matrix=mathutils.Matrix.Translation((0,0,h/2)))
+            bmesh.ops.create_cone(bm, segments=16, radius1=radius*1.4, radius2=radius*1.4, depth=0.5, matrix=mathutils.Matrix.Translation((0,0,h-0.25)))
             bm.to_mesh(mesh); bm.free()
             apply_mat(obj, "mat_marble", cfg.get("color", (0.95, 0.95, 0.97, 1.0)))
+
+            # Pillar-top Statues
+            s_name = f"statue_{i}"
+            s_mesh = bpy.data.meshes.new(s_name)
+            s_obj = bpy.data.objects.new(s_name, s_mesh)
+            coll.objects.link(s_obj); s_obj.parent = root; s_obj.location = (pos[0], pos[1], h)
+            bm_s = bmesh.new()
+            sx = mathutils.Matrix.Scale(1.0, 4, (1, 0, 0)); sy = mathutils.Matrix.Scale(0.65, 4, (0, 1, 0)); sz = mathutils.Matrix.Scale(1.35, 4, (0, 0, 1))
+            body_mat = mathutils.Matrix.Translation((0, 0, 0.42)) @ (sx @ sy @ sz)
+            bmesh.ops.create_uvsphere(bm_s, u_segments=10, v_segments=8, radius=0.38, matrix=body_mat)
+            bm_s.to_mesh(s_mesh); bm_s.free()
+            apply_mat(s_obj, "mat_stone", (0.55, 0.52, 0.5, 1.0))
+
+    def _create_lavender_beds(self, coll, root, cfg, half):
+        depth, dens = cfg.get("depth", 8.0), cfg.get("density", 80)
+        path_w = 2.5 / 2.0 + 0.6
+        y_front = -half
+        side_spread = cfg.get("side_spread", half - path_w)
+        max_stalk_h = cfg.get("max_stalk_height", 0.65)
+
+        bed_regions = [(-path_w - side_spread, -path_w), (path_w, path_w + side_spread)]
+        for s, (x_min, x_max) in enumerate(bed_regions):
+            for j in range(dens):
+                px, py = random.uniform(x_min, x_max), random.uniform(y_front - depth, y_front)
+                name = f"lavender_{s}_{j}"
+                mesh = bpy.data.meshes.new(name); obj = bpy.data.objects.new(name, mesh)
+                coll.objects.link(obj); obj.parent = root; obj.location = (px, py, 0)
+                bm = bmesh.new()
+                for _ in range(random.randint(3, 6)):
+                    sh = random.uniform(0.56, max_stalk_h * 2)
+                    bmesh.ops.create_cone(bm, segments=4, radius1=0.026, radius2=0.016, depth=sh, matrix=mathutils.Matrix.Translation((random.uniform(-0.14, 0.14), random.uniform(-0.14, 0.14), sh/2)))
+                bm.to_mesh(mesh); bm.free()
+                apply_mat(obj, "mat_lavender", cfg.get("flower_color", (0.55, 0.28, 0.85)))
+
+    def _create_path_torches(self, coll, root, half, path_cfg, torches_cfg):
+        y_start = -half; length = path_cfg.get("length", 40); y_end = y_start - length
+        offset = (path_cfg.get("width", 2.5) / 2.0) + 1.0
+        h, spacing = torches_cfg.get("height", 2.4), torches_cfg.get("spacing", 5.0)
+        y, idx = y_start, 0
+        while y >= y_end:
+            for side in [-1, 1]:
+                name = f"torch_{idx}_{side}"; mesh = bpy.data.meshes.new(name); obj = bpy.data.objects.new(name, mesh); coll.objects.link(obj)
+                obj.parent = root; obj.location = (side * offset, y, 0)
+                bm = bmesh.new()
+                bmesh.ops.create_cone(bm, segments=6, radius1=0.05, radius2=0.04, depth=h, matrix=mathutils.Matrix.Translation((0, 0, h/2)))
+                fh = torches_cfg.get("flame_cone_height", 0.42)
+                bmesh.ops.create_cone(bm, segments=6, radius1=0.07, radius2=0, depth=fh, matrix=mathutils.Matrix.Translation((0, 0, h+fh/2 + 0.14)))
+                bm.to_mesh(mesh); bm.free()
+                apply_mat(obj, "mat_torch_stick", (0.15, 0.08, 0.02, 1.0))
+            y -= spacing; idx += 1
 
     def _create_rock_path(self, coll, root, cfg, half):
         mesh = bpy.data.meshes.new("rock_path"); obj = bpy.data.objects.new("rock_path", mesh); coll.objects.link(obj); obj.parent = root
@@ -101,11 +172,23 @@ class ExteriorModeler(Modeler):
         veg_root = bpy.data.objects.new("vegetation", None); coll.objects.link(veg_root); veg_root.parent = root
         count, shades = cfg.get("count", 50), cfg.get("shades", [(0.04, 0.22, 0.04)])
         for i in range(count):
-            # Increased minimum distance to 80 to prevent tree canopies from clipping into the greenhouse interior
             angle, dist = random.uniform(0, math.pi * 2), random.uniform(80, 200); loc = (math.sin(angle)*dist, math.cos(angle)*dist, 0)
             create_branching_tree(f"ext_tree_{i}", loc, random.uniform(2.5, 5.0), coll, shades, 'round')
             tree = bpy.data.objects.get(f"ext_tree_{i}")
             if tree: tree.parent = veg_root
+
+    def _setup_fog(self, cfg):
+        """Sets up Volume Scatter for environmental fog."""
+        world = bpy.context.scene.world
+        if not world: return
+        world.use_nodes = True
+        nodes = world.node_tree.nodes
+        links = world.node_tree.links
+        vol = nodes.get("Volume Scatter") or nodes.new(type='ShaderNodeVolumeScatter')
+        vol.inputs['Density'].default_value = cfg.get("density", 0.01)
+        vol.inputs['Color'].default_value = cfg.get("color", (0.1, 0.5, 0.2, 1.0))
+        out = nodes.get("World Output")
+        if out: links.new(vol.outputs['Volume'], out.inputs['Volume'])
 
 from registry import registry
 registry.register_modeling("ExteriorModeler", ExteriorModeler)

@@ -78,8 +78,15 @@ def execute_event(event, context_director=None):
             obj.location.z = 0; obj.keyframe_insert(data_path="location", index=2, frame=1)
             obj.location.z = params["height"]; obj.keyframe_insert(data_path="location", index=2, frame=params["frames"])
         elif action == "animate":
-            from animation_handler import AnimationHandler
-            AnimationHandler().apply_animation(obj, params["tag"], event.get("start", 1), params.get("duration", 100))
+            if params.get("tag") == "swap_position":
+                if not obj.animation_data: obj.animation_data_create()
+                start_f = event.get("start", 1)
+                dest = mathutils.Vector((*params["target_pos"], obj.location.z))
+                obj.location = dest
+                obj.keyframe_insert(data_path="location", frame=start_f)
+            else:
+                from animation_handler import AnimationHandler
+                AnimationHandler().apply_animation(obj, params["tag"], event.get("start", 1), params.get("duration", 100))
         elif action == "move_to":
             if not obj.animation_data: obj.animation_data_create()
             start_f = event.get("start", 1); duration = params.get("duration_frames", 60)
