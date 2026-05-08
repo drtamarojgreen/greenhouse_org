@@ -37,9 +37,21 @@ class Director:
             self.scene_cfg = json.load(f)
         return True
 
+    def _keyframe_visibility(self, obj, frame, hide):
+        obj.hide_render = hide
+        obj.keyframe_insert(data_path="hide_render", frame=frame)
+        obj.hide_viewport = hide
+        obj.keyframe_insert(data_path="hide_viewport", frame=frame)
+        for child in obj.children:
+            self._keyframe_visibility(child, frame, hide)
+
     def setup_environment(self, force=False, start_f=1, end_f=None):
         """Assembles environment by filtering parameters based on context."""
-        self._clear_environment_collection()
+        # Instead of destructively purging, we manage visibility for multi-scene files
+        coll = bpy.data.collections.get(mc.coll_environment)
+        if not coll:
+            coll = bpy.data.collections.new(mc.coll_environment)
+            bpy.context.scene.collection.children.link(coll)
         
         raw_params = self.scene_cfg.get("environment", mc.get("environment", {}))
         env_type = raw_params.get("type", "exterior")
@@ -48,12 +60,41 @@ class Director:
         # Declarative pre-filtering for isolation
         filtered_params = self._filter_params(raw_params, context)
         
+        # Create a container for this specific environment to handle visibility
+        env_name = f"Env_{env_type}_{start_f}"
+        env_root = bpy.data.objects.new(env_name, None)
+        coll.objects.link(env_root)
+        
         modeler_cls = registry.get_modeling(self._resolve_modeler_id(env_type))
         if modeler_cls:
-            # Standardized name for test compatibility
-            modeler_cls().build_mesh("Env", filtered_params)
+            # Standardized name for test compatibility, but parented to our env_root
+            mesh_root = modeler_cls().build_mesh("Env", filtered_params)
+            if mesh_root:
+                mesh_root.parent = env_root
 
-        self._build_ancillary_systems(start_f, env_type)
+        self._build_ancillary_systems(start_f, env_type, env_root)
+        
+        # Keyframe visibility
+        if start_f > 1 or end_f is not None:
+            # Hide before start
+            if start_f > 1:
+                self._keyframe_visibility(env_root, 1, True)
+                
+            self._keyframe_visibility(env_root, start_f, False)
+            
+            if end_f is not None:
+                self._keyframe_visibility(env_root, end_f + 1, True)
+                
+            # Toggle other environments
+            for other in coll.objects:
+                if other != env_root and other.name.startswith("Env_"):
+                    # Hide other environment during this new one
+                    self._keyframe_visibility(other, start_f, True)
+                    # Restore after if this one ends
+                    if end_f is not None:
+                        self._keyframe_visibility(other, end_f + 1, False)
+        else:
+            self._keyframe_visibility(env_root, 1, False)
 
     def _filter_params(self, params, context):
         disallowed = mc.get(f"context_constraints.{context}.disallowed_assets", [])
@@ -85,17 +126,24 @@ class Director:
         for obj in list(coll.objects): bpy.data.objects.remove(obj, do_unlink=True)
         for sub in list(coll.children): self._recursive_purge(sub)
 
-    def _build_ancillary_systems(self, start_f, env_type):
+    def _build_ancillary_systems(self, start_f, env_type, parent_root=None):
         # Interior Model
         int_cfg = self.scene_cfg.get("interior", mc.get("interior", {}))
         int_cls = registry.get_modeling("InteriorModeler")
         if int_cls and (int_cfg or env_type == "interior"):
-            int_cls().build_mesh(f"Interior_{start_f}", int_cfg)
+            mesh = int_cls().build_mesh(f"Interior_{start_f}", int_cfg)
+            if mesh and parent_root: mesh.parent = parent_root
         
         # Backdrop
         from environment.backdrop import BackdropModeler
         chroma_cfg = mc.get("chroma", {})
-        if chroma_cfg: BackdropModeler().build_mesh("Chroma", chroma_cfg)
+        if chroma_cfg:
+            # We don't have a direct return of the mesh for backdrop yet, but we can parent its objects
+            BackdropModeler().build_mesh("Chroma", chroma_cfg)
+            if parent_root:
+                for obj in bpy.data.collections.get(mc.coll_environment).objects:
+                    if obj.name.startswith("chroma_backdrop_") and not obj.parent:
+                        obj.parent = parent_root
 
     def apply_sequencing(self):
         """Sets timeline markers, prioritizing fixed beats over cycle logic."""

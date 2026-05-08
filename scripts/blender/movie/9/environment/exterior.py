@@ -101,7 +101,8 @@ class ExteriorModeler(Modeler):
         veg_root = bpy.data.objects.new("vegetation", None); coll.objects.link(veg_root); veg_root.parent = root
         count, shades = cfg.get("count", 50), cfg.get("shades", [(0.04, 0.22, 0.04)])
         for i in range(count):
-            angle, dist = random.uniform(0, math.pi * 2), random.uniform(40, 150); loc = (math.sin(angle)*dist, math.cos(angle)*dist, 0)
+            # Increased minimum distance to 80 to prevent tree canopies from clipping into the greenhouse interior
+            angle, dist = random.uniform(0, math.pi * 2), random.uniform(80, 200); loc = (math.sin(angle)*dist, math.cos(angle)*dist, 0)
             create_branching_tree(f"ext_tree_{i}", loc, random.uniform(2.5, 5.0), coll, shades, 'round')
             tree = bpy.data.objects.get(f"ext_tree_{i}")
             if tree: tree.parent = veg_root

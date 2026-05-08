@@ -64,6 +64,9 @@ class MountainBaseModeler(Modeler):
         bpy.ops.mesh.primitive_plane_add(size=W, location=(0, -W/4, 0))
         apron = bpy.context.active_object; apron.name = "mountain_apron"; apron.scale = (2, 0.5, 1)
         apply_mat(apron, "mat_mountain_apron", [0.2, 0.18, 0.15])
+        if apron.name not in coll.objects: coll.objects.link(apron)
+        for c in list(apron.users_collection):
+            if c != coll: c.objects.unlink(apron)
         return apron
 
     def _scatter_bushes(self, W, angle, cfg, coll, parent):

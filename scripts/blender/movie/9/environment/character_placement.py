@@ -115,7 +115,11 @@ def load_extended_scene(scene_path, director_ref):
     env = cfg.get("environment")
     if env and director_ref:
         director_ref.scene_cfg["environment"] = env
-        director_ref.setup_environment(force=True)
+        director_ref.setup_environment(
+            force=True, 
+            start_f=cfg.get("start_frame", 1), 
+            end_f=cfg.get("end_frame", None)
+        )
 
     # Execute events
     for beat in cfg.get("story_beats", []):

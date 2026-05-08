@@ -71,6 +71,9 @@ class ForestRoadModeler(Modeler):
         bpy.ops.mesh.primitive_plane_add(size=L, location=(0, L/2, -0.05))
         apron = bpy.context.active_object; apron.name = "forest_ground"; apron.scale = (10, 1, 1)
         apply_mat(apron, "mat_forest_ground", [0.1, 0.12, 0.08])
+        if apron.name not in coll.objects: coll.objects.link(apron)
+        for c in list(apron.users_collection):
+            if c != coll: c.objects.unlink(apron)
         return apron
 
 from registry import registry

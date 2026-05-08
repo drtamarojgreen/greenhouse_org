@@ -1,4 +1,3 @@
-import movie_configuration as mc
 import bpy
 import os
 import sys
@@ -13,6 +12,7 @@ from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
 from director import Director
+import movie_configuration as mc
 
 def validate_scene_integrity():
     """Hard gate before rendering: armature count must match character expectations."""
