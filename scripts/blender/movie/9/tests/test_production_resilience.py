@@ -8,8 +8,8 @@ import mathutils
 M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
+import movie_configuration as mc
 
-import config
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 from director import Director
@@ -19,7 +19,7 @@ class TestProductionResilience(unittest.TestCase):
     def setUpClass(cls):
         bpy.ops.wm.read_factory_settings(use_empty=True)
         cls.manager = AssetManager()
-        entities = config.config.get("ensemble.entities", [])
+        entities = mc.get("ensemble.entities", [])
         for ent_cfg in entities:
             CharacterBuilder.create(ent_cfg["id"], ent_cfg).build(cls.manager)
         cls.director = Director()
@@ -52,11 +52,12 @@ class TestProductionResilience(unittest.TestCase):
             if obj.type == 'MESH': self.assertGreater(obj.scale.x, 0.001)
 
     def test_res_grounding(self):
+        bpy.context.scene.frame_set(1)
         for obj in bpy.data.objects:
             if ".Body" in obj.name:
                 bbox = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
                 # High-fidelity assets might have slight offsets; allow up to 0.5 for stability
-                self.assertLess(abs(min(v.z for v in bbox)), 0.5)
+                self.assertLess(abs(min(v.z for v in bbox)), 0.5, f"Object {obj.name} not grounded correctly at frame 1")
 
     def test_res_action_slot(self):
         for obj in bpy.data.objects:

@@ -8,9 +8,9 @@ import json
 M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
+import movie_configuration as mc
 
 from director import Director
-import config
 
 class TestContextConstraintsV9(unittest.TestCase):
     def test_asset_filtering(self):
@@ -25,7 +25,7 @@ class TestContextConstraintsV9(unittest.TestCase):
         # process a hypothetical environment config block.
 
         context = "greenhouse"
-        constraints = config.config.get("context_constraints", {}).get(context, {})
+        constraints = mc.get("context_constraints", {}).get(context, {})
         disallowed = constraints.get("disallowed_assets", [])
 
         test_env = {

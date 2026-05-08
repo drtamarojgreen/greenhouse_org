@@ -1,4 +1,4 @@
-import config
+import movie_configuration as mc
 from registry import registry
 # Data-driven components
 import modeling.procedural
@@ -10,6 +10,8 @@ import animation.universal
 import environment.exterior
 import environment.interior
 import environment.backdrop
+import environment.forest_road
+import environment.mountain_base
 
 def initialize_registry():
     """

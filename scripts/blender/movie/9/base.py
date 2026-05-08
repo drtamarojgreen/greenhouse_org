@@ -1,3 +1,4 @@
+import movie_configuration as mc
 class Modeler:
     """
     Base class for modeling components.

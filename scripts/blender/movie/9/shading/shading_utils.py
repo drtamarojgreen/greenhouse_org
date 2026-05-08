@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import bpy
 
 def setup_iris_nodes(mat, color):

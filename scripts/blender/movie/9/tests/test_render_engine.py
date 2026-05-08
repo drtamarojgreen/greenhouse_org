@@ -9,6 +9,7 @@ M9_ROOT = os.path.dirname(TEST_DIR)
 
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
+import movie_configuration as mc
 
 class TestMovie9RenderEngine(unittest.TestCase):
     def test_eevee_enforcement(self):

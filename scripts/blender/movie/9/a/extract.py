@@ -7,7 +7,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-import config
+import movie_configuration as mc
 import components
 from a.extractor import AssetExtractor
 

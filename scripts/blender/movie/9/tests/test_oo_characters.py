@@ -9,6 +9,7 @@ M9_ROOT = os.path.dirname(TEST_DIR)
 
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
+import movie_configuration as mc
 
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
@@ -21,14 +22,12 @@ class TestMovie9OOCharacters(unittest.TestCase):
 
     def test_character_oo_composition(self):
         """Verifies composition and component resolution."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
+        char.build(self.manager)
 
-        self.assertIsNotNone(char.modeler)
-        self.assertIsNotNone(char.rigger)
-        self.assertIsNotNone(char.shader)
-        self.assertIsNotNone(char.animator)
+        self.assertIsNotNone(char.body)
+        self.assertIsNotNone(char.rig)
 
 if __name__ == "__main__":
     unittest.main()

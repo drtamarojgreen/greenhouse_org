@@ -9,6 +9,7 @@ M9_ROOT = os.path.dirname(TEST_DIR)
 
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
+import movie_configuration as mc
 
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
@@ -21,12 +22,11 @@ class TestMovie9V5Parity(unittest.TestCase):
 
     def test_vertex_group_naming_parity(self):
         """Verifies that vertex groups match bone names (standard for V5/V6 parity)."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
-        vg_names = {vg.name for vg in char.mesh.vertex_groups}
+        vg_names = {vg.name for vg in char.body.vertex_groups}
         for bone in char.rig.data.bones:
             if bone.use_deform:
                 self.assertIn(bone.name, vg_names)

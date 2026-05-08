@@ -7,8 +7,8 @@ import sys
 M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
+import movie_configuration as mc
 
-import config
 from render import build_scene
 
 class TestExtendedVisibility(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestExtendedVisibility(unittest.TestCase):
         """Lists characters visible in the extended frame range 4200-4800."""
         print("\n--- Visibility Audit (Frames 4200 - 4800) ---")
 
-        entities = [e["id"] for e in config.config.get("ensemble.entities", [])]
+        entities = [e["id"] for e in mc.get("ensemble.entities", [])]
         frames_to_check = [4200, 4400, 4600, 4800]
 
         for frame in frames_to_check:

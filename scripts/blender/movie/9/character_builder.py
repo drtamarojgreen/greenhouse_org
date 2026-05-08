@@ -1,191 +1,121 @@
+import movie_configuration as mc
 import bpy
 import os
-import sys
-
-# Ensure Movie 9 root is in sys.path
-M9_ROOT = os.path.dirname(os.path.abspath(__file__))
-if M9_ROOT not in sys.path:
-    sys.path.insert(0, M9_ROOT)
-
-import config
+import json
 from registry import registry
-# Import procedural components to ensure registration
-import modeling.procedural
-import modeling.plant
-import modeling.greenhouse_mobile
-import environment.forest_road
-import environment.mountain_base
-import rigging.procedural
-import rigging.plant
-import shading.universal
-import animation.universal
 
-MAIN_CHARACTER_IDS = ["Herbaceous", "Arbor"]
+class CharacterBuilder:
+    """
+    OO Factory for Character and Entity construction.
+    Architecture Kept: The builder pattern ensures that characters are constructed
+    with all required components (modeling, rigging, shading, animation) in a
+    consistent, decoupled way.
+    """
 
-class Character:
-    """
-    Strictly OO Character container following Composition over Inheritance.
-    """
     def __init__(self, char_id, cfg):
         self.char_id = char_id
         self.cfg = cfg
         self.rig = None
-        self.mesh = None
-        self.is_protagonist = cfg.get("is_protagonist", False)
+        self.body = None
 
-        c_cfg = cfg.get("components", {})
-        self.modeler = self._resolve(registry.get_modeling, c_cfg.get("modeling"))
-        self.rigger = self._resolve(registry.get_rigging, c_cfg.get("rigging"))
-        self.shader = self._resolve(registry.get_shading, c_cfg.get("shading"))
-        self.animator = self._resolve(registry.get_animation, c_cfg.get("animation"))
-
-    def _resolve(self, registry_func, name):
-        if not name: return None
-        cls = registry_func(name)
-        return cls() if cls else None
+    @staticmethod
+    def create(char_id, cfg=None):
+        """Factory method to instantiate a CharacterBuilder from mc."""
+        if cfg is None:
+            cfg = mc.get_character_config(char_id)
+        
+        if cfg is None:
+            print(f"WARNING: No config found for character {char_id}. Falling back to default.")
+            cfg = {"id": char_id, "type": "DYNAMIC"}
+            
+        return CharacterBuilder(char_id, cfg)
 
     def build(self, manager):
-        params = self.cfg.get("parameters", {}).copy()
-        # Merge structure into params for components
-        if "structure" in self.cfg:
-            params["structure"] = self.cfg["structure"]
-
+        """Orchestrates the multi-phase construction of a character."""
+        c_cfg = self.cfg.get("components", {})
+        
         # 1. Rigging
-        if self.rigger:
-            self.rig = self.rigger.build_rig(self.char_id, params)
-
+        rig_id = c_cfg.get("rigging")
+        rigger_cls = registry.get_rigging(rig_id)
+        if rigger_cls:
+            self.rig = rigger_cls().build_rig(self.char_id, self.cfg)
+        
         # 2. Modeling
-        if self.modeler:
-            self.mesh = self.modeler.build_mesh(self.char_id, params, rig=self.rig)
+        model_id = c_cfg.get("modeling")
+        modeler_cls = registry.get_modeling(model_id)
+        if modeler_cls:
+            self.body = modeler_cls().build_mesh(self.char_id, self.cfg.get("structure", {}), rig=self.rig)
 
         # 3. Shading
-        if self.mesh and self.shader:
-            self.shader.apply_materials(self.mesh, params)
+        shade_id = c_cfg.get("shading")
+        if not shade_id and self.cfg.get("is_protagonist"):
+             shade_id = "UniversalShader"
 
-        # 4. Bind Armature Modifier if both exist
-        if self.mesh and self.rig:
-            mod = self.mesh.modifiers.new(name="Armature", type='ARMATURE')
-            mod.object = self.rig
+        shader_cls = registry.get_shading(shade_id)
+        if shader_cls and (self.body or self.rig):
+            if self.body:
+                self.body["is_protagonist"] = self.cfg.get("is_protagonist", False)
+            shader_cls().apply_materials(self.body or self.rig, self.cfg.get("parameters", {}))
 
-        # 5. Normalization
-        if self.rig and self.cfg.get("target_height"):
-            manager.normalize_character(self.rig, self.cfg["target_height"])
+        # Handle MESH-type (linked) assets
+        if self.cfg.get("type") == "MESH" and not self.rig:
+            self._build_linked_asset(manager)
 
-        if self.rig: manager.apply_standard_renaming(self.rig, self.char_id, is_rig=True)
-        if self.mesh: manager.apply_standard_renaming(self.mesh, self.char_id, is_rig=False)
-
-        # 6. Main character tagging for director/cinematic logic
+        # 4. Normalization (Scaling & Grounding)
         if self.rig:
-            self.rig["is_protagonist"] = self.is_protagonist
-        if self.mesh:
-            self.mesh["is_protagonist"] = self.is_protagonist
-            if self.mesh.type == 'MESH':
-                for poly in self.mesh.data.polygons:
-                    poly.use_smooth = True
+            manager.normalize_character(self.rig, self.cfg.get("target_height", 2.0))
+
+        # 5. Initialization (Position/Rotation) - MUST be after normalization
+        target = self.rig or self.body
+        if target:
+            if "default_pos" in self.cfg:
+                target.location = self.cfg["default_pos"]
+            if "default_rot" in self.cfg:
+                target.rotation_euler = self.cfg["default_rot"]
+
+            # Ensure frame 1 state is recorded for clinical transition tests
+            if not target.animation_data: target.animation_data_create()
+            target.keyframe_insert(data_path="location", frame=1)
+            target.keyframe_insert(data_path="rotation_euler", frame=1)
+        
+        return self.rig or self.body
+
+    def _build_linked_asset(self, manager):
+        blend = mc.assets_blend
+        targets = [self.cfg.get("source_mesh"), self.cfg.get("source_rig")]
+        objs = manager.link_assets(blend, [t for t in targets if t])
+        
+        # Resolve rig and body from linked objects
+        for obj in objs:
+            if obj.type == 'ARMATURE': self.rig = obj
+            elif obj.type == 'MESH': self.body = obj
+            
+        if self.rig:
+            manager.apply_standard_renaming(self.rig, self.char_id, is_rig=True)
+            self.rig["linked_asset"] = True
+        if self.body:
+            manager.apply_standard_renaming(self.body, self.char_id, is_rig=False)
+
+        if self.rig and self.body:
+            self.body.parent = self.rig
+            self.body.matrix_parent_inverse.identity()
 
     def apply_pose(self):
-        pos = self.cfg.get("default_pos", [0, 0, 0])
+        """Applies the default rest pose based on configuration."""
         if self.rig:
-            self.rig.location = pos
-        elif self.mesh:
-            self.mesh.location = pos
-        bpy.context.view_layer.update()
+            bpy.context.view_layer.objects.active = self.rig
+            bpy.ops.object.mode_set(mode='POSE')
+            # Reset bones to 0
+            for bone in self.rig.pose.bones:
+                bone.rotation_euler = (0,0,0)
+                bone.location = (0,0,0)
+            bpy.ops.object.mode_set(mode='OBJECT')
 
     def animate(self, tag, frame, params=None):
-        if self.rig and self.animator:
-            combined_params = self.cfg.get("parameters", {}).copy()
-            if params: combined_params.update(params)
-            self.animator.apply_action(self.rig, tag, frame, combined_params)
-
-class LinkedCharacter(Character):
-    """
-    Character that links assets from a blend file instead of building procedurally.
-    Feature Kept: External asset linking ensures that high-fidelity, hand-crafted assets
-    from previous versions (like the protagonists) can be seamlessly integrated into the
-    new Movie 9 environment.
-    """
-    def build(self, manager):
-        targets = []
-        if self.cfg.get("source_mesh"): targets.append(self.cfg["source_mesh"])
-        if self.cfg.get("source_rig"): targets.append(self.cfg["source_rig"])
-
-        blend_file = config.config.protagonist_blend if self.cfg.get("is_protagonist") else config.config.assets_blend
-        objs = manager.link_assets(blend_file, targets)
-        for obj in objs:
-            if obj.type == 'ARMATURE':
-                self.rig = obj
-                manager.apply_standard_renaming(obj, self.char_id, is_rig=True)
-            elif obj.type == 'MESH':
-                self.mesh = obj
-                manager.apply_standard_renaming(obj, self.char_id, is_rig=False)
-
-        # Fallback to procedural build if linking failed (ensures test suite and pipeline stability)
-        if (self.rig is None or self.mesh is None):
-            print(f"INFO: Asset link failed for {self.char_id}, falling back to procedural generation.")
-            # Resolve components for procedural fallback
-            self.modeler = registry.get_modeling("PlantModeler")()
-            self.rigger = registry.get_rigging("PlantRigger")()
-            self.shader = registry.get_shading("UniversalShader")()
-            self.animator = registry.get_animation("ProceduralAnimator")()
-            
-            params = self.cfg.get("parameters", {}).copy()
-            if self.rigger: self.rig = self.rigger.build_rig(self.char_id, params)
-            if self.modeler: self.mesh = self.modeler.build_mesh(self.char_id, params, rig=self.rig)
-            
-            # Ensure flags are set BEFORE shading for correct material selection
-            is_protag = self.cfg.get("is_protagonist", False)
-            if self.rig: self.rig["is_protagonist"] = is_protag
-            if self.mesh: self.mesh["is_protagonist"] = is_protag
-
-            if self.mesh and self.shader: self.shader.apply_materials(self.mesh, params)
-            
-            if self.mesh and self.rig:
-                mod = self.mesh.modifiers.get("Armature") or self.mesh.modifiers.new(name="Armature", type='ARMATURE')
-                mod.object = self.rig
-                if self.mesh.parent != self.rig:
-                    self.mesh.parent = self.rig
-                    self.mesh.matrix_parent_inverse = self.rig.matrix_world.inverted()
-        else:
-            # Ensure linked mesh follows its rig
-            if self.mesh and self.rig:
-                if self.mesh.parent != self.rig:
-                    self.mesh.parent = self.rig
-                    self.mesh.matrix_parent_inverse = self.rig.matrix_world.inverted()
-
-                arm_mod = next((m for m in self.mesh.modifiers if m.type == 'ARMATURE'), None)
-                if arm_mod is None:
-                    arm_mod = self.mesh.modifiers.new(name="Armature", type='ARMATURE')
-                arm_mod.object = self.rig
-
-        # Only mark as linked_asset if it was ACTUALLY loaded (not fallback)
-        if self.rig and not (self.char_id in MAIN_CHARACTER_IDS and not objs):
-            self.rig["linked_asset"] = True
-        if self.rig and self.cfg.get("target_height"):
-            manager.normalize_character(self.rig, self.cfg["target_height"])
-
-        if self.rig:
-            self.rig["is_protagonist"] = self.is_protagonist
-        if self.mesh:
-            self.mesh["is_protagonist"] = self.is_protagonist
-        if self.mesh:
-            self.mesh["is_protagonist"] = self.is_protagonist
-            if self.mesh.type == 'MESH':
-                for poly in self.mesh.data.polygons:
-                    poly.use_smooth = True
-
-class CharacterBuilder:
-    """Factory for Character instantiation."""
-    @staticmethod
-    def create(char_id, cfg):
-        resolved_cfg = dict(cfg)
-        # Ensure default components for registry resolution
-        if "components" not in resolved_cfg:
-            resolved_cfg["components"] = {
-                "modeling": "PlantModeler",
-                "rigging": "PlantRigger",
-                "shading": "UniversalShader",
-                "animation": "ProceduralAnimator"
-            }
-        ctype = resolved_cfg.get("type", "MESH")
-        if ctype == "DYNAMIC": return Character(char_id, resolved_cfg)
-        return LinkedCharacter(char_id, resolved_cfg)
+        """Applies an animation action to the character."""
+        anim_id = self.cfg.get("components", {}).get("animation")
+        animator_cls = registry.get_animation(anim_id)
+        if animator_cls and self.rig:
+            p = self.cfg.get("parameters", {}).copy()
+            if params: p.update(params)
+            animator_cls().apply_action(self.rig, tag, frame, p)

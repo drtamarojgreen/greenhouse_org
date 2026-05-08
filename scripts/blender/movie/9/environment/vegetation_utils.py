@@ -167,7 +167,10 @@ def apply_mat(obj, name, color, emission=0.0, alpha=False, metallic=0.0, roughne
                 bsdf.inputs['Emission Color'].default_value = color
             elif 'Emission' in bsdf.inputs:
                 bsdf.inputs['Emission'].default_value = color
-    if alpha: mat.blend_method = 'BLEND'
+    if alpha: 
+        mat.blend_method = 'BLEND'
+        if hasattr(mat, 'shadow_method'):
+            mat.shadow_method = 'NONE'
     if mat.name not in obj.data.materials:
         obj.data.materials.append(mat)
     return mat

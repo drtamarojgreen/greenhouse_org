@@ -9,6 +9,7 @@ M9_ROOT = os.path.dirname(TEST_DIR)
 
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
+import movie_configuration as mc
 
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
@@ -21,8 +22,7 @@ class TestMovie9Comprehensive(unittest.TestCase):
 
     def test_full_production_cycle(self):
         """Verifies build, pose, and animate sequence."""
-        from config import config
-        cfg = config.get_character_config("Herbaceous")
+        cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
         char.apply_pose()
@@ -33,9 +33,8 @@ class TestMovie9Comprehensive(unittest.TestCase):
 
     def test_multiple_characters(self):
         """Verifies that building multiple characters doesn't cross-pollinate data."""
-        from config import config
-        h_cfg = config.get_character_config("Herbaceous")
-        a_cfg = config.get_character_config("Arbor")
+        h_cfg = mc.get_character_config("Herbaceous")
+        a_cfg = mc.get_character_config("Arbor")
 
         h_char = CharacterBuilder.create("Herbaceous", h_cfg)
         a_char = CharacterBuilder.create("Arbor", a_cfg)
@@ -43,7 +42,7 @@ class TestMovie9Comprehensive(unittest.TestCase):
         h_char.build(self.manager)
         a_char.build(self.manager)
 
-        self.assertNotEqual(h_char.mesh.name, a_char.mesh.name)
+        self.assertNotEqual(h_char.body.name, a_char.body.name)
         self.assertNotEqual(h_char.rig.name, a_char.rig.name)
 
 if __name__ == "__main__":

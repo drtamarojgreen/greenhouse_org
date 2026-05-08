@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import bpy
 import os
 import sys
@@ -8,4 +9,3 @@ if M9_DIR not in sys.path: sys.path.insert(0, M9_DIR)
 
 # No more sys.path hacking of subdirectories.
 # Standard packages:
-# import config, registry, character_builder, director, asset_manager...

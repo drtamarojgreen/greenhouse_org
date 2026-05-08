@@ -7,6 +7,7 @@ import sys
 M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path:
     sys.path.append(M9_ROOT)
+import movie_configuration as mc
 
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
@@ -24,7 +25,11 @@ class TestMovie9FacialVisibility(unittest.TestCase):
             "id": "Herbaceous",
             "type": "MESH",
             "is_protagonist": True,
-            "components": { "modeling": "PlantModeler", "rigging": "PlantRigger" }
+            "components": {
+                "modeling": "PlantModeler",
+                "rigging": "PlantRigger",
+                "shading": "UniversalShader"
+            }
         }
         char = CharacterBuilder.create("Herbaceous", entity)
         char.build(self.manager)

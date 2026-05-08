@@ -1,3 +1,4 @@
+import movie_configuration as mc
 class ComponentRegistry:
     """
     Registry to map configuration strings to implementation classes.

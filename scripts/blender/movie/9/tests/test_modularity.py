@@ -7,8 +7,8 @@ import sys
 M9_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_DIR not in sys.path:
     sys.path.append(M9_DIR)
+import movie_configuration as mc
 
-from config import config
 from asset_manager import AssetManager
 from director import Director
 from registry import registry
@@ -25,29 +25,29 @@ class TestMovie9Modularity(unittest.TestCase):
 
     def test_universal_build_data_driven(self):
         """Verifies that a character is built purely from geometry and props data."""
-        cfg = config.get_character_config("Herbaceous")
+        cfg = mc.get_character_config("Herbaceous")
         char = CharacterBuilder.create("Herbaceous", cfg)
         char.build(self.manager)
 
         # Verify prop objects exist (from structure.props)
-        prop_names = [o.name for o in char.rig.children if o != char.mesh]
+        prop_names = [o.name for o in char.rig.children if o != char.body]
         self.assertTrue(any("Eye_L" in n for n in prop_names))
 
     def test_environment_modular_build(self):
-        """Verifies that ExteriorModeler creates complex environment from config."""
+        """Verifies that ExteriorModeler creates complex environment from mc."""
         from environment.exterior import ExteriorModeler
         mod = ExteriorModeler()
-        mod.build_mesh("TestEnv", config.get("environment", {}))
+        mod.build_mesh("TestEnv", mc.get("environment", {}))
 
         self.assertIn("interior_floor", bpy.data.objects)
         self.assertIn("mountain_range", bpy.data.objects)
         self.assertIn("greenhouse_roof", bpy.data.objects)
 
     def test_backdrop_modular_build(self):
-        """Verifies Chroma backdrops are built from config."""
+        """Verifies Chroma backdrops are built from mc."""
         from environment.backdrop import BackdropModeler
         mod = BackdropModeler()
-        mod.build_mesh("Chroma", config.get("chroma", {}))
+        mod.build_mesh("Chroma", mc.get("chroma", {}))
         self.assertIn("chroma_backdrop_wide", bpy.data.objects)
 
     def test_director_cinematics_full(self):

@@ -81,6 +81,7 @@
   },
   "environment": {
     "type": "exterior",
+    "context": "greenhouse",
     "lighting_override": "Standard_Daylight"
   }
 }

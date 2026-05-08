@@ -1,3 +1,4 @@
+import movie_configuration as mc
 import bpy
 import bmesh
 import mathutils
@@ -35,7 +36,9 @@ class PlantModeler(Modeler):
         mesh_obj = bpy.data.objects.new(f"{char_id}.Body", mesh_data)
         bpy.context.scene.collection.objects.link(mesh_obj)
 
-        if rig: mesh_obj.parent = rig
+        if rig:
+            mesh_obj.parent = rig
+            mesh_obj.matrix_parent_inverse.identity()
 
         bm = bmesh.new()
         dlayer = bm.verts.layers.deform.verify()
@@ -162,6 +165,9 @@ class PlantModeler(Modeler):
 
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.004)
         bm.to_mesh(mesh_data); bm.free()
+
+        for poly in mesh_data.polygons:
+            poly.use_smooth = True
 
         # Modifiers
         m_cfg = self.p_cfg["modifiers"]

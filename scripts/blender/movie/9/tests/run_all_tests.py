@@ -10,6 +10,8 @@ M9_DIR = os.path.dirname(TEST_DIR)
 if M9_DIR not in sys.path:
     sys.path.insert(0, M9_DIR)
 
+import movie_configuration as mc
+
 def run_tests():
     # Force registration by importing components
     import components

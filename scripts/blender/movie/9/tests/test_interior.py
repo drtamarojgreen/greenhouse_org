@@ -8,6 +8,7 @@ import json
 M9_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_DIR not in sys.path:
     sys.path.append(M9_DIR)
+import movie_configuration as mc
 
 from asset_manager import AssetManager
 
@@ -67,7 +68,7 @@ class TestInteriorFurnishing(unittest.TestCase):
         self.assertIsNotNone(emit, "Logo material must have an Emission node.")
 
     def test_interior_animation_presence(self):
-        """Verifies that the logo animation is keyed if 'animate' is true in config."""
+        """Verifies that the logo animation is keyed if 'animate' is true in mc."""
         from environment.interior import InteriorModeler
 
         # Load the real assets file to modify it for the test
