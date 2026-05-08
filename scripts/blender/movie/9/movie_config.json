@@ -309,7 +309,7 @@
   "environment": {
     "type": "interior",
     "floor": { "size": 40, "interior_color": [0.22, 0.12, 0.05, 1.0], "exterior_radius": 300, "exterior_color": [0.02, 0.15, 0.02, 1.0] },
-    "roof": { "size": 42, "height": 10, "color": [0.7, 0.85, 1.0, 0.2] },
+    "roof": { "size": 42, "height": 10, "color": [0.7, 0.85, 1.0, 0.1] },
     "pillars": {
       "radius": 0.8,
       "height": null,

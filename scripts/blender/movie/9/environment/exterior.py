@@ -81,7 +81,12 @@ class ExteriorModeler(Modeler):
         apply_mat(obj, f"mat_{name}", color)
 
     def _create_roof(self, coll, root, cfg):
-        L, W, H = cfg.get("length", 40), cfg.get("width", 60), cfg.get("height", 10)
+        # Resolve dimensions, respecting 'size' as a shortcut for square roofs
+        size = cfg.get("size")
+        L = cfg.get("length", size if size else 40)
+        W = cfg.get("width", size if size else 60)
+        H = cfg.get("height", 10)
+
         bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, H), scale=(L / 2.0, W / 2.0, 0.08))
         obj = bpy.context.active_object; obj.name = "greenhouse_roof"; obj.parent = root
         apply_mat(obj, "mat_roof", cfg.get("color", (0.7, 0.85, 1.0, 0.2)), alpha=True)

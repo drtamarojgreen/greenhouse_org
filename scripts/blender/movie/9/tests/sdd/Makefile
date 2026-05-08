@@ -29,7 +29,11 @@ TARGETS = \
 	$(BIN_DIR)/CameraDistanceAudit \
 	$(BIN_DIR)/SceneGeometryAudit \
 	$(BIN_DIR)/ProtagonistStructureAudit \
-	$(BIN_DIR)/DiagnosticSceneVisibilityAudit
+	$(BIN_DIR)/DiagnosticSceneVisibilityAudit \
+	$(BIN_DIR)/WaterCanSpoutAudit \
+	$(BIN_DIR)/EnvironmentFeaturesAudit \
+	$(BIN_DIR)/StorylineBeatsAudit \
+	$(BIN_DIR)/AnimationTagsAudit
 
 all: $(TARGETS)
 
@@ -60,6 +64,10 @@ run: all
 	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/SceneGeometryAudit
 	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/ProtagonistStructureAudit
 	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/DiagnosticSceneVisibilityAudit
+	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/WaterCanSpoutAudit
+	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/EnvironmentFeaturesAudit
+	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/StorylineBeatsAudit
+	@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/AnimationTagsAudit
 
 verify: run
 
