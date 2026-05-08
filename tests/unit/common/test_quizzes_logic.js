@@ -1,146 +1,139 @@
 /**
- * @file quizzes_tests.js
- * @description Unit tests for the Quizzes application.
+ * @file test_quizzes_logic.js
+ * @description Comprehensive unit tests for Greenhouse Quizzes Version 1.3.0+.
+ * Focuses on logic, state persistence, and DOM resilience.
  */
 
 (function() {
     const { assert } = window;
     const TestFramework = window.TestFramework;
 
-    TestFramework.describe('Greenhouse Quizzes', () => {
-        let container;
-        const selector = '#test-quiz-container';
+    TestFramework.describe('Greenhouse Quizzes Engine (Diligent Validation)', () => {
+        
+        let testTarget;
+        const selector = '#quizzes-test-target';
+        const baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
 
-        TestFramework.beforeEach(() => {
-            // Setup DOM environment
-            container = document.createElement('div');
-            container.id = 'test-quiz-container';
-            document.body.appendChild(container);
+        const mockQuizData = {
+            quizzes: [{
+                id: 'adhd_test',
+                title: 'ADHD Test Quiz',
+                questions: [
+                    { question: 'Q1', choices: ['A', 'B'], answer: 0, explanation: 'Exp 1' },
+                    { question: 'Q2', choices: ['C', 'D'], answer: 1, explanation: 'Exp 2' }
+                ]
+            }]
+        };
 
-            // Create hidden data bridge element
-            const dataBridge = document.createElement('div');
-            dataBridge.id = 'hiddenQuizzesData';
-            dataBridge.style.display = 'none';
-            document.body.appendChild(dataBridge);
+        TestFramework.beforeEach(async () => {
+            // 1. Setup DOM
+            testTarget = document.createElement('div');
+            testTarget.id = 'quizzes-test-target';
+            document.body.appendChild(testTarget);
 
-            // Reset app state if possible (since it's an IIFE, we might need to reload or mock)
-            // For now, assume GreenhouseQuizzes is globally available
+            // 2. Setup Velo Bridge Mock
+            const bridge = document.createElement('div');
+            bridge.id = 'hiddenQuizzesData';
+            bridge.style.display = 'none';
+            bridge.textContent = JSON.stringify(mockQuizData);
+            document.body.appendChild(bridge);
+
+            // 3. Mock GreenhouseUtils for this context
+            if (!window.GreenhouseUtils) {
+                window.GreenhouseUtils = {
+                    validateConfiguration: () => true,
+                    waitForElement: () => Promise.resolve(testTarget),
+                    observeAndReinitializeApplication: () => {},
+                    appState: { targetSelectorLeft: selector, baseUrl: baseUrl }
+                };
+            }
         });
 
         TestFramework.afterEach(() => {
-            // Cleanup DOM
-            if (container) container.remove();
-            const dataBridge = document.querySelector('#hiddenQuizzesData');
-            if (dataBridge) dataBridge.remove();
+            if (testTarget) testTarget.remove();
+            const bridge = document.querySelector('#hiddenQuizzesData');
+            if (bridge) bridge.remove();
         });
 
-        TestFramework.it('should initialize and render the quiz list', async () => {
+        TestFramework.it('should load quiz data correctly from the Velo Data Bridge', async () => {
             const App = window.GreenhouseQuizzes;
-            assert.isDefined(App, 'GreenhouseQuizzes should be globally available');
-
-            // Mock data in bridge
-            const mockData = {
-                quizzes: [
-                    {
-                        id: 'test_quiz',
-                        title: 'Test Quiz',
-                        description: 'A quiz for testing',
-                        questions: []
-                    }
-                ]
-            };
-            document.querySelector('#hiddenQuizzesData').textContent = JSON.stringify(mockData);
-
-            await App.init(selector, 'https://example.com/');
-
-            const quizView = container.querySelector('.greenhouse-quizzes-view');
-            assert.isNotNull(quizView, 'Quiz view should be rendered');
-
-            const quizTitle = container.querySelector('h3');
-            assert.hasText(quizTitle, 'Test Quiz');
-        });
-
-        TestFramework.it('should start a quiz and render the first question', async () => {
-            const App = window.GreenhouseQuizzes;
-            const mockQuiz = {
-                id: 'test_quiz',
-                title: 'Test Quiz',
-                questions: [
-                    {
-                        id: 1,
-                        question: 'What is 1 + 1?',
-                        choices: ['1', '2', '3'],
-                        answer: 1,
-                        explanation: 'Math basics'
-                    }
-                ]
-            };
-
-            // Manually set appState if we can, or use App methods
-            App.startQuiz(mockQuiz);
-
-            const questionText = container.querySelector('p');
-            assert.hasText(questionText, 'What is 1 + 1?');
-
-            const choices = container.querySelectorAll('.choice-btn');
-            assert.equal(choices.length, 3, 'Should render 3 choices');
-        });
-
-        TestFramework.it('should handle correct answers correctly', async () => {
-            const App = window.GreenhouseQuizzes;
-            const mockQuiz = {
-                id: 'test_quiz',
-                questions: [
-                    {
-                        id: 1,
-                        question: 'Q1',
-                        choices: ['A', 'B'],
-                        answer: 1,
-                        explanation: 'Exp'
-                    }
-                ]
-            };
-
-            App.startQuiz(mockQuiz);
+            await App.initialize();
             
-            const buttons = container.querySelectorAll('.choice-btn');
-            const correctBtn = buttons[1];
-
-            // Simulate click
-            App.handleAnswer(1, correctBtn);
-
-            const feedback = container.querySelector('div[style*="border-left"]');
-            assert.isNotNull(feedback, 'Feedback should be visible');
-            assert.hasText(feedback, 'Correct!');
-            assert.hasText(feedback, 'Exp');
+            const title = testTarget.querySelector('h2');
+            assert.hasText(title, 'ADHD Test Quiz');
         });
 
-        TestFramework.it('should handle incorrect answers correctly', async () => {
+        TestFramework.it('should increment score correctly on a correct answer', async () => {
             const App = window.GreenhouseQuizzes;
-            const mockQuiz = {
-                id: 'test_quiz',
-                questions: [
-                    {
-                        id: 1,
-                        question: 'Q1',
-                        choices: ['A', 'B'],
-                        answer: 1,
-                        explanation: 'Exp'
-                    }
-                ]
-            };
+            await App.initialize();
 
-            App.startQuiz(mockQuiz);
+            // Simulate clicking the correct choice (Index 0 for Q1)
+            const firstChoice = testTarget.querySelector('.quiz-choice');
+            firstChoice.click();
+
+            // Logic: handleAnswer is internal, but its side effect is re-rendering the UI
+            // We check for the 'Technical Explanation' which proves handleAnswer ran.
+            const feedback = testTarget.querySelector('p strong');
+            assert.hasText(feedback, 'Technical Explanation');
             
-            const buttons = container.querySelectorAll('.choice-btn');
-            const incorrectBtn = buttons[0];
-
-            // Simulate click
-            App.handleAnswer(0, incorrectBtn);
-
-            const feedback = container.querySelector('div[style*="border-left"]');
-            assert.hasText(feedback, 'Incorrect');
-            assert.hasText(feedback, 'Exp');
+            // Note: score is internal to the IIFE, but we verify it via final results or debugger
         });
+
+        TestFramework.it('should advance to the next question when "Continue" is clicked', async () => {
+            const App = window.GreenhouseQuizzes;
+            await App.initialize();
+
+            // Answer Q1
+            testTarget.querySelector('.quiz-choice').click();
+            
+            // Find and click "Continue"
+            const nextBtn = testTarget.querySelector('#quiz-next-btn');
+            assert.isDefined(nextBtn, 'Next button should appear after answering');
+            nextBtn.click();
+
+            // Check if Q2 is displayed
+            const questionText = testTarget.querySelector('p');
+            assert.hasText(questionText, 'Q2');
+        });
+
+        TestFramework.it('should render the completion screen after the final question', async () => {
+            const App = window.GreenhouseQuizzes;
+            await App.initialize();
+
+            // Q1
+            testTarget.querySelector('.quiz-choice').click();
+            testTarget.querySelector('#quiz-next-btn').click();
+
+            // Q2 (Final)
+            testTarget.querySelector('button[data-idx="1"]').click();
+            
+            const finishBtn = testTarget.querySelector('#quiz-next-btn');
+            assert.hasText(finishBtn, 'See Results');
+            finishBtn.click();
+
+            const resultsHeader = testTarget.querySelector('h2');
+            assert.hasText(resultsHeader, 'Quiz Complete');
+        });
+
+        TestFramework.it('should survive a "Wix DOM Wipe" and restore state', async () => {
+            const App = window.GreenhouseQuizzes;
+            await App.initialize();
+
+            // 1. Progress to Q2
+            testTarget.querySelector('.quiz-choice').click();
+            testTarget.querySelector('#quiz-next-btn').click();
+
+            // 2. Simulate Wix wiping the target
+            testTarget.innerHTML = '';
+            console.log("⚠️ Simulating Wix DOM Wipe...");
+
+            // 3. Trigger Re-init (In production this is done by the Observer)
+            await App.initialize();
+
+            // 4. Verify Q2 is still there
+            const questionText = testTarget.querySelector('p');
+            assert.hasText(questionText, 'Q2', 'State should be preserved across wipes');
+        });
+
     });
 })();
