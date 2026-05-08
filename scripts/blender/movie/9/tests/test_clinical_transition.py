@@ -63,6 +63,10 @@ class TestClinicalTransitionV9(unittest.TestCase):
 
     def test_swap_logic_coordinates(self):
         """Verifies character positions after the clinical swap at frame 1540."""
+        # Ensure Director setup is clean
+        self.director.setup_environment()
+        self.director.apply_storyline()
+
         bpy.context.scene.frame_set(1540)
 
         herb = bpy.data.objects.get("Herbaceous.Rig")

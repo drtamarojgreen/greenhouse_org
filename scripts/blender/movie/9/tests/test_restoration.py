@@ -4,10 +4,13 @@ import unittest
 import mathutils
 import math
 
+from render import build_scene
+
 class TestRestorationComprehensive(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        pass
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        build_scene()
 
     def test_animation_tags_presence(self):
         """Verifies that all Movie 6 emotional tags are handled by AnimationHandler."""
@@ -133,13 +136,14 @@ class TestRestorationComprehensive(unittest.TestCase):
                 if slot_curves:
                     fcurves_list.extend(list(slot_curves))
             
-            fcurve = next((fc for fc in fcurves_list if fc.data_path == "location" and fc.array_index == 0), None)
+            fcurve = next((fc for fc in fcurves_list if "location" in fc.data_path and fc.array_index == 0), None)
 
             # Additional check for Blender 5.1+ Slotted Actions
             if fcurve is None and hasattr(wide.animation_data, "action_slot"):
                 slot = wide.animation_data.action_slot
-                curves = getattr(slot, "curves", getattr(slot, "fcurves", []))
-                fcurve = next((fc for fc in curves if fc.data_path == "location" and fc.array_index == 0), None)
+                if slot:
+                    curves = getattr(slot, "curves", getattr(slot, "fcurves", []))
+                    fcurve = next((fc for fc in curves if "location" in fc.data_path and fc.array_index == 0), None)
 
             self.assertIsNotNone(fcurve, f"Wide camera missing X-location animation (bounce). Paths: {[fc.data_path for fc in fcurves_list]}")
             # keyframe_points for legacy, points for some 5.1 curves

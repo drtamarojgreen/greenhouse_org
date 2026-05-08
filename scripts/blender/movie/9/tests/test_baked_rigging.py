@@ -28,13 +28,19 @@ class TestMovie9BakedRigging(unittest.TestCase):
         char.build(self.manager)
 
         # Mock an action for testing since we might not have the actual blend in CI
+        # BakedAnimator looks for {base_name}_{tag}
         mock_action = bpy.data.actions.new(name="Herbaceous_walk")
         
         # Test switching
         char.animate("walk", 1)
         
         if char.rig and char.rig.animation_data:
+            # Check active action OR slotted action in 5.1
             action = char.rig.animation_data.action
+            if action is None and hasattr(char.rig.animation_data, "action_slot"):
+                slot = char.rig.animation_data.action_slot
+                if slot: action = slot.action
+
             self.assertIsNotNone(action, "Failed to apply baked action")
             self.assertEqual(action.name, "Herbaceous_walk")
 
