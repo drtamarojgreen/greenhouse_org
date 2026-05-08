@@ -26,7 +26,7 @@ class BackdropModeler(Modeler):
             obj.name = f"chroma_backdrop_{wall['id']}"
             obj.rotation_euler = [math.radians(r) for r in wall["rot"]]
 
-            bg_path = bg_images[i] if i < len(bg_images) else None
+            bg_path = self._resolve_bg_path(bg_images[i] if i < len(bg_images) else None)
             mat = self._create_chroma_mat(obj.name, alpha, bg_path)
             obj.data.materials.append(mat)
 
@@ -34,6 +34,22 @@ class BackdropModeler(Modeler):
             for c in list(obj.users_collection):
                 if c != coll: c.objects.unlink(obj)
 
+        return None
+
+    def _resolve_bg_path(self, path):
+        if not path: return None
+        if os.path.exists(path): return path
+
+        # Robust resolution for relative paths (looking in M6 and M9 assets)
+        m9_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        basename = os.path.basename(path)
+        candidates = [
+            os.path.join(m9_root, "assets", basename),
+            os.path.join(os.path.dirname(m9_root), "6", "assets", basename),
+            os.path.join(os.path.dirname(m9_root), "6", basename)
+        ]
+        for c in candidates:
+            if os.path.exists(c): return c
         return None
 
     def _create_chroma_mat(self, name, alpha, bg_path=None):
