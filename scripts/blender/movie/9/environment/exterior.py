@@ -85,7 +85,13 @@ class ExteriorModeler(Modeler):
         size = cfg.get("size")
         L = cfg.get("length", size if size else 40)
         W = cfg.get("width", size if size else 60)
-        H = cfg.get("height", 10)
+
+        # Resolve height
+        H = cfg.get("height")
+        if H is None and "derive_from" in cfg:
+            H = mc.get(cfg["derive_from"], 10.0)
+        elif H is None:
+            H = 10.0
 
         bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, H), scale=(L / 2.0, W / 2.0, 0.08))
         obj = bpy.context.active_object; obj.name = "greenhouse_roof"; obj.parent = root
