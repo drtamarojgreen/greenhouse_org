@@ -191,7 +191,8 @@
         },
         "structure": {
           "geometry": [
-            { "name": "Body", "type": "SPHERE", "params": [0.4], "loc": [0,0,0], "material": "glow" }
+            { "name": "Body", "type": "SPHERE", "params": [0.4], "loc": [0,0,0], "material": "glow" },
+            { "name": "Spout", "type": "CONE", "params": [0.05, 0.12, 0.6], "loc": [0.4, 0, 0.2], "rot": [0, 45, 0], "material": "glow" }
           ]
         },
         "parameters": {
@@ -226,11 +227,21 @@
         "parameters": {
           "materials": {
             "body": { "color": [0.15, 0.35, 0.15] },
-            "glass": { "color": [0.7, 0.9, 1.0], "emission": 0.5 }
+            "glass": { "color": [0.7, 0.9, 1.0], "emission": 0.5 },
+            "wheel": { "color": [0.08, 0.08, 0.08] },
+            "frame": { "color": [0.25, 0.18, 0.10] }
           }
         },
         "structure": {
-          "body_length": 6.0, "body_width": 2.8, "body_height": 2.5
+          "body_length": 6.0,
+          "body_width": 2.8,
+          "body_height": 2.5,
+          "wheel_radius": 0.45,
+          "wheel_width": 0.25,
+          "num_windows": 4,
+          "door_width": 0.9,
+          "door_height": 2.0,
+          "roof_type": "arched"
         },
         "default_pos": [8.0, -18.0, 0.0]
       },
@@ -255,7 +266,15 @@
       {
         "beat": "Arrival", "start": 1, "end": 600,
         "events": [
-          { "target": "Sylvan_Majesty", "action": "visibility", "params": { "hidden_at": 1, "visible_at": 300 } }
+          { "target": "Sylvan_Majesty", "action": "visibility", "params": { "hidden_at": 1, "visible_at": 300 } },
+          { "target": "Shadow_Weaver", "action": "animate", "start": 1, "params": { "tag": "shake", "duration": 599 } }
+        ]
+      },
+      {
+        "beat": "Rite of Joy", "start": 600, "end": 1000,
+        "events": [
+          { "target": "Radiant_Aura", "action": "visibility", "params": { "hidden_at": 1, "visible_at": 600 } },
+          { "target": "Radiant_Aura", "action": "altitude", "params": { "height": 10.0, "frames": 600 } }
         ]
       },
       {
@@ -264,16 +283,58 @@
           { "target": "Herbaceous", "action": "move_to", "start": 1000, "params": { "destination_pos": [-1.5, -3.2, 0], "duration_frames": 100 } },
           { "target": "Arbor", "action": "move_to", "start": 1000, "params": { "destination_pos": [-4.0, -3.0, 0], "duration_frames": 100 } }
         ]
+      },
+      {
+        "beat": "Blessing", "start": 1800, "end": 3000, "events": [
+           { "target": "WaterCan", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } },
+           { "target": "GardenHose", "action": "emission_pulse", "params": { "start": 1800, "end": 3000, "max": 20.0 } }
+        ]
+      },
+      {
+        "beat": "Final Ascent", "start": 3000, "end": 4200, "events": [
+           { "target": "ALL", "action": "animate", "params": { "tag": "dance", "duration": 1200 } }
+        ]
+      },
+      {
+        "beat": "Outro Gather", "start": 4200, "end": 4800, "events": [
+          { "target": "ALL", "action": "move_to", "start": 4200, "params": { "destination_pos": [0, 2, 0], "formation": "arc", "duration_frames": 150 } },
+          { "target": "GreenhouseMobile", "action": "move_to", "start": 4200, "params": { "destination_pos": [0, -12, 0], "duration_frames": 150 } },
+          { "target": "Radiant_Aura", "action": "altitude", "params": { "height": 0.5, "frames": 4500 } },
+          { "target": "WaterCan", "action": "visibility", "params": { "hidden_at": 4200 } },
+          { "target": "GardenHose", "action": "visibility", "params": { "hidden_at": 4200 } }
+        ]
       }
     ]
   },
   "environment": {
     "type": "interior",
-    "floor": { "size": 40 },
-    "roof": { "height": 10 },
-    "mountains": { "radius": 250, "count": 24 },
-    "vegetation": { "count": 50 },
-    "rock_path": { "length": 40, "width": 2.5 }
+    "floor": { "size": 40, "interior_color": [0.22, 0.12, 0.05, 1.0], "exterior_radius": 300, "exterior_color": [0.02, 0.15, 0.02, 1.0] },
+    "roof": { "size": 42, "height": null, "derive_from": "chroma.wall_height", "color": [0.7, 0.85, 1.0, 0.1] },
+    "pillars": {
+      "radius": 0.8,
+      "height": null,
+      "derive_from": "chroma.wall_height",
+      "color": [0.95, 0.95, 0.97, 1.0]
+    },
+    "mountains": { "radius": 250, "count": 24, "color": [0.05, 0.05, 0.08, 1.0] },
+    "vegetation": { "count": 50, "shades": [[0.04, 0.22, 0.04], [0.07, 0.30, 0.07]] },
+    "rock_path": { "length": 40, "width": 2.5, "color": [0.42, 0.42, 0.42, 1.0] },
+    "torches": {
+      "height": 2.4,
+      "flame_cone_height": 0.42,
+      "spacing": 5.0,
+      "flame_color": [1.0, 0.55, 0.1, 1.0],
+      "flame_emission_strength": 6.0
+    },
+    "lavender": {
+      "depth": 8.0,
+      "density": 80,
+      "side_spread": 18.0,
+      "stalk_color": [0.25, 0.5, 0.2],
+      "flower_color": [0.55, 0.28, 0.85],
+      "max_stalk_height": 0.65
+    },
+    "fog": { "density": 0.01, "color": [0.1, 0.5, 0.2, 1.0] }
   },
   "chroma": {
     "size": 30, "alpha": 0.8, "wall_height": 15.0,
@@ -288,11 +349,27 @@
       { "id": "ots2", "pos": [20, 0, 7.5], "rot": [90, 0, -90] }
     ]
   },
+  "patrol_paths": {
+    "perimeter": {
+      "waypoints": [
+        [-15, -15, 0], [15, -15, 0], [15, 15, 0],
+        [-15, 15, 0], [-15, -15, 0]
+      ]
+    },
+    "perimeter_inner": {
+      "waypoints": [
+        [-10, -10, 0], [10, -10, 0], [10, 10, 0],
+        [-10, 10, 0], [-10, -10, 0]
+      ]
+    }
+  },
   "extended_scenes": [
     "scene_configs/scene_06_boarding.json",
     "scene_configs/scene_07_forest_drive.json",
     "scene_configs/scene_05_ascent.json"
   ],
+  "interior": {},
+  "normalization": { "strategy": "BBOX", "enable_culling": false, "enable_origin_reset": true },
   "context_constraints": {
     "greenhouse": {
       "disallowed_assets": ["mountains", "vegetation", "rock_path"],

@@ -59,7 +59,7 @@ class ProceduralModeler(base.Modeler):
 
         matrix = mathutils.Matrix.Translation(loc)
         if "rot" in geo:
-            matrix @= mathutils.Euler(geo["rot"]).to_matrix().to_4x4()
+            matrix @= mathutils.Euler([math.radians(r) for r in geo["rot"]]).to_matrix().to_4x4()
         if "scale" in geo:
             s_vec = geo["scale"]
             matrix @= mathutils.Matrix.Diagonal((*s_vec, 1))
@@ -106,7 +106,7 @@ class ProceduralModeler(base.Modeler):
         if "scale" in prop:
             matrix @= mathutils.Matrix.Diagonal((*prop["scale"], 1))
         if "rot" in prop:
-            matrix @= mathutils.Euler(prop["rot"]).to_matrix().to_4x4()
+            matrix @= mathutils.Euler([math.radians(r) for r in prop["rot"]]).to_matrix().to_4x4()
 
         if gtype == "SPHERE":
             bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=params[0], matrix=matrix)

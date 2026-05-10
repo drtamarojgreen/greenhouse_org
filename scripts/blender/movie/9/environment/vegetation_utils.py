@@ -161,6 +161,8 @@ def apply_mat(obj, name, color, emission=0.0, alpha=False, metallic=0.0, roughne
         bsdf.inputs['Base Color'].default_value = color
         bsdf.inputs['Metallic'].default_value = metallic
         bsdf.inputs['Roughness'].default_value = roughness
+        if len(color) == 4:
+            bsdf.inputs['Alpha'].default_value = color[3]
         if emission > 0:
             if 'Emission Strength' in bsdf.inputs:
                 bsdf.inputs['Emission Strength'].default_value = emission

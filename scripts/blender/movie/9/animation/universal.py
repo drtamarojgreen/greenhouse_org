@@ -51,8 +51,8 @@ class BakedAnimator(Animator):
         base_name = rig.name.replace(".Rig", "")
         # Prioritized list of name candidates
         candidates = [
-            params.get("action_name"),
             f"{base_name}_{tag}",
+            params.get("action_name"),
             f"{base_name}.{tag}",
             tag
         ]

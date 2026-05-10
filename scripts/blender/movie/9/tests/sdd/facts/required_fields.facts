@@ -3,3 +3,7 @@ Situation: Required_Fields
 # MESH entities must also have source_mesh
 # DYNAMIC entities must also have components
 Is entity_required_fields_present = true
+Is water_can_spout_required = true
+Is features_check_enabled = true
+Is storyline_check_enabled = true
+Is tags_check_enabled = true

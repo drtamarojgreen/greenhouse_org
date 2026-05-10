@@ -66,35 +66,35 @@ class CameraControls:
         freq = b_cfg.get("frequency", 0.04)
         amp = b_cfg.get("amplitude", 0.8)
         
-        # Clear existing keyframes for this axis to prevent overlap
-        if obj.animation_data and obj.animation_data.action:
-            action = obj.animation_data.action
-            if hasattr(action, "fcurves"):
-                fcurves = [fc for fc in action.fcurves if fc.data_path == "location" and fc.array_index == idx]
-                for fc in fcurves: action.fcurves.remove(fc)
-            elif hasattr(action, "slots"):
-                for slot in action.slots:
-                    curves = getattr(slot, "curves", getattr(slot, "fcurves", []))
-                    fcurves = [fc for fc in curves if fc.data_path == "location" and fc.array_index == idx]
-                    for fc in fcurves:
-                        if hasattr(slot, "curves"): slot.curves.remove(fc)
-                        elif hasattr(slot, "fcurves"): slot.fcurves.remove(fc)
-
         if not obj.animation_data: obj.animation_data_create()
         if not obj.animation_data.action:
             obj.animation_data.action = bpy.data.actions.new(name=f"Bounce_{obj.name}")
 
+        action = obj.animation_data.action
+
         # Support both legacy and Slotted Actions in Blender 5.1+
+        fcurves_list = []
         if hasattr(bpy.types, "ActionSlot"):
-            # In Blender 5.1+, ensure the object is assigned to a slot
             if not obj.animation_data.action_slot:
-                action = obj.animation_data.action
                 slot = action.slots[0] if len(action.slots) > 0 else action.slots.new(name="Default")
                 obj.animation_data.action_slot = slot
+            slot = obj.animation_data.action_slot
+            fcurves_list = getattr(slot, "curves", getattr(slot, "fcurves", []))
+        else:
+            fcurves_list = action.fcurves
+
+        # Clear existing keyframes for this axis to prevent overlap
+        to_remove = [fc for fc in fcurves_list if fc.data_path == "location" and fc.array_index == idx]
+        for fc in to_remove:
+            if hasattr(action, "fcurves"): action.fcurves.remove(fc)
+            else: fcurves_list.remove(fc)
 
         for f in range(1, total_frames + 1, 40):
             val = math.sin(f * freq) * amp
-            setattr(obj.location, axis.lower(), val)
+            # Add to existing location to allow for base offset
+            curr_loc = list(obj.location)
+            curr_loc[idx] = val
+            obj.location = curr_loc
             obj.keyframe_insert(data_path="location", index=idx, frame=f)
 
     def _setup_camera_path(self, cam, anim_cfg):

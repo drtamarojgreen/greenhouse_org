@@ -81,6 +81,18 @@ class AnimationHandler(base.Animator):
             movement.animate_stand(obj, start_frame, duration or 40, get_bone)
         elif tag == "climb":
             movement.animate_climb(obj, start_frame, duration or 100, get_bone)
+        elif tag == "grasp":
+            gestures.animate_grasp(obj, start_frame, get_bone)
+        elif tag == "bend_down":
+            gestures.animate_bend_down(obj, start_frame, get_bone)
+        elif tag == "reach_out":
+            gestures.animate_reach_out(obj, start_frame, get_bone)
+        elif tag == "droop":
+            gestures.animate_droop(obj, start_frame, duration or 60, get_bone)
+        elif tag == "stretch":
+            gestures.animate_stretch(obj, start_frame, duration or 60, get_bone)
+        elif tag == "wiggle":
+            gestures.animate_wiggle(obj, start_frame, duration or 60, get_bone)
 
         # Blender 5.1 Slotted Action Support
         if hasattr(obj.animation_data, "action_slot"):
