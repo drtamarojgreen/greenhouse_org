@@ -4,6 +4,7 @@
 #include <vector>
 #include <regex>
 #include "../cpp/util/fact_utils.h"
+#include "../cpp/util/decorator.h"
 
 using namespace Sorrel::Sdd::Util;
 
