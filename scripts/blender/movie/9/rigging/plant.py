@@ -232,7 +232,8 @@ class PlantRigger(Rigger):
 
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        self._create_minimal_face_props(char_id, armature_obj)
+        # Facial features are now integrated in PlantModeler to prevent redundancy
+        # self._create_minimal_face_props(char_id, armature_obj)
 
         return armature_obj
 
