@@ -1,6 +1,7 @@
-# Movie 9 SDD — Sorrel Checkouts
-# Tracks completed and verified work per the SORREL Agent Handbook.
+# Sorrel SDD Checkouts - Movie 9 Face Architecture
 
-## Completed and Verified
-
-- [x] RedundantEyeAudit: Identified and resolved duplicate eye creation in PlantModeler and PlantRigger. Verified total eye count is 2.
+## Completed Work
+- [x] Conducted comprehensive git history analysis of character face instability (Commit 5c9d797).
+- [x] Identified architectural conflict between integrated mesh modeling and modular prop rigging.
+- [x] Verified current system state using `ProtagonistStructureAudit`.
+- [x] Delivered detailed assessment report and stabilization roadmap in `docs/movie_assessment.md`.
