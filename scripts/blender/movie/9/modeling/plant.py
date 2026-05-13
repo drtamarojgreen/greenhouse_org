@@ -106,6 +106,23 @@ class PlantModeler(Modeler):
                 t_name = f"Toe.{i}.{side}"
                 self._add_organic_part(bm, mesh_obj, dlayer, 0.04, 0.02, 0.12, (f_loc[0] + (i-2)*0.06, toe_base_y - 0.06, f_loc[2]), t_name, rot=(math.radians(90), 0, 0))
 
+        # Facial Features (Eyes/Iris/Pupil for High-Fidelity Test)
+        head_c = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
+        for side, sx in [("L", 1), ("R", -1)]:
+            eye_pos = head_c + mathutils.Vector((0.15*sx, -head_r*0.9, 0.1))
+            num_faces = len(bm.faces)
+            bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.08, matrix=mathutils.Matrix.Translation(eye_pos))
+            bm.faces.ensure_lookup_table()
+            for i in range(num_faces, len(bm.faces)):
+                bm.faces[i].material_index = 2 # Iris
+
+            pupil_pos = eye_pos + mathutils.Vector((0, -0.07, 0))
+            num_faces = len(bm.faces)
+            bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.03, matrix=mathutils.Matrix.Translation(pupil_pos))
+            bm.faces.ensure_lookup_table()
+            for i in range(num_faces, len(bm.faces)):
+                bm.faces[i].material_index = 3 # Pupil
+
         # Foliage Algorithm
         f_cfg = self.p_cfg["foliage"]
         head_center = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
