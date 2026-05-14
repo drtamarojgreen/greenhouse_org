@@ -398,4 +398,5 @@
     };
 
     window.GreenhouseLabelingSystem = GreenhouseLabelingSystem;
+    window.LabelingSystem = GreenhouseLabelingSystem; // Alias for tests
 })();
