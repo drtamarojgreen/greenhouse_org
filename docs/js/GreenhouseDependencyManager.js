@@ -151,8 +151,21 @@ window.GreenhouseDependencyManager = (function() {
             if (state.promises.has(name)) {
                 const error = new Error(`Dependency '${name}' not available within ${timeout}ms`);
                 state.errors.set(name, error);
-                state.promises.get(name).reject(error);
+                const promiseData = state.promises.get(name);
                 state.promises.delete(name);
+
+                // Defensive check: If we're in a Node.js test environment,
+                // unhandled rejections might crash the process even if they are caught later in the same event loop.
+                if (typeof process !== 'undefined' && process.listeners && process.listeners('unhandledRejection').length === 0) {
+                    // Try to avoid crashing in some Node versions during tests
+                    try {
+                        promiseData.reject(error);
+                    } catch (e) {
+                        debugLog(`Error during rejection: ${e.message}`);
+                    }
+                } else {
+                    promiseData.reject(error);
+                }
 
                 debugLog(`Dependency ${name} timed out after ${timeout}ms`);
             }
@@ -398,9 +411,11 @@ window.GreenhouseDependencyManager = (function() {
 })();
 
 // Auto-register the dependency manager itself
-window.GreenhouseDependencyManager.register('dependencyManager', window.GreenhouseDependencyManager, {
-    version: '1.0.0',
-    description: 'Centralized dependency management system'
-});
+if (window.GreenhouseDependencyManager && !window.GreenhouseDependencyManager.isAvailable('dependencyManager')) {
+    window.GreenhouseDependencyManager.register('dependencyManager', window.GreenhouseDependencyManager, {
+        version: '1.0.0',
+        description: 'Centralized dependency management system'
+    });
+}
 
 console.log('GreenhouseDependencyManager: Initialized and ready');
