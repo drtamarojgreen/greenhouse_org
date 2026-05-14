@@ -127,9 +127,9 @@
                 card.className = 'model-toc-card';
 
                 // Title Section
-                const titleElem = document.createElement('h3');
-                titleElem.textContent = title;
-                card.appendChild(titleElem);
+                const cardTitleElem = document.createElement('h3');
+                cardTitleElem.textContent = title;
+                card.appendChild(cardTitleElem);
 
                 // Description Container
                 const descContainer = document.createElement('div');
@@ -166,7 +166,7 @@
                 card.appendChild(actionGroup);
 
                 grid.appendChild(card);
-            });
+            }
             console.log('AGENT_DEBUG: TOC rendered with card layout and class-based fix.');
             this.addEventListeners();
         },
