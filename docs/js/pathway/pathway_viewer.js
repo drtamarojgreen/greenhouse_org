@@ -4,8 +4,8 @@
 (function () {
     'use strict';
 
-    // Internal helper for parsing KGML data and JSON-based pathways
-    const KeggParser = {
+    // Internal helper for parsing Reactome and JSON-based pathways
+    const ReactomeParser = {
         async parse(source, isRaw = false) {
             try {
                 let text;
@@ -19,22 +19,21 @@
                     text = await response.text();
                 }
 
-                // Detect JSON format
+                // Detect JSON format (Reactome default)
                 if (text.trim().startsWith('{')) {
                     try {
                         return this.parseJSON(JSON.parse(text));
                     } catch (e) {
-                        console.error("Pathway App: Failed to parse JSON data", e);
+                        console.error("Pathway App: Failed to parse Reactome JSON data", e);
                         return { nodes: [], edges: [] };
                     }
                 }
 
+                // Fallback for KGML legacy support
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(text, "application/xml");
-
                 const nodes = this.extractEntries(xmlDoc);
                 const edges = this.extractRelations(xmlDoc);
-
                 return { nodes, edges };
             } catch (error) {
                 return { nodes: [], edges: [] };
@@ -42,49 +41,46 @@
         },
 
         parseJSON(data) {
-            const nodes = [];
-            const edges = [];
+            const rawNodes = data.nodes || data.physicalEntities || [];
+            const rawEdges = data.edges || data.interactions || [];
 
-            if (data.molecules) {
-                data.molecules.forEach(m => {
-                    nodes.push({
-                        id: m.id,
-                        name: m.label || m.id,
-                        type: m.class || 'compound',
-                        link: m.link || m.source,
-                        x: m.x || 400,
-                        y: m.y || 400,
-                        color: m.color,
-                        radius: m.defaultRadius
-                    });
-                });
-            }
+            const nodes = rawNodes.map(n => ({
+                id: String(n.dbId || n.id || n.stId),
+                name: n.displayName || n.name || String(n.dbId),
+                type: this.mapReactomeClass(n.renderableClass || n.type),
+                link: n.stId ? `https://reactome.org/content/detail/${n.stId}` : null,
+                x: n.x || (n.minX + (n.maxX - n.minX) / 2) || 400,
+                y: n.y || (n.minY + (n.maxY - n.minY) / 2) || 400,
+                stId: n.stId
+            }));
 
-            if (data.reactions) {
-                data.reactions.forEach(r => {
-                    if (r.substrate && r.product) {
-                        edges.push({
-                            source: r.substrate,
-                            target: r.product,
-                            type: r.type,
-                            catalyst: r.catalyst,
-                            metadata: r
-                        });
-                    }
-                });
-            }
+            const edges = rawEdges.map(e => ({
+                source: String(e.from || e.sourceId || (e.input && e.input[0])),
+                target: String(e.to || e.targetId || (e.output && e.output[0])),
+                type: e.renderableClass || 'reaction'
+            })).filter(e => e.source && e.target);
 
             return { nodes, edges };
+        },
+
+        mapReactomeClass(rc) {
+            const map = {
+                'Protein': 'gene',
+                'Complex': 'map',
+                'Chemical': 'compound',
+                'Reaction': 'reaction',
+                'Pathway': 'map',
+                'RNA': 'gene'
+            };
+            return map[rc] || 'compound';
         },
 
         extractEntries(xmlDoc) {
             const nodes = [];
             const entries = xmlDoc.getElementsByTagName("entry");
-
             for (let i = 0; i < entries.length; i++) {
                 const entry = entries[i];
                 const graphics = entry.getElementsByTagName("graphics")[0];
-
                 if (graphics) {
                     nodes.push({
                         id: entry.getAttribute("id"),
@@ -102,7 +98,6 @@
         extractRelations(xmlDoc) {
             const edges = [];
             const relations = xmlDoc.getElementsByTagName("relation");
-
             for (let i = 0; i < relations.length; i++) {
                 const relation = relations[i];
                 edges.push({
@@ -474,7 +469,7 @@
 
             // Priority 1: Use bridged data from Velo if available
             if (this.rawXmlData) {
-                const parsed = await KeggParser.parse(this.rawXmlData, true);
+                const parsed = await ReactomeParser.parse(this.rawXmlData, true);
                 if (parsed.nodes.length > 0) {
                     this.pathwayData = PathwayLayout.generate3DLayout(parsed);
                     this.pathwayEdges = parsed.edges;
@@ -643,11 +638,11 @@
         async loadExternalPathway(url, isLive = false) {
             try {
                 const fetchUrl = isLive ? url : (this.baseUrl + url);
-                const parsedData = await KeggParser.parse(fetchUrl);
+                const parsedData = await ReactomeParser.parse(fetchUrl);
 
                 if (parsedData.nodes.length > 0) {
                     parsedData.nodes.forEach(node => {
-                        node.region = this.mapKeggNodeToRegion(node, this.currentPathwayId);
+                        node.region = this.mapReactomeNodeToRegion(node, this.currentPathwayId);
                     });
                     this.pathwayData = PathwayLayout.generate3DLayout({ nodes: parsedData.nodes });
                     this.pathwayEdges = parsedData.edges;
@@ -659,7 +654,7 @@
             return false;
         },
 
-        mapKeggNodeToRegion(node, pathwayId) {
+        mapReactomeNodeToRegion(node, pathwayId) {
             const name = (node.name || '').toLowerCase();
 
             if (pathwayId === 'tryptophan') {

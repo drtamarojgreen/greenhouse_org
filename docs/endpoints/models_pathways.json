@@ -4,7 +4,7 @@
         {
             "id": "tryptophan",
             "name": "Tryptophan-Kynurenine",
-            "kegg_id": "hsa00380",
+            "reactome_id": "hsa00380",
             "description": "Metabolic pathway linking the gut-brain axis and immune response.",
             "source": "endpoints/inflammation_pathway_graph.json",
             "regions": [
@@ -17,7 +17,7 @@
         {
             "id": "hpa",
             "name": "HPA Axis",
-            "kegg_id": "hsa04921",
+            "reactome_id": "hsa04921",
             "description": "Hypothalamic-Pituitary-Adrenal axis; the central stress response system.",
             "source": null,
             "regions": [
@@ -29,7 +29,7 @@
         {
             "id": "circadian",
             "name": "Circadian Rhythm",
-            "kegg_id": "hsa04710",
+            "reactome_id": "hsa04710",
             "description": "Suprachiasmatic nucleus (SCN) regulation of sleep-wake cycles.",
             "source": null,
             "regions": [
@@ -42,9 +42,9 @@
         {
             "id": "dopaminergic",
             "name": "Dopaminergic",
-            "kegg_id": "hsa04728",
+            "reactome_id": "hsa04728",
             "description": "Mesolimbic and nigrostriatal reward and motor pathways.",
-            "source": "endpoints/kegg_dopaminergic_raw.xml",
+            "source": "endpoints/reactome_dopaminergic_raw.xml",
             "regions": [
                 "vta",
                 "sn",
@@ -55,7 +55,7 @@
         {
             "id": "serotonergic",
             "name": "Serotonergic",
-            "kegg_id": "hsa04726",
+            "reactome_id": "hsa04726",
             "description": "Raphe nuclei projections regulating mood, appetite, and sleep.",
             "source": null,
             "regions": [
@@ -68,7 +68,7 @@
         {
             "id": "noradrenergic",
             "name": "Noradrenergic",
-            "kegg_id": "hsa04724",
+            "reactome_id": "hsa04724",
             "description": "Locus coeruleus system for arousal and attention.",
             "source": null,
             "regions": [
@@ -81,7 +81,7 @@
         {
             "id": "protein_kinase",
             "name": "Protein Kinase (MAPK)",
-            "kegg_id": "hsa04010",
+            "reactome_id": "hsa04010",
             "description": "Intracellular signaling cascade for growth and synaptic plasticity.",
             "source": null,
             "regions": [
@@ -93,9 +93,9 @@
         {
             "id": "nitric_oxide",
             "name": "Nitric Oxide (ADHD)",
-            "kegg_id": null,
+            "reactome_id": null,
             "description": "L-arginine/nitric oxide pathway and its role in dopamine homeostasis and ADHD.",
-            "source": "endpoints/kegg_nitric_oxide.xml",
+            "source": "endpoints/reactome_nitric_oxide.xml",
             "regions": [
                 "pfc",
                 "striatum",

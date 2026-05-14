@@ -360,19 +360,56 @@
                     const response = await fetch(baseUrl + url);
                     if (!response.ok) return null;
                     const contentType = response.headers.get('Content-Type');
-                    if (contentType && contentType.includes('text/html')) return null;
-                    const xmlText = await response.text();
-                    return this.parseKGML(xmlText);
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        return this.parseReactomeJSON(data);
+                    }
+                    
+                    const text = await response.text();
+                    if (text.trim().startsWith('{')) {
+                        return this.parseReactomeJSON(JSON.parse(text));
+                    }
+                    
+                    // Fallback for KGML if legacy files exist, but flagged as Reactome-wrapped
+                    return this.parseKGML(text);
                 } catch (e) { return null; }
             },
-            async loadJSONPathway(url, baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
-                try {
-                    const response = await fetch(baseUrl + url);
-                    if (!response.ok) return null;
-                    const contentType = response.headers.get('Content-Type');
-                    if (contentType && contentType.includes('text/html')) return null;
-                    return await response.json();
-                } catch (e) { return null; }
+            parseReactomeJSON(data) {
+                // Mapping Reactome Diagram Layout JSON to Greenhouse format
+                // Reactome uses 'nodes' and 'edges' or 'physicalEntities' and 'interactions'
+                const rawNodes = data.nodes || data.physicalEntities || [];
+                const rawEdges = data.edges || data.interactions || [];
+
+                const nodes = rawNodes.map(n => ({
+                    id: String(n.dbId || n.id || n.stId),
+                    name: n.displayName || n.name || String(n.dbId),
+                    type: this.mapReactomeClass(n.renderableClass || n.type),
+                    x: n.x || (n.minX + (n.maxX - n.minX) / 2) || 400,
+                    y: n.y || (n.minY + (n.maxY - n.minY) / 2) || 400,
+                    stId: n.stId,
+                    region: n.region || null
+                }));
+
+                const edges = rawEdges.map(e => ({
+                    source: String(e.from || e.sourceId || (e.input && e.input[0])),
+                    target: String(e.to || e.targetId || (e.output && e.output[0])),
+                    type: e.renderableClass || 'reaction'
+                })).filter(e => e.source && e.target);
+
+                return { nodes, edges };
+            },
+            mapReactomeClass(rc) {
+                if (!rc) return 'compound';
+                const map = {
+                    'Protein': 'gene',
+                    'Complex': 'map',
+                    'Chemical': 'compound',
+                    'Reaction': 'reaction',
+                    'Pathway': 'map',
+                    'RNA': 'gene'
+                };
+                return map[rc] || 'compound';
             },
             parseKGML(xmlText) {
                 const parser = new DOMParser();

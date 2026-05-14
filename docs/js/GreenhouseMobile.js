@@ -63,7 +63,7 @@
                 }
             },
             pathway: {
-                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'pathway/pathway_ui_3d_geometry.js', 'pathway/pathway_camera_controls.js', 'pathway/pathway_ui_3d_brain.js', 'pathway/pathway_viewer.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'pathway/pathway_ui_3d_geometry.js', 'pathway/pathway_camera_controls.js', 'pathway/pathway_ui_3d_brain.js', 'reactome_parser.js', 'pathway/pathway_viewer.js'],
                 modes: ['Basal Ganglia', 'Dopamine Loop', 'Serotonin Path'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'pathway-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -194,7 +194,7 @@
                 }
             },
             stress: {
-                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'stress/stress_config.js', 'stress/stress_controls.js', 'stress/stress_tooltips.js', 'stress/stress_macro.js', 'stress/stress_pathway.js', 'stress/stress_geometry.js', 'stress/stress_ui_3d.js', 'stress/stress_app.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'reactome_parser.js', 'stress/stress_config.js', 'stress/stress_controls.js', 'stress/stress_tooltips.js', 'stress/stress_macro.js', 'stress/stress_pathway.js', 'stress/stress_geometry.js', 'stress/stress_ui_3d.js', 'stress/stress_app.js'],
                 modes: ['REGULATORY', 'PATHWAY', 'SYSTEMIC'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'stress-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -207,7 +207,7 @@
                 }
             },
             inflammation: {
-                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'inflammation/inflammation_config.js', 'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js', 'inflammation/inflammation_geometry.js', 'inflammation/inflammation_ui_3d.js', 'inflammation/inflammation_app.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'reactome_parser.js', 'inflammation/inflammation_config.js', 'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js', 'inflammation/inflammation_geometry.js', 'inflammation/inflammation_ui_3d.js', 'inflammation/inflammation_app.js'],
                 modes: ['MACRO', 'MICRO', 'MOLECULAR', 'PATHWAY'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'inflam-canvas-' + Math.random().toString(36).substr(2, 9);

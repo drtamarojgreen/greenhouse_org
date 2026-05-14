@@ -14,7 +14,7 @@
                     { value: 0, label: 'REGULATORY (MACRO)' },
                     { value: 1, label: 'CELLULAR (MICRO)' },
                     { value: 2, label: 'MOLECULAR' },
-                    { value: 3, label: 'PATHWAY (KEGG)' }
+                    { value: 3, label: 'PATHWAY (Reactome)' }
                 ], type: 'button'
             },
             {

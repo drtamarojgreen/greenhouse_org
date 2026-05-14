@@ -102,32 +102,19 @@
             // Prevent infinite re-fetching from the render loop while this is async
             this.currentPathwayId = id;
 
-            // Determine source: local xml or kegg
+            // Determine source: local xml or reactome
             if (!meta.source) {
                 console.log(`Stress UI: No source for pathway ${id}, using default layout.`);
-                // We'll proceed with an empty nodes/edges set which will trigger local generation if needed
-                // or just skip. For now, we avoid the XHR.
                 return;
             }
 
             const baseUrl = (this.app && this.app.baseUrl) ? this.app.baseUrl : '';
-            const isJSON = meta.source.toLowerCase().endsWith('.json');
-            const data = isJSON ?
-                await window.GreenhouseModelsUtil.PathwayService.loadJSONPathway(meta.source, baseUrl) :
-                await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, baseUrl);
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, baseUrl);
 
             if (data) {
-                // Handle various JSON formats (KEGG vs custom Greenhouse)
-                let nodes = data.nodes || data.molecules || data.compartments || [];
-                let edges = data.edges || data.reactions || [];
-
-                // Standardize node fields
-                nodes = nodes.map(n => ({
-                    ...n,
-                    id: n.id,
-                    name: n.name || n.label || n.id,
-                    type: n.type || n.class || 'compound'
-                }));
+                // Standardize node fields (already mapped by PathwayService.loadPathway/parseReactomeJSON)
+                const nodes = data.nodes || [];
+                const edges = data.edges || [];
 
                 // Apply 3D Layout (Simplified version of PathwayViewer logic)
                 const nodesWithPos = nodes.map((n, i) => {
@@ -158,14 +145,13 @@
                         };
                     } else if (meta.regions && meta.regions[0] && anatomicalMap[meta.regions[0]]) {
                         const base = anatomicalMap[meta.regions[0]];
-                        // If we fall back to a single region, use jittered positions
                         pos = {
                             x: base.x + (Math.sin(i) * 20),
                             y: base.y + (Math.cos(i) * 20),
                             z: base.z + (Math.sin(i * 0.5) * 10)
                         };
                     } else if (n.x !== undefined && n.y !== undefined) {
-                        // Fallback to 2D coordinates from KGML/JSON with scaling
+                        // Fallback to 2D coordinates from Reactome/JSON with scaling
                         const scaleFactor = 2.0;
                         pos.x = (n.x - 400) / scaleFactor;
                         pos.y = -(n.y - 400) / scaleFactor;
@@ -177,8 +163,8 @@
 
                 // Standardize edges (ensure source/target are strings)
                 const standardizedEdges = edges.map(e => ({
-                    source: e.source || e.substrate,
-                    target: e.target || e.product,
+                    source: String(e.source),
+                    target: String(e.target),
                     type: e.type || 'standard'
                 }));
 

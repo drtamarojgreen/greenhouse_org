@@ -1,7 +1,7 @@
 /**
  * @file stress_pathway.js
  * @description Scientifically comprehensive HPA-Axis and Dynamic Pathway Visualization.
- * Renders KEGG-sourced pathways integrated from the shared data bridge.
+ * Renders Reactome-sourced pathways integrated from the shared data bridge.
  */
 
 (function () {
@@ -25,7 +25,6 @@
 
             // --- GRAPH VISUALIZATION INTEGRATION ---
             // If the Graph Viewer is available and active, render it INSTEAD or ON TOP
-            // We'll add a toggle in the UI section below.
             const GraphViewer = window.GreenhouseModelGraphViewer;
 
             // Auto-load data if present but not initialized
@@ -47,7 +46,6 @@
                 GraphViewer.updatePhysics();
 
                 // Render Graph (Pass 3D Camera/Projection)
-                // render(ctx, width, height, camera, projection)
                 GraphViewer.render(ctx, projection.width, projection.height, camera, projection);
 
                 // Draw a "Exit Graph" button or similar overlay
@@ -108,7 +106,7 @@
                 if (node.mesh && (activePathId === 'hpa' || node.id === 'hypothalamus')) {
                     this.drawGlandMesh(ctx, node, camera, projection);
                 } else {
-                    this.drawKeggNode(ctx, node);
+                    this.drawReactomeNode(ctx, node);
                 }
             });
 
@@ -119,7 +117,6 @@
             nodes.forEach(n => {
                 if (n.scale > 0.45) {
                     const labelStr = (n.label || n.name || '').toUpperCase();
-                    // Attempt translation or use raw string
                     const displayLabel = t(labelStr) || labelStr;
                     ctx.fillText(displayLabel, n.x, n.y + 18 * n.scale);
                 }
@@ -130,18 +127,10 @@
         },
 
         drawGraphControls(ctx, projection, isGraphActive = true) {
-            // Draw a button in top-right or similar
             const x = projection.width - 140;
             const y = 80; // Below main nav
             const w = 120;
             const h = 30;
-
-            // Check Interaction
-            // We need access to mouse position. Usually passed via state or gathered.
-            // stress_app.js has `this.interaction`. ui3d has access to app.
-            // We can check `window.GreenhouseStressApp.interaction` if global, or pass it.
-            // Simplest: Just draw it, and handle click in a global handler or app handler.
-            // For now, let's just draw.
 
             ctx.fillStyle = 'rgba(50, 50, 70, 0.8)';
             ctx.fillRect(x, y, w, h);
@@ -153,10 +142,7 @@
             ctx.textAlign = 'center';
             ctx.fillText(isGraphActive ? "EXIT GRAPH VIEW" : "TOPIC GRAPH", x + w / 2, y + 19);
 
-            // Store button bounds for click handling (GLOBAL HACK for quick integration)
             if (!window.GreenhouseStressPathwayButtons) window.GreenhouseStressPathwayButtons = [];
-            // Clear previous button definition for this frame to avoid dupes? 
-            // Actually just overwrite.
             window.GreenhouseStressPathwayButtons = [{
                 id: 'toggle_graph',
                 x: x, y: y, w: w, h: h,
@@ -196,7 +182,6 @@
                 if (b.type === 'neural') {
                     ctx.fillStyle = '#D0D0D0';
                     ctx.beginPath(); ctx.arc(bx, by, 2, 0, Math.PI * 2); ctx.fill();
-                    // "Ghost" tail
                     ctx.strokeStyle = 'rgba(0, 255, 200, 0.3)';
                     ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - (b.tx - b.x) * 0.1, by - (b.ty - b.y) * 0.1); ctx.stroke();
                 } else {
@@ -207,7 +192,7 @@
             ctx.restore();
         },
 
-        drawKeggNode(ctx, node) {
+        drawReactomeNode(ctx, node) {
             const color = node.type === 'gene' ? '#E0E0E0' : (node.type === 'compound' ? '#D0D0D0' : '#D0D0D0');
             ctx.fillStyle = color;
             ctx.shadowBlur = 5;

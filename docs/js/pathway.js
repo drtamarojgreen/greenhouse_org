@@ -28,6 +28,7 @@
                     'js/pathway/pathway_ui_3d_geometry.js',
                     'js/pathway/pathway_camera_controls.js',
                     'js/pathway/pathway_ui_3d_brain.js',
+                    'js/reactome_parser.js',
                     'js/pathway/pathway_viewer.js',
                     'js/V8GraphRenderer.js'
                 ];
