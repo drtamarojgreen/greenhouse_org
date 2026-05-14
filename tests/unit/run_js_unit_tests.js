@@ -3,8 +3,32 @@ const path = require('path');
 
 // --- 1. Mock Browser Environment ---
 global.window = global;
+global.window._greenhouseScriptAttributes = {
+    'data-genetic-selectors': JSON.stringify({ genetic: '#genetic-app' }),
+    'base-url': './',
+    'target-selector-left': '#target-left'
+};
+
+// Auto-register 'utils' with the mock dependency manager
+setTimeout(() => {
+    if (global.GreenhouseDependencyManager && global.GreenhouseUtils) {
+        global.GreenhouseDependencyManager.register('utils', global.GreenhouseUtils);
+    }
+}, 0);
+
 global.self = global;
+global.Node = class { constructor() { this.nodeType = 1; } }; // Basic Node mock for quizzes.js
+global.HTMLElement = class extends global.Node {};
 global.performance = { now: () => Date.now() };
+
+// Mock localStorage
+global.localStorage = {
+    _data: {},
+    setItem: (key, value) => { global.localStorage._data[key] = String(value); },
+    getItem: (key) => global.localStorage._data.hasOwnProperty(key) ? global.localStorage._data[key] : null,
+    removeItem: (key) => { delete global.localStorage._data[key]; },
+    clear: () => { global.localStorage._data = {}; }
+};
 
 class MockElement {
     constructor(tagName) {
@@ -26,12 +50,35 @@ class MockElement {
     getAttribute(name) { return this.attributes[name] || null; }
     hasAttribute(name) { return this.attributes.hasOwnProperty(name); }
     appendChild(child) { this.children.push(child); }
+    prepend(child) { this.children.unshift(child); }
+    after(child) {
+        if (this.parentElement) {
+            const idx = this.parentElement.children.indexOf(this);
+            this.parentElement.children.splice(idx + 1, 0, child);
+        }
+    }
+    contains(node) {
+        if (node === this) return true;
+        for (let child of this.children) {
+            if (child.contains(node)) return true;
+        }
+        return false;
+    }
+    querySelector(selector) { return new MockElement('div'); }
+    querySelectorAll(selector) { return []; }
     removeChild(child) {
         const index = this.children.indexOf(child);
         if (index > -1) this.children.splice(index, 1);
     }
     addEventListener(event, callback) {}
     removeEventListener(event, callback) {}
+    dispatchEvent(event) { return true; }
+    getBoundingClientRect() {
+        return {
+            top: 0, left: 0, right: 800, bottom: 600,
+            width: 800, height: 600, x: 0, y: 0
+        };
+    }
     getElementsByTagName(name) {
         let results = [];
         for (let child of this.children) {
@@ -42,7 +89,9 @@ class MockElement {
     }
     getContext() {
         return {
+            canvas: this,
             fillRect: () => {},
+            strokeRect: () => {},
             clearRect: () => {},
             beginPath: () => {},
             moveTo: () => {},
@@ -50,6 +99,7 @@ class MockElement {
             stroke: () => {},
             fill: () => {},
             arc: () => {},
+            ellipse: () => {},
             fillText: () => {},
             measureText: () => ({ width: 10 }),
             save: () => {},
@@ -58,7 +108,14 @@ class MockElement {
             rotate: () => {},
             scale: () => {},
             drawImage: () => {},
-            setLineDash: () => {} // Added for rendering tests
+            setLineDash: () => {},
+            createLinearGradient: () => ({ addColorStop: () => {} }),
+            createRadialGradient: () => ({ addColorStop: () => {} }),
+            quadraticCurveTo: () => {},
+            bezierCurveTo: () => {},
+            closePath: () => {},
+            rect: () => {},
+            clip: () => {}
         };
     }
 }
@@ -96,17 +153,24 @@ global.DOMParser = class {
 global.fetch = (url) => Promise.resolve({
     ok: true,
     text: () => Promise.resolve(''),
-    json: () => Promise.resolve({}),
+    json: () => Promise.resolve({ quizzes: [] }),
     headers: { get: () => 'application/json' }
 });
 
 global.document = {
     getElementById: (id) => new MockElement('div'),
+    createTextNode: (text) => ({ text, nodeType: 3 }),
     querySelector: (selector) => { // Mocking selector for script attributes
         if (selector === 'script[src*="dopamine.js"]') {
             return { getAttribute: (name) => {
                 if (name === 'data-base-url') return '';
                 if (name === 'data-target-selector-left') return '#dopamine-app-container';
+                return null;
+            } };
+        }
+        if (selector === 'script[src*="genetic.js"]') {
+            return { getAttribute: (name) => {
+                if (name === 'data-genetic-selectors') return JSON.stringify({ genetic: '#genetic-app' });
                 return null;
             } };
         }
@@ -123,6 +187,11 @@ global.navigator = { userAgent: 'node.js' }; // Mock navigator
 global.location = { href: 'http://localhost/', search: '', hash: '' }; // Mock location
 global.requestAnimationFrame = (callback) => setTimeout(callback, 16);
 global.cancelAnimationFrame = (id) => clearTimeout(id);
+
+// Window event listeners
+global.addEventListener = (event, callback) => {};
+global.removeEventListener = (event, callback) => {};
+global.dispatchEvent = (event) => true;
 
 // --- 2. Load Infrastructure (Relative to tests/unit/) ---
 const ROOT = path.resolve(__dirname, '../../');
@@ -157,6 +226,7 @@ global.GreenhouseModels3DMath = {
 // Mock for GreenhouseDopamine and its state/methods
 global.GreenhouseDopamine = {
     state: {
+        timer: 0,
         camera: { x: 0, y: 0, z: -400, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
         cameraControls: { autoRotateSpeed: 0.001, minZoom: -150, maxZoom: -1200 },
         cinematicCamera: true,
@@ -274,7 +344,84 @@ global.RNARepairSimulation = class { constructor() {} }; // Mock for RNARepairSi
 // Mock for other utility classes/functions
 global.GreenhouseADHDData = {}; // Mock for ADHD data
 global.GreenhouseBioStatus = { sync: () => {} }; // Mock for BioStatus
-global.GreenhouseDependencyManager = { clear: () => {}, getStatus: () => {} }; // Mock Dependency Manager
+// Functional GreenhouseDependencyManager mock
+global.GreenhouseDependencyManager = (function() {
+    let deps = new Map();
+    let metadata = new Map();
+    let waiters = [];
+
+    return {
+        register: (name, instance, meta = {}) => {
+            deps.set(name, instance);
+            metadata.set(name, { ...meta, registeredAt: Date.now() });
+            // Resolve waiters
+            for (let i = waiters.length - 1; i >= 0; i--) {
+                const waiter = waiters[i];
+                if (waiter.names.every(n => deps.has(n))) {
+                    if (waiter.isMultiple) {
+                        const results = {};
+                        waiter.names.forEach(n => results[n] = deps.get(n));
+                        waiter.resolve(results);
+                    } else {
+                        waiter.resolve(deps.get(waiter.names[0]));
+                    }
+                    waiters.splice(i, 1);
+                }
+            }
+        },
+        unregister: (name) => {
+            deps.delete(name);
+            metadata.delete(name);
+            // Reject waiters for this name
+            for (let i = waiters.length - 1; i >= 0; i--) {
+                const waiter = waiters[i];
+                if (waiter.names.includes(name)) {
+                    waiter.reject(new Error(`Dependency ${name} was unregistered`));
+                    waiters.splice(i, 1);
+                }
+            }
+        },
+        isAvailable: (name) => deps.has(name),
+        get: (name) => deps.get(name),
+        getMetadata: (name) => metadata.get(name),
+        waitFor: (name, timeoutMs = 100) => {
+            if (deps.has(name)) return Promise.resolve(deps.get(name));
+            return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    const idx = waiters.findIndex(w => w.resolve === resolve);
+                    if (idx > -1) {
+                        waiters.splice(idx, 1);
+                        reject(new Error(`Dependency ${name} not available within ${timeoutMs}ms`));
+                    }
+                }, timeoutMs);
+                waiters.push({ names: [name], resolve: (val) => { clearTimeout(timeout); resolve(val); }, reject: (err) => { clearTimeout(timeout); reject(err); }, isMultiple: false });
+            });
+        },
+        waitForMultiple: (names, timeoutMs = 100) => {
+            if (names.every(n => deps.has(n))) {
+                const results = {};
+                names.forEach(n => results[n] = deps.get(n));
+                return Promise.resolve(results);
+            }
+            return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    const idx = waiters.findIndex(w => w.resolve === resolve);
+                    if (idx > -1) {
+                        waiters.splice(idx, 1);
+                        reject(new Error(`Dependencies ${names.join(', ')} not available within ${timeoutMs}ms`));
+                    }
+                }, timeoutMs);
+                waiters.push({ names, resolve: (vals) => { clearTimeout(timeout); resolve(vals); }, reject: (err) => { clearTimeout(timeout); reject(err); }, isMultiple: true });
+            });
+        },
+        clear: () => { deps = new Map(); metadata = new Map(); waiters = []; },
+        getStatus: () => ({
+            available: Array.from(deps.keys()),
+            statistics: { totalRegistered: deps.size },
+            pending: waiters.length
+        })
+    };
+})();
 global.GreenhouseComponent = class { constructor() {} init() {} }; // Mock GreenhouseComponent
 global.GreenhouseSystem = class { constructor() {} }; // Mock GreenhouseSystem
 global.GreenhouseScheduler = { initialize: () => {} }; // Mock Scheduler
@@ -286,10 +433,23 @@ global.GreenhouseNeuroCameraControls = { init: () => {}, rotate: () => {}, zoom:
 // Mock for specific methods and properties that were causing errors
 global.window.GreenhouseUtils = {
     ...global.GreenhouseUtils, // Preserve existing mocks if any
+    appState: {
+        targetSelectorLeft: '#target-left',
+        baseUrl: './'
+    },
     showNotification: () => {},
-    createElementSafely: () => new MockElement('div'),
-    removeElementSafely: () => {},
-    getStatus: () => ({}),
+    displayError: (msg) => { console.error(`[GreenhouseUtils] Error: ${msg}`); },
+    displaySuccess: (msg) => { console.log(`[GreenhouseUtils] Success: ${msg}`); },
+    displayInfo: (msg) => { console.log(`[GreenhouseUtils] Info: ${msg}`); },
+    createElementSafely: (tag) => {
+        const el = new MockElement(tag);
+        el.setAttribute('data-greenhouse-tag', 'true');
+        return el;
+    },
+    removeElementSafely: (el) => {
+        if (el && el.remove) el.remove();
+    },
+    getStatus: () => ({ status: 'healthy' }),
     activeLigands: {},
     Signaling: {},
     // Mock for 'init' methods that are called on various objects
@@ -302,7 +462,14 @@ global.window.GreenhouseUtils = {
     showConflictModal: () => {},
     observeAndReinitializeApplication: () => {},
     startSentinel: () => {},
-    renderModelsTOC: () => {}
+    renderModelsTOC: () => {},
+    fetchModelDescriptions: () => Promise.resolve([
+        { id: 'genetic', title: 'Genetic Model', url: '/genetic' }
+    ]),
+    loadScript: (name, baseUrl) => Promise.resolve(),
+    waitForElement: (selector) => Promise.resolve(new MockElement('div')),
+    validateConfiguration: () => true,
+    isMobileUser: () => false
 };
 
 // Mock specific functions or properties from modules that are directly used
@@ -357,11 +524,33 @@ const modulesToLoad = [
     'dopamine/dopamine_analytics.js',
     'dopamine/dopamine_ux.js',
     'serotonin.js',
+    'serotonin/serotonin_receptors.js',
+    'serotonin/serotonin_kinetics.js',
+    'serotonin/serotonin_transport.js',
+    'serotonin/serotonin_signaling.js',
+    'serotonin/serotonin_analytics.js',
+    'serotonin/serotonin_controls.js',
     'synapse.js',
+    'synapse/synapse_chemistry.js',
+    'synapse/synapse_app.js',
+    'synapse/synapse_analytics.js',
+    'synapse/synapse_neurotransmitters.js',
     'genetic.js',
+    'genetic/genetic_config.js',
+    'genetic/genetic_algo.js',
+    'genetic/genetic_ui_3d.js',
     'stress.js',
+    'stress/stress_config.js',
+    'stress/stress_app.js',
     'inflammation.js',
+    'inflammation/inflammation_config.js',
+    'inflammation/inflammation_app.js',
     'neuro.js',
+    'neuro/neuro_config.js',
+    'neuro/neuro_ga.js',
+    'neuro/neuro_ui_3d.js',
+    'neuro/neuro_app.js',
+    'neuro/neuro_camera_controls.js',
     'rna_repair.js',
     'models_lang.js',
     'models_util.js',
@@ -372,28 +561,26 @@ const modulesToLoad = [
     'models_ui_environment.js',
     'models_ui_synapse.js',
     'models_ui.js',
-    'models_ui_neuro.js', // Assuming this path exists
-    'models_ui_pathway.js', // Assuming this path exists
-    'models_ui_rna.js', // Assuming this path exists
-    'models_ui_stress.js', // Assuming this path exists
-    'models_ui_serotonin.js', // Assuming this path exists
-    'models_ui_genetic.js', // Assuming this path exists
-    'models_ui_inflammation.js', // Assuming this path exists
-    'models_ui_dopamine.js', // Assuming this path exists
-    'models_ui_cognition.js', // Assuming this path exists
-    'models_ui_emotion.js', // Assuming this path exists
-    'models_ui_dna.js', // Assuming this path exists
-    'models_ui_ap.js', // Assuming this path exists
-    'models_ui_gene.js', // Assuming this path exists
-    'models_ui_video.js', // Assuming this path exists
-    'models_ui_tech.js', // Assuming this path exists
-    'models_ui_inspiration.js', // Assuming this path exists
-    'models_ui_news.js', // Assuming this path exists
-    'models_ui_schedule.js', // Assuming this path exists
-    'models_ui_quizzes.js', // Assuming this path exists
-    'models_ui_mobile.js', // Assuming this path exists
-    'models_ui_dashboard.js', // Assuming this path exists
-    'models_ui_admin.js', // Assuming this path exists
+    'neuro.js',
+    'pathway.js',
+    'rna_repair.js',
+    'stress.js',
+    'serotonin.js',
+    'genetic.js',
+    'inflammation.js',
+    'dopamine.js',
+    'cognition.js',
+    'emotion.js',
+    'dna_repair.js',
+    'videos.js',
+    'tech.js',
+    'inspiration.js',
+    'news.js',
+    'scheduler.js',
+    'quizzes.js',
+    'GreenhouseMobile.js',
+    'GreenhouseDashboardApp.js',
+    'GreenhouseAdminApp.js',
 ];
 
 modulesToLoad.forEach(modulePath => {
