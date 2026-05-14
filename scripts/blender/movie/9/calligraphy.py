@@ -48,9 +48,16 @@ class CalligraphyDirector:
         obj = bpy.data.objects.new(name, curve); bpy.context.scene.collection.objects.link(obj)
         theme_colors = self._load_theme_colors()
         mat = bpy.data.materials.new(name=f"{name}_Mat"); mat.use_nodes = True; nodes = mat.node_tree.nodes; nodes.clear()
-        out = nodes.new(type='ShaderNodeOutputMaterial'); emit = nodes.new(type='ShaderNodeEmission')
-        emit.inputs['Color'].default_value = (*theme_colors[0], 1.0); emit.inputs['Strength'].default_value = cfg.get("emission_strength", 9.0)
-        mat.node_tree.links.new(emit.outputs['Emission'], out.inputs['Surface']); curve.materials.append(mat)
+        out = nodes.new(type='ShaderNodeOutputMaterial')
+        bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+        bsdf.inputs['Base Color'].default_value = (*theme_colors[0], 1.0)
+        bsdf.inputs['Metallic'].default_value = 0.9
+        bsdf.inputs['Roughness'].default_value = 0.2
+        # Blender 4.0+ / 5.1 Naming
+        bsdf.inputs['Emission Color'].default_value = (*theme_colors[0], 1.0)
+        bsdf.inputs['Emission Strength'].default_value = cfg.get("emission_strength", 0.2)
+        mat.node_tree.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+        curve.materials.append(mat)
         return obj
 
     def _keyframe_text_segment(self, text_obj, cam_obj, frame_start, frame_end, cfg):
@@ -79,16 +86,48 @@ class CalligraphyDirector:
             l_data = bpy.data.lights.get(ld["id"]) or bpy.data.lights.new(ld["id"], ld.get("type", "POINT"))
             l_obj = bpy.data.objects.get(ld["id"]) or bpy.data.objects.new(ld["id"], l_data)
             if l_obj.name not in bpy.context.scene.collection.objects: bpy.context.scene.collection.objects.link(l_obj)
-            l_obj.location = text_obj.location + mathutils.Vector(ld.get("offset", [0, 2, 0.5]))
+            
+            # Use color from config or fallback to theme
             l_data.color = ld.get("color", theme_colors[0])
+            
             if ld.get("type") == "SPOT":
                 l_data.spot_size = math.radians(ld.get("spot_size_deg", 30))
-                # Constraint
+                # Constraint to ensure light always hits the text
                 con = next((c for c in l_obj.constraints if c.type == 'TRACK_TO'), None) or l_obj.constraints.new(type='TRACK_TO')
                 con.target = text_obj; con.track_axis = 'TRACK_NEGATIVE_Z'; con.up_axis = 'UP_Y'
-                if ld.get("animate_sweep"):
+                
+                if ld.get("animate_path"):
+                    self._animate_spotlight_curved_path(l_obj, text_obj, ld, i0, i1, o0, o1)
+                elif ld.get("animate_sweep"):
                     self._animate_spotlight_sweep(l_obj, ld, i0, i1, o0, o1)
+            
+            if not ld.get("animate_path"):
+                l_obj.location = text_obj.location + mathutils.Vector(ld.get("offset", [0, -2, 0.5]))
+                l_obj.keyframe_insert(data_path="location", frame=i0)
+                l_obj.keyframe_insert(data_path="location", frame=o0)
+
             self._animate_light_curve(l_data, ld.get("energy", 240.0), i0, i1, o0, o1)
+
+    def _animate_spotlight_curved_path(self, l_obj, text_obj, ld, i0, i1, o0, o1):
+        radius = ld.get("path_radius", 2.5)
+        freq = ld.get("path_freq", 0.15)
+        phase = ld.get("path_phase", 0.0)
+        base_offset = mathutils.Vector(ld.get("offset", [0, 2, 0.5]))
+
+        for frame in range(1, self.total_frames + 1):
+            enabled = (i0 <= frame <= i1) or (o0 <= frame <= o1)
+            if enabled:
+                bpy.context.scene.frame_set(frame)
+                t = (frame - (i0 if i0 <= frame <= i1 else o0)) / 24.0
+                angle = 2 * math.pi * freq * t + phase
+                
+                # Create a subtle curved figure-eight or elliptical path
+                off_x = math.sin(angle) * radius
+                off_z = math.cos(angle * 2.0) * (radius * 0.4) 
+                
+                # Apply location relative to the animated text object
+                l_obj.location = text_obj.location + base_offset + mathutils.Vector((off_x, 0, off_z))
+                l_obj.keyframe_insert(data_path="location", frame=frame)
 
     def _animate_spotlight_sweep(self, l_obj, ld, i0, i1, o0, o1):
         axis = ld.get("sweep_axis", "X")

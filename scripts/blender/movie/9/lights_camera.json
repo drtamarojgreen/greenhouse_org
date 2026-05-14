@@ -357,12 +357,12 @@
     "size": 0.36,
     "extrude": 0.06,
     "bevel_depth": 0.02,
-    "emission_strength": 6.0,
+    "emission_strength": 1.5,
     "intro_frames": [
       1,
-      5
+      3
     ],
-    "outro_frames": [4751, 4800],
+    "outro_frames": [4801, 5000],
     "offset": [
       0.0,
       -0.1,
@@ -375,11 +375,35 @@
         "energy": 800.0,
         "spot_size_deg": 30.0,
         "color": [0.2, 0.8, 0.2],
-        "offset": [0.0, 1.8, 0.7],
+        "offset": [0.0, -1.8, 0.7],
         "animate_sweep": true,
         "sweep_axis": "X",
         "sweep_amp_deg": 12.0,
         "sweep_freq_hz": 0.4
+      },
+      {
+        "id": "Calligraphy_greenhouse_green",
+        "type": "SPOT",
+        "energy": 650.0,
+        "spot_size_deg": 35.0,
+        "color": [0.4, 0.73, 0.41],
+        "offset": [0.5, -2.2, 0.4],
+        "animate_path": true,
+        "path_radius": 2.2,
+        "path_freq": 0.12,
+        "path_phase": 0.0
+      },
+      {
+        "id": "Calligraphy_greenhouse_purple",
+        "type": "SPOT",
+        "energy": 650.0,
+        "spot_size_deg": 35.0,
+        "color": [0.45, 0.15, 0.32],
+        "offset": [-0.5, -2.2, 0.4],
+        "animate_path": true,
+        "path_radius": 2.2,
+        "path_freq": 0.1,
+        "path_phase": 3.14
       },
       {
         "id": "Calligraphy_fill",
@@ -387,7 +411,7 @@
         "energy": 450.0,
         "spot_size_deg": 45.0,
         "color": [0.4, 0.9, 0.4],
-        "offset": [0.7, 2.1, 0.25],
+        "offset": [0.7, -2.1, 0.25],
         "animate_sweep": true,
         "sweep_axis": "Y",
         "sweep_amp_deg": 8.0,
@@ -399,7 +423,7 @@
         "energy": 350.0,
         "spot_size_deg": 25.0,
         "color": [0.1, 0.6, 0.1],
-        "offset": [-0.8, 1.9, 0.5],
+        "offset": [-0.8, -1.9, 0.5],
         "animate_sweep": false
       }
     ]

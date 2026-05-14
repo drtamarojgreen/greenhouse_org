@@ -87,12 +87,13 @@ class Director:
                 
             # Toggle other environments
             for other in coll.objects:
-                if other != env_root and other.name.startswith("Env_"):
-                    # Hide other environment during this new one
-                    self._keyframe_visibility(other, start_f, True)
-                    # Restore after if this one ends
-                    if end_f is not None:
-                        self._keyframe_visibility(other, end_f + 1, False)
+                if other != env_root and (other.name.startswith("Env_") or other.name.startswith("Interior_") or other.name.startswith("Chroma")):
+                    if not other.parent: # Only toggle root objects
+                        # Hide other environment during this new one
+                        self._keyframe_visibility(other, start_f, True)
+                        # Restore after if this one ends
+                        if end_f is not None:
+                            self._keyframe_visibility(other, end_f + 1, False)
         else:
             self._keyframe_visibility(env_root, 1, False)
 
