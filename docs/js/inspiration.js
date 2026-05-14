@@ -1,4 +1,4 @@
-'''// Version: 0.1.0 (Debug Build)
+// Version: 0.1.0 (Debug Build)
 /**
  * @file inspiration.js
  * @description Core functionality for the Greenhouse inspiration application.
@@ -323,4 +323,3 @@
     main();
 
 })();
-''
