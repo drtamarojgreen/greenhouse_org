@@ -108,11 +108,19 @@
             grid.className = 'models-toc-grid';
             container.appendChild(grid);
 
-            const models = xmlDoc.querySelectorAll('model');
-            models.forEach(model => {
-                const modelId = model.getAttribute('id');
-                const title = model.querySelector('title').textContent;
-                const url = model.querySelector('url') ? model.querySelector('url').textContent : `/${modelId}`;
+            const models = xmlDoc.getElementsByTagName('model');
+            for (let i = 0; i < models.length; i++) {
+                const model = models[i];
+                const modelId = model.getAttribute('id') || 'unknown';
+
+                const titleElem = model.getElementsByTagName('title')[0];
+                const title = titleElem ? titleElem.textContent.trim() : 'Unknown Model';
+
+                const urlElem = model.getElementsByTagName('url')[0];
+                const rawPath = (urlElem && urlElem.textContent.trim()) ? urlElem.textContent.trim() : `/${modelId}`;
+
+                // Ensure path starts with /
+                const finalPath = rawPath.startsWith('/') ? rawPath : '/' + rawPath;
 
                 // Create Card
                 const card = document.createElement('div');
@@ -146,10 +154,9 @@
                 // Launch Button
                 const launchLink = document.createElement('a');
 
-                // Use the URL as provided in the XML (clean URLs)
-                const path = url.startsWith('/') ? url : '/' + url;
-                const canonicalBase = 'https://greenhousemd.org';
-                launchLink.href = canonicalBase + path;
+                // Absolute URL Construction for Production
+                const canonicalDomain = 'https://www.greenhousemd.org';
+                launchLink.href = canonicalDomain + finalPath;
 
                 const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
                 launchLink.className = 'greenhouse-btn greenhouse-btn-primary';
