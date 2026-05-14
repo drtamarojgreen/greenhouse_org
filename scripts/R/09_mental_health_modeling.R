@@ -3,11 +3,12 @@
 # This script provides an integrated framework for analyzing mental health conditions
 # by combining data from public databases. It demonstrates a conceptual workflow for
 # building a knowledge graph from genes, pathways, publications, clinical trials, and drugs.
+# Refactored to use Reactome instead of KEGG for pathway data.
 
 # --- 1. Load Dependencies & Access Scripts ---
 # In a real workflow, these would be sourced to make their functions available.
 # source("scripts/R/06_data_access_pubmed.R")
-# source("scripts/R/08_data_access_kegg.R")
+# source("scripts/R/07_data_access_reactome.R") # Replaces 08_data_access_kegg.R
 # source("scripts/R/10_data_access_clinicaltrials.R")
 # source("scripts/R/11_data_access_dailymed.R")
 
@@ -25,12 +26,11 @@ TARGET_DRUG <- "Aripiprazole"
 run_data_retrieval <- function() {
   message("--- Starting Data Retrieval --- ")
   
-  # a. Get KEGG pathways for the condition
-  # pathways <- find_kegg_pathways(TARGET_CONDITION)
-  # hsa_pathway_id <- names(pathways)[grep("hsa", names(pathways))][1]
-  # pathway_details <- get_kegg_pathway_details(hsa_pathway_id)
-  # pathway_genes_df <- parse_kegg_genes(pathway_details)
-  message("1. (Conceptual) Fetched KEGG pathways for Schizophrenia.")
+  # a. Get Reactome pathways for the condition
+  # pathways_df <- find_reactome_pathways(TARGET_CONDITION)
+  # top_pathway_id <- pathways_df$id[1]
+  # pathway_genes_df <- get_reactome_pathway_genes(top_pathway_id)
+  message("1. (Conceptual) Fetched Reactome pathways for Schizophrenia.")
   
   # b. Get PubMed articles linking genes to the condition
   # pubmed_query <- paste0("(", TARGET_CONDITION, ") AND (", paste(CANDIDATE_GENES, collapse = " OR "), ")")

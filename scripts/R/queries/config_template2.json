@@ -71,6 +71,6 @@
     
     "gene_symbols": [],
     "organism": "Human",
-    "kegg_pathway_id": null
+    "reactome_pathway_id": null
   }
 }

@@ -188,7 +188,7 @@ class PipelineConfig:
             raise ValueError(f"model_type must be one of {valid_models}")
         
         # Check data source
-        valid_sources = ["brfss", "pubmed", "clinicaltrials", "kegg", "reactome", "custom"]
+        valid_sources = ["brfss", "pubmed", "clinicaltrials", "reactome", "custom"]
         if self.config["data_source"] not in valid_sources:
             raise ValueError(f"data_source must be one of {valid_sources}")
         
@@ -196,7 +196,7 @@ class PipelineConfig:
         if self.config["data_source"] == "brfss" and not PYREADSTAT_AVAILABLE:
             raise ImportError("pyreadstat required for BRFSS data. Install: pip install pyreadstat")
         
-        if self.config["data_source"] in ["pubmed", "kegg", "reactome"] and not BIOPYTHON_AVAILABLE:
+        if self.config["data_source"] in ["pubmed", "reactome"] and not BIOPYTHON_AVAILABLE:
             raise ImportError("Biopython required for biomedical data sources. Install: pip install biopython")
         
         # Create directories
@@ -1622,4 +1622,4 @@ Examples:
 
 
 if __name__ == "__main__":
-    main()
+    main()()

@@ -25,9 +25,12 @@
             });
 
             TestFramework.it('should verify anatomical mapping logic', () => {
-                assert.equal(Viewer.mapKeggNodeToRegion({ name: 'Tryptophan' }, 'tryptophan'), 'gut');
-                assert.equal(Viewer.mapKeggNodeToRegion({ name: 'Cortisol' }, 'hpa'), 'adrenals');
-                assert.equal(Viewer.mapKeggNodeToRegion({ name: 'CRH' }, 'hpa'), 'hypothalamus');
+                assert.equal(Viewer.mapReactomeNodeToRegion({ name: 'Tryptophan' }, 'tryptophan'), 'gut');
+                assert.equal(Viewer.mapReactomeNodeToRegion({ name: 'Cortisol' }, 'hpa'), 'adrenals');
+                assert.equal(Viewer.mapReactomeNodeToRegion({ name: 'CRH' }, 'hpa'), 'hypothalamus');
+                
+                // Test for stId based mapping if needed
+                assert.equal(Viewer.mapReactomeNodeToRegion({ name: 'GenericGene', stId: 'R-HSA-1234' }, 'hpa'), 'pfc');
             });
         });
 

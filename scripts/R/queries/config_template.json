@@ -19,7 +19,7 @@
   
   "data": {
     "source": "brfss",
-    "_source_options": ["brfss", "pubmed", "clinicaltrials", "kegg", "reactome", "custom"],
+    "_source_options": ["brfss", "pubmed", "clinicaltrials", "reactome", "custom"],
     
     "brfss": {
       "url": "https://www.cdc.gov/brfss/annual_data/2022/files/LLCP2022XPT.zip",

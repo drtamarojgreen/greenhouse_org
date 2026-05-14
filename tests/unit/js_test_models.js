@@ -134,7 +134,7 @@
             'common/test_patient_app_unit.js', 'common/test_dashboard_app_unit.js', 'common/test_meditation_app.js',
             'common/test_scheduler_logic.js', 'common/test_tech_canvas.js', 'common/test_inspiration_logic.js',
             'common/test_quizzes_logic.js',
-            'common/test_kegg_parser.js', 'common/test_models_page_new.js', 'common/test_layout_parity.js',
+            'common/test_reactome_parser.js', 'common/test_models_page_new.js', 'common/test_layout_parity.js',
             'test_production_resilience.js'
         ]
     };
@@ -176,7 +176,7 @@
             'synapse/synapse_neurotransmitters.js', 'synapse/synapse_3d.js'
         ],
         'pathway': [
-            'models_util.js', 'models_3d_math.js', 'kegg_parser.js',
+            'models_util.js', 'models_3d_math.js', 'reactome_parser.js',
             'pathway/pathway_config.js', 'pathway/pathway_layout.js',
             'pathway/pathway_ui_3d_brain.js', 'pathway/pathway_viewer.js'
         ],
@@ -220,7 +220,7 @@
             'models_ui_environment_therapy.js', 'models_ui_environment.js', 'models_3d_math.js',
             'models_ui_3d.js', 'models_ui.js', 'models_ux.js', 'labeling_system.js',
             'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js',
-            'inspiration.js', 'quizzes.js', 'kegg_parser.js', 'models_toc.js', 'GreenhouseMobile.js',
+            'inspiration.js', 'quizzes.js', 'reactome_parser.js', 'models_toc.js', 'GreenhouseMobile.js',
             'GreenhouseReactCompatibility.js', 'V8GraphRenderer.js'
         ]
     };
@@ -396,7 +396,7 @@
                 else if (cleanPath.startsWith('js/')) cleanPath = `/docs/${cleanPath}`;
                 else if (cleanPath.includes('stress_config.js')) cleanPath = '/docs/js/stress/stress_config.js';
                 else if (cleanPath.includes('inflammation_config.js')) cleanPath = '/docs/js/inflammation/inflammation_config.js';
-                else if (['assertion_library.js', 'test_framework.js', 'model_tests.js', 'GreenhouseUtils.js', 'GreenhouseDependencyManager.js', 'greenhouse.js', 'models_3d_math.js', 'models_lang.js', 'models_util.js', 'performance_profiler.js', 'GreenhouseReactCompatibility.js', 'V8GraphRenderer.js', 'labeling_system.js', 'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js', 'inspiration.js', 'kegg_parser.js', 'models_toc.js'].includes(cleanPath.split('/').pop())) {
+                else if (['assertion_library.js', 'test_framework.js', 'model_tests.js', 'GreenhouseUtils.js', 'GreenhouseDependencyManager.js', 'greenhouse.js', 'models_3d_math.js', 'models_lang.js', 'models_util.js', 'performance_profiler.js', 'GreenhouseReactCompatibility.js', 'V8GraphRenderer.js', 'labeling_system.js', 'GreenhousePatientApp.js', 'GreenhouseDashboardApp.js', 'scheduler.js', 'inspiration.js', 'reactome_parser.js', 'models_toc.js'].includes(cleanPath.split('/').pop())) {
                     cleanPath = `/docs/js/${cleanPath.split('/').pop()}`;
                 }
                 else if (cleanPath.startsWith('docs/')) cleanPath = `/${cleanPath}`;

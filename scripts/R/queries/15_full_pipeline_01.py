@@ -46,7 +46,6 @@ except ImportError:
 
 try:
     import gseapy as gp
-    from bioservices import KEGG
     from mygene import MyGeneInfo
     HAS_PATHWAY_TOOLS = True
 except ImportError:
@@ -150,7 +149,7 @@ class ExternalDataConfig:
     # Pathway analysis
     gene_symbols: List[str] = field(default_factory=list)
     organism: str = "Human"
-    kegg_pathway_id: Optional[str] = None
+    reactome_pathway_id: Optional[str] = None
 
 
 @dataclass
