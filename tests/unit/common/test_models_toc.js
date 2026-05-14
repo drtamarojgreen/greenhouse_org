@@ -77,7 +77,7 @@
             window.GreenhouseModelsTOC.config.xmlPath = originalXmlPath;
         });
 
-        TestFramework.it('should generate correct canonical URLs for production', async () => {
+        TestFramework.it('should generate correct live URLs with www subdomain and path', async () => {
             window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
             await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -86,7 +86,13 @@
                 const card = grid.children[0];
                 const launchLink = card.querySelector('a');
                 if (launchLink) {
-                    assert.contains(launchLink.href, 'greenhousemd.org');
+                    // Verify it contains the www subdomain and the domain
+                    assert.contains(launchLink.href, 'www.greenhousemd.org', 'Link should contain the www subdomain');
+                    assert.isTrue(launchLink.href.startsWith('https://'), 'Link should be an absolute HTTPS URL');
+                    // Verify that a path is actually present (e.g., https://www.greenhousemd.org/genetic)
+                    // The path should not just be the base domain.
+                    const urlObj = new URL(launchLink.href);
+                    assert.isTrue(urlObj.pathname.length > 1, 'URL should include the model path');
                 }
             }
         });
