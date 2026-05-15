@@ -264,9 +264,26 @@
 
             // Physical Node Construction
             appState.targetElement.innerHTML = '';
+            appState.targetElement.style.position = 'relative';
+            appState.targetElement.style.minHeight = '600px';
+
             const root = createElement('section', { 
                 id: 'greenhouse-quizzes-sentry',
-                style: { width: '100%', padding: '40px', background: '#000000', borderRadius: '24px', border: '3px solid #4ca1af', boxSizing: 'border-box', fontFamily: 'Quicksand, sans-serif', color: '#ffffff', minHeight: '500px' }
+                style: { 
+                    position: 'absolute',
+                    zIndex: '100',
+                    top: '0',
+                    left: '0',
+                    width: '100%', 
+                    padding: '40px', 
+                    background: '#000000', 
+                    borderRadius: '24px', 
+                    border: '3px solid #4ca1af', 
+                    boxSizing: 'border-box', 
+                    fontFamily: 'Quicksand, sans-serif', 
+                    color: '#ffffff', 
+                    minHeight: '600px' 
+                }
             },
                 createElement('h2', { style: { color: '#4ca1af', margin: '0 0 20px 0', fontWeight: '300', letterSpacing: '1px' } }, 'Greenhouse Research Quizzes'),
                 createElement('div', { id: 'quizzes-content-root', style: { color: '#ffffff' } }, '⏳ Loading quiz modules...')
