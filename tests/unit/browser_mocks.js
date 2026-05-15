@@ -52,12 +52,29 @@ class MockElement {
             contains: () => false,
             toggle: (c) => false
         };
-        this.innerHTML = '';
+        this._innerHTML = '';
         this.value = '';
         this.textContent = '';
         this.parentElement = null;
         this.id = '';
         this.className = '';
+    }
+    get innerHTML() { return this._innerHTML; }
+    set innerHTML(v) {
+        this._innerHTML = v;
+        if (typeof v === 'string' && v.includes('id=')) {
+            const matches = v.match(/id=["']([^"']+)["']/g);
+            if (matches) {
+                matches.forEach(m => {
+                    const id = m.match(/id=["']([^"']+)["']/)[1];
+                    if (!this.querySelector('#' + id)) {
+                        const child = new MockElement('div');
+                        child.setAttribute('id', id);
+                        this.appendChild(child);
+                    }
+                });
+            }
+        }
     }
     setAttribute(n, v) {
         this.attributes[n] = String(v);
@@ -115,6 +132,22 @@ class MockElement {
                 if (found) return found;
             }
         }
+        // Basic selector support for classes
+        if (s.startsWith('.')) {
+            const className = s.slice(1);
+            if (this.className.split(' ').includes(className)) return this;
+            for (let child of this.children) {
+                const found = child.querySelector(s);
+                if (found) return found;
+            }
+        }
+        // Fallback for everything else
+        for (let child of this.children) {
+            if (child.tagName.toLowerCase() === s.toLowerCase()) return child;
+            if (child.id === s.replace('#', '')) return child;
+            const found = child.querySelector(s);
+            if (found) return found;
+        }
         return null;
     }
     querySelectorAll(s) { return []; }
@@ -125,7 +158,8 @@ class MockElement {
             measureText: () => ({ width: 10 }), save: d, restore: d, translate: d, rotate: d, scale: d,
             drawImage: d, setLineDash: d, createLinearGradient: () => ({ addColorStop: d }),
             createRadialGradient: () => ({ addColorStop: d }), quadraticCurveTo: d, bezierCurveTo: d,
-            clip: d, roundRect: d, clearRect: d, closePath: d, strokeRect: d, rect: d,
+            clip: d, roundRect: d, clearRect: d, closePath: d, strokeRect: d, rect: d, ellipse: d,
+            createPattern: () => ({}),
             set shadowBlur(v) {}, set shadowColor(v) {}, set globalAlpha(v) {},
             set globalCompositeOperation(v) {}, set strokeStyle(v) {}, set fillStyle(v) {},
             set lineWidth(v) {}, set lineCap(v) {}, set font(v) {}, set textAlign(v) {}, set filter(v) {}
@@ -140,6 +174,7 @@ class MockElement {
 
 function setupMockEnvironment() {
     global.window = global;
+    global.HTMLElement = class MockHTMLElement extends MockElement {};
     global.self = global;
     global.performance = { now: () => Date.now() };
 
