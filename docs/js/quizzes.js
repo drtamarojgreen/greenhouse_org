@@ -158,7 +158,7 @@
 
     /**
      * @function renderUI
-     * @description The core UI engine using physical nodes and explicit inline styles.
+     * @description The core UI engine using physical nodes, explicit inline styles, and improved feedback.
      */
     function renderUI() {
         const contentArea = document.getElementById('quizzes-content-root');
@@ -175,64 +175,100 @@
         );
 
         // 2. Question Text
-        const questionText = createElement('p', { style: { fontSize: '1.4rem', lineHeight: '1.5', margin: '30px 0', color: '#ffffff' } }, q.question);
+        const questionText = createElement('p', { style: { fontSize: '1.4rem', lineHeight: '1.5', margin: '20px 0 30px 0', color: '#ffffff', fontWeight: '300' } }, q.question);
 
         // 3. Choices
-        const choicesList = createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } });
+        const choicesList = createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '30px' } });
         q.choices.forEach((choice, idx) => {
             let btnStyle = { 
                 textAlign: 'left', 
-                padding: '20px', 
-                borderRadius: '10px', 
+                padding: '18px 24px', 
+                borderRadius: '12px', 
                 fontSize: '1.1rem', 
                 cursor: 'pointer', 
-                transition: 'all 0.2s', 
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)', 
                 color: '#ffffff',
                 width: '100%',
                 display: 'block',
-                border: '1px solid rgba(76, 161, 175, 0.4)',
-                background: 'rgba(255,255,255,0.05)'
+                border: '1px solid rgba(76, 161, 175, 0.3)',
+                background: 'rgba(255,255,255,0.03)',
+                outline: 'none'
             };
             
             if (appState.hasAnswered) {
                 btnStyle.cursor = 'default';
                 if (idx === q.answer) {
-                    btnStyle.background = 'rgba(46, 204, 113, 0.3)';
+                    btnStyle.background = 'rgba(46, 204, 113, 0.2)';
                     btnStyle.border = '2px solid #2ecc71';
+                    btnStyle.boxShadow = '0 0 15px rgba(46, 204, 113, 0.2)';
                 } else if (idx === appState.lastSelectedIdx) {
-                    btnStyle.background = 'rgba(231, 76, 60, 0.3)';
+                    btnStyle.background = 'rgba(231, 76, 60, 0.2)';
                     btnStyle.border = '2px solid #e74c3c';
+                    btnStyle.boxShadow = '0 0 15px rgba(231, 76, 60, 0.2)';
                 } else {
-                    btnStyle.background = 'rgba(255,255,255,0.02)';
-                    btnStyle.border = '1px solid #333';
-                    btnStyle.color = '#666666';
+                    btnStyle.opacity = '0.5';
+                    btnStyle.background = 'rgba(255,255,255,0.01)';
+                    btnStyle.border = '1px solid #222';
+                    btnStyle.color = '#888888';
                 }
+            } else {
+                // Add hover effect via JS for immediate feedback since we aren't using CSS
+                btnStyle.onmouseover = "this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='#4ca1af'";
+                btnStyle.onmouseout = "this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(76, 161, 175, 0.3)'";
             }
 
-            choicesList.appendChild(createElement('button', { style: btnStyle, onclick: () => handleChoice(idx) }, choice));
+            const btn = createElement('button', { style: btnStyle, onclick: () => handleChoice(idx) }, choice);
+            choicesList.appendChild(btn);
         });
 
-        // 4. Feedback Area
-        const feedback = appState.hasAnswered ? createElement('div', { style: { marginTop: '30px', padding: '25px', background: 'rgba(76,161,175,0.1)', borderLeft: '5px solid #4ca1af', borderRadius: '8px' } },
-            createElement('p', { style: { margin: '0', color: '#eeeeee', lineHeight: '1.6' } }, 
-                createElement('strong', { style: { color: '#4ca1af', display: 'block', marginBottom: '10px' } }, 'Research Context:'),
+        // 4. Feedback Area (Visible only after answering)
+        const feedback = appState.hasAnswered ? createElement('div', { 
+            style: { 
+                marginTop: '10px', 
+                padding: '25px', 
+                background: 'rgba(76,161,175,0.08)', 
+                borderLeft: '4px solid #4ca1af', 
+                borderRadius: '0 12px 12px 0',
+                animation: 'fadeIn 0.4s ease-out'
+            } 
+        },
+            createElement('p', { style: { margin: '0', color: '#eeeeee', lineHeight: '1.7', fontSize: '1.05rem' } }, 
+                createElement('strong', { style: { color: '#4ca1af', display: 'block', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.9rem' } }, 'Research Context & Insight:'),
                 q.explanation
             ),
-            createElement('button', { 
-                style: { marginTop: '20px', background: '#4ca1af', color: '#ffffff', border: 'none', padding: '12px 30px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' },
-                onclick: next
-            }, appState.currentIndex + 1 < total ? 'Next Question' : 'View Results')
+            createElement('div', { style: { display: 'flex', justifyContent: 'flex-end', marginTop: '25px' } },
+                createElement('button', { 
+                    style: { 
+                        background: '#4ca1af', 
+                        color: '#ffffff', 
+                        border: 'none', 
+                        padding: '14px 40px', 
+                        borderRadius: '30px', 
+                        cursor: 'pointer', 
+                        fontWeight: 'bold',
+                        fontSize: '1rem',
+                        boxShadow: '0 4px 15px rgba(76, 161, 175, 0.3)',
+                        transition: 'transform 0.2s'
+                    },
+                    onclick: next
+                }, appState.currentIndex + 1 < total ? 'Continue to Next Question →' : 'View Final Assessment Result')
+            )
         ) : null;
 
         contentArea.appendChild(header);
         contentArea.appendChild(questionText);
         contentArea.appendChild(choicesList);
         if (feedback) contentArea.appendChild(feedback);
+        
+        // Auto-scroll feedback into view if it might be cut off
+        if (feedback) {
+            setTimeout(() => feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+        }
     }
 
     /**
      * @function initialize
-     * @description Robust initialization sequence.
+     * @description Robust initialization sequence with flexible layout.
      */
     async function initialize(passedContainer = null, passedSelector = null) {
         if (appState.isLoading) return;
@@ -265,7 +301,8 @@
             // Physical Node Construction
             appState.targetElement.innerHTML = '';
             appState.targetElement.style.position = 'relative';
-            appState.targetElement.style.minHeight = '600px';
+            appState.targetElement.style.minHeight = '700px'; // Increased for safety
+            appState.targetElement.style.overflow = 'visible';
 
             const root = createElement('section', { 
                 id: 'greenhouse-quizzes-sentry',
@@ -276,17 +313,19 @@
                     left: '0',
                     width: '100%', 
                     padding: '40px', 
-                    background: '#000000', 
+                    background: '#0a0a0a', // Slightly darker for better contrast
                     borderRadius: '24px', 
-                    border: '3px solid #4ca1af', 
+                    border: '1px solid rgba(76, 161, 175, 0.4)', 
                     boxSizing: 'border-box', 
                     fontFamily: 'Quicksand, sans-serif', 
                     color: '#ffffff', 
-                    minHeight: '600px' 
+                    minHeight: '700px',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                    overflowY: 'auto' // Allow internal scrolling if needed
                 }
             },
-                createElement('h2', { style: { color: '#4ca1af', margin: '0 0 20px 0', fontWeight: '300', letterSpacing: '1px' } }, 'Greenhouse Research Quizzes'),
-                createElement('div', { id: 'quizzes-content-root', style: { color: '#ffffff' } }, '⏳ Loading quiz modules...')
+                createElement('h2', { style: { color: '#4ca1af', margin: '0 0 25px 0', fontWeight: '300', letterSpacing: '2px', textAlign: 'center' } }, 'GREENHOUSE RESEARCH ASSESSMENT'),
+                createElement('div', { id: 'quizzes-content-root', style: { color: '#ffffff' } }, '⏳ Synchronizing assessment modules...')
             );
 
             appState.targetElement.prepend(root);
