@@ -183,21 +183,33 @@
      * @function initialize
      * @description Robust initialization sequence.
      */
-    async function initialize() {
+    async function initialize(passedContainer = null, passedSelector = null) {
         if (appState.isLoading) return;
         appState.isLoading = true;
 
         try {
             if (!G.validateConfiguration()) return;
-            appState.targetSelector = G.appState.targetSelectorLeft;
+            
+            // Priority: Passed container > Found element
+            appState.targetSelector = passedSelector || G.appState.targetSelectorLeft;
             appState.baseUrl = G.appState.baseUrl;
 
-            // wait for the anchor
-            appState.targetElement = await G.waitForElement(appState.targetSelector);
+            if (passedContainer && document.body.contains(passedContainer)) {
+                appState.targetElement = passedContainer;
+            } else {
+                appState.targetElement = await G.waitForElement(appState.targetSelector);
+            }
             
-            // React Settlement Delay (5s)
-            console.log("⏳ [Quizzes] 5s React settlement in progress...");
-            await new Promise(r => setTimeout(r, 5000));
+            // Reduced Settlement Delay (500ms) - Matches books.js pattern
+            console.log("⏳ [Quizzes] 500ms React settlement in progress...");
+            await new Promise(r => setTimeout(r, 500));
+
+            // Final check after delay to ensure we have the latest container
+            const currentContainer = document.querySelector(appState.targetSelector);
+            if (currentContainer && currentContainer !== appState.targetElement) {
+                console.log("Quizzes: Container changed during settlement, updating target.");
+                appState.targetElement = currentContainer;
+            }
 
             // Physical Node Construction
             appState.targetElement.innerHTML = '';
@@ -215,6 +227,7 @@
             
             appState.isInitialized = true;
             appState.isRunning = true;
+            window.GreenhouseQuizzes.isRunning = true; // Sync public API
 
             // Resilience Hooks
             G.observeAndReinitializeApplication(appState.targetElement, appState.targetSelector, window.GreenhouseQuizzes, 'initialize');
@@ -231,7 +244,7 @@
 
     window.GreenhouseQuizzes = {
         initialize: initialize,
-        isRunning: () => appState.isRunning
+        isRunning: false // Boolean property instead of function to prevent clobbering issues
     };
 
     initialize();
