@@ -32,6 +32,48 @@
     };
 
     /**
+     * @description The script element that is currently being executed.
+     * This is used to retrieve configuration attributes from the loader script.
+     * @type {HTMLScriptElement}
+     */
+    const scriptElement = document.currentScript;
+
+    /**
+     * @function validateConfiguration
+     * @description Validates the configuration passed from the loader script.
+     * Autonomous implementation matching books.js/news.js pattern.
+     */
+    function validateConfiguration() {
+        const globalAttributes = window._greenhouseScriptAttributes || {};
+
+        appState.targetSelector = globalAttributes['target-selector-left']
+                                 || scriptElement?.getAttribute('data-target-selector-left')
+                                 || scriptElement?.getAttribute('data-target-selector');
+
+        appState.baseUrl = globalAttributes['base-url'] || scriptElement?.getAttribute('data-base-url');
+        const view = globalAttributes['view'] || scriptElement?.getAttribute('data-view');
+
+        if (!appState.targetSelector) {
+            console.error('Quizzes: Missing required data-target-selector attribute');
+            return false;
+        }
+
+        if (!appState.baseUrl) {
+            console.error('Quizzes: Missing required data-base-url attribute');
+            return false;
+        }
+
+        if (!appState.baseUrl.endsWith('/')) {
+            appState.baseUrl += '/';
+        }
+
+        appState.currentView = view || new URLSearchParams(window.location.search).get('view') || 'default';
+
+        console.log(`Quizzes: Configuration validated - View: ${appState.currentView}, Target: ${appState.targetSelector}`);
+        return true;
+    }
+
+    /**
      * @function createElement
      * @description Robust element creator matching Greenhouse standards.
      */
@@ -188,11 +230,11 @@
         appState.isLoading = true;
 
         try {
-            if (!G.validateConfiguration()) return;
+            if (!validateConfiguration()) return;
             
             // Priority: Passed container > Found element
-            appState.targetSelector = passedSelector || G.appState.targetSelectorLeft;
-            appState.baseUrl = G.appState.baseUrl;
+            appState.targetSelector = passedSelector || appState.targetSelector;
+            appState.baseUrl = appState.baseUrl;
 
             if (passedContainer && document.body.contains(passedContainer)) {
                 appState.targetElement = passedContainer;
