@@ -53,6 +53,8 @@ class PlantRigger(Rigger):
             "Ear.R": ((-head_r*0.9, 0, hcz), (-head_r*1.1, 0, hcz+0.1), "Head"),
             "Eye.L": ((head_r*0.35, -head_r*0.84, hcz+head_r*0.35), (head_r*0.35, -head_r*0.92, hcz+head_r*0.35), "Head"),
             "Eye.R": ((-head_r*0.35,-head_r*0.84, hcz+head_r*0.35), (-head_r*0.35,-head_r*0.92, hcz+head_r*0.35), "Head"),
+            "Eyelid.Upper.L": ((head_r*0.35, -head_r*0.84, hcz+head_r*0.40), (head_r*0.35, -head_r*0.92, hcz+head_r*0.40), "Head"),
+            "Eyelid.Lower.L": ((head_r*0.35, -head_r*0.84, hcz+head_r*0.30), (head_r*0.35, -head_r*0.92, hcz+head_r*0.30), "Head"),
             "Lip.Upper": ((0, -head_r*0.96, hcz-head_r*0.18), (0, -head_r*1.06, hcz-head_r*0.18), "Head"),
             "Lip.Lower": ((0, -head_r*0.95, hcz-head_r*0.24), (0, -head_r*1.05, hcz-head_r*0.24), "Head"),
         }
