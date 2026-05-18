@@ -11,3 +11,4 @@
 - Consolidated `base.py` and `registry.py` into shared movie root.
 - Maintained High-Fidelity character features (facial modeling/rigging) in modular components.
 - Constructed Movie 10 using the modular architecture.
+- **Note**: Movie 9 remains untouched per user request to preserve the known working version.
