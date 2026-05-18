@@ -13,7 +13,7 @@ import movie_configuration as mc
 
 from director import Director
 
-class TestMovie9AntagonistPatrol(unittest.TestCase):
+class TestMovie10AntagonistPatrol(unittest.TestCase):
     def test_patrol_path_assignment(self):
         """Verifies that antagonist patrol paths are correctly loaded and applied."""
         director = Director()

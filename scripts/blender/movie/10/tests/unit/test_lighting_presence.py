@@ -9,7 +9,7 @@ import movie_configuration as mc
 
 from director import Director
 
-class TestMovie9LightingPresence(unittest.TestCase):
+class TestMovie10LightingPresence(unittest.TestCase):
     def test_lighting_rig_presence(self):
         """Ported from M6: Verifies that lighting objects are created."""
         d = Director(); d.setup_lighting()

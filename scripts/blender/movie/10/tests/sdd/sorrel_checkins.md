@@ -1,7 +1,7 @@
-# Sorrel Checkins
+# Sorrel Checkins (Movie 10)
 
 ## Incomplete Work
-- None. All tasks completed within this SIP.
+- None.
 
 ## Deferred Work
-- Real-time physics for high-fidelity foliage (planned for future iteration).
+- Real-time physics for high-fidelity foliage (planned for next movie iteration).

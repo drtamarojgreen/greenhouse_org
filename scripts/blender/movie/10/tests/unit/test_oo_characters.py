@@ -15,7 +15,7 @@ from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
 
-class TestMovie9OOCharacters(unittest.TestCase):
+class TestMovie10OOCharacters(unittest.TestCase):
     def setUp(self):
         components.initialize_registry()
         self.manager = AssetManager(); self.manager.clear_scene()

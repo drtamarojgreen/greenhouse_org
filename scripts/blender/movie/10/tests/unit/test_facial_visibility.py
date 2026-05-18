@@ -12,7 +12,7 @@ import movie_configuration as mc
 from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 
-class TestMovie9FacialVisibility(unittest.TestCase):
+class TestMovie10FacialVisibility(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.manager = AssetManager()

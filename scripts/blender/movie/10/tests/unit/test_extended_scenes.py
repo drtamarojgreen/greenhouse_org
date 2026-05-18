@@ -13,7 +13,7 @@ import movie_configuration as mc
 
 from director import Director
 
-class TestMovie9ExtendedScenes(unittest.TestCase):
+class TestMovie10ExtendedScenes(unittest.TestCase):
     def test_extended_scene_loading(self):
         """Verifies that extended scene JSONs (8, 9, 10) can be parsed and markers added."""
         director = Director()

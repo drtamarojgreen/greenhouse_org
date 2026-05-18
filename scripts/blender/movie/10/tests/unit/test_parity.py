@@ -15,7 +15,7 @@ from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
 
-class TestMovie9Parity(unittest.TestCase):
+class TestMovie10Parity(unittest.TestCase):
     """Ensures Movie 9 output matches qualitative standards using universal logic."""
 
     def setUp(self):

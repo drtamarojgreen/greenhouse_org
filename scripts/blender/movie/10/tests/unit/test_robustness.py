@@ -15,7 +15,7 @@ from asset_manager import AssetManager
 from character_builder import CharacterBuilder
 import components
 
-class TestMovie9Robustness(unittest.TestCase):
+class TestMovie10Robustness(unittest.TestCase):
 
     def setUp(self):
         components.initialize_registry()

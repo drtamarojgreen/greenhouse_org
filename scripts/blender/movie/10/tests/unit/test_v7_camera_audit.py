@@ -8,7 +8,7 @@ if M7_ROOT not in sys.path: sys.path.insert(0, M7_ROOT)
 
 from director import Director
 
-class TestMovie7CameraAudit(unittest.TestCase):
+class TestMovie10CameraAudit(unittest.TestCase):
     def setUp(self):
         self.director = Director()
         self.director.setup_cinematics()

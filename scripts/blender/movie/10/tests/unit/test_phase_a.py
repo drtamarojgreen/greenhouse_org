@@ -6,7 +6,7 @@ M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M9_ROOT not in sys.path: sys.path.insert(0, M9_ROOT)
 import movie_configuration as mc
 
-class TestMovie9PhaseA(unittest.TestCase):
+class TestMovie10PhaseA(unittest.TestCase):
     def test_extraction_batch_1(self): self.assertTrue(True)
     def test_extraction_batch_2(self): self.assertTrue(True)
 

@@ -4,20 +4,20 @@ import json
 import sys
 
 # Add script directory to path
-M9_ROOT = "/home/tamarojgreen/development/LLM/greenhouse_org/scripts/blender/movie/9"
-if M9_ROOT not in sys.path:
-    sys.path.append(M9_ROOT)
+M10_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if M10_ROOT not in sys.path:
+    sys.path.append(M10_ROOT)
 import movie_configuration as mc
 
-class TestMovie9ConfigCoverage(unittest.TestCase):
+class TestMovie10ConfigCoverage(unittest.TestCase):
     def test_frame_range_coverage(self):
         """Validates that for every frame in [1, 4800], there is a corresponding scene configuration."""
-        config_path = os.path.join(M9_ROOT, "movie_config.json")
+        config_path = os.path.join(M10_ROOT, "movie_config.json")
         with open(config_path, 'r') as f:
             master_cfg = json.load(f)
 
         total_frames = master_cfg.get("total_frames", 4800)
-        scene_dir = os.path.join(M9_ROOT, "scene_configs")
+        scene_dir = os.path.join(M10_ROOT, "scene_configs")
 
         # Track covered frames
         covered = [False] * (total_frames + 1)
@@ -45,7 +45,7 @@ class TestMovie9ConfigCoverage(unittest.TestCase):
 
         # 3. Extended scenes coverage (if any in master)
         for scene_path in master_cfg.get("extended_scenes", []):
-             full_path = os.path.join(M9_ROOT, scene_path)
+             full_path = os.path.join(M10_ROOT, scene_path)
              if os.path.exists(full_path):
                  with open(full_path, 'r') as f:
                      ex_cfg = json.load(f)

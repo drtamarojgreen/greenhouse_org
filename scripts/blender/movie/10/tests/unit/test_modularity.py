@@ -15,7 +15,7 @@ from registry import registry
 from character_builder import CharacterBuilder
 import components
 
-class TestMovie9Modularity(unittest.TestCase):
+class TestMovie10Modularity(unittest.TestCase):
 
     def setUp(self):
         components.initialize_registry()

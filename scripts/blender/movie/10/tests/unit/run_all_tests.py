@@ -3,7 +3,7 @@ import bpy
 import os
 import sys
 
-# scripts/blender/movie/9/tests/run_all_tests.py
+# scripts/blender/movie/10/tests/run_all_tests.py
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 M9_DIR = os.path.dirname(TEST_DIR)
 

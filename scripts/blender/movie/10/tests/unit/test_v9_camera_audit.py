@@ -11,7 +11,7 @@ import movie_configuration as mc
 from director import Director
 from render import build_scene
 
-class TestMovie9CameraAudit(unittest.TestCase):
+class TestMovie10CameraAudit(unittest.TestCase):
     """
     Standard cinematic audit for Movie 9.
     Provides diagnostic visualizations for stage layout and visibility.

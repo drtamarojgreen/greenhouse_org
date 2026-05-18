@@ -1,13 +1,8 @@
-# Sorrel Checkouts
+# Sorrel Checkouts (Movie 10)
 
 ## Completed Work
-### Task 1: Anatomical Brain Fidelity
-- Enhanced `docs/js/brain_mesh_realistic.js` with higher vertex density and fractal sulci/gyri displacement.
-- Implemented curvature-based Ambient Occlusion in `neuro_ui_3d_brain.js` and `genetic_ui_3d_brain.js`.
-- Improved PBR-lite shading model in UI modules.
-
-### Task 2: Movie 10 with High-Fidelity Characters
-- Created `scripts/blender/movie/10/` directory.
-- Implemented high-fidelity modeling (`modelers.py`), rigging (`riggers.py`), and shading (`shaders.py`) specifically for Movie 10.
-- All movie logic is contained strictly within the `movie/10/` directory.
-- **Note**: Movie 9 remains untouched to preserve stability.
+### Task 2: Movie 10 localized implementation
+- Created fully self-contained Movie 10 logic suite in `scripts/blender/movie/10/`.
+- Implemented localized `base.py`, `registry.py`, `modelers.py`, `riggers.py`, and `shaders.py`.
+- Restored and refined high-fidelity protagonist characters with advanced facial modeling (eyes, iris, pupil) and rigging (eyelids, lips, jaw).
+- Migrated and updated all tests from Movie 7 and Movie 9 to reference Movie 10 paths.

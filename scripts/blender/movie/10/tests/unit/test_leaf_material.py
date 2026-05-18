@@ -13,7 +13,7 @@ import movie_configuration as mc
 
 from environment.vegetation_utils import create_leaf_material
 
-class TestMovie9LeafMaterial(unittest.TestCase):
+class TestMovie10LeafMaterial(unittest.TestCase):
     def test_leaf_material_nodes(self):
         """Verifies that the procedural leaf material contains noise-based translucency nodes."""
         base_color = [0.2, 0.6, 0.2]
