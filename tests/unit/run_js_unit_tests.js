@@ -7,7 +7,9 @@ const { setupGreenhouseMocks } = require('./greenhouse_mocks');
 setupMockEnvironment();
 setupGreenhouseMocks();
 
-process.on('unhandledRejection', () => {});
+process.on('unhandledRejection', (reason) => {
+    // console.error('Unhandled Rejection:', reason);
+});
 
 // --- 2. Load Infrastructure ---
 const ROOT = path.resolve(__dirname, '../../');
@@ -36,7 +38,9 @@ function loadModule(m) {
         const code = fs.readFileSync(fullPath, 'utf8');
         try {
             eval(code);
-        } catch (e) {}
+        } catch (e) {
+            // Silence errors during initial module load as they often depend on globals defined later
+        }
     }
 }
 
@@ -72,22 +76,8 @@ const modules = [
 
 modules.forEach(loadModule);
 
-// FINAL FORCE of required members and Node-safe behaviors
+// Final re-sync of mocks after all modules loaded
 setupGreenhouseMocks();
-
-// Use a getter to ensure loadScript is always our mock
-if (global.GreenhouseUtils) {
-    Object.defineProperty(global.GreenhouseUtils, 'loadScript', {
-        get: () => () => Promise.resolve(),
-        configurable: true
-    });
-}
-if (global.window.GreenhouseUtils) {
-    Object.defineProperty(global.window.GreenhouseUtils, 'loadScript', {
-        get: () => () => Promise.resolve(),
-        configurable: true
-    });
-}
 
 // --- 4. Discover and Run Tests ---
 function getAllTestFiles(dir, files_ = []) {
@@ -115,17 +105,8 @@ async function runTests() {
     }
     const results = await global.TestFramework.run();
     console.log(`Summary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
-    if (results.failed > 0) {
-        if (results.suites) {
-            results.suites.forEach(s => {
-                if (s.tests) {
-                    s.tests.forEach(t => {
-                        if (t.result === 'failed') console.error(`❌ [${s.name}] ${t.name}: ${t.error ? t.error.message : 'Unknown Error'}`);
-                    });
-                }
-            });
-        }
-        process.exit(1);
-    }
+
+    // Force exit to kill background animation loops
+    process.exit(results.failed > 0 ? 1 : 0);
 }
 runTests().catch(e => { console.error(e); process.exit(1); });
