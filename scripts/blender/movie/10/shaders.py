@@ -1,9 +1,9 @@
 import bpy
-from scripts.blender.movie.base import Shader
-from scripts.blender.movie.registry import registry
+from .base import Shader
+from .registry import registry
 
 class UniversalShader(Shader):
-    """Universal material applier with High-Fidelity support."""
+    """Universal material applier for Movie 10."""
 
     def apply_materials(self, mesh, params):
         mats_cfg = params.get("materials", {})
@@ -25,7 +25,6 @@ class UniversalShader(Shader):
             mat_name = f"{mesh.name}_{mat_id}"
             materials[mat_id] = self._create_material(mat_name, cfg)
 
-        # Assignment
         semantic_order = ["primary", "secondary", "iris", "pupil"]
         ordered = [k for k in semantic_order if k in materials]
         for k in materials:

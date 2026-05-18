@@ -2,13 +2,13 @@ import bpy
 import bmesh
 import math
 import mathutils
-from scripts.blender.movie.base import Rigger
-from scripts.blender.movie.registry import registry
+from .base import Rigger
+from .registry import registry
 
 class PlantRigger(Rigger):
     """
     Specific Rigger for Procedural Plant Humanoids.
-    Modularized bone hierarchy including High-Fidelity facial rigging.
+    Bone hierarchy including High-Fidelity facial rigging for Movie 10.
     """
 
     def build_rig(self, char_id, params):
@@ -47,7 +47,6 @@ class PlantRigger(Rigger):
             "Foliage":   ((0, 0, torso_h+neck_h+head_r), (0, 0, torso_h+neck_h+head_r+0.5), "Head"),
         }
 
-        # Add High-Fidelity Facial Bones
         hcz = torso_h + neck_h + head_r
         facial_bones = {
             "Ear.L": ((head_r*0.9, 0, hcz), (head_r*1.1, 0, hcz+0.1), "Head"),

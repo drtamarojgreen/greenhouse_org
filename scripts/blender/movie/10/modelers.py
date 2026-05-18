@@ -5,13 +5,13 @@ import math
 import random
 import json
 import os
-from scripts.blender.movie.base import Modeler
-from scripts.blender.movie.registry import registry
+from .base import Modeler
+from .registry import registry
 
 class PlantModeler(Modeler):
     """
     Specific Modeler for Procedural Plant Humanoids.
-    Modularized to support multiple movies with High-Fidelity features.
+    Modularized for Movie 10 with High-Fidelity features.
     """
 
     def __init__(self, config_path=None):
@@ -21,8 +21,7 @@ class PlantModeler(Modeler):
                 self.p_cfg = json.load(f)
 
         if self.p_cfg is None:
-            # Try to find plant.json in the same directory as this file
-            default_path = os.path.join(os.path.dirname(__file__), "plant.json")
+            default_path = os.path.join(os.path.dirname(__file__), "modeling", "plant.json")
             if os.path.exists(default_path):
                 with open(default_path, 'r') as f:
                     self.p_cfg = json.load(f)
@@ -97,19 +96,19 @@ class PlantModeler(Modeler):
             self._add_joint_bulb(bm, mesh_obj, dlayer, f_loc, 0.13, f"Foot.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.10, 0.06, lseg[2], (f_loc[0], f_loc[1]-lseg[2]/2, f_loc[2]), f"Foot.{side}", rot=(math.radians(90), 0, 0))
 
-            # High-Fidelity Fingers
+            # Fingers
             fing_base_z = h_loc[2] - 0.15
             for i in range(1, 4):
                 f_name = f"Finger.{i}.{side}"
                 self._add_organic_part(bm, mesh_obj, dlayer, 0.03, 0.01, 0.15, (h_loc[0] + (i-2)*0.05, h_loc[1], fing_base_z - 0.07), f_name, rot=(math.radians(0), 0, 0))
 
-            # High-Fidelity Toes
+            # Toes
             toe_base_y = f_loc[1] - 0.15
             for i in range(1, 4):
                 t_name = f"Toe.{i}.{side}"
                 self._add_organic_part(bm, mesh_obj, dlayer, 0.04, 0.02, 0.12, (f_loc[0] + (i-2)*0.06, toe_base_y - 0.06, f_loc[2]), t_name, rot=(math.radians(90), 0, 0))
 
-        # High-Fidelity Facial Features (Eyes/Iris/Pupil)
+        # Facial Features
         head_c = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
         for side, sx in [("L", 1), ("R", -1)]:
             eye_pos = head_c + mathutils.Vector((0.15*sx, -head_r*0.9, 0.1))
@@ -126,7 +125,7 @@ class PlantModeler(Modeler):
             for i in range(num_faces, len(bm.faces)):
                 bm.faces[i].material_index = 3 # Pupil
 
-        # Foliage Algorithm
+        # Foliage
         f_cfg = self.p_cfg["foliage"]
         head_center = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
         foliage_vg = (mesh_obj.vertex_groups.get("Foliage") or mesh_obj.vertex_groups.new(name="Foliage"))
@@ -160,7 +159,6 @@ class PlantModeler(Modeler):
                     v[dlayer][vg.index] = 1.0
                     v[dlayer][foliage_vg.index] = 0.6
 
-        # Material Index Assignment
         for face in bm.faces:
             is_foliage = any(v[dlayer].get(foliage_vg.index, 0) > 0.5 for v in face.verts)
             face.material_index = 1 if is_foliage else 0
@@ -170,18 +168,6 @@ class PlantModeler(Modeler):
 
         for poly in mesh_data.polygons:
             poly.use_smooth = True
-
-        # Modifiers
-        m_cfg = self.p_cfg.get("modifiers", {})
-        if m_cfg:
-            disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')
-            disp.strength = m_cfg.get("bark_bump_strength", 0.05)
-
-            wave = mesh_obj.modifiers.new(name="WindSway", type='WAVE')
-            wave.height = m_cfg.get("wind_sway", {}).get("height", 0.05)
-            wave.width = m_cfg.get("wind_sway", {}).get("width", 1.5)
-            wave.speed = m_cfg.get("wind_sway", {}).get("speed", 0.2)
-            wave.vertex_group = "Foliage"
 
         return mesh_obj
 
@@ -195,9 +181,6 @@ class PlantModeler(Modeler):
             z_fact = 1.0 - abs(dist_from_center / (height / 2))
             factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
             v.co = mathutils.Vector(loc) + (v.co - mathutils.Vector(loc)) * factor
-        for v in ret['verts']:
-            for face in v.link_faces:
-                face.smooth = True
         return ret
 
     def _add_joint_bulb(self, bm, mesh_obj, dlayer, loc, rad, bname):
@@ -206,8 +189,6 @@ class PlantModeler(Modeler):
         ret = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=rad, matrix=matrix)
         for v in ret['verts']:
             v[dlayer][vg.index] = 1.0
-            for face in v.link_faces:
-                face.smooth = True
 
     def _get_default_config(self):
         return {
