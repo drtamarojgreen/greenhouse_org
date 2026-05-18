@@ -1,0 +1,67 @@
+{
+  "production": {
+    "title": "Movie 10: The High-Fidelity Horizon",
+    "total_frames": 5000,
+    "start_frame": 1
+  },
+  "paths": {
+    "output_dir": "scripts/blender/movie/10/assets/"
+  },
+  "ensemble": {
+    "entities": [
+      {
+        "id": "Herbaceous_HF",
+        "type": "DYNAMIC",
+        "components": {
+          "modeling": "PlantModeler",
+          "rigging": "PlantRigger",
+          "shading": "UniversalShader"
+        },
+        "parameters": {
+          "seed": 101,
+          "materials": {
+            "primary": { "color": [0.12, 0.08, 0.04] },
+            "secondary": { "color": [0.1, 0.6, 0.15] },
+            "iris": { "color": [0.2, 0.4, 1.0] }
+          }
+        },
+        "default_pos": [-2.0, 1.0, 0.0],
+        "is_protagonist": true
+      },
+      {
+        "id": "Arbor_HF",
+        "type": "DYNAMIC",
+        "components": {
+          "modeling": "PlantModeler",
+          "rigging": "PlantRigger",
+          "shading": "UniversalShader"
+        },
+        "parameters": {
+          "seed": 102,
+          "materials": {
+            "primary": { "color": [0.18, 0.1, 0.06] },
+            "secondary": { "color": [0.15, 0.7, 0.1] },
+            "iris": { "color": [1.0, 0.8, 0.2] }
+          }
+        },
+        "default_pos": [2.0, 1.0, 0.0],
+        "is_protagonist": true
+      }
+    ],
+    "storyline": [
+      {
+        "beat": "Awakening", "start": 1, "end": 1000,
+        "events": [
+          { "target": "Herbaceous_HF", "action": "visibility", "params": { "visible_at": 1 } },
+          { "target": "Arbor_HF", "action": "visibility", "params": { "visible_at": 1 } }
+        ]
+      },
+      {
+        "beat": "Synthesized Unity", "start": 1000, "end": 3000,
+        "events": [
+          { "target": "ALL", "action": "animate", "params": { "tag": "unified_dance", "duration": 2000 } }
+        ]
+      }
+    ]
+  }
+}

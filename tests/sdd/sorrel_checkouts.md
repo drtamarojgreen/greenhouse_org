@@ -1,17 +1,13 @@
-# JS Genetic SDD — Sorrel Checkouts
-# Tracks completed and verified work for lifecycle traceability.
+# Sorrel Checkouts
 
-## Empirical Observations (2024-05-04)
+## Completed Work
+### Task 1: Anatomical Brain Fidelity
+- Enhanced `docs/js/brain_mesh_realistic.js` with higher vertex density and fractal sulci/gyri displacement.
+- Implemented curvature-based Ambient Occlusion in `neuro_ui_3d_brain.js` and `genetic_ui_3d_brain.js`.
+- Improved PBR-lite shading model in UI modules.
 
-- **GeneticUIMethodAudit**: Reports 7 found methods in `genetic_ui_3d.js`.
-- **JSGlobalNamespaceAudit**: Reports 22 namespace violations across 81 files (missing IIFE or 'use strict').
-- **JSNamingConventionAudit**: Reports 16 naming violations across 81 files (non-compliant global names).
-- **JSMeaninglessAssertionAudit**: Reports 0 meaningless assertions.
-- **JSUnusedSymbolAudit**: Reports 27 potential unused symbols.
-- **JSEmptyCatchAudit**: Reports 4 empty catch blocks (locations: `graph_parser.js:96`, `inspiration.js:238`, `news.js:230`, `GreenhouseUtils.js:638`).
-- **JSHardcodedValueAudit**: Reports 1603 magic numbers above threshold and 3876 long hardcoded strings (primarily translation data in `models_lang.js`).
-- **JSCodeDuplicationAudit**: Reports 227 identical 5-line cross-file chunks.
-- **JSFileLengthAudit**: Reports 3 long files: `genetic_ui_3d.js` (1110), `rna_repair.js` (1050), and `models_lang.js` (4936).
-- **JSLongTaskAudit**: Reports 16 unthrottled listeners (e.g., `mousemove`, `scroll`, `resize`) and 3 instances of triple-nested loops.
-- **JSComplexityAudit**: Reports 4 complex files (score > 100): `genetic_ui_3d.js:126`, `rna_repair.js:167`, `books.js:101`, `GreenhouseUtils.js:130`.
-- **JSVarUsageAudit**: Reports 4 instances of 'var' usage, all in `models_lang.js`.
+### Task 2: Modular Blender Movie Architecture & Movie 10
+- Refactored duplicated logic into `scripts/blender/movie/scene_utilities/` and `scripts/blender/movie/style_utilities/`.
+- Consolidated `base.py` and `registry.py` into shared movie root.
+- Maintained High-Fidelity character features (facial modeling/rigging) in modular components.
+- Constructed Movie 10 using the modular architecture.

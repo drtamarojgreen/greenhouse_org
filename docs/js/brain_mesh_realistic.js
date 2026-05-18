@@ -51,13 +51,14 @@
             };
 
             // Parameters for realistic brain shape
+            // Increased density for anatomical fidelity
             const baseRadius = 200;
-            const latBands = 80;
-            const lonBands = 80;
+            const latBands = 100;
+            const lonBands = 100;
 
             // Generate layers: Internal structures first, then Cortex
             const layers = [
-                { name: 'Internal', radius: 0.45 * baseRadius, latBands: 40, lonBands: 40 },
+                { name: 'Internal', radius: 0.45 * baseRadius, latBands: 50, lonBands: 50 },
                 { name: 'Cortex', radius: baseRadius, latBands: latBands, lonBands: lonBands }
             ];
 
@@ -380,7 +381,7 @@
          */
         addCorticalFolds(x, y, z, baseRadius, region) {
             // No folds for internal structures or brainstem
-            const internalRegions = ['corpusCallosum', 'lateralVentricle', 'thalamus', 'hypothalamus', 'pituitaryGland', 'mammillaryBody', 'brainstem'];
+            const internalRegions = ['corpusCallosum', 'lateralVentricle', 'thalamus', 'hypothalamus', 'pituitaryGland', 'mammillaryBody', 'brainstem', 'vagus_nerve', 'optic_nerve'];
             if (internalRegions.includes(region)) {
                 return { x: 0, y: 0, z: 0 };
             }
@@ -390,18 +391,19 @@
 
             switch (region) {
                 case 'pfc':
-                    freqMult = 1.2; ampMult = 1.1; break;
+                    freqMult = 1.3; ampMult = 1.2; break;
                 case 'cerebellum':
-                    freqMult = 3.0; ampMult = 0.5; break;
+                    freqMult = 3.5; ampMult = 0.6; break;
                 case 'temporalLobe':
-                    freqMult = 0.8; ampMult = 0.9; break;
+                    freqMult = 0.9; ampMult = 1.0; break;
                 case 'occipitalLobe':
-                    freqMult = 1.5; ampMult = 0.8; break;
+                    freqMult = 1.6; ampMult = 0.9; break;
             }
 
-            displacement += Math.sin(nx * 4 * freqMult + nz * 3 * freqMult) * Math.cos(ny * 3 * freqMult) * 0.12 * ampMult;
-            displacement += Math.sin(nx * 8 * freqMult + nz * 6 * freqMult) * Math.cos(ny * 7 * freqMult) * 0.06 * ampMult;
-            displacement += Math.sin(nx * 16 * freqMult + nz * 12 * freqMult) * Math.cos(ny * 14 * freqMult) * 0.03 * ampMult;
+            // Fractal Perlin-like displacement for gyri/sulci
+            displacement += Math.sin(nx * 5 * freqMult + nz * 4 * freqMult) * Math.cos(ny * 4 * freqMult) * 0.15 * ampMult;
+            displacement += Math.sin(nx * 10 * freqMult + nz * 8 * freqMult) * Math.cos(ny * 9 * freqMult) * 0.08 * ampMult;
+            displacement += Math.sin(nx * 20 * freqMult + nz * 16 * freqMult) * Math.cos(ny * 18 * freqMult) * 0.04 * ampMult;
 
             const len = Math.sqrt(nx**2 + ny**2 + nz**2);
             if (len > 0) {
