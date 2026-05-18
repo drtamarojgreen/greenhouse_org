@@ -10,29 +10,30 @@ struct Card {
 
 int main() {
     std::vector<Card> cards = {
+        {"Architecture Consistency", "./scripts/blender/movie/10/tests/sdd/cards/const_check"},
         {"High Fidelity Standards", "./scripts/blender/movie/10/tests/sdd/cards/hf_check"},
-        {"Architectural Consistency", "./scripts/blender/movie/10/tests/sdd/cards/const_check"}
+        {"Deep Module & JSON Integrity", "./scripts/blender/movie/10/tests/sdd/cards/deep_check"}
     };
 
-    std::cout << "Starting Movie 10 Sorrel Execution Loop..." << std::endl;
+    std::cout << "Starting Movie 10 Sorrel Structural Enforcement Loop..." << std::endl;
     bool success = true;
 
     for (const auto& card : cards) {
         std::cout << "\nExecuting Card: " << card.name << std::endl;
         int result = std::system(card.binary.c_str());
         if (result != 0) {
-            std::cout << "Card " << card.name << " FAILED with exit code " << result << std::endl;
+            std::cout << "Card " << card.name << " VIOLATION detected (exit code " << result << ")" << std::endl;
             success = false;
         } else {
-            std::cout << "Card " << card.name << " PASSED" << std::endl;
+            std::cout << "Card " << card.name << " PASSED (Verified against Facts)" << std::endl;
         }
     }
 
     if (success) {
-        std::cout << "\n[ALL CARDS VERIFIED AGAINST FACTS]" << std::endl;
+        std::cout << "\n[RESULT] SYSTEM STABLE AND STRUCTURALLY SOUND" << std::endl;
         return 0;
     } else {
-        std::cout << "\n[FACT VIOLATIONS DETECTED]" << std::endl;
+        std::cout << "\n[RESULT] CRITICAL STRUCTURAL VIOLATIONS DETECTED" << std::endl;
         return 1;
     }
 }
