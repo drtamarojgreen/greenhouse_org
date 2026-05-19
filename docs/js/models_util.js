@@ -279,6 +279,65 @@
             return pathString.replace(/\b(w|h|tw|psy)\b/g, match => context[match]);
         },
 
+        /**
+         * @function compute
+         * @description Safely evaluates basic mathematical expressions containing context variables.
+         * Supports +, -, *, / and variables w, h, tw, psy.
+         * @param {string} expr - The expression to evaluate (e.g., "w / 2 + 10")
+         * @param {Object} context - Context object containing variable values.
+         * @returns {number} The evaluated result.
+         */
+        compute(expr, context) {
+            if (typeof expr === 'number') return expr;
+            if (!expr) return 0;
+
+            // 1. Replace variables from context
+            let result = this.parseDynamicPath(expr, context);
+
+            // 2. Remove all whitespace
+            result = result.replace(/\s+/g, '');
+
+            // 3. Simple Tokenization and Shunting-Yard for basic arithmetic
+            // For the scope of Greenhouse, we usually only see simple expressions like "w/2" or "psy"
+            // We'll implement a basic calculator that handles precedence.
+
+            const ops = {
+                '+': (a, b) => a + b,
+                '-': (a, b) => a - b,
+                '*': (a, b) => a * b,
+                '/': (a, b) => a / b
+            };
+            const prec = { '+': 1, '-': 1, '*': 2, '/': 2 };
+
+            const tokens = result.split(/([+\-*/])/).filter(t => t.length > 0);
+            const values = [];
+            const operators = [];
+
+            const applyOp = () => {
+                const op = operators.pop();
+                const b = values.pop();
+                const a = values.pop();
+                values.push(ops[op](a, b));
+            };
+
+            for (let token of tokens) {
+                if (ops[token]) {
+                    while (operators.length > 0 && prec[operators[operators.length - 1]] >= prec[token]) {
+                        applyOp();
+                    }
+                    operators.push(token);
+                } else {
+                    values.push(parseFloat(token));
+                }
+            }
+
+            while (operators.length > 0) {
+                applyOp();
+            }
+
+            return values[0] || 0;
+        },
+
         t(key) {
             const lang = this.currentLanguage;
             // 1. Try direct key lookup in current language

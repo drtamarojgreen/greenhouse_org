@@ -17,14 +17,27 @@
             let path;
             switch (element.type) {
                 case 'path':
-                    path = new Path2D(GreenhouseModelsUtil.parseDynamicPath(element.path, { w, h, tw, psy }));
+                    // Enhanced path parsing: evaluate expressions within the path string
+                    // Example: "M w/2 psy" -> "M 400 360"
+                    const rawPath = element.path || '';
+                    const processedPath = rawPath.split(/(\s|,)/).map(token => {
+                        const trimmed = token.trim();
+                        if (!trimmed || /^[a-zA-Z]$/.test(trimmed)) return token; // Keep commands like M, L, C, etc.
+                        // Check if it contains variables or arithmetic
+                        if (/\b(w|h|tw|psy)\b|[+\-*/]/.test(trimmed)) {
+                            return GreenhouseModelsUtil.compute(trimmed, { w, h, tw, psy });
+                        }
+                        return token;
+                    }).join('');
+
+                    path = new Path2D(processedPath);
                     if(ctx.fillStyle) ctx.fill(path);
                     if(ctx.strokeStyle) ctx.stroke(path);
                     break;
                 case 'ellipse':
                     ctx.beginPath();
-                    const cx = eval(GreenhouseModelsUtil.parseDynamicPath(element.cx, { w, h, tw, psy }));
-                    const cy = eval(GreenhouseModelsUtil.parseDynamicPath(element.cy, { w, h, tw, psy }));
+                    const cx = GreenhouseModelsUtil.compute(element.cx, { w, h, tw, psy });
+                    const cy = GreenhouseModelsUtil.compute(element.cy, { w, h, tw, psy });
                     ctx.ellipse(cx, cy, element.rx, element.ry, 0, 0, Math.PI * 2);
                     if(ctx.fillStyle) ctx.fill();
                     if(ctx.strokeStyle) ctx.stroke();
