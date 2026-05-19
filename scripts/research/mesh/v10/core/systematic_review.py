@@ -103,7 +103,7 @@ class SystematicReviewEngine:
         conf_obj = ConfounderCatalog.extract_confounders(study_record, text)
         
         # Live FDA lookup to extract active pharmacology variables dynamically based on study intervention
-        med_term = study_record.get("intervention", "Concerta")
+        med_term = study_record.get("intervention", "")
         try:
             drug = ExternalAPIFetcher.fetch_opendrug_metadata(med_term)
             generic_name = drug.get("generic_name", med_term)
@@ -115,7 +115,7 @@ class SystematicReviewEngine:
             active_ingredient = med_term
             
         proximal = [f"{peicot_obj.population} Severity: {peicot_obj.outcome}"]
-        intermediate = [f"Autonomic cortisol excretion rates", f"Active medication status of {generic_name}"]
+        intermediate = [f"Physiological excretion/response rates", f"Active medication status of {generic_name}"]
         long_term = [f"Long-term endpoints (Timing: {peicot_obj.timing})"]
 
         # Settings Context (Feature 25)
@@ -133,7 +133,7 @@ class SystematicReviewEngine:
             gaps.append(f"Missing {generic_name} dosage records")
 
         # Selective reporting (Feature 30)
-        methods = [f"{peicot_obj.population} severity measurement", "Salivary Cortisol Level", f"{brand_name} Adherence"]
+        methods = [f"{peicot_obj.population} severity measurement", f"{peicot_obj.outcome} assessment", f"{brand_name} Adherence"]
         results = list(methods)
         if len(results) > 1 and any(w in text for w in ["selective", "primary only", "omitted", "partial", "limitations"]):
             results = results[:-1]
@@ -145,10 +145,9 @@ class SystematicReviewEngine:
         elif "stress exposure increased" in text or "stress predicts adhd" in text:
             direction = "stress-to-ADHD"
 
-        # Evidence Tagging (Feature 36)
-        evidence = "phenomenological"
-        if any(w in text for w in ["hpa", "cortisol", "receptor", "dopamine", active_ingredient.lower()]):
-            evidence = "mechanistic"
+        # Evidence Tagging (Feature 36): mechanistic if abstract mentions pharmacological/biomarker keywords
+        mechanistic_keywords = [active_ingredient.lower()] + [w.lower() for w in [peicot_obj.exposure, peicot_obj.outcome] if w]
+        evidence = "mechanistic" if any(w in text for w in mechanistic_keywords) else "phenomenological"
 
         # Citation Context (Feature 37)
         cit = "neutral"
@@ -228,27 +227,31 @@ class SystematicReviewEngine:
 
     def generate_chronology_matrix(self) -> List[Dict[str, Any]]:
         """
-        Chronology matrix linking evidence changes to DSM guidelines revisions dynamically (Feature 38).
+        Chronology matrix linking evidence changes to diagnostic guideline revisions dynamically (Feature 38).
+        Uses the most recent study in the active review set as the live evidence anchor.
         """
-        pubmed_info = ExternalAPIFetcher.fetch_pubmed_metadata(["34218945"])
-        details = list(pubmed_info.values())[0]
+        # Use the most recently added study as the live anchor, if available
+        if self.studies:
+            anchor = self.studies[-1]
+            anchor_ref = f"Active dataset study: '{anchor.title}' (PMID: {anchor.pmid})."
+        else:
+            anchor_ref = "No studies currently loaded in the active review set."
         
-        # Build dynamic clinical timelines using live PubMed evidence inputs
         return [
             {
-                "DSM_Version": "DSM-III (1980)",
-                "Focus": "Introduction of ADD classification separating hyperactivity boundaries.",
+                "Guideline_Version": "Early Classification Era",
+                "Focus": "Introduction of primary classification separating behavioral and attentional boundaries.",
                 "Evidence_Baseline": "Initial clinical observation records."
             },
             {
-                "DSM_Version": "DSM-IV (1994)",
-                "Focus": "Establishment of kombined and inattentive subtypes based on behavioral scales.",
+                "Guideline_Version": "Revised Diagnostic Era",
+                "Focus": "Establishment of combined and distinct subtypes based on behavioral scales.",
                 "Evidence_Baseline": "Clinical field trial outcomes."
             },
             {
-                "DSM_Version": "DSM-5 (2013) & Beyond",
-                "Focus": "Integration of environmental cortisol wear-and-tear and stress biomarkers.",
-                "Evidence_Baseline": f"Informed by live peer-reviewed study: '{details['title']}' published in {details['journal']} (PMID: {details['pmid']})."
+                "Guideline_Version": "Current Evidence-Based Era",
+                "Focus": "Integration of environmental biomarker data and physiological stress markers.",
+                "Evidence_Baseline": anchor_ref
             }
         ]
 
@@ -262,7 +265,7 @@ class SystematicReviewEngine:
                     "cell_type": "markdown",
                     "metadata": {},
                     "source": [
-                        "# Systematic Review Notebook - ADHD & Chronic Stress Evidence Synthesis\n",
+                        f"# Systematic Review Notebook - Evidence Synthesis\n",
                         "Auto-generated by MeSH Discovery Pipeline v10."
                     ]
                 },

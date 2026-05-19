@@ -143,31 +143,62 @@ class MainPipelineV10:
         )
 
         # [STAGE 4] Emerging Discovery (Burst detection & preprints)
-        # Dynamically query biomedical APIs to populate emerging watchlists and timeseries
-        drug_meta = ExternalAPIFetcher.fetch_opendrug_metadata("Concerta")
-        active_ingredient = drug_meta["active_ingredient"]
-        ctrials = ExternalAPIFetcher.fetch_clinical_trials("Clinical Intervention", limit=2)
-        conditions = ExternalAPIFetcher.fetch_clinical_conditions("gastroenteri", limit=5)
+        intervention = "Clinical Intervention"
+        if studies and "peicot" in studies[0]:
+            intervention = studies[0]["peicot"].get("intervention", "Clinical Intervention")
+        elif studies:
+            intervention = studies[0].get("intervention", "Clinical Intervention")
+            
+        # [STAGE 4] Emerging Discovery (Burst detection & preprints)
+        try:
+            drug_meta = ExternalAPIFetcher.fetch_opendrug_metadata(intervention)
+            active_ingredient = drug_meta.get("active_ingredient", intervention)
+        except Exception:
+            active_ingredient = intervention
+            
+        ctrials = ExternalAPIFetcher.fetch_clinical_trials(intervention, limit=2)
+        conditions = ExternalAPIFetcher.fetch_clinical_conditions(intervention[:10], limit=5)
         for cond in conditions:
-            logger.info(f"Retrieved NLM Clinical Condition: {cond['icd9_code']} - {cond['primary_name']}")
+            logger.info(f"Retrieved NLM Clinical Condition: {cond.get('icd9_code', 'N/A')} - {cond.get('primary_name', 'N/A')}")
             
-        rxnorm_props = ExternalAPIFetcher.fetch_rxnorm_properties("Concerta")
-        logger.info(f"Retrieved RxNorm Properties: RxCUI {rxnorm_props.get('rxcui')} - {rxnorm_props.get('name')} (tty: {rxnorm_props.get('tty')})")
+        rxnorm_props = ExternalAPIFetcher.fetch_rxnorm_properties(intervention)
+        logger.info(f"Retrieved RxNorm Properties: RxCUI {rxnorm_props.get('rxcui', 'N/A')} - {rxnorm_props.get('name', 'N/A')} (tty: {rxnorm_props.get('tty', 'N/A')})")
             
+        sim_conf = self.config.get("simulation_defaults")
+        if not sim_conf:
+            raise KeyError(
+                "Required config section 'simulation_defaults' is missing from config.yaml. "
+                "Add emerging_years, emerging_counts_burst/weak/steady, and emerging_cagr_burst/weak/steady."
+            )
+
+        def require(key: str):
+            val = sim_conf.get(key)
+            if val is None:
+                raise KeyError(f"Required config key 'simulation_defaults.{key}' is missing from config.yaml.")
+            return val
+
+        years        = require("emerging_years")
+        burst_counts = require("emerging_counts_burst")
+        weak_counts  = require("emerging_counts_weak")
+        steady_counts = require("emerging_counts_steady")
+        cagr_burst   = require("emerging_cagr_burst")
+        cagr_weak    = require("emerging_cagr_weak")
+        cagr_steady  = require("emerging_cagr_steady")
+
         raw_emerging_series = []
         for idx, ct in enumerate(ctrials[:2]):
             raw_emerging_series.append({
-                "term": ct["title"][:25],
-                "counts": [2, 5, 12, 28, 62] if idx == 0 else [1, 2, 6, 12, 24],
-                "years": [2021, 2022, 2023, 2024, 2025],
-                "cagr": 88.5 if idx == 0 else 52.0,
+                "term": ct.get("title", "Unknown")[:25],
+                "counts": burst_counts if idx == 0 else weak_counts,
+                "years": years,
+                "cagr": cagr_burst if idx == 0 else cagr_weak,
                 "is_preprint": idx == 0
             })
         raw_emerging_series.append({
-            "term": f"HPA-axis ({active_ingredient})",
-            "counts": [22, 24, 25, 24, 23],
-            "years": [2021, 2022, 2023, 2024, 2025],
-            "cagr": 1.1,
+            "term": f"Physiological Pathway ({active_ingredient})",
+            "counts": steady_counts,
+            "years": years,
+            "cagr": cagr_steady,
             "is_preprint": False
         })
         
@@ -199,10 +230,10 @@ class MainPipelineV10:
 
         # [STAGE 7] Cross-Version adapters (Feature 169, 170)
         # Dynamically map v7 legacy networks utilizing active ingredients
-        mock_v7_top_nodes = [
-            {"node": 1024, "label": f"HPA-axis ({active_ingredient})", "degree": 14},
-            {"node": 2048, "label": "Sleep-Circadian Disruption", "degree": 4}
-        ]
+        mock_v7_top_nodes = sim_conf.get("mock_nodes", [
+            {"id": "Dynamic_1", "label": "Intervention Pathway A"},
+            {"id": "Dynamic_2", "label": "Intervention Pathway B"}
+        ])
         v7_bridged = self.cross_ver.apply_v7_network_bridge(mock_v7_top_nodes)
         
         mock_v8_trials = {
@@ -306,10 +337,10 @@ class MainPipelineV10:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MeSH v10.0 Orchestration Engine")
     parser.add_argument(
-        "--studies-file", 
-        type=str, 
-        required=False, 
-        help="Path to JSON file containing real, systematically searched study databases"
+        "--studies-file",
+        type=str,
+        required=False,
+        help="Path to the studies JSON file. If omitted, uses infrastructure.studies_file from config.yaml."
     )
     parser.add_argument(
         "--data-enriched",
@@ -324,20 +355,43 @@ if __name__ == "__main__":
     parser.add_argument(
         "--seed",
         type=str,
-        help="Explore up to 5 levels of associations of a seed term in PubMed (bypasses synthesis)."
+        nargs="*",
+        metavar="TERM",
+        help=(
+            "Explore PubMed MeSH associations for one or more seed terms. "
+            "Usage: --seed ADHD Stress Glutathione. "
+            "If passed with no arguments, uses seed_exploration.default_terms from config.yaml."
+        )
     )
     args = parser.parse_args()
 
     pipeline = MainPipelineV10()
     try:
-        if args.seed:
-            tree_data = pipeline.emerging.run_deep_seed_exploration(args.seed, max_depth=5)
-            pipeline.cli.display_seed_association_tree(tree_data, depth=5)
-        else:
-            if not args.studies_file:
-                print("Error: --studies-file is required unless --seed is provided.")
+        if args.seed is not None:  # flag was present (even with no terms)
+            seed_conf = pipeline.config.get("seed_exploration", {})
+            # If called as `--seed` with no terms, fall back to config defaults
+            terms = args.seed if args.seed else seed_conf.get("default_terms", [])
+            if not terms:
+                print("Error: No seed terms provided and no default_terms found in config.yaml under seed_exploration.")
                 sys.exit(1)
-            pipeline.run_clinical_synthesis(args.studies_file, enriched=args.data_enriched, modeling=args.modeling)
+            max_seeds = seed_conf.get("max_seeds", 5)
+            if len(terms) > max_seeds:
+                print(f"Warning: {len(terms)} terms supplied; capping at {max_seeds} (seed_exploration.max_seeds in config.yaml).")
+                terms = terms[:max_seeds]
+            max_depth = seed_conf.get("max_depth") or pipeline.config.get("discovery", {}).get("max_levels", 3)
+            merged_data = pipeline.emerging.run_multi_seed_exploration(terms)
+            pipeline.cli.display_merged_seed_forest(merged_data, depth=max_depth)
+        else:
+            # Resolve studies file: CLI flag takes priority, then config.yaml
+            studies_file = args.studies_file or pipeline.config.get("infrastructure", {}).get("studies_file")
+            if not studies_file:
+                print(
+                    "Error: No studies file specified. Either pass --studies-file <path> "
+                    "or set infrastructure.studies_file in config.yaml."
+                )
+                sys.exit(1)
+            pipeline.run_clinical_synthesis(studies_file, enriched=args.data_enriched, modeling=args.modeling)
+
     except ConnectionError as e:
         print("\n" + "="*80)
         print("CLINICAL SYNTHESIS PIPELINE ERROR (FAIL-FAST)")

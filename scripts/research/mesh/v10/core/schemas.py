@@ -53,7 +53,11 @@ class PEICOTSchema:
             
         outc = peicot_data.get("outcome")
         if not outc:
-            outc = "Diurnal Cortisol Rhythms" if "cortisol" in text_lower else ("Heart Rate Variability" if "hrv" in text_lower else "Clinical Severity Scores")
+            # Derive a generic label from the abstract text if present, else use a structural placeholder
+            if "cortisol" in text_lower or "hrv" in text_lower or "variability" in text_lower:
+                outc = study_record.get("outcomes_proximal", ["Clinical Biomarker Score"])[0] if study_record.get("outcomes_proximal") else "Clinical Biomarker Score"
+            else:
+                outc = "Clinical Severity Score"
             
         time = peicot_data.get("timing")
         if not time:

@@ -13,6 +13,16 @@ discovery:
   max_children_per_node: 6
   total_max_terms: 100
 
+# --- Seed Exploration (--seed flag) ---
+seed_exploration:
+  default_terms:
+    - "ADHD"
+    - "Stress"
+    - "Glutathione"
+  max_depth: 3       # overrides discovery.max_levels for seed mode if set
+  max_children: 3    # max branches per node (decays by 1 per level)
+  max_seeds: 5       # hard cap on number of seed terms processed in one run
+
 # --- Meta-Analysis Framework Parameters ---
 meta_analysis:
   readiness_criteria:
@@ -38,6 +48,7 @@ neuro_modeling:
 
 # --- Infrastructure & Reproducibility Settings ---
 infrastructure:
+  studies_file: "scripts/research/mesh/v10/output/studies_database.json"
   cache_db: "scripts/research/mesh/v10/cache.db"
   output_dir: "scripts/research/mesh/v10/output"
   formats: ["json", "csv", "png", "svg"]
@@ -53,3 +64,19 @@ reputable_resources:
   ncbi_pubmed_esummary: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
   openfda_drug_label: "https://api.fda.gov/drug/label.json"
   clinicaltrials_registry: "https://clinicaltrials.gov/api/v2/studies"
+
+# --- Mock & Simulation Defaults ---
+simulation_defaults:
+  emerging_years: [2021, 2022, 2023, 2024, 2025]
+  emerging_counts_burst: [2, 5, 12, 28, 62]
+  emerging_counts_weak: [1, 2, 6, 12, 24]
+  emerging_counts_steady: [22, 24, 25, 24, 23]
+  emerging_cagr_burst: 88.5   # CAGR assigned to fastest-growing trial term
+  emerging_cagr_weak: 52.0    # CAGR assigned to second trial term
+  emerging_cagr_steady: 1.1   # CAGR for the steady physiological pathway term
+  mock_nodes:
+    - id: "Dynamic_1"
+      label: "Intervention Pathway A"
+    - id: "Dynamic_2"
+      label: "Intervention Pathway B"
+
