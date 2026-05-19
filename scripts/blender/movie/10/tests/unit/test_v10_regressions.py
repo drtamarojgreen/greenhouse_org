@@ -1,17 +1,39 @@
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import unittest
 import os
 import sys
 
 # Ensure Movie 10 root is in sys.path
-M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
 
-import movie_configuration as mc
-from asset_manager import AssetManager
-from character_builder import CharacterBuilder
-from director import Director
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
+try:
+    try:
+    from character_builder import
+except ImportError:
+    from ..character_builder import CharacterBuilder
+except ImportError:
+    from .character_builder import CharacterBuilder
+try:
+    try:
+    from director import
+except ImportError:
+    from ..director import Director
+except ImportError:
+    from .director import Director
 import components
 
 class TestV10Regressions(unittest.TestCase):
@@ -43,7 +65,7 @@ class TestV10Regressions(unittest.TestCase):
 
     def test_animation_tags_presence(self):
         """Verifies that new animation tags are supported by the CharacterBuilder."""
-        char = CharacterBuilder.create("Herbaceous")
+        char = CharacterBuilder.create("Herbaceous_HF")
         # Just verify we can call animate with these tags without crash (logic will be implemented later)
         tags = ["grasp", "bend_down", "reach_out", "droop", "stretch", "wiggle"]
         for tag in tags:

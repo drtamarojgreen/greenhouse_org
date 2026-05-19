@@ -6,7 +6,10 @@ import json
 
 # Setup localized environment
 try:
+    try:
     from registry import registry
+except ImportError:
+    from .registry import registry
     import modelers
     import riggers
     import shaders

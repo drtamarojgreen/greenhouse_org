@@ -1,15 +1,20 @@
 try: import bpy
 except ImportError: bpy = None
-try: import bmesh
+try: try: import bmesh
 except ImportError: bmesh = None
-try: import mathutils
+except ImportError: bmesh = None
+try: try: import mathutils
+except ImportError: mathutils = None
 except ImportError: mathutils = None
 import math
 import os
 
 try:
     from base import Rigger
+    try:
     from registry import registry
+except ImportError:
+    from .registry import registry
 except ImportError:
     from .base import Rigger
     from .registry import registry

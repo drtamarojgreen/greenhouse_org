@@ -22,7 +22,10 @@ if spec is None:
     if alt_root not in sys.path:
         sys.path.insert(0, alt_root)
 
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
 def run_tests():
     # Force registration by importing components

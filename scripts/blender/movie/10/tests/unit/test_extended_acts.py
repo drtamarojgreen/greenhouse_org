@@ -1,14 +1,30 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 
 # Add script directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from director import Director
-from asset_manager import AssetManager
+try:
+    try:
+    from director import
+except ImportError:
+    from ..director import Director
+except ImportError:
+    from .director import Director
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
 
 class TestExtendedActs(unittest.TestCase):
     def setUp(self):

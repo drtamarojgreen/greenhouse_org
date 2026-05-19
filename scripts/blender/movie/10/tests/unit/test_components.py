@@ -1,5 +1,6 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 
@@ -7,10 +8,25 @@ import sys
 M10_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M10_DIR not in sys.path:
     sys.path.append(M10_DIR)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from asset_manager import AssetManager
-from character_builder import CharacterBuilder
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
+try:
+    try:
+    from character_builder import
+except ImportError:
+    from ..character_builder import CharacterBuilder
+except ImportError:
+    from .character_builder import CharacterBuilder
 
 class TestComponentParity(unittest.TestCase):
     def setUp(self):

@@ -1,18 +1,42 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
-import mathutils
+try: try: import mathutils
+except ImportError: mathutils = None
+except ImportError: mathutils = None
 
 # Standard path injection
-M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from asset_manager import AssetManager
-from character_builder import CharacterBuilder
-from director import Director
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
+try:
+    try:
+    from character_builder import
+except ImportError:
+    from ..character_builder import CharacterBuilder
+except ImportError:
+    from .character_builder import CharacterBuilder
+try:
+    try:
+    from director import
+except ImportError:
+    from ..director import Director
+except ImportError:
+    from .director import Director
 
 class TestProductionResilience(unittest.TestCase):
     @classmethod
@@ -41,7 +65,7 @@ class TestProductionResilience(unittest.TestCase):
                 self.assertTrue(obj.matrix_parent_inverse.is_identity)
 
     def test_res_bone_height(self):
-        for ent_id in ["Herbaceous", "Arbor"]:
+        for ent_id in ["Herbaceous_HF", "Arbor_HF"]:
             rig = bpy.data.objects.get(f"{ent_id}.Rig")
             if rig:
                 head = rig.pose.bones.get("Head")
@@ -90,8 +114,8 @@ class TestProductionResilience(unittest.TestCase):
     def test_res_batch_13(self): self.assertIn("Wide", bpy.data.objects)
     def test_res_batch_14(self): self.assertTrue(bpy.context.scene.camera is not None)
     def test_res_batch_15(self): self.assertEqual(bpy.context.scene.frame_start, 1)
-    def test_res_batch_16(self): self.assertGreater(len(bpy.data.objects["Herbaceous.Body"].vertex_groups), 5)
-    def test_res_batch_17(self): self.assertGreater(len(bpy.data.objects["Arbor.Body"].vertex_groups), 5)
+    def test_res_batch_16(self): self.assertGreater(len(bpy.data.objects["Herbaceous_HF.Body"].vertex_groups), 5)
+    def test_res_batch_17(self): self.assertGreater(len(bpy.data.objects["Arbor_HF.Body"].vertex_groups), 5)
     def test_res_batch_18(self): self.assertTrue(all(m.use_nodes for m in bpy.data.materials))
     def test_res_batch_19(self): self.assertTrue(any("Bark" in m.name for m in bpy.data.materials))
     def test_res_batch_20(self): self.assertTrue(any("Leaf" in m.name for m in bpy.data.materials))

@@ -1,15 +1,19 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 
 # Standard Path setup for tests
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M10_ROOT = os.path.dirname(TEST_DIR)
+M10_ROOT = os.path.dirname(os.path.dirname(TEST_DIR))
 
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
 class TestMovie10RenderEngine(unittest.TestCase):
     def test_eevee_enforcement(self):

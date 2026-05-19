@@ -1,5 +1,6 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 
@@ -7,12 +8,36 @@ import sys
 M10_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if M10_DIR not in sys.path:
     sys.path.append(M10_DIR)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from asset_manager import AssetManager
-from director import Director
-from registry import registry
-from character_builder import CharacterBuilder
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
+try:
+    try:
+    from director import
+except ImportError:
+    from ..director import Director
+except ImportError:
+    from .director import Director
+try:
+    from registry import registry
+except ImportError:
+    from .registry import registry
+try:
+    try:
+    from character_builder import
+except ImportError:
+    from ..character_builder import CharacterBuilder
+except ImportError:
+    from .character_builder import CharacterBuilder
 import components
 
 class TestMovie10Modularity(unittest.TestCase):
@@ -25,8 +50,8 @@ class TestMovie10Modularity(unittest.TestCase):
 
     def test_universal_build_data_driven(self):
         """Verifies that a character is built purely from geometry and props data."""
-        cfg = mc.get_character_config("Herbaceous")
-        char = CharacterBuilder.create("Herbaceous", cfg)
+        cfg = mc.get_character_config("Herbaceous_HF")
+        char = CharacterBuilder.create("Herbaceous_HF", cfg)
         char.build(self.manager)
 
         # Verify prop objects exist (from structure.props)

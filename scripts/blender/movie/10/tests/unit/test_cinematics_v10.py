@@ -1,14 +1,18 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 import json
 
 # Ensure we can import Movie 10 modules
-M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
 class TestCinematicsV10(unittest.TestCase):
     def setUp(self):

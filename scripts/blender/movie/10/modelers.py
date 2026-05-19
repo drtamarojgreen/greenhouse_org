@@ -1,8 +1,10 @@
 try: import bpy
 except ImportError: bpy = None
-try: import bmesh
+try: try: import bmesh
 except ImportError: bmesh = None
-try: import mathutils
+except ImportError: bmesh = None
+try: try: import mathutils
+except ImportError: mathutils = None
 except ImportError: mathutils = None
 import math
 import random
@@ -11,7 +13,10 @@ import os
 
 try:
     from base import Modeler
+    try:
     from registry import registry
+except ImportError:
+    from .registry import registry
 except ImportError:
     from .base import Modeler
     from .registry import registry

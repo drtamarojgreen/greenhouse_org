@@ -1,18 +1,34 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 
 # Standard Path setup for tests
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M10_ROOT = os.path.dirname(TEST_DIR)
+M10_ROOT = os.path.dirname(os.path.dirname(TEST_DIR))
 
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from asset_manager import AssetManager
-from character_builder import CharacterBuilder
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
+try:
+    try:
+    from character_builder import
+except ImportError:
+    from ..character_builder import CharacterBuilder
+except ImportError:
+    from .character_builder import CharacterBuilder
 import components
 
 class TestMovie10BakedRigging(unittest.TestCase):
@@ -22,13 +38,13 @@ class TestMovie10BakedRigging(unittest.TestCase):
 
     def test_baked_action_assignment(self):
         """Verifies that BakedAnimator can correctly assign actions linked with characters."""
-        # We'll use Herbaceous as it's configured for BakedAnimator now
-        cfg = mc.get_character_config("Herbaceous")
-        char = CharacterBuilder.create("Herbaceous", cfg)
+        # We'll use Herbaceous_HF as it's configured for BakedAnimator now
+        cfg = mc.get_character_config("Herbaceous_HF")
+        char = CharacterBuilder.create("Herbaceous_HF", cfg)
         char.build(self.manager)
 
         # Mock an action for testing since we might not have the actual blend in CI
-        mock_action = bpy.data.actions.new(name="Herbaceous_walk")
+        mock_action = bpy.data.actions.new(name="Herbaceous_HF_walk")
 
         # Test switching
         char.animate("walk", 1)
@@ -36,7 +52,7 @@ class TestMovie10BakedRigging(unittest.TestCase):
         if char.rig and char.rig.animation_data:
             action = char.rig.animation_data.action
             self.assertIsNotNone(action, "Failed to apply baked action")
-            self.assertEqual(action.name, "Herbaceous_walk")
+            self.assertEqual(action.name, "Herbaceous_HF_walk")
 
     def test_linked_rig_integrity(self):
         """Verifies that linked rigs maintain their bone hierarchy and visibility."""

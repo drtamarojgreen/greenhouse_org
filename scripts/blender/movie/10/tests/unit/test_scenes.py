@@ -1,14 +1,24 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import json
 import sys
 
-M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if M10_ROOT not in sys.path: sys.path.insert(0, M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from director import Director
+try:
+    try:
+    from director import
+except ImportError:
+    from ..director import Director
+except ImportError:
+    from .director import Director
 
 class TestGenericPipeline(unittest.TestCase):
     """Verifies that the pipeline is strictly data-driven and modular."""
@@ -53,7 +63,13 @@ class TestGenericPipeline(unittest.TestCase):
 
     def test_animation_modular_dispatch(self):
         """Verifies AnimationHandler dispatches to modular sub-packages."""
-        from animation_handler import AnimationHandler
+        try:
+    try:
+    from animation_handler import
+except ImportError:
+    from ..animation_handler import AnimationHandler
+except ImportError:
+    from .animation_handler import AnimationHandler
         handler = AnimationHandler()
         # Verify it has the apply_animation method but no local _animate methods
         self.assertTrue(hasattr(handler, "apply_animation"))
@@ -62,7 +78,10 @@ class TestGenericPipeline(unittest.TestCase):
 
     def test_zero_hardcoding_registry(self):
         """Verifies that models are loaded via registry, not hardcoded imports."""
-        from registry import registry
+        try:
+    from registry import registry
+except ImportError:
+    from .registry import registry
         self.assertIsNotNone(registry.get_modeling("PlantModeler"))
         self.assertIsNotNone(registry.get_modeling("GreenhouseMobileModeler"))
 

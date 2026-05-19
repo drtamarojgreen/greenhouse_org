@@ -7,7 +7,10 @@ import sys
 M10_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if M10_ROOT not in sys.path:
     sys.path.append(M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
 class TestMovie10ConfigCoverage(unittest.TestCase):
     def test_frame_range_coverage(self):

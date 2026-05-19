@@ -1,13 +1,18 @@
 try: import bpy
 except ImportError: bpy = None
-try: import bmesh
+try: try: import bmesh
 except ImportError: bmesh = None
-try: import mathutils
+except ImportError: bmesh = None
+try: try: import mathutils
+except ImportError: mathutils = None
 except ImportError: mathutils = None
 
 try:
     from base import Shader
+    try:
     from registry import registry
+except ImportError:
+    from .registry import registry
 except ImportError:
     from .base import Shader
     from .registry import registry

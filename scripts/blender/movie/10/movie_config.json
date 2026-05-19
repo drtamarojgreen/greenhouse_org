@@ -1,7 +1,7 @@
 {
   "production": {
     "title": "Movie 10: High-Fidelity Horizon",
-    "total_frames": 5000,
+    "total_frames": 10000,
     "start_frame": 1
   },
   "paths": {
@@ -18,9 +18,7 @@
         "id": "Herbaceous_HF",
         "type": "DYNAMIC",
         "components": {
-          "modeling": "PlantModeler",
-          "rigging": "PlantRigger",
-          "shading": "UniversalShader"
+          "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader"
         },
         "parameters": {
           "seed": 101,
@@ -37,9 +35,7 @@
         "id": "Arbor_HF",
         "type": "DYNAMIC",
         "components": {
-          "modeling": "PlantModeler",
-          "rigging": "PlantRigger",
-          "shading": "UniversalShader"
+          "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader"
         },
         "parameters": {
           "seed": 102,
@@ -51,6 +47,74 @@
         },
         "default_pos": [2.0, 1.0, 0.0],
         "is_protagonist": true
+      },
+      {
+        "id": "Lichen_HF",
+        "type": "DYNAMIC",
+        "components": {
+          "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader"
+        },
+        "parameters": {
+          "seed": 201, "height_scale": 0.8,
+          "materials": {
+            "primary": { "color": [0.2, 0.2, 0.15] },
+            "secondary": { "color": [0.5, 0.5, 0.4] },
+            "iris": { "color": [0.8, 0.7, 0.2] }
+          }
+        },
+        "default_pos": [0.0, 4.0, 0.0],
+        "is_protagonist": true
+      },
+      {
+        "id": "Spore_HF",
+        "type": "DYNAMIC",
+        "components": {
+          "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader"
+        },
+        "parameters": {
+          "seed": 202, "height_scale": 0.6,
+          "materials": {
+            "primary": { "color": [0.3, 0.05, 0.05] },
+            "secondary": { "color": [1.0, 0.4, 0.2] },
+            "iris": { "color": [1.0, 1.0, 1.0] }
+          }
+        },
+        "default_pos": [5.0, -2.0, 0.0],
+        "is_protagonist": true
+      },
+      {
+        "id": "Blight_HF",
+        "type": "DYNAMIC",
+        "components": {
+          "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader"
+        },
+        "parameters": {
+          "seed": 301,
+          "materials": {
+            "primary": { "color": [0.1, 0.1, 0.1] },
+            "secondary": { "color": [0.2, 0.0, 0.2] },
+            "iris": { "color": [1.0, 0.0, 0.0] }
+          }
+        },
+        "default_pos": [0.0, -8.0, 0.0],
+        "is_protagonist": false
+      },
+      {
+        "id": "Drone_X10",
+        "type": "DYNAMIC",
+        "components": {
+          "modeling": "PlantModeler", "rigging": "PlantRigger", "shading": "UniversalShader"
+        },
+        "parameters": {
+          "seed": 302, "height_scale": 0.5,
+          "materials": {
+            "primary": { "color": [0.05, 0.05, 0.05] },
+            "secondary": { "color": [0.3, 0.3, 0.35] },
+            "iris": { "color": [0.0, 0.8, 1.0] }
+          }
+        },
+        "default_pos": [0.0, 0.0, 5.0],
+        "is_protagonist": false
       }
     ]
   },
@@ -66,10 +130,36 @@
   },
   "storyline": [
     {
-      "beat": "Awakening", "start": 1, "end": 1000,
+      "beat": "Awakening", "start": 1, "end": 5000,
       "events": [
         { "target": "Herbaceous_HF", "action": "visibility", "params": { "visible_at": 1 } },
         { "target": "Arbor_HF", "action": "visibility", "params": { "visible_at": 1 } }
+      ]
+    },
+    {
+      "beat": "The Creeping Standardization", "start": 5001, "end": 6500,
+      "events": [
+        { "target": "Blight_HF", "action": "visibility", "params": { "visible_at": 5001 } },
+        { "target": "Lichen_HF", "action": "visibility", "params": { "visible_at": 5001 } }
+      ]
+    },
+    {
+      "beat": "The Sky Patrol", "start": 6501, "end": 8000,
+      "events": [
+        { "target": "Drone_X10", "action": "visibility", "params": { "visible_at": 6501 } },
+        { "target": "Spore_HF", "action": "visibility", "params": { "visible_at": 6501 } }
+      ]
+    },
+    {
+      "beat": "The Deep Root Conflict", "start": 8001, "end": 9500,
+      "events": [
+        { "target": "Arbor_HF", "action": "panic", "params": { "intensity": 0.8 } }
+      ]
+    },
+    {
+      "beat": "The Horizon Realized", "start": 9501, "end": 10000,
+      "events": [
+        { "target": "Herbaceous_HF", "action": "victory_pose", "params": { "frame": 9800 } }
       ]
     }
   ]

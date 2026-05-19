@@ -1,16 +1,32 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 
 # Add script directory to path
-M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if M10_ROOT not in sys.path:
     sys.path.append(M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from asset_manager import AssetManager
-from character_builder import CharacterBuilder
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
+try:
+    try:
+    from character_builder import
+except ImportError:
+    from ..character_builder import CharacterBuilder
+except ImportError:
+    from .character_builder import CharacterBuilder
 
 class TestMovie10FacialVisibility(unittest.TestCase):
     @classmethod
@@ -20,9 +36,9 @@ class TestMovie10FacialVisibility(unittest.TestCase):
 
     def test_protagonist_facial_features(self):
         """Verifies that protagonists have pupils and irises present in the rig hierarchy."""
-        # Test with Herbaceous as representative
+        # Test with Herbaceous_HF as representative
         entity = {
-            "id": "Herbaceous",
+            "id": "Herbaceous_HF",
             "type": "MESH",
             "is_protagonist": True,
             "components": {
@@ -31,10 +47,10 @@ class TestMovie10FacialVisibility(unittest.TestCase):
                 "shading": "UniversalShader"
             }
         }
-        char = CharacterBuilder.create("Herbaceous", entity)
+        char = CharacterBuilder.create("Herbaceous_HF", entity)
         char.build(self.manager)
 
-        rig = bpy.data.objects.get("Herbaceous.Rig")
+        rig = bpy.data.objects.get("Herbaceous_HF.Rig")
         self.assertIsNotNone(rig, "Rig not created")
 
         # Check for facial feature markers or meshes
@@ -45,7 +61,7 @@ class TestMovie10FacialVisibility(unittest.TestCase):
         facial_parts = [n for n in children_names if any(x in n.lower() for x in ["pupil", "iris", "eye"])]
 
         # If the modeler creates them as part of the body mesh, check materials
-        body = bpy.data.objects.get("Herbaceous.Body")
+        body = bpy.data.objects.get("Herbaceous_HF.Body")
         if body:
             mat_names = [m.name.lower() for m in body.data.materials if m]
             self.assertTrue(any("eye" in m or "iris" in m or "pupil" in m for m in mat_names),

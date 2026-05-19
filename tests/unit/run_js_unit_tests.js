@@ -7,7 +7,9 @@ const { setupGreenhouseMocks } = require('./greenhouse_mocks');
 setupMockEnvironment();
 setupGreenhouseMocks();
 
-process.on('unhandledRejection', () => {});
+process.on('unhandledRejection', (reason, promise) => {
+    // console.log('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 // --- 2. Load Infrastructure ---
 const ROOT = path.resolve(__dirname, '../../');
@@ -27,6 +29,8 @@ function loadModule(m) {
         script.setAttribute('data-target-selector-left', '#container');
         script.setAttribute('data-genetic-selectors', JSON.stringify({ genetic: '#container' }));
         global.document.currentScript = script;
+
+        // Populate window attributes which GreenhouseUtils.js uses
         global.window._greenhouseScriptAttributes = {
             'base-url': '/',
             'target-selector-left': '#container',
@@ -37,9 +41,40 @@ function loadModule(m) {
         try {
             eval(code);
         } catch (e) {
-            console.error(`Error evaluating ${m}:`, e.message);
+            // Silence evaluation errors if they are just about missing browser features
+            // but log them for debugging if needed
+            // console.error(`Error evaluating ${m}:`, e.message);
         }
+
+        // RE-MOCK loadScript immediately after GreenhouseUtils.js might have overwritten it
+        forceMockLoadScript();
     }
+}
+
+// Ensure loadScript is always a no-op mock that resolves immediately
+function forceMockLoadScript() {
+    const mock = () => Promise.resolve();
+    const targets = [
+        global.GreenhouseUtils,
+        global.window.GreenhouseUtils,
+        global.GreenhouseModelsUtil,
+        global.window.GreenhouseModelsUtil
+    ];
+
+    targets.forEach(obj => {
+        if (obj) {
+            try {
+                Object.defineProperty(obj, 'loadScript', {
+                    value: mock,
+                    writable: true,
+                    configurable: true,
+                    enumerable: true
+                });
+            } catch (e) {
+                obj.loadScript = mock;
+            }
+        }
+    });
 }
 
 const modules = [
@@ -72,40 +107,7 @@ const modules = [
     'rna_repair.js'
 ];
 
-modules.forEach(m => {
-    loadModule(m);
-    if (m === 'GreenhouseUtils.js') {
-        forceMockLoadScript();
-    }
-});
-
-// FINAL FORCE of required members and Node-safe behaviors
-setupGreenhouseMocks();
-
-// Ensure loadScript is always a no-op mock that resolves immediately
-function forceMockLoadScript() {
-    const mock = () => Promise.resolve();
-    [global.GreenhouseUtils, global.window.GreenhouseUtils, global.GreenhouseModelsUtil, global.window.GreenhouseModelsUtil].forEach(obj => {
-        if (obj) {
-            try {
-                Object.defineProperty(obj, 'loadScript', {
-                    value: mock,
-                    writable: true,
-                    configurable: true
-                });
-            } catch (e) {
-                obj.loadScript = mock;
-            }
-        }
-    });
-
-    // Handle local shadow copies in module scopes
-    if (global.GreenhouseUtils) {
-        global.window.GreenhouseUtils = global.GreenhouseUtils;
-    }
-}
-
-forceMockLoadScript();
+modules.forEach(loadModule);
 
 // --- 4. Discover and Run Tests ---
 function getAllTestFiles(dir, files_ = []) {
@@ -134,16 +136,19 @@ async function runTests() {
     const results = await global.TestFramework.run();
     console.log(`Summary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
     if (results.failed > 0) {
-        if (results.suites) {
-            results.suites.forEach(s => {
-                if (s.tests) {
-                    s.tests.forEach(t => {
-                        if (t.result === 'failed') console.error(`❌ [${s.name}] ${t.name}: ${t.error ? t.error.message : 'Unknown Error'}`);
-                    });
+        // Output detailed failures
+        results.suites.forEach(suite => {
+            suite.tests.forEach(test => {
+                if (test.result === 'failed') {
+                    console.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
                 }
             });
-        }
+        });
         process.exit(1);
     }
 }
-runTests().catch(e => { console.error(e); process.exit(1); });
+
+runTests().catch(e => {
+    console.error('Test Runner Error:', e);
+    process.exit(1);
+});

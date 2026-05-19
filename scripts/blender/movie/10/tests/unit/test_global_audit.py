@@ -1,5 +1,6 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 import math
@@ -8,9 +9,18 @@ import math
 M10_ROOT = os.path.dirname(os.path.abspath(os.path.join(__file__, "../..")))
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from director import Director
+try:
+    try:
+    from director import
+except ImportError:
+    from ..director import Director
+except ImportError:
+    from .director import Director
 import components
 
 class TestGlobalAuditV10(unittest.TestCase):

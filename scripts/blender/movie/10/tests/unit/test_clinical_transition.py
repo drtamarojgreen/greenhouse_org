@@ -1,18 +1,42 @@
 import unittest
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
-import mathutils
+try: try: import mathutils
+except ImportError: mathutils = None
+except ImportError: mathutils = None
 
 # Ensure Movie 10 root is in sys.path
-M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
-from director import Director
-from asset_manager import AssetManager
-from character_builder import CharacterBuilder
+try:
+    try:
+    from director import
+except ImportError:
+    from ..director import Director
+except ImportError:
+    from .director import Director
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
+try:
+    try:
+    from character_builder import
+except ImportError:
+    from ..character_builder import CharacterBuilder
+except ImportError:
+    from .character_builder import CharacterBuilder
 import components
 
 class TestClinicalTransitionV10(unittest.TestCase):
@@ -23,7 +47,7 @@ class TestClinicalTransitionV10(unittest.TestCase):
         cls.manager.clear_scene()
 
         # Build necessary entities for testing
-        for eid in ["Herbaceous", "Arbor", "ClinicalDesk", "PatientChair"]:
+        for eid in ["Herbaceous_HF", "Arbor_HF", "ClinicalDesk", "PatientChair"]:
             ent = mc.get_character_config(eid)
             if ent:
                 char = CharacterBuilder.create(eid, ent)
@@ -49,11 +73,11 @@ class TestClinicalTransitionV10(unittest.TestCase):
         # Check positions at frame 1100 (after move_to duration)
         bpy.context.scene.frame_set(1100)
 
-        herb = bpy.data.objects.get("Herbaceous.Rig")
-        arbor = bpy.data.objects.get("Arbor.Rig")
+        herb = bpy.data.objects.get("Herbaceous_HF.Rig")
+        arbor = bpy.data.objects.get("Arbor_HF.Rig")
 
-        # Herbaceous destination: [-1.5, -3.2, 0]
-        # Arbor destination: [-4.0, -3.0, 0]
+        # Herbaceous_HF destination: [-1.5, -3.2, 0]
+        # Arbor_HF destination: [-4.0, -3.0, 0]
         if herb:
             self.assertAlmostEqual(herb.location.x, -1.5, places=1)
             self.assertAlmostEqual(herb.location.y, -3.2, places=1)
@@ -65,10 +89,10 @@ class TestClinicalTransitionV10(unittest.TestCase):
         """Verifies character positions after the clinical swap at frame 1540."""
         bpy.context.scene.frame_set(1540)
 
-        herb = bpy.data.objects.get("Herbaceous.Rig")
-        arbor = bpy.data.objects.get("Arbor.Rig")
+        herb = bpy.data.objects.get("Herbaceous_HF.Rig")
+        arbor = bpy.data.objects.get("Arbor_HF.Rig")
 
-        # Swap: Herbaceous -> Desk [-4.0, -3.0], Arbor -> Chair [-1.5, -3.2]
+        # Swap: Herbaceous_HF -> Desk [-4.0, -3.0], Arbor_HF -> Chair [-1.5, -3.2]
         if herb:
             self.assertAlmostEqual(herb.location.x, -4.0, places=1)
         if arbor:

@@ -1,15 +1,27 @@
 import unittest
-import bpy
-import bmesh
+try: import bpy
+except ImportError: bpy = None
+try: try: import bmesh
+except ImportError: bmesh = None
+except ImportError: bmesh = None
 import os
 import sys
 
 # Add script directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import movie_configuration as mc
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 
 from modeling.greenhouse_mobile import GreenhouseMobileModeler
-from asset_manager import AssetManager
+try:
+    try:
+    from asset_manager import
+except ImportError:
+    from ..asset_manager import AssetManager
+except ImportError:
+    from .asset_manager import AssetManager
 
 class TestGreenhouseMobileDesign(unittest.TestCase):
     def setUp(self):

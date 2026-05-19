@@ -1,7 +1,13 @@
-import movie_configuration as mc
-import bpy
+try:
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
+try: import bpy
+except ImportError: bpy = None
 import unittest
-import mathutils
+try: try: import mathutils
+except ImportError: mathutils = None
+except ImportError: mathutils = None
 import math
 
 class TestRestorationComprehensive(unittest.TestCase):
@@ -11,9 +17,15 @@ class TestRestorationComprehensive(unittest.TestCase):
 
     def test_animation_tags_presence(self):
         """Verifies that all Movie 6 emotional tags are handled by AnimationHandler."""
-        from animation_handler import AnimationHandler
+        try:
+    try:
+    from animation_handler import
+except ImportError:
+    from ..animation_handler import AnimationHandler
+except ImportError:
+    from .animation_handler import AnimationHandler
         handler = AnimationHandler()
-        obj = bpy.data.objects.get("Herbaceous.Rig")
+        obj = bpy.data.objects.get("Herbaceous_HF.Rig")
         if not obj: return
 
         tags = ["joyful", "worry", "stretch", "wiggle", "reach_out", "bend_down", "walk", "shiver", "droop", "smile", "sit", "stand"]
@@ -24,7 +36,10 @@ class TestRestorationComprehensive(unittest.TestCase):
 
     def test_bone_mapping_fidelity(self):
         """Verifies that high-fidelity facial bones are mapped correctly."""
-        from animation_handler import BONE_NAME_MAP
+        try:
+    from animation_handler import
+except ImportError:
+    from ..animation_handler import BONE_NAME_MAP
         required_bones = [
             "Lip.Corner.Ctrl.L", "Lip.Corner.Ctrl.R", "Jaw.Ctrl",
             "Pupil.Ctrl.L", "Pupil.Ctrl.R",
