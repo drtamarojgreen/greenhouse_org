@@ -5,10 +5,10 @@ import sys
 
 # Standard Path setup for tests
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M9_ROOT = os.path.dirname(TEST_DIR)
+M10_ROOT = os.path.dirname(TEST_DIR)
 
-if M9_ROOT not in sys.path:
-    sys.path.insert(0, M9_ROOT)
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
 import movie_configuration as mc
 
 from director import Director
@@ -22,7 +22,7 @@ class TestMovie10ExtendedScenes(unittest.TestCase):
 
         # Test loading one scene
         scene_path = extended[0]
-        full_path = os.path.join(M9_ROOT, scene_path)
+        full_path = os.path.join(M10_ROOT, scene_path)
         self.assertTrue(os.path.exists(full_path))
 
         # Check markers before and after

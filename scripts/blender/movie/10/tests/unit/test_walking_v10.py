@@ -4,15 +4,15 @@ import os
 import sys
 import math
 
-# Ensure we can import Movie 9 modules
-M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M9_ROOT not in sys.path:
-    sys.path.insert(0, M9_ROOT)
+# Ensure we can import Movie 10 modules
+M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
 import movie_configuration as mc
 
 from animation_handler import AnimationHandler
 
-class TestWalkingV9(unittest.TestCase):
+class TestWalkingV10(unittest.TestCase):
     def test_independent_limb_coordination(self):
         """Verifies that the walk cycle coordinates limbs independently."""
         # Create a dummy armature

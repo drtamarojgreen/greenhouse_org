@@ -4,8 +4,8 @@ import os
 import json
 import sys
 
-M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M9_ROOT not in sys.path: sys.path.insert(0, M9_ROOT)
+M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M10_ROOT not in sys.path: sys.path.insert(0, M10_ROOT)
 import movie_configuration as mc
 
 from director import Director
@@ -33,7 +33,7 @@ class TestGenericPipeline(unittest.TestCase):
             ],
             "environment": {"type": "exterior"}
         }
-        scene_dir = os.path.join(M9_ROOT, "scene_configs")
+        scene_dir = os.path.join(M10_ROOT, "scene_configs")
         os.makedirs(scene_dir, exist_ok=True)
         mock_path = os.path.join(scene_dir, "test_mock.json")
         with open(mock_path, "w") as f: json.dump(mock_scene, f)

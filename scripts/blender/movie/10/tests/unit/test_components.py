@@ -3,10 +3,10 @@ import bpy
 import os
 import sys
 
-# Ensure Movie 9 is in path
-M9_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M9_DIR not in sys.path:
-    sys.path.append(M9_DIR)
+# Ensure Movie 10 is in path
+M10_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M10_DIR not in sys.path:
+    sys.path.append(M10_DIR)
 import movie_configuration as mc
 
 from asset_manager import AssetManager

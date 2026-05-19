@@ -3,16 +3,16 @@ import bpy
 import os
 import sys
 
-# Ensure Movie 9 root is in sys.path
-M9_ROOT = os.path.dirname(os.path.abspath(os.path.join(__file__, "../..")))
-if M9_ROOT not in sys.path:
-    sys.path.insert(0, M9_ROOT)
+# Ensure Movie 10 root is in sys.path
+M10_ROOT = os.path.dirname(os.path.abspath(os.path.join(__file__, "../..")))
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
 import movie_configuration as mc
 
 from director import Director
 import components
 
-class TestCinematicsDynamicV9(unittest.TestCase):
+class TestCinematicsDynamicV10(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         components.initialize_registry()

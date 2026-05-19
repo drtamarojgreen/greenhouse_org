@@ -4,9 +4,9 @@ import os
 import sys
 
 # Add script directory to path
-M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M9_ROOT not in sys.path:
-    sys.path.append(M9_ROOT)
+M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M10_ROOT not in sys.path:
+    sys.path.append(M10_ROOT)
 import movie_configuration as mc
 
 from asset_manager import AssetManager

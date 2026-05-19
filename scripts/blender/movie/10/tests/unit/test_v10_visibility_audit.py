@@ -4,17 +4,17 @@ import os
 import sys
 import mathutils
 
-# Ensure Movie 9 root is in sys.path
-M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M9_ROOT not in sys.path:
-    sys.path.insert(0, M9_ROOT)
+# Ensure Movie 10 root is in sys.path
+M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
 import movie_configuration as mc
 
 from render import build_scene
 
 class TestVisibilityAudit(unittest.TestCase):
     """
-    High-fidelity audit suite for Movie 9 camera and entity visibility.
+    High-fidelity audit suite for Movie 10 camera and entity visibility.
     Restores the ASCII layout chart and visibility matrix from Movie 4/5 standards.
     """
 

@@ -5,9 +5,9 @@ import sys
 import mathutils
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M9_ROOT = os.path.dirname(TEST_DIR)
-if M9_ROOT not in sys.path:
-    sys.path.insert(0, M9_ROOT)
+M10_ROOT = os.path.dirname(TEST_DIR)
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
 import movie_configuration as mc
 
 from render import build_scene

@@ -3,12 +3,12 @@ import bpy
 import os
 import sys
 
-# scripts/blender/movie/10/tests/run_all_tests.py
+# scripts/blender/movie/10/tests/unit/run_all_tests.py
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M9_DIR = os.path.dirname(TEST_DIR)
+M10_ROOT = os.path.dirname(os.path.dirname(TEST_DIR))
 
-if M9_DIR not in sys.path:
-    sys.path.insert(0, M9_DIR)
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
 
 import movie_configuration as mc
 

@@ -5,10 +5,10 @@ import sys
 
 # Standard Path setup for tests
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M9_ROOT = os.path.dirname(TEST_DIR)
+M10_ROOT = os.path.dirname(TEST_DIR)
 
-if M9_ROOT not in sys.path:
-    sys.path.insert(0, M9_ROOT)
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
 import movie_configuration as mc
 
 class TestMovie10RenderEngine(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestMovie10RenderEngine(unittest.TestCase):
 
         # Simulate a check that would be in the render pipeline
         if bpy.context.scene.render.engine == 'CYCLES':
-            self.fail("Cycles engine detected. EEVEE is strictly enforced for Movie 9 production.")
+            self.fail("Cycles engine detected. EEVEE is strictly enforced for Movie 10 production.")
 
 if __name__ == "__main__":
     unittest.main()

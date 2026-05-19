@@ -4,9 +4,9 @@ import os
 import sys
 
 # Add script directory to path
-M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M9_ROOT not in sys.path:
-    sys.path.append(M9_ROOT)
+M10_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if M10_ROOT not in sys.path:
+    sys.path.append(M10_ROOT)
 import movie_configuration as mc
 
 from asset_manager import AssetManager
@@ -40,7 +40,7 @@ class TestMovie10FacialVisibility(unittest.TestCase):
         # Check for facial feature markers or meshes
         children_names = [c.name for c in rig.children_recursive]
 
-        # In Movie 9, facial features might be sub-meshes or vertex groups.
+        # In Movie 10, facial features might be sub-meshes or vertex groups.
         # If they are separate objects parented to the head bone:
         facial_parts = [n for n in children_names if any(x in n.lower() for x in ["pupil", "iris", "eye"])]
 

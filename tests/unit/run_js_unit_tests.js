@@ -36,7 +36,9 @@ function loadModule(m) {
         const code = fs.readFileSync(fullPath, 'utf8');
         try {
             eval(code);
-        } catch (e) {}
+        } catch (e) {
+            console.error(`Error evaluating ${m}:`, e.message);
+        }
     }
 }
 
@@ -70,24 +72,40 @@ const modules = [
     'rna_repair.js'
 ];
 
-modules.forEach(loadModule);
+modules.forEach(m => {
+    loadModule(m);
+    if (m === 'GreenhouseUtils.js') {
+        forceMockLoadScript();
+    }
+});
 
 // FINAL FORCE of required members and Node-safe behaviors
 setupGreenhouseMocks();
 
-// Use a getter to ensure loadScript is always our mock
-if (global.GreenhouseUtils) {
-    Object.defineProperty(global.GreenhouseUtils, 'loadScript', {
-        get: () => () => Promise.resolve(),
-        configurable: true
+// Ensure loadScript is always a no-op mock that resolves immediately
+function forceMockLoadScript() {
+    const mock = () => Promise.resolve();
+    [global.GreenhouseUtils, global.window.GreenhouseUtils, global.GreenhouseModelsUtil, global.window.GreenhouseModelsUtil].forEach(obj => {
+        if (obj) {
+            try {
+                Object.defineProperty(obj, 'loadScript', {
+                    value: mock,
+                    writable: true,
+                    configurable: true
+                });
+            } catch (e) {
+                obj.loadScript = mock;
+            }
+        }
     });
+
+    // Handle local shadow copies in module scopes
+    if (global.GreenhouseUtils) {
+        global.window.GreenhouseUtils = global.GreenhouseUtils;
+    }
 }
-if (global.window.GreenhouseUtils) {
-    Object.defineProperty(global.window.GreenhouseUtils, 'loadScript', {
-        get: () => () => Promise.resolve(),
-        configurable: true
-    });
-}
+
+forceMockLoadScript();
 
 // --- 4. Discover and Run Tests ---
 function getAllTestFiles(dir, files_ = []) {
