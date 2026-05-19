@@ -1,0 +1,4 @@
+Situation: Ingestion_Pipeline_Compliance
+Is enforce_zero_stubs = true
+Is allow_hardcoded_guidelines = false
+Is target_pipeline_version = 10.0.0
