@@ -1,26 +1,32 @@
-import movie_configuration as mc
 import bpy
 import bmesh
 import mathutils
 import math
 import random
-import os
-import sys
 import json
-
-from base import Modeler
-from registry import registry
+import os
+from .base import Modeler
+from .registry import registry
 
 class PlantModeler(Modeler):
     """
     Specific Modeler for Procedural Plant Humanoids.
-    Now strictly data-driven via plant.json.
+    Modularized for Movie 10 with High-Fidelity features.
     """
 
-    def __init__(self):
-        config_path = os.path.join(os.path.dirname(__file__), "plant.json")
-        with open(config_path, 'r') as f:
-            self.p_cfg = json.load(f)
+    def __init__(self, config_path=None):
+        self.p_cfg = None
+        if config_path and os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                self.p_cfg = json.load(f)
+
+        if self.p_cfg is None:
+            default_path = os.path.join(os.path.dirname(__file__), "modeling", "plant.json")
+            if os.path.exists(default_path):
+                with open(default_path, 'r') as f:
+                    self.p_cfg = json.load(f)
+            else:
+                self.p_cfg = self._get_default_config()
 
     def build_mesh(self, char_id, params, rig=None):
         height_scale = params.get("height_scale", 1.0)
@@ -54,7 +60,7 @@ class PlantModeler(Modeler):
         matrix_head = mathutils.Matrix.Translation((0, 0, torso_h+neck_h+head_r))
         bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=32, radius=head_r, matrix=matrix_head)
         head_vg = mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")
-        for v in bm.verts: # Simplified head VG assignment
+        for v in bm.verts:
             if (v.co - mathutils.Vector((0, 0, torso_h+neck_h+head_r))).length < head_r * 1.1:
                 v[dlayer][head_vg.index] = 1.0
 
@@ -62,7 +68,6 @@ class PlantModeler(Modeler):
         l_cfg = self.p_cfg["limbs"]
         for side, sx in [("L", 1), ("R", -1)]:
             # Arms
-            # Shoulder position should match the rig's shoulder height
             s_loc = [l_cfg["arm_shoulder_pos"][0] * sx, l_cfg["arm_shoulder_pos"][1], l_cfg["arm_shoulder_pos"][2] * torso_h]
             seg = l_cfg["arm_segments"]
             self._add_joint_bulb(bm, mesh_obj, dlayer, s_loc, 0.16, f"Arm.{side}")
@@ -78,7 +83,6 @@ class PlantModeler(Modeler):
 
             # Legs
             hip_loc = [l_cfg["leg_hip_pos"][0] * sx, l_cfg["leg_hip_pos"][1], l_cfg["leg_hip_pos"][2]]
-            # Ensure hips are scaled if height_scale is significant
             hip_loc[2] *= height_scale
             lseg = l_cfg["leg_segments"]
             self._add_joint_bulb(bm, mesh_obj, dlayer, hip_loc, 0.18, f"Thigh.{side}")
@@ -92,21 +96,19 @@ class PlantModeler(Modeler):
             self._add_joint_bulb(bm, mesh_obj, dlayer, f_loc, 0.13, f"Foot.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.10, 0.06, lseg[2], (f_loc[0], f_loc[1]-lseg[2]/2, f_loc[2]), f"Foot.{side}", rot=(math.radians(90), 0, 0))
 
-            # Fingers (Simplified for modular rig compatibility)
-            # Offset to tail of hand bone
+            # Fingers
             fing_base_z = h_loc[2] - 0.15
             for i in range(1, 4):
                 f_name = f"Finger.{i}.{side}"
                 self._add_organic_part(bm, mesh_obj, dlayer, 0.03, 0.01, 0.15, (h_loc[0] + (i-2)*0.05, h_loc[1], fing_base_z - 0.07), f_name, rot=(math.radians(0), 0, 0))
 
             # Toes
-            # Offset to tail of foot bone
             toe_base_y = f_loc[1] - 0.15
             for i in range(1, 4):
                 t_name = f"Toe.{i}.{side}"
                 self._add_organic_part(bm, mesh_obj, dlayer, 0.04, 0.02, 0.12, (f_loc[0] + (i-2)*0.06, toe_base_y - 0.06, f_loc[2]), t_name, rot=(math.radians(90), 0, 0))
 
-        # Facial Features (Eyes/Iris/Pupil for High-Fidelity Test)
+        # Facial Features
         head_c = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
         for side, sx in [("L", 1), ("R", -1)]:
             eye_pos = head_c + mathutils.Vector((0.15*sx, -head_r*0.9, 0.1))
@@ -123,7 +125,7 @@ class PlantModeler(Modeler):
             for i in range(num_faces, len(bm.faces)):
                 bm.faces[i].material_index = 3 # Pupil
 
-        # Foliage Algorithm
+        # Foliage
         f_cfg = self.p_cfg["foliage"]
         head_center = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
         foliage_vg = (mesh_obj.vertex_groups.get("Foliage") or mesh_obj.vertex_groups.new(name="Foliage"))
@@ -139,7 +141,7 @@ class PlantModeler(Modeler):
             for v in ret['verts']:
                 v[dlayer][foliage_vg.index] = 1.0
 
-        # Limb Foliage (Limbs and Leaves logic ported from Movie 7)
+        # Limb Foliage
         limbs_foliage = ["Arm.L", "Arm.R", "Elbow.L", "Elbow.R", "Thigh.L", "Thigh.R", "Knee.L", "Knee.R"]
         density = f_cfg.get("limb_foliage_density", 6)
         for bone_name in limbs_foliage:
@@ -157,8 +159,6 @@ class PlantModeler(Modeler):
                     v[dlayer][vg.index] = 1.0
                     v[dlayer][foliage_vg.index] = 0.6
 
-        # Material Index Assignment for Shading (0: Bark, 1: Foliage/Leaf)
-
         for face in bm.faces:
             is_foliage = any(v[dlayer].get(foliage_vg.index, 0) > 0.5 for v in face.verts)
             face.material_index = 1 if is_foliage else 0
@@ -168,17 +168,6 @@ class PlantModeler(Modeler):
 
         for poly in mesh_data.polygons:
             poly.use_smooth = True
-
-        # Modifiers
-        m_cfg = self.p_cfg["modifiers"]
-        disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')
-        disp.strength = m_cfg["bark_bump_strength"]
-
-        wave = mesh_obj.modifiers.new(name="WindSway", type='WAVE')
-        wave.height = m_cfg["wind_sway"]["height"]
-        wave.width = m_cfg["wind_sway"]["width"]
-        wave.speed = m_cfg["wind_sway"]["speed"]
-        wave.vertex_group = "Foliage"
 
         return mesh_obj
 
@@ -192,9 +181,6 @@ class PlantModeler(Modeler):
             z_fact = 1.0 - abs(dist_from_center / (height / 2))
             factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
             v.co = mathutils.Vector(loc) + (v.co - mathutils.Vector(loc)) * factor
-        for v in ret['verts']:
-            for face in v.link_faces:
-                face.smooth = True
         return ret
 
     def _add_joint_bulb(self, bm, mesh_obj, dlayer, loc, rad, bname):
@@ -203,7 +189,21 @@ class PlantModeler(Modeler):
         ret = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=rad, matrix=matrix)
         for v in ret['verts']:
             v[dlayer][vg.index] = 1.0
-            for face in v.link_faces:
-                face.smooth = True
+
+    def _get_default_config(self):
+        return {
+            "proportions": {"torso_h": 1.5, "head_r": 0.4, "neck_h": 0.2},
+            "limbs": {
+                "arm_shoulder_pos": [0.4, 0, 0.9],
+                "arm_segments": [0.4, 0.4, 0.15],
+                "leg_hip_pos": [0.25, 0, 0.1],
+                "leg_segments": [0.5, 0.5, 0.25]
+            },
+            "foliage": {
+                "head_count": 20,
+                "head_tilt_range": [0.2, 0.8],
+                "branch_len_range": [0.4, 0.8]
+            }
+        }
 
 registry.register_modeling("PlantModeler", PlantModeler)

@@ -1,0 +1,12 @@
+{
+  "source_movies": ["7", "9"],
+  "required_features": [
+    "limb_foliage_density",
+    "head_count",
+    "eye_pos",
+    "Iris",
+    "Pupil",
+    "Lip",
+    "Eyelid"
+  ]
+}

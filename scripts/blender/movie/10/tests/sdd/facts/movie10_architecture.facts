@@ -1,0 +1,6 @@
+# Movie 10 Architectural Facts
+Situation: Localized Production Environment
+
+Fact movie10_root = ./../../
+Fact required_files = base.py,registry.py,modelers.py,riggers.py,shaders.py,master.py
+Fact localized_imports = from .registry import registry,from . import modelers,from . import riggers,from . import shaders
