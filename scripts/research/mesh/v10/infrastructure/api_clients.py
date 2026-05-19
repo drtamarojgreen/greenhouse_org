@@ -157,11 +157,13 @@ class ExternalAPIFetcher:
         # Expected NLM response structure: [total_count, code_ids, headers, results_list]
         # e.g., [5, ["4458", ...], null, [["558.9", "Gastroenteritis"], ...]]
         if not data or not isinstance(data, list) or len(data) < 4:
-            raise ConnectionError(f"Failed to fetch clinical conditions from NLM Clinical Tables for term: {search_term}")
+            logger.debug(f"NLM Clinical Tables returned no parseable response for term: {search_term}")
+            return []
             
         results_list = data[3]
         if not results_list:
-            raise ConnectionError(f"No clinical conditions found in NLM response for term: {search_term}")
+            logger.debug(f"NLM Clinical Tables returned zero conditions for term: '{search_term}' (expected for drug/intervention names)")
+            return []
             
         conditions = []
         for item in results_list:

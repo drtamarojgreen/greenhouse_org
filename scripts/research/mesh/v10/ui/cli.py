@@ -241,3 +241,48 @@ class CLIV10:
             
         rich_tree = build_tree(tree_data)
         self.console.print(rich_tree)
+
+    def display_merged_seed_forest(self, merged_data: Dict[str, Any], depth: int = 3):
+        """
+        Displays each individual seed tree, then a unified merged MeSH co-occurrence table
+        showing which terms were discovered across multiple seeds and how many they appeared in.
+        """
+        from rich.tree import Tree
+
+        seeds = merged_data.get("seeds", [])
+        trees = merged_data.get("trees", [])
+        merged_terms = merged_data.get("merged_terms", [])
+
+        # --- Individual trees ---
+        for tree_data in trees:
+            self.display_seed_association_tree(tree_data, depth=depth)
+
+        # --- Merged cross-seed table ---
+        self.console.print(f"\n[bold cyan]🔗 MERGED CROSS-SEED MeSH TERM CO-OCCURRENCE[/bold cyan]")
+        self.console.print(
+            f"Seeds explored: [bold magenta]{', '.join(seeds)}[/bold magenta] | "
+            f"Unique MeSH terms found: [green]{len(merged_terms)}[/green]"
+        )
+
+        if not merged_terms:
+            self.console.print("[yellow]No shared or discovered MeSH terms returned across any seed.[/yellow]")
+            return
+
+        merged_table = Table(show_header=True, header_style="bold white on dark_blue", border_style="blue")
+        merged_table.add_column("MeSH Term", style="white", min_width=28)
+        merged_table.add_column("Seeds Found In", justify="center", style="cyan", min_width=14)
+        merged_table.add_column("Coverage", style="green", min_width=10)
+        merged_table.add_column("Seed Labels", style="dim white")
+
+        max_count = seeds.__len__() or 1
+        for entry in merged_terms:
+            term = entry["term"]
+            count = entry["seed_count"]
+            seed_labels = ", ".join(entry["seeds"])
+            # Simple bar: ████░░░
+            filled = round((count / max_count) * 8)
+            bar = "█" * filled + "░" * (8 - filled)
+            merged_table.add_row(term, f"{count} / {max_count}", bar, seed_labels)
+
+        self.console.print(merged_table)
+
