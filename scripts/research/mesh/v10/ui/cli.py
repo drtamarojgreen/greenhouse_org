@@ -103,26 +103,26 @@ class CLIV10:
         self.console.print(Panel(watchlist_pnl, title="Underrepresented Populations Watchlists", border_style="blue"))
 
     def display_physiological_simulation(self, sim_data: Dict[str, List[float]]):
-        self.console.print("\n[bold magenta]📈 PHYSIOLOGICAL SIMULATION (HPA Stress Dynamics & Exec Function Decay)[/bold magenta]")
+        self.console.print("\n[bold magenta]📈 PHYSIOLOGICAL SIMULATION DYNAMICS[/bold magenta]")
         
         # Build text-based chart to look incredibly cool
         chart_lines = []
         for i in range(0, len(sim_data["hours"]), 2):
             hour = sim_data["hours"][i]
-            cort = sim_data["cortisol_levels"][i]
-            exec_sc = sim_data["executive_function_scores"][i]
+            biomarker = sim_data["biomarker_levels"][i]
+            score = sim_data["clinical_scores"][i]
             
             # Create progress bars for visual wow factor
-            cort_bar = "█" * int(cort)
-            exec_bar = "█" * int(exec_sc / 5)
+            bio_bar = "█" * int(biomarker)
+            score_bar = "█" * int(score / 5)
             
             chart_lines.append(
                 f"[dim]Hour {hour:02d}:00[/dim] | "
-                f"[yellow]Cortisol ({cort:5.1f} ug/dL)[/yellow] {cort_bar:<25} | "
-                f"[cyan]Executive Function ({exec_sc:5.1f}%)[/cyan] {exec_bar:<20}"
+                f"[yellow]Biomarker ({biomarker:5.1f})[/yellow] {bio_bar:<25} | "
+                f"[cyan]Clinical Score ({score:5.1f}%)[/cyan] {score_bar:<20}"
             )
         
-        self.console.print(Panel("\n".join(chart_lines), border_style="magenta", title="HPA dynamic simulation curves"))
+        self.console.print(Panel("\n".join(chart_lines), border_style="magenta", title="Physiological dynamic simulation curves"))
 
     def display_educational_modules(self, curriculum: Dict[str, Any], osce: Dict[str, Any]):
         self.console.print("\n[bold green]🎓 MEDICAL EDUCATION INTEGRATION MODULES[/bold green]")
@@ -133,7 +133,7 @@ class CLIV10:
         body = (
             f"[bold cyan]Undergraduate (UME)[/bold cyan]: {ume['Title']}\n"
             f"  - Core Competency: [dim]{ume['Core_Competencies'][1]}[/dim]\n"
-            f"  - Core screeners: Conners, ADHD-RS\n\n"
+            f"  - Core screeners: Standardized clinical inventory\n\n"
             f"[bold magenta]Residency (GME)[/bold magenta]: {gme['Title']}\n"
             f"  - Core Competency: [dim]{gme['Core_Competencies'][0]}[/dim]\n\n"
             f"[bold yellow]OSCE Prompt Station[/bold yellow]: [bold]{osce['Station_Title']}[/bold]\n"
@@ -195,3 +195,49 @@ class CLIV10:
             f"{dup_alert}"
         )
         self.console.print(Panel(body, border_style="cyan", title="Run verification & audit logs"))
+
+    def display_dynamic_mesh_model(self, seed_term: str, modeling_results: Dict[str, Any]):
+        self.console.print(f"\n[bold magenta]⚡ DYNAMIC MeSH NEUROBIOLOGICAL MODELING FOR: \"{seed_term}\"[/bold magenta]")
+        self.console.print("Derived dynamically by parsing extracted dataset keywords against the NLM MeSH RDF API.")
+        
+        anatomy_table = Table(show_header=True, header_style="bold cyan", border_style="cyan")
+        anatomy_table.add_column("[A08] ANATOMICAL TARGETS & BRAIN REGIONS", style="white")
+        anatomy_table.add_column("Hits", justify="right", style="green")
+        for kw, count in sorted(modeling_results.get("Anatomy_Regions", {}).items(), key=lambda x: -x[1]):
+            anatomy_table.add_row(kw, str(count))
+            
+        chem_table = Table(show_header=True, header_style="bold yellow", border_style="yellow")
+        chem_table.add_column("[D] NEUROTRANSMITTERS & CHEMICALS", style="white")
+        chem_table.add_column("Hits", justify="right", style="green")
+        for kw, count in sorted(modeling_results.get("Chemicals_Neurotransmitters", {}).items(), key=lambda x: -x[1]):
+            chem_table.add_row(kw, str(count))
+            
+        path_table = Table(show_header=True, header_style="bold green", border_style="green")
+        path_table.add_column("[G/F] PHYSIOLOGICAL PROCESSES", style="white")
+        path_table.add_column("Hits", justify="right", style="green")
+        for kw, count in sorted(modeling_results.get("Pathways_Processes", {}).items(), key=lambda x: -x[1]):
+            path_table.add_row(kw, str(count))
+            
+        self.console.print(anatomy_table)
+        self.console.print(chem_table)
+        self.console.print(path_table)
+
+    def display_seed_association_tree(self, tree_data: Dict[str, Any], depth: int = 5):
+        from rich.tree import Tree
+        self.console.print(f"\n[bold cyan]🌳 DEEP ASSOCIATION MeSH TREE (Depth: {depth})[/bold cyan]")
+        self.console.print("Dynamically extracted by traversing PubMed co-occurring MeSH descriptors.")
+        
+        def build_tree(node_data: Dict[str, Any], parent_tree=None):
+            term = node_data.get("term", "Unknown")
+            if parent_tree is None:
+                tree = Tree(f"[bold magenta]{term}[/bold magenta]")
+            else:
+                tree = parent_tree.add(f"[green]{term}[/green]")
+                
+            for child in node_data.get("children", []):
+                build_tree(child, tree)
+                
+            return tree
+            
+        rich_tree = build_tree(tree_data)
+        self.console.print(rich_tree)

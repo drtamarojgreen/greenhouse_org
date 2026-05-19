@@ -8,6 +8,7 @@ import urllib.request
 import urllib.parse
 import json
 import logging
+import time
 from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger("ExternalAPIFetcher")
@@ -31,7 +32,10 @@ class ExternalAPIFetcher:
                 if response.status == 200:
                     return json.loads(response.read().decode("utf-8"))
         except Exception as e:
-            logger.warning(f"Failed to fetch data from API {url}: {e}")
+            if hasattr(e, "code") and e.code == 404:
+                logger.debug(f"API {url} returned 404 Not Found (expected for non-pharmacological entries).")
+            else:
+                logger.warning(f"Failed to fetch data from API {url}: {e}")
         return None
 
     @classmethod
@@ -193,5 +197,85 @@ class ExternalAPIFetcher:
             raise ConnectionError(f"Failed to fetch RxNorm concept properties for RxCUI: {rxcui}")
             
         return prop_data["properties"]
+
+    @classmethod
+    def fetch_mesh_descriptor_for_keyword(cls, keyword: str) -> Optional[str]:
+        """
+        Dynamically resolves a local keyword to a MeSH descriptor ID via the MeSH RDF Lookup API.
+        Enforces a strict 333ms delay to comply with NLM unauthenticated rate limits.
+        """
+        time.sleep(0.35)
+        encoded_kw = urllib.parse.quote(keyword)
+        url = f"https://id.nlm.nih.gov/mesh/lookup/descriptor?label={encoded_kw}&match=contains&limit=1"
+        data = cls.query_api_safely(url)
+        
+        if data and isinstance(data, list) and len(data) > 0:
+            resource_uri = data[0].get("resource", "")
+            if resource_uri:
+                return resource_uri.split("/")[-1]
+        return None
+
+    @classmethod
+    def fetch_mesh_tree_numbers(cls, mesh_id: str) -> List[str]:
+        """
+        Fetches the tree numbers for a specific MeSH ID dynamically from the MeSH RDF Details API.
+        Enforces a strict 333ms delay.
+        """
+        time.sleep(0.35)
+        url = f"https://id.nlm.nih.gov/mesh/{mesh_id}.json"
+        data = cls.query_api_safely(url)
+        
+        if data and isinstance(data, dict):
+            tree_nums = data.get("treeNumber", [])
+            # Convert list of URIs to just the tree number strings
+            if isinstance(tree_nums, list):
+                return [t.split("/")[-1] for t in tree_nums if isinstance(t, str)]
+            elif isinstance(tree_nums, str):
+                return [tree_nums.split("/")[-1]]
+        return []
+
+    @classmethod
+    def fetch_pubmed_mesh_associations(cls, term: str, limit: int = 5) -> List[str]:
+        """
+        Dynamically queries PubMed for a specific term, retrieves the top N matching papers,
+        and extracts the most frequent co-occurring MeSH headings.
+        """
+        import xml.etree.ElementTree as ET
+        from collections import Counter
+        
+        time.sleep(0.35)
+        encoded_term = urllib.parse.quote(term)
+        search_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={encoded_term}&retmode=json&retmax={limit}"
+        
+        search_data = cls.query_api_safely(search_url)
+        if not search_data or "esearchresult" not in search_data:
+            return []
+            
+        id_list = search_data["esearchresult"].get("idlist", [])
+        if not id_list:
+            return []
+            
+        time.sleep(0.35)
+        pmid_str = ",".join(id_list)
+        fetch_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pmid_str}&retmode=xml"
+        
+        req = urllib.request.Request(fetch_url, headers={'User-Agent': 'Mozilla/5.0'})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as response:
+                xml_data = response.read()
+                root = ET.fromstring(xml_data)
+                
+                mesh_counter = Counter()
+                for mesh_heading in root.findall(".//MeshHeading/DescriptorName"):
+                    mesh_term = mesh_heading.text
+                    if mesh_term and mesh_term.lower() != term.lower():
+                        mesh_counter[mesh_term] += 1
+                        
+                # Return the top 3 most frequent associated MeSH terms
+                return [m[0] for m in mesh_counter.most_common(3)]
+        except Exception as e:
+            logger.warning(f"Failed to fetch or parse PubMed XML for PMIDs {pmid_str}: {e}")
+            return []
+
 
 

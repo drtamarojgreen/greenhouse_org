@@ -55,7 +55,7 @@ class MainPipelineV10:
         self.output_dir = self.config.get("infrastructure", {}).get("output_dir", "scripts/research/mesh/v10/output")
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def run_clinical_synthesis(self, studies_file_path: str) -> Dict[str, Any]:
+    def run_clinical_synthesis(self, studies_file_path: str, enriched: bool = False, modeling: bool = False) -> Dict[str, Any]:
         """
         Executes a complete systematic review and meta-analysis synthesis run
         on a systematically searched clinical literature database file.
@@ -139,14 +139,14 @@ class MainPipelineV10:
         # GRADE Evidence Certainty evaluations
         grade_res = GRADEEvidenceSynthesizer.evaluate_grade(pool_res)
         plain_lang = GRADEEvidenceSynthesizer.get_plain_language_interpretation(
-            pool_res["pooled_effect"], grade_res["GRADE_certainty"], ("Chronic Environmental Stress", "ADHD Inattention")
+            pool_res["pooled_effect"], grade_res["GRADE_certainty"], ("Extracted Exposure", "Extracted Outcome")
         )
 
         # [STAGE 4] Emerging Discovery (Burst detection & preprints)
         # Dynamically query biomedical APIs to populate emerging watchlists and timeseries
         drug_meta = ExternalAPIFetcher.fetch_opendrug_metadata("Concerta")
         active_ingredient = drug_meta["active_ingredient"]
-        ctrials = ExternalAPIFetcher.fetch_clinical_trials("ADHD Stress", limit=2)
+        ctrials = ExternalAPIFetcher.fetch_clinical_trials("Clinical Intervention", limit=2)
         conditions = ExternalAPIFetcher.fetch_clinical_conditions("gastroenteri", limit=5)
         for cond in conditions:
             logger.info(f"Retrieved NLM Clinical Condition: {cond['icd9_code']} - {cond['primary_name']}")
@@ -205,10 +205,9 @@ class MainPipelineV10:
         ]
         v7_bridged = self.cross_ver.apply_v7_network_bridge(mock_v7_top_nodes)
         
-        # Ingest mock v8 DrugBank/Clinical trials summaries from dynamic CT registries
         mock_v8_trials = {
-            "ADHD": [
-                {"nct_id": ct["nct_id"], "interventions": [ct["sponsor"]], "phase": [ct["phase"]]}
+            "Clinical_Focus": [
+                {"nct_id": ct["nct_id"], "interventions": [ct.get("sponsor", "")], "phase": [ct.get("phase", "")]}
                 for ct in ctrials
             ]
         }
@@ -275,12 +274,28 @@ class MainPipelineV10:
         self.cli.display_welcome()
         self.cli.display_review_table(review_records)
         self.cli.display_meta_pooling(pool_res, small_study_bias)
-        self.cli.display_emerging_dashboard(bursts, weak_signals, watchlists)
-        self.cli.display_physiological_simulation(sim_res)
-        self.cli.display_educational_modules(curr_guides, osce_prompts)
-        self.cli.display_policy_briefs(school_brief, workplace_brief)
-        self.cli.display_program_roadmaps(planning_roadmap, incident_playbook)
-        self.cli.display_infrastructure_log(run_manifest, duplicates)
+        
+        if enriched:
+            self.cli.display_emerging_dashboard(bursts, weak_signals, watchlists)
+            self.cli.display_physiological_simulation(sim_res)
+            self.cli.display_educational_modules(curr_guides, osce_prompts)
+            self.cli.display_policy_briefs(school_brief, workplace_brief)
+            self.cli.display_program_roadmaps(planning_roadmap, incident_playbook)
+            self.cli.display_infrastructure_log(run_manifest, duplicates)
+
+        if modeling:
+            seed_term = self.config.get("seed_term", "Extracted Condition")
+            keywords = []
+            for s in studies:
+                if "peicot" in s:
+                    keywords.append(s["peicot"].get("intervention", ""))
+                    keywords.append(s["peicot"].get("exposure", ""))
+                    keywords.append(s["peicot"].get("outcome", ""))
+                keywords.append(s.get("intervention", ""))
+            
+            keywords = [k for k in keywords if k]
+            modeling_results = self.systems.run_dynamic_mesh_modeling(keywords)
+            self.cli.display_dynamic_mesh_model(seed_term, modeling_results)
 
         return {
             "manifest": run_manifest,
@@ -293,14 +308,36 @@ if __name__ == "__main__":
     parser.add_argument(
         "--studies-file", 
         type=str, 
-        required=True, 
+        required=False, 
         help="Path to JSON file containing real, systematically searched study databases"
+    )
+    parser.add_argument(
+        "--data-enriched",
+        action="store_true",
+        help="Include all educational templates, physiological circadian simulation, and policy brief dashboard views."
+    )
+    parser.add_argument(
+        "--modeling",
+        action="store_true",
+        help="Execute dynamic neurobiological modeling using NLM MeSH RDF API."
+    )
+    parser.add_argument(
+        "--seed",
+        type=str,
+        help="Explore up to 5 levels of associations of a seed term in PubMed (bypasses synthesis)."
     )
     args = parser.parse_args()
 
     pipeline = MainPipelineV10()
     try:
-        pipeline.run_clinical_synthesis(args.studies_file)
+        if args.seed:
+            tree_data = pipeline.emerging.run_deep_seed_exploration(args.seed, max_depth=5)
+            pipeline.cli.display_seed_association_tree(tree_data, depth=5)
+        else:
+            if not args.studies_file:
+                print("Error: --studies-file is required unless --seed is provided.")
+                sys.exit(1)
+            pipeline.run_clinical_synthesis(args.studies_file, enriched=args.data_enriched, modeling=args.modeling)
     except ConnectionError as e:
         print("\n" + "="*80)
         print("CLINICAL SYNTHESIS PIPELINE ERROR (FAIL-FAST)")

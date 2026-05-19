@@ -19,69 +19,82 @@ class MedicalEducationGenerator:
         """
         Derives active search query terms dynamically from pipeline parameters.
         """
-        return self.config.get("seed_term", "ADHD Stress")
+        peicot = self.config.get("systematic_review", {}).get("peicot_schema", {})
+        population = peicot.get("population", ["Clinical Population"])[0]
+        exposures = peicot.get("exposures", ["Exposure"])[0]
+        return f"{population} {exposures}"
+
+    def _get_active_drug(self, index: int = 0) -> Dict[str, str]:
+        peicot = self.config.get("systematic_review", {}).get("peicot_schema", {})
+        interventions = peicot.get("interventions", ["Standard Intervention"])
+        intervention = interventions[index] if len(interventions) > index else interventions[0] if interventions else "Standard Intervention"
+        
+        try:
+            drug = ExternalAPIFetcher.fetch_opendrug_metadata(intervention)
+        except Exception:
+            drug = {
+                "brand_name": intervention, "generic_name": intervention, 
+                "active_ingredient": intervention, "indications": "Not specified in active dataset", 
+                "warnings": "Not specified", "dosage_and_administration": "Not specified", 
+                "adverse_reactions": "Not specified"
+            }
+        return drug
 
     def generate_curriculum_guides(self) -> Dict[str, Any]:
-        """
-        Creates UME and GME evidence matrices dynamically from ClinicalTrials.gov (Features 101, 102).
-        """
         term = self._get_query_term()
-        trials = ExternalAPIFetcher.fetch_clinical_trials(term, limit=2)
-        
-        # Structure dynamic curriculum guides using live registry information
+        try:
+            trials = ExternalAPIFetcher.fetch_clinical_trials(term, limit=2)
+        except Exception:
+            trials = []
+            
         guides = {}
         for idx, t in enumerate(trials):
             level = "UME_Undergraduate_Medical_Education" if idx == 0 else "GME_Graduate_Medical_Education"
             guides[level] = {
-                "Title": f"Evidence Appraisal: Dynamic Clinical Trial Integration ({t['nct_id']})",
-                "Trial_Focus": t["title"],
-                "Sponsor": t["sponsor"],
-                "Phase": t["phase"],
-                "Registry_Status": t["status"],
+                "Title": f"Evidence Appraisal: Dynamic Clinical Trial Integration ({t.get('nct_id', 'Unknown')})",
+                "Trial_Focus": t.get("title", "Unknown"),
+                "Sponsor": t.get("sponsor", "Unknown"),
+                "Phase": t.get("phase", "Unknown"),
+                "Registry_Status": t.get("status", "Unknown"),
                 "Core_Competencies": [
                     f"Critically analyze registered trials for {term} interventions.",
-                    f"Evaluate protocol validity based on {t['phase']} trial design."
+                    f"Evaluate protocol validity based on {t.get('phase', 'Unknown')} trial design."
                 ],
-                "Brief_Summary": t["brief_summary"]
+                "Brief_Summary": t.get("brief_summary", "Unknown")
             }
         return guides
 
-    def get_case_scenarios(self, pooled_smd: float = 0.487) -> List[Dict[str, Any]]:
-        """
-        Dynamically constructs resident case studies linking WLS meta-analytic data (Features 103, 104).
-        """
-        pubmed_info = ExternalAPIFetcher.fetch_pubmed_metadata(["34218945"])
-        pubmed_rec = list(pubmed_info.values())[0]
+    def get_case_scenarios(self, pooled_smd: float = 0.500) -> List[Dict[str, Any]]:
+        peicot = self.config.get("systematic_review", {}).get("peicot_schema", {})
+        population = peicot.get("population", ["Clinical Population"])[0]
+        exposures = peicot.get("exposures", ["Exposure"])[0]
         
         scenarios = []
-        # Support case-scenario variations matching dynamic literature search parameters
-        for role in ["Pediatric_Resident", "Child_Psychiatry_Fellow"]:
+        for role in ["Junior_Resident", "Senior_Fellow"]:
             scenarios.append({
                 "Target_Audience": role,
                 "Case_Presentation": (
-                    f"Patient presents with chronic environmental stressors and prominent cognitive symptoms. "
-                    f"The literature base (including PMID: {pubmed_rec['pmid']}, published in '{pubmed_rec['journal']}' in {pubmed_rec['year']}) "
-                    f"evaluates the relationship between stress exposure and neurodevelopmental trajectories."
+                    f"Patient presents with signs of {population} combined with high levels of {exposures}. "
+                    f"The active systematic literature evaluates the relationship between these factors and long-term trajectories."
                 ),
                 "Discussion_Prompts": [
-                    f"How do the findings from the '{pubmed_rec['journal']}' paper generalize to a patient exhibiting high stress levels?",
-                    f"Evaluate the dynamic pooled effect size ({pooled_smd:.3f}) relative to this single publication."
+                    f"How do the findings from the active dataset generalize to a patient exhibiting high {exposures} levels?",
+                    f"Evaluate the dynamic pooled effect size ({pooled_smd:.3f}) relative to individual clinical presentations."
                 ]
             })
         return scenarios
 
-    def get_osce_prompts(self, pooled_smd: float = 0.487, i2: float = 0.0) -> Dict[str, Any]:
-        """
-        Objective structured clinical education prompts driven by openFDA Drug Label API (Feature 105).
-        """
-        drug = ExternalAPIFetcher.fetch_opendrug_metadata("Concerta")
+    def get_osce_prompts(self, pooled_smd: float = 0.500, i2: float = 0.0) -> Dict[str, Any]:
+        drug = self._get_active_drug(0)
+        peicot = self.config.get("systematic_review", {}).get("peicot_schema", {})
+        population = peicot.get("population", ["Clinical Population"])[0]
         
         return {
             "Station_Title": f"Clinical OSCE Prompt: Pharmacological Appraisal of {drug['brand_name']}",
             "Time_Allowed": "12 Minutes",
             "Candidate_Instructions": (
-                f"A patient is seeking guidance on {drug['brand_name']} ({drug['generic_name']}). "
-                f"Active substance: {drug['active_ingredient']}. The FDA-approved purpose/indication is: {drug['indications']}. "
+                f"A patient ({population}) is seeking guidance on {drug['brand_name']} ({drug['generic_name']}). "
+                f"Active substance: {drug['active_ingredient']}. The FDA-approved purpose/indication is: {drug['indications'][:150]}. "
                 f"Given the pooled systematic evidence mean difference of {pooled_smd:.3f} (Heterogeneity I2: {i2:.1f}%), "
                 "explain the expected therapeutic benefits, clinical warnings, and adverse profiles."
             ),
@@ -99,29 +112,26 @@ class MedicalEducationGenerator:
         }
 
     def get_myth_versus_evidence(self) -> List[Dict[str, str]]:
-        """
-        Myth-versus-evidence teaching aids dynamically constructed from live FDA monographs (Feature 106).
-        """
-        drug = ExternalAPIFetcher.fetch_opendrug_metadata("Concerta")
+        drug = self._get_active_drug(0)
         return [
             {
-                "Myth": f"ADHD pharmacotherapy like {drug['brand_name']} lacks clear clinical mechanisms and specific FDA boundaries.",
+                "Myth": f"Clinical pharmacotherapy like {drug['brand_name']} lacks clear clinical mechanisms and specific FDA boundaries.",
                 "Evidence": f"FDA approved {drug['brand_name']} ({drug['generic_name']}) for: {drug['indications'][:150]}... with strict dosing guidelines: {drug['dosage_and_administration'][:150]}..."
             },
             {
-                "Myth": "Stimulant therapies pose completely unpredictable, undocumented hazards to autonomic systems.",
+                "Myth": "Such therapies pose completely unpredictable, undocumented hazards to physiological systems.",
                 "Evidence": f"FDA outlines specific, codified clinical warnings: {drug['warnings'][:150]}... and tracked adverse reactions: {drug['adverse_reactions'][:150]}..."
             }
         ]
 
     def get_bias_language_guidance(self) -> Dict[str, List[str]]:
-        """
-        Bias-aware language guidance dynamically referencing FDA generic terminology (Feature 107, 108).
-        """
-        drug = ExternalAPIFetcher.fetch_opendrug_metadata("Concerta")
+        drug = self._get_active_drug(0)
+        peicot = self.config.get("systematic_review", {}).get("peicot_schema", {})
+        population = peicot.get("population", ["Clinical Population"])[0]
+        
         return {
             "Avoid_Stigmatizing_Stubs": [
-                "Avoid referring to patients as 'hyperactive individuals' or using informal stimulant names.",
+                f"Avoid defining patients primarily by their diagnosis ({population}) rather than as individuals with the condition.",
                 "Avoid over-claiming diagnostic outcomes without statistical backing."
             ],
             "Preferred_Scientific_Terminology": [
@@ -131,29 +141,24 @@ class MedicalEducationGenerator:
         }
 
     def get_journal_club_kit(self) -> Dict[str, Any]:
-        """
-        Journal-club kits generated dynamically from live PubMed metadata (Feature 109, 110, 111).
-        """
-        pubmed_info = ExternalAPIFetcher.fetch_pubmed_metadata(["34218945"])
-        details = list(pubmed_info.values())[0]
+        peicot = self.config.get("systematic_review", {}).get("peicot_schema", {})
+        population = peicot.get("population", ["Clinical Population"])[0]
+        exposures = peicot.get("exposures", ["Exposure"])[0]
         
         return {
-            "Article_Title": details["title"],
-            "Authors": ", ".join(details["authors"]),
-            "Citation_Source": f"{details['journal']} ({details['pub_date']})",
+            "Article_Title": f"Dynamic Systematic Review on {population} and {exposures}",
+            "Authors": "Active Dataset Consortium",
+            "Citation_Source": "Dynamic Synthesis Run",
             "Critical_Appraisal_Questions": [
-                f"How does the target study design in the {details['journal']} article control for population heterogeneity?",
-                "Evaluate the risk of selective reporting in the methods-stated outcomes of this paper.",
-                "Analyze how the author list controls for potential funding and conflict of bias."
+                f"How does the target study design in the active dataset control for {population} heterogeneity?",
+                "Evaluate the risk of selective reporting in the methods-stated outcomes of this synthesis.",
+                "Analyze how the extracted literature controls for potential funding and conflict of bias."
             ]
         }
 
     def get_quick_reference_card(self) -> List[Dict[str, Any]]:
-        """
-        Quick-reference cards dynamically populated from openFDA drug labels (Feature 115).
-        """
-        drug1 = ExternalAPIFetcher.fetch_opendrug_metadata("Concerta")
-        drug2 = ExternalAPIFetcher.fetch_opendrug_metadata("Tenex") # Guanfacine
+        drug1 = self._get_active_drug(0)
+        drug2 = self._get_active_drug(1)
         
         return [
             {

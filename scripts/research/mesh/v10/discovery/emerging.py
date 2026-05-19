@@ -261,7 +261,52 @@ class EmergingDiscoveryEngine:
         brief += (
             "\n## 3. Recommended Actions\n"
             f"- Evaluate potential interactions with {drug['generic_name']} approved indications.\n"
-            "- Allocate systematic review capacity to investigate burst terms.\n"
             "- Add weak-signal terms to search fixtures.\n"
         )
         return brief
+
+    def run_deep_seed_exploration(self, seed_term: str, max_depth: int = 5) -> Dict[str, Any]:
+        """
+        Executes a Breadth-First Search (BFS) graph traversal to discover PubMed MeSH 
+        associations up to N levels deep, utilizing strict branch limits and rate limits.
+        """
+        import time
+        from scripts.research.mesh.v10.infrastructure.api_clients import ExternalAPIFetcher
+        
+        # We will build a nested dict to represent the tree
+        # Format: { "term": "...", "children": [...] }
+        
+        visited = set([seed_term.lower()])
+        
+        def explore_level(current_term: str, current_depth: int) -> Dict[str, Any]:
+            node = {"term": current_term, "children": []}
+            
+            if current_depth >= max_depth:
+                return node
+                
+            # Fetch top 2 or 3 associations to strictly bound branch explosion
+            # depth 0->1: 3 branches. depth 1->2: 2 branches to be safe.
+            branch_limit = 3 if current_depth == 0 else 2
+            
+            associations = ExternalAPIFetcher.fetch_pubmed_mesh_associations(current_term, limit=5)
+            
+            # Filter visited and limit branches
+            valid_associations = []
+            for assoc in associations:
+                if assoc.lower() not in visited:
+                    visited.add(assoc.lower())
+                    valid_associations.append(assoc)
+                    if len(valid_associations) >= branch_limit:
+                        break
+                        
+            for assoc in valid_associations:
+                child_node = explore_level(assoc, current_depth + 1)
+                node["children"].append(child_node)
+                
+            return node
+
+        print(f"Initializing deep association search for '{seed_term}' (Max depth: {max_depth})...")
+        print("This may take a few minutes as we safely pace API calls...")
+        
+        tree = explore_level(seed_term, 0)
+        return tree
