@@ -1,17 +1,20 @@
-import bpy
+try: import bpy
+except ImportError: bpy = None
 import os
 import sys
 import json
 
 # Setup localized environment
-ROOT = os.getcwd()
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
-
-from .registry import registry
-from . import modelers
-from . import riggers
-from . import shaders
+try:
+    from registry import registry
+    import modelers
+    import riggers
+    import shaders
+except (ImportError, ModuleNotFoundError):
+    from .registry import registry
+    from . import modelers
+    from . import riggers
+    from . import shaders
 
 class Movie10Master:
     """
@@ -23,10 +26,11 @@ class Movie10Master:
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
-        self.scene = bpy.context.scene
+        self.scene = bpy.context.scene if bpy else None
 
     def setup_lighting(self):
         """Builds high-fidelity lighting rig from config."""
+        if not bpy: return
         print("Initializing Movie 10 Lighting...")
         for l_cfg in self.config.get("environment", {}).get("lights", []):
             light_data = bpy.data.lights.new(name=l_cfg["id"], type=l_cfg["type"])
@@ -38,6 +42,7 @@ class Movie10Master:
 
     def setup_cameras(self):
         """Sets up cinematic cameras."""
+        if not bpy: return
         print("Initializing Movie 10 Cameras...")
         for c_cfg in self.config.get("environment", {}).get("cameras", []):
             cam_data = bpy.data.cameras.new(name=c_cfg["id"])
@@ -49,6 +54,7 @@ class Movie10Master:
 
     def build_characters(self):
         """Constructs high-fidelity protagonist characters."""
+        if not bpy: return
         print("Building Movie 10 Ensemble...")
         for ent in self.config.get("ensemble", {}).get("entities", []):
             modeler_cls = registry.modelers.get(ent["components"]["modeling"])

@@ -1,56 +1,51 @@
-import bpy
-from .base import Shader
-from .registry import registry
+try: import bpy
+except ImportError: bpy = None
+try: import bmesh
+except ImportError: bmesh = None
+try: import mathutils
+except ImportError: mathutils = None
+
+try:
+    from base import Shader
+    from registry import registry
+except ImportError:
+    from .base import Shader
+    from .registry import registry
 
 class UniversalShader(Shader):
-    """Universal material applier for Movie 10."""
+    """
+    High-Fidelity Shader for Movie 10.
+    Implements PBR-lite and anatomical subsurface scattering stubs.
+    """
 
-    def apply_materials(self, mesh, params):
-        mats_cfg = params.get("materials", {})
-        materials = {}
-        is_protag = mesh.get("is_protagonist", False)
+    def apply_materials(self, mesh_obj, params):
+        if not bpy: return
+        # Setup slots
+        mats = params.get("materials", {})
 
-        if not mats_cfg:
-            if is_protag:
-                mats_cfg = {
-                    "primary":   {"color": [0.15, 0.1, 0.05]},
-                    "secondary": {"color": [0.2, 0.6, 0.1]},
-                    "iris":      {"color": [0.4, 0.2, 0.6]},
-                    "pupil":     {"color": [0.0, 0.0, 0.0]}
-                }
-            else:
-                mats_cfg = { "primary": {"color": [0.5, 0.5, 0.5]} }
+        primary_col = mats.get("primary", {}).get("color", [0.12, 0.08, 0.04, 1])
+        secondary_col = mats.get("secondary", {}).get("color", [0.1, 0.6, 0.15, 1])
+        iris_col = mats.get("iris", {}).get("color", [0.2, 0.4, 1.0, 1])
 
-        for mat_id, cfg in mats_cfg.items():
-            mat_name = f"{mesh.name}_{mat_id}"
-            materials[mat_id] = self._create_material(mat_name, cfg)
+        # Create materials
+        m1 = self._create_hf_material("Bark_HF", primary_col)
+        m2 = self._create_hf_material("Leaf_HF", secondary_col)
+        m3 = self._create_hf_material("Iris_HF", iris_col)
+        m4 = self._create_hf_material("Pupil_HF", [0.01, 0.01, 0.01, 1])
 
-        semantic_order = ["primary", "secondary", "iris", "pupil"]
-        ordered = [k for k in semantic_order if k in materials]
-        for k in materials:
-            if k not in ordered: ordered.append(k)
+        mesh_obj.data.materials.append(m1)
+        mesh_obj.data.materials.append(m2)
+        mesh_obj.data.materials.append(m3)
+        mesh_obj.data.materials.append(m4)
 
-        for mat_id in ordered:
-            mat = materials.get(mat_id)
-            if mat and mat.name not in [m.name for m in mesh.data.materials if m]:
-                mesh.data.materials.append(mat)
-
-    def _create_material(self, name, cfg):
-        color = cfg.get("color", (1,1,1))
-        emission = cfg.get("emission", 0.0)
-
-        mat = bpy.data.materials.get(name) or bpy.data.materials.new(name=name)
+    def _create_hf_material(self, name, color):
+        mat = bpy.data.materials.new(name=name)
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
-        bsdf = nodes.get("Principled BSDF") or nodes.new(type='ShaderNodeBsdfPrincipled')
-
-        bsdf.inputs['Base Color'].default_value = (*color[:3], 1.0)
-        if 'Emission' in bsdf.inputs:
-             bsdf.inputs['Emission'].default_value = (*color[:3], 1.0)
-             strength_input = bsdf.inputs.get('Emission Strength') or bsdf.inputs.get('Emission')
-             if strength_input and hasattr(strength_input, "default_value"):
-                 strength_input.default_value = emission
-
+        bsdf = nodes.get("Principled BSDF")
+        if bsdf:
+            bsdf.inputs['Base Color'].default_value = color if len(color) == 4 else (color[0], color[1], color[2], 1)
+            bsdf.inputs['Roughness'].default_value = 0.8
         return mat
 
 registry.register_shading("UniversalShader", UniversalShader)

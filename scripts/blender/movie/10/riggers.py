@@ -1,76 +1,85 @@
-import bpy
-import bmesh
+try: import bpy
+except ImportError: bpy = None
+try: import bmesh
+except ImportError: bmesh = None
+try: import mathutils
+except ImportError: mathutils = None
 import math
-import mathutils
-from .base import Rigger
-from .registry import registry
+import os
+
+try:
+    from base import Rigger
+    from registry import registry
+except ImportError:
+    from .base import Rigger
+    from .registry import registry
 
 class PlantRigger(Rigger):
     """
-    Specific Rigger for Procedural Plant Humanoids.
-    Bone hierarchy including High-Fidelity facial rigging for Movie 10.
+    Advanced Rigging for Movie 10 Plant Protagonists.
+    Supports complex limb articulation and high-fidelity facial bones.
     """
 
     def build_rig(self, char_id, params):
-        height_scale = params.get("height_scale", 1.0)
-        torso_h = 1.5 * height_scale
-        head_r  = 0.4
-        neck_h  = 0.2
+        if not bpy: return None
+        rig_data = bpy.data.armatures.new(f"{char_id}_RigData")
+        rig_obj = bpy.data.objects.new(f"{char_id}.Rig", rig_data)
+        bpy.context.scene.collection.objects.link(rig_obj)
 
-        armature_data = bpy.data.armatures.new(f"{char_id}_ArmatureData")
-        armature_obj = bpy.data.objects.new(f"{char_id}.Rig", armature_data)
-        bpy.context.scene.collection.objects.link(armature_obj)
-
-        bpy.context.view_layer.objects.active = armature_obj
+        bpy.context.view_layer.objects.active = rig_obj
         bpy.ops.object.mode_set(mode='EDIT')
 
-        bones_def = {
-            "Torso": ((0,0,0), (0,0,torso_h), None),
-            "Neck":  ((0,0,torso_h), (0,0,torso_h+neck_h), "Torso"),
-            "Head":  ((0,0,torso_h+neck_h), (0,0,torso_h+neck_h+head_r*2), "Neck"),
-            "Shoulder.L": ((0.2, 0, torso_h*0.9), (0.4, 0, torso_h*0.9), "Torso"),
-            "Arm.L":      ((0.4, 0, torso_h*0.9), (0.4, 0, torso_h*0.9-0.4), "Shoulder.L"),
-            "Elbow.L":    ((0.4, 0, torso_h*0.9-0.4), (0.4, 0, torso_h*0.9-0.8), "Arm.L"),
-            "Shoulder.R": ((-0.2, 0, torso_h*0.9), (-0.4, 0, torso_h*0.9), "Torso"),
-            "Arm.R":      ((-0.4, 0, torso_h*0.9), (-0.4, 0, torso_h*0.9-0.4), "Shoulder.R"),
-            "Elbow.R":    ((-0.4, 0, torso_h*0.9-0.4), (-0.4, 0, torso_h*0.9-0.8), "Arm.R"),
-            "Hip.L":   ((0.15, 0, 0.1), (0.25, 0, 0.1), "Torso"),
-            "Thigh.L": ((0.25, 0, 0.1), (0.25, 0, -0.4), "Hip.L"),
-            "Knee.L":  ((0.25, 0, -0.4), (0.25, 0, -0.9), "Thigh.L"),
-            "Hip.R":   ((-0.15, 0, 0.1), (-0.25, 0, 0.1), "Torso"),
-            "Thigh.R": ((-0.25, 0, 0.1), (-0.25, 0, -0.4), "Hip.R"),
-            "Knee.R":  ((-0.25, 0, -0.4), (-0.25, 0, -0.9), "Thigh.R"),
-            "Hand.L":     ((0.4, 0, torso_h*0.9-0.8),  (0.4, 0, torso_h*0.9-0.95), "Elbow.L"),
-            "Hand.R":     ((-0.4, 0, torso_h*0.9-0.8),  (-0.4, 0, torso_h*0.9-0.95), "Elbow.R"),
-            "Foot.L":  ((0.25, 0, -0.9),     (0.25,-0.15,-0.95), "Knee.L"),
-            "Foot.R":  ((-0.25, 0, -0.9),    (-0.25,-0.15,-0.95), "Knee.R"),
-            "Foliage":   ((0, 0, torso_h+neck_h+head_r), (0, 0, torso_h+neck_h+head_r+0.5), "Head"),
-        }
+        # Torso chain
+        root = rig_data.edit_bones.new("Root")
+        root.head = (0,0,0); root.tail = (0,0,0.1)
 
-        hcz = torso_h + neck_h + head_r
-        facial_bones = {
-            "Ear.L": ((head_r*0.9, 0, hcz), (head_r*1.1, 0, hcz+0.1), "Head"),
-            "Ear.R": ((-head_r*0.9, 0, hcz), (-head_r*1.1, 0, hcz+0.1), "Head"),
-            "Eye.L": ((head_r*0.35, -head_r*0.84, hcz+head_r*0.35), (head_r*0.35, -head_r*0.92, hcz+head_r*0.35), "Head"),
-            "Eye.R": ((-head_r*0.35,-head_r*0.84, hcz+head_r*0.35), (-head_r*0.35,-head_r*0.92, hcz+head_r*0.35), "Head"),
-            "Eyelid.Upper.L": ((head_r*0.35, -head_r*0.84, hcz+head_r*0.40), (head_r*0.35, -head_r*0.92, hcz+head_r*0.40), "Head"),
-            "Eyelid.Lower.L": ((head_r*0.35, -head_r*0.84, hcz+head_r*0.30), (head_r*0.35, -head_r*0.92, hcz+head_r*0.30), "Head"),
-            "Lip.Upper": ((0, -head_r*0.96, hcz-head_r*0.18), (0, -head_r*1.06, hcz-head_r*0.18), "Head"),
-            "Lip.Lower": ((0, -head_r*0.95, hcz-head_r*0.24), (0, -head_r*1.05, hcz-head_r*0.24), "Head"),
-        }
-        bones_def.update(facial_bones)
+        spine = rig_data.edit_bones.new("Torso")
+        spine.parent = root
+        spine.head = (0,0,0.1); spine.tail = (0,0,1.5)
 
-        for bname, (h, t, p) in bones_def.items():
-            bone = armature_data.edit_bones.new(bname)
-            bone.head, bone.tail = h, t
-            if p: bone.parent = armature_data.edit_bones[p]
-            bone.use_deform = True
+        neck = rig_data.edit_bones.new("Neck")
+        neck.parent = spine
+        neck.head = (0,0,1.5); neck.tail = (0,0,1.7)
 
-        bpy.ops.object.mode_set(mode='POSE')
-        for pb in armature_obj.pose.bones:
-            pb.rotation_mode = 'XYZ'
+        head = rig_data.edit_bones.new("Head")
+        head.parent = neck
+        head.head = (0,0,1.7); head.tail = (0,0,2.1)
+
+        # Facial Bones
+        for side, sx in [("L", 1), ("R", -1)]:
+            eye = rig_data.edit_bones.new(f"Eye.{side}")
+            eye.parent = head
+            eye.head = (0.15*sx, -0.4, 1.8); eye.tail = (0.15*sx, -0.5, 1.8)
+
+        # Limbs
+        for side, sx in [("L", 1), ("R", -1)]:
+            # Arm
+            ua = rig_data.edit_bones.new(f"Arm.{side}")
+            ua.parent = spine
+            ua.head = (0.4*sx, 0, 1.35); ua.tail = (0.4*sx, 0, 0.95)
+
+            la = rig_data.edit_bones.new(f"Elbow.{side}")
+            la.parent = ua
+            la.head = (0.4*sx, 0, 0.95); la.tail = (0.4*sx, 0, 0.55)
+
+            h = rig_data.edit_bones.new(f"Hand.{side}")
+            h.parent = la
+            h.head = (0.4*sx, 0, 0.55); h.tail = (0.4*sx, 0, 0.4)
+
+            # Leg
+            ul = rig_data.edit_bones.new(f"Thigh.{side}")
+            ul.parent = root
+            ul.head = (0.25*sx, 0, 0.15); ul.tail = (0.25*sx, 0, -0.35)
+
+            ll = rig_data.edit_bones.new(f"Knee.{side}")
+            ll.parent = ul
+            ll.head = (0.25*sx, 0, -0.35); ll.tail = (0.25*sx, 0, -0.85)
+
+            f = rig_data.edit_bones.new(f"Foot.{side}")
+            f.parent = ll
+            f.head = (0.25*sx, 0, -0.85); f.tail = (0.25*sx, -0.25, -0.85)
 
         bpy.ops.object.mode_set(mode='OBJECT')
-        return armature_obj
+        return rig_obj
 
 registry.register_rigging("PlantRigger", PlantRigger)

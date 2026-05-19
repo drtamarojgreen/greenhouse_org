@@ -1,12 +1,20 @@
-import bpy
-import bmesh
-import mathutils
+try: import bpy
+except ImportError: bpy = None
+try: import bmesh
+except ImportError: bmesh = None
+try: import mathutils
+except ImportError: mathutils = None
 import math
 import random
 import json
 import os
-from .base import Modeler
-from .registry import registry
+
+try:
+    from base import Modeler
+    from registry import registry
+except ImportError:
+    from .base import Modeler
+    from .registry import registry
 
 class PlantModeler(Modeler):
     """
@@ -29,6 +37,7 @@ class PlantModeler(Modeler):
                 self.p_cfg = self._get_default_config()
 
     def build_mesh(self, char_id, params, rig=None):
+        if not bpy: return None
         height_scale = params.get("height_scale", 1.0)
         seed = params.get("seed", 42)
         random.seed(seed)

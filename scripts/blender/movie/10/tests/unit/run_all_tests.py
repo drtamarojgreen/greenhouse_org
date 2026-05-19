@@ -1,14 +1,26 @@
 import unittest
-import bpy
+try:
+    import bpy
+except ImportError:
+    bpy = None
 import os
 import sys
 
 # scripts/blender/movie/10/tests/unit/run_all_tests.py
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M10_ROOT = os.path.dirname(os.path.dirname(TEST_DIR))
+M10_ROOT = os.path.abspath(os.path.join(TEST_DIR, "..", ".."))
 
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
+
+# Verify we can find the module
+import importlib.util
+spec = importlib.util.find_spec("movie_configuration")
+if spec is None:
+    # Try alternate pathing for Blender environment
+    alt_root = os.path.join(os.getcwd(), "scripts", "blender", "movie", "10")
+    if alt_root not in sys.path:
+        sys.path.insert(0, alt_root)
 
 import movie_configuration as mc
 

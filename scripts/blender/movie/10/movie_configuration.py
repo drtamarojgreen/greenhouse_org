@@ -1,6 +1,9 @@
 import json
 import os
-import bpy
+try:
+    import bpy
+except ImportError:
+    bpy = None
 
 # Internal state
 _data = {}
@@ -55,7 +58,7 @@ COLL_ASSETS = coll_assets
 COLL_CAMERAS = coll_cameras
 
 # Blender 5.1 compatibility shims
-if hasattr(bpy, "types"):
+if bpy and hasattr(bpy, "types"):
     if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx") and not hasattr(bpy.types.IMPORT_SCENE_OT_fbx, "files"):
         bpy.types.IMPORT_SCENE_OT_fbx.files = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
     if hasattr(bpy.types, "EXPORT_SCENE_OT_fbx") and not hasattr(bpy.types.EXPORT_SCENE_OT_fbx, "use_space_transform"):
@@ -69,3 +72,8 @@ coll_cameras = get("collections.cameras", "CAMERAS")
 # Equipment dir is not used in Movie 10 config but keep for parity if tests expect it
 equipment_dir = "/home/tamarojgreen/Documents/Movie_Equipment/"
 assets_blend = os.path.join(equipment_dir, "MHD2_animation133.blend")
+
+# Add to sys.modules to handle top-level imports when package-relative fails
+import sys
+if 'movie_configuration' not in sys.modules:
+    sys.modules['movie_configuration'] = sys.modules[__name__]
