@@ -1,21 +1,22 @@
-try: import bpy
-except ImportError: bpy = None
-try: try: import bmesh
-except ImportError: bmesh = None
-except ImportError: bmesh = None
-try: try: import mathutils
-except ImportError: mathutils = None
-except ImportError: mathutils = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 
 try:
-    from base import Shader
-    try:
-    from registry import registry
-except ImportError:
-    from .registry import registry
-except ImportError:
     from .base import Shader
     from .registry import registry
+except (ImportError, ValueError):
+    try:
+        from base import Shader
+        from registry import registry
+    except ImportError:
+        Shader = object
+        registry = None
 
 class UniversalShader(Shader):
     """
@@ -53,4 +54,5 @@ class UniversalShader(Shader):
             bsdf.inputs['Roughness'].default_value = 0.8
         return mat
 
-registry.register_shading("UniversalShader", UniversalShader)
+if registry:
+    registry.register_shading("UniversalShader", UniversalShader)

@@ -1,23 +1,24 @@
-try: import bpy
-except ImportError: bpy = None
-try: try: import bmesh
-except ImportError: bmesh = None
-except ImportError: bmesh = None
-try: try: import mathutils
-except ImportError: mathutils = None
-except ImportError: mathutils = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 import math
 import os
 
 try:
-    from base import Rigger
-    try:
-    from registry import registry
-except ImportError:
-    from .registry import registry
-except ImportError:
     from .base import Rigger
     from .registry import registry
+except (ImportError, ValueError):
+    try:
+        from base import Rigger
+        from registry import registry
+    except ImportError:
+        Rigger = object
+        registry = None
 
 class PlantRigger(Rigger):
     """
@@ -87,4 +88,5 @@ class PlantRigger(Rigger):
         bpy.ops.object.mode_set(mode='OBJECT')
         return rig_obj
 
-registry.register_rigging("PlantRigger", PlantRigger)
+if registry:
+    registry.register_rigging("PlantRigger", PlantRigger)

@@ -1,11 +1,9 @@
 try: import bpy
 except ImportError: bpy = None
-try: try: import bmesh
-except ImportError: bmesh = None
+try: import bmesh
 except ImportError: bmesh = None
 import math
-try: try: import mathutils
-except ImportError: mathutils = None
+try: import mathutils
 except ImportError: mathutils = None
 import random
 try:

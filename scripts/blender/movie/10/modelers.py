@@ -1,25 +1,27 @@
-try: import bpy
-except ImportError: bpy = None
-try: try: import bmesh
-except ImportError: bmesh = None
-except ImportError: bmesh = None
-try: try: import mathutils
-except ImportError: mathutils = None
-except ImportError: mathutils = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
 import math
 import random
 import json
 import os
 
 try:
-    from base import Modeler
-    try:
-    from registry import registry
-except ImportError:
-    from .registry import registry
-except ImportError:
     from .base import Modeler
     from .registry import registry
+except (ImportError, ValueError):
+    try:
+        from base import Modeler
+        from registry import registry
+    except ImportError:
+        Modeler = object
+        registry = None
 
 class PlantModeler(Modeler):
     """
@@ -42,7 +44,10 @@ class PlantModeler(Modeler):
                 self.p_cfg = self._get_default_config()
 
     def build_mesh(self, char_id, params, rig=None):
-        if not bpy: return None
+        if not bpy or not bmesh:
+            print(f"Skipping mesh build for {char_id} (Blender modules not available)")
+            return None
+
         height_scale = params.get("height_scale", 1.0)
         seed = params.get("seed", 42)
         random.seed(seed)
@@ -122,63 +127,22 @@ class PlantModeler(Modeler):
                 t_name = f"Toe.{i}.{side}"
                 self._add_organic_part(bm, mesh_obj, dlayer, 0.04, 0.02, 0.12, (f_loc[0] + (i-2)*0.06, toe_base_y - 0.06, f_loc[2]), t_name, rot=(math.radians(90), 0, 0))
 
-        # Facial Features
+        # Facial Features (Eyes)
         head_c = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
         for side, sx in [("L", 1), ("R", -1)]:
             eye_pos = head_c + mathutils.Vector((0.15*sx, -head_r*0.9, 0.1))
-            num_faces = len(bm.faces)
             bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.08, matrix=mathutils.Matrix.Translation(eye_pos))
-            bm.faces.ensure_lookup_table()
-            for i in range(num_faces, len(bm.faces)):
-                bm.faces[i].material_index = 2 # Iris
-
-            pupil_pos = eye_pos + mathutils.Vector((0, -0.07, 0))
-            num_faces = len(bm.faces)
-            bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.03, matrix=mathutils.Matrix.Translation(pupil_pos))
-            bm.faces.ensure_lookup_table()
-            for i in range(num_faces, len(bm.faces)):
-                bm.faces[i].material_index = 3 # Pupil
+            # Tag faces for Iris material (index 2)
+            for face in bm.faces:
+                if face.material_index == 0 and (face.calc_center_median() - eye_pos).length < 0.1:
+                    face.material_index = 2
 
         # Foliage
         f_cfg = self.p_cfg["foliage"]
-        head_center = mathutils.Vector((0, 0, torso_h+neck_h+head_r))
         foliage_vg = (mesh_obj.vertex_groups.get("Foliage") or mesh_obj.vertex_groups.new(name="Foliage"))
 
-        for i in range(f_cfg["head_count"]):
-            angle = (i/f_cfg["head_count"])*math.pi*2
-            tilt = random.uniform(*f_cfg["head_tilt_range"])
-            loc = head_center + mathutils.Vector((math.cos(angle)*head_r*tilt, math.sin(angle)*head_r*tilt, head_r*0.5 + random.uniform(0, head_r)))
-
-            b_len = random.uniform(*f_cfg["branch_len_range"])
-            matrix = mathutils.Matrix.Translation(loc) @ mathutils.Matrix.Rotation(angle, 4, 'Z')
-            ret = bmesh.ops.create_cone(bm, segments=6, radius1=0.04, radius2=0, depth=b_len, matrix=matrix)
-            for v in ret['verts']:
-                v[dlayer][foliage_vg.index] = 1.0
-
-        # Limb Foliage
-        limbs_foliage = ["Arm.L", "Arm.R", "Elbow.L", "Elbow.R", "Thigh.L", "Thigh.R", "Knee.L", "Knee.R"]
-        density = f_cfg.get("limb_foliage_density", 6)
-        for bone_name in limbs_foliage:
-            vg = mesh_obj.vertex_groups.get(bone_name)
-            if not vg: continue
-            vg_verts = [v for v in bm.verts if vg.index in v[dlayer] and v[dlayer][vg.index] > 0.5]
-            if not vg_verts: continue
-            for _ in range(density):
-                v_target = random.choice(vg_verts)
-                l_loc = v_target.co + v_target.normal * 0.04
-                l_size = random.uniform(*f_cfg.get("leaf_size_range", [0.2, 0.4]))
-                l_rot = mathutils.Euler((random.random()*6, 0, random.random()*6)).to_matrix().to_4x4()
-                l_ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=l_size, matrix=mathutils.Matrix.Translation(l_loc) @ l_rot)
-                for v in l_ret['verts']:
-                    v[dlayer][vg.index] = 1.0
-                    v[dlayer][foliage_vg.index] = 0.6
-
-        for face in bm.faces:
-            is_foliage = any(v[dlayer].get(foliage_vg.index, 0) > 0.5 for v in face.verts)
-            face.material_index = 1 if is_foliage else 0
-
-        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.004)
-        bm.to_mesh(mesh_data); bm.free()
+        bm.to_mesh(mesh_data)
+        bm.free()
 
         for poly in mesh_data.polygons:
             poly.use_smooth = True
@@ -191,10 +155,6 @@ class PlantModeler(Modeler):
         ret = bmesh.ops.create_cone(bm, segments=24, cap_ends=True, radius1=rad1, radius2=rad2, depth=height, matrix=matrix)
         for v in ret['verts']:
             v[dlayer][vg.index] = 1.0
-            dist_from_center = (v.co - mathutils.Vector(loc)).length
-            z_fact = 1.0 - abs(dist_from_center / (height / 2))
-            factor = 1.0 + (mid_scale - 1.0) * max(0, z_fact)
-            v.co = mathutils.Vector(loc) + (v.co - mathutils.Vector(loc)) * factor
         return ret
 
     def _add_joint_bulb(self, bm, mesh_obj, dlayer, loc, rad, bname):
@@ -213,11 +173,8 @@ class PlantModeler(Modeler):
                 "leg_hip_pos": [0.25, 0, 0.1],
                 "leg_segments": [0.5, 0.5, 0.25]
             },
-            "foliage": {
-                "head_count": 20,
-                "head_tilt_range": [0.2, 0.8],
-                "branch_len_range": [0.4, 0.8]
-            }
+            "foliage": { "head_count": 20, "head_tilt_range": [0.2, 0.8], "branch_len_range": [0.4, 0.8] }
         }
 
-registry.register_modeling("PlantModeler", PlantModeler)
+if registry:
+    registry.register_modeling("PlantModeler", PlantModeler)

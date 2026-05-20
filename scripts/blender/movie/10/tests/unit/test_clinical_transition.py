@@ -3,8 +3,7 @@ try: import bpy
 except ImportError: bpy = None
 import os
 import sys
-try: try: import mathutils
-except ImportError: mathutils = None
+try: import mathutils
 except ImportError: mathutils = None
 
 # Ensure Movie 10 root is in sys.path

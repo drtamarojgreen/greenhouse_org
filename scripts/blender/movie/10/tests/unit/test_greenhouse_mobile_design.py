@@ -1,8 +1,7 @@
 import unittest
 try: import bpy
 except ImportError: bpy = None
-try: try: import bmesh
-except ImportError: bmesh = None
+try: import bmesh
 except ImportError: bmesh = None
 import os
 import sys

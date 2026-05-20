@@ -1,14 +1,12 @@
 try: import bpy
 except ImportError: bpy = None
-try: try: import bmesh
-except ImportError: bmesh = None
+try: import bmesh
 except ImportError: bmesh = None
 import math
 import random
 import json
 import os
-try: try: import mathutils
-except ImportError: mathutils = None
+try: import mathutils
 except ImportError: mathutils = None
 try:
     import movie_configuration as mc

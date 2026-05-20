@@ -5,8 +5,7 @@ except ImportError:
 try: import bpy
 except ImportError: bpy = None
 import math
-try: try: import mathutils
-except ImportError: mathutils = None
+try: import mathutils
 except ImportError: mathutils = None
 
 def apply_patrol(rig, patrol_cfg, total_frames):

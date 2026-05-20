@@ -5,8 +5,7 @@ except ImportError:
 try: import bpy
 except ImportError: bpy = None
 import unittest
-try: try: import mathutils
-except ImportError: mathutils = None
+try: import mathutils
 except ImportError: mathutils = None
 import math
 

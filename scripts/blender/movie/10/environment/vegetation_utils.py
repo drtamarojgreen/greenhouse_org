@@ -1,12 +1,10 @@
 try: import bpy
 except ImportError: bpy = None
-try: try: import bmesh
-except ImportError: bmesh = None
+try: import bmesh
 except ImportError: bmesh = None
 import math
 import random
-try: try: import mathutils
-except ImportError: mathutils = None
+try: import mathutils
 except ImportError: mathutils = None
 
 def create_leaf_material(name, base_color, leaf_cfg):

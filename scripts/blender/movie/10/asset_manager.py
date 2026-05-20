@@ -4,8 +4,7 @@ except ImportError:
     from . import movie_configuration as mc
 try: import bpy
 except ImportError: bpy = None
-try: try: import mathutils
-except ImportError: mathutils = None
+try: import mathutils
 except ImportError: mathutils = None
 import os
 
