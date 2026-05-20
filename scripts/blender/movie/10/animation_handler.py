@@ -1,16 +1,9 @@
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
+import movie_configuration as mc
+import bpy
 import math
 import random
 import base
-try:
-    from registry import registry
-except ImportError:
-    from .registry import registry
+from registry import registry
 
 # Ported from Movie 6: Bone mapping for cross-rig compatibility (Internal vs Mixamo)
 BONE_NAME_MAP = {

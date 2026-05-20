@@ -1,11 +1,31 @@
 try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
 import math
 import random
-try: import bpy
-except ImportError: bpy = None
 
 def animate_idle(obj, start, duration, get_bone_fn):
     if obj.type != 'ARMATURE': return

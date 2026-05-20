@@ -1,12 +1,28 @@
-try: import bpy
-except ImportError: bpy = None
-try: import bmesh
-except ImportError: bmesh = None
-import math
-try: import mathutils
-except ImportError: mathutils = None
-import random
 try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+import math
+import random
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
@@ -85,7 +101,6 @@ class MountainBaseModeler(Modeler):
                 bush = bpy.data.objects.get(b_name)
                 if bush: bush.parent = parent
 
-try:
     from registry import registry
 except ImportError:
     from .registry import registry

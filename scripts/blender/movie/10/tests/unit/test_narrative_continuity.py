@@ -1,33 +1,40 @@
-import unittest
-try: import bpy
-except ImportError: bpy = None
-import os
-import sys
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-# Ensure Movie 10 root is in sys.path
-M10_ROOT = os.path.dirname(os.path.abspath(os.path.join(__file__, "../..")))
-if M10_ROOT not in sys.path:
-    sys.path.insert(0, M10_ROOT)
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-
-try:
-    try:
-    from director import
-except ImportError:
-    from ..director import Director
-except ImportError:
-    from .director import Director
-try:
-    try:
-    from asset_manager import
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
 except ImportError:
     from ..asset_manager import AssetManager
-except ImportError:
-    from .asset_manager import AssetManager
-import components
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
 
 class TestNarrativeContinuityV10(unittest.TestCase):
     @classmethod

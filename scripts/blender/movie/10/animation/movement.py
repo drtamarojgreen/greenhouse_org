@@ -1,10 +1,30 @@
 try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
 import math
-try: import bpy
-except ImportError: bpy = None
 
 def animate_walk(obj, start, duration, get_bone_fn):
     """

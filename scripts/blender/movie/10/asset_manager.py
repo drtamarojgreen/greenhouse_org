@@ -1,11 +1,6 @@
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
-try: import mathutils
-except ImportError: mathutils = None
+import movie_configuration as mc
+import bpy
+import mathutils
 import os
 
 class AssetManager:
@@ -105,8 +100,7 @@ class AssetManager:
         bpy.context.evaluated_depsgraph_get().update()
 
     def execute_balanced_culling(self, rig):
-        try: import bmesh
-except ImportError: bmesh = None
+        import bmesh
         meshes = [c for c in rig.children_recursive if c.type == 'MESH']
         irw = rig.matrix_world.inverted()
         for mesh in meshes:

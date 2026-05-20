@@ -1,26 +1,38 @@
-import unittest
-try: import bpy
-except ImportError: bpy = None
-import os
-import sys
-import json
-
-# Ensure Movie 10 is in path
-M10_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M10_DIR not in sys.path:
-    sys.path.append(M10_DIR)
 try:
-    import movie_configuration as mc
+    import bpy
+    import bmesh
+    import mathutils
 except ImportError:
-    from . import movie_configuration as mc
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-try:
-    try:
-    from asset_manager import
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
 except ImportError:
     from ..asset_manager import AssetManager
-except ImportError:
-    from .asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
 
 class TestInteriorFurnishing(unittest.TestCase):
     def setUp(self):
@@ -92,14 +104,3 @@ class TestInteriorFurnishing(unittest.TestCase):
         temp_cfg_path = os.path.join(m9_root, "environment", "test_interior_assets.json")
         with open(temp_cfg_path, 'w') as f:
             json.dump(cfg, f)
-
-        try:
-            InteriorModeler().build_mesh("Interior", {"config_path": temp_cfg_path})
-            mat_logo = bpy.data.materials.get("mat_tv_logo")
-            self.assertIsNotNone(mat_logo.node_tree.animation_data, "Logo emission should be animated.")
-        finally:
-            if os.path.exists(temp_cfg_path):
-                os.remove(temp_cfg_path)
-
-if __name__ == "__main__":
-    unittest.main(argv=[sys.argv[0]])

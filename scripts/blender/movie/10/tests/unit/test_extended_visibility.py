@@ -1,22 +1,40 @@
-import unittest
-try: import bpy
-except ImportError: bpy = None
-import os
-import sys
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-# Standard path injection
-M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
+except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-
-try:
-    from render import
-except ImportError:
-    from ..render import build_scene
 
 class TestExtendedVisibility(unittest.TestCase):
     @classmethod

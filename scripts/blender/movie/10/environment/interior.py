@@ -1,14 +1,30 @@
-try: import bpy
-except ImportError: bpy = None
-try: import bmesh
-except ImportError: bmesh = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 import math
 import random
 import json
 import os
-try: import mathutils
-except ImportError: mathutils = None
-try:
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
@@ -284,7 +300,6 @@ class InteriorModeler(Modeler):
         if "rot" in cfg: obj.rotation_euler = [math.radians(r) for r in cfg["rot"]]
         if "scale" in cfg: obj.scale = cfg["scale"]
 
-try:
     from registry import registry
 except ImportError:
     from .registry import registry

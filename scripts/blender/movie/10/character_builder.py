@@ -1,15 +1,8 @@
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
+import movie_configuration as mc
+import bpy
 import os
 import json
-try:
-    from registry import registry
-except ImportError:
-    from .registry import registry
+from registry import registry
 
 class CharacterBuilder:
     """

@@ -1,19 +1,34 @@
 try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
-try: import bmesh
-except ImportError: bmesh = None
 import os
 import sys
 import math
-try: import mathutils
-except ImportError: mathutils = None
 
 from base import Rigger
-try:
     from registry import registry
 except ImportError:
     from .registry import registry
@@ -23,7 +38,6 @@ M6_ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path
 if M6_ASSETS not in sys.path:
     sys.path.insert(0, M6_ASSETS)
 
-try:
     from facial_utilities_v6 import create_facial_props_v6
 except ImportError:
     create_facial_props_v6 = None

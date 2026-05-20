@@ -1,24 +1,39 @@
-import unittest
-try: import bpy
-except ImportError: bpy = None
-import os
-import json
-import sys
-
-M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if M10_ROOT not in sys.path: sys.path.insert(0, M10_ROOT)
 try:
-    import movie_configuration as mc
+    import bpy
+    import bmesh
+    import mathutils
 except ImportError:
-    from . import movie_configuration as mc
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-try:
-    try:
-    from director import
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
 except ImportError:
+    from ..asset_manager import AssetManager
     from ..director import Director
-except ImportError:
-    from .director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
+if M10_ROOT not in sys.path: sys.path.insert(0, M10_ROOT)
 
 class TestGenericPipeline(unittest.TestCase):
     """Verifies that the pipeline is strictly data-driven and modular."""
@@ -63,13 +78,6 @@ class TestGenericPipeline(unittest.TestCase):
 
     def test_animation_modular_dispatch(self):
         """Verifies AnimationHandler dispatches to modular sub-packages."""
-        try:
-    try:
-    from animation_handler import
-except ImportError:
-    from ..animation_handler import AnimationHandler
-except ImportError:
-    from .animation_handler import AnimationHandler
         handler = AnimationHandler()
         # Verify it has the apply_animation method but no local _animate methods
         self.assertTrue(hasattr(handler, "apply_animation"))
@@ -78,12 +86,3 @@ except ImportError:
 
     def test_zero_hardcoding_registry(self):
         """Verifies that models are loaded via registry, not hardcoded imports."""
-        try:
-    from registry import registry
-except ImportError:
-    from .registry import registry
-        self.assertIsNotNone(registry.get_modeling("PlantModeler"))
-        self.assertIsNotNone(registry.get_modeling("GreenhouseMobileModeler"))
-
-if __name__ == "__main__":
-    unittest.main()

@@ -6,14 +6,34 @@ except ImportError:
     bpy = None
     bmesh = None
     mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 import math
 import os
 
-try:
     from .base import Rigger
     from .registry import registry
 except (ImportError, ValueError):
-    try:
         from base import Rigger
         from registry import registry
     except ImportError:

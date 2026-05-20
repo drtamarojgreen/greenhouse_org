@@ -1,13 +1,29 @@
 try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
-try: import bmesh
-except ImportError: bmesh = None
-try: import mathutils
-except ImportError: mathutils = None
 import math
 import os
 import sys
@@ -18,7 +34,6 @@ if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
 import base
-try:
     from registry import registry
 except ImportError:
     from .registry import registry

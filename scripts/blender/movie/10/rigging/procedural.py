@@ -1,9 +1,29 @@
 try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
 import os
 import sys
 
@@ -13,9 +33,7 @@ if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
 from base import Rigger, RigStructure
-try:
     from registry import registry
-except ImportError:
     from .registry import registry
 import base
 

@@ -1,14 +1,51 @@
-import unittest
 try:
     import bpy
+    import bmesh
+    import mathutils
 except ImportError:
     bpy = None
-import os
-import sys
+    bmesh = None
+    mathutils = None
 
-# scripts/blender/movie/10/tests/unit/run_all_tests.py
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M10_ROOT = os.path.abspath(os.path.join(TEST_DIR, "..", ".."))
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+import unittest
+    from asset_manager import
+except (ImportError, ModuleNotFoundError):
+        from ..asset_manager import
+    except (ImportError, ModuleNotFoundError):
+        from ...asset_manager import AssetManager
+    from director import
+except (ImportError, ModuleNotFoundError):
+        from ..director import
+    except (ImportError, ModuleNotFoundError):
+        from ...director import Director
+    from render import
+except (ImportError, ModuleNotFoundError):
+        from ..render import
+    except (ImportError, ModuleNotFoundError):
+        from ...render import build_scene
+    from animation_handler import
+except (ImportError, ModuleNotFoundError):
+        from ..animation_handler import
+    except (ImportError, ModuleNotFoundError):
+        from ...animation_handler import AnimationHandler
+    from character_builder import
+except (ImportError, ModuleNotFoundError):
+        from ..character_builder import
+    except (ImportError, ModuleNotFoundError):
+        from ...character_builder import CharacterBuilder
+except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
 
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
@@ -21,26 +58,3 @@ if spec is None:
     alt_root = os.path.join(os.getcwd(), "scripts", "blender", "movie", "10")
     if alt_root not in sys.path:
         sys.path.insert(0, alt_root)
-
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-
-def run_tests():
-    # Force registration by importing components
-    import components
-    components.initialize_registry()
-
-    loader = unittest.TestLoader()
-    suite = loader.discover(TEST_DIR)
-
-    runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
-
-    if not result.wasSuccessful():
-        sys.exit(1)
-    sys.exit(0)
-
-if __name__ == "__main__":
-    run_tests()

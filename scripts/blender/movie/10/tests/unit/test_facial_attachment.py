@@ -1,16 +1,40 @@
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
+except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
 import unittest
 import os
 import sys
 
 M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if M10_ROOT not in sys.path: sys.path.insert(0, M10_ROOT)
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-
-class TestMovie10FacialAttachment(unittest.TestCase):
-    def test_facial_batch_1(self): self.assertTrue(True)
-
-if __name__ == "__main__":
-    unittest.main()

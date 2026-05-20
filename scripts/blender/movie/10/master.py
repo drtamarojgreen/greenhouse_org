@@ -1,14 +1,32 @@
-try: import bpy
-except ImportError: bpy = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 import os
 import sys
 import json
 
 # Setup localized environment
-try:
-    try:
     from registry import registry
-except ImportError:
     from .registry import registry
     import modelers
     import riggers

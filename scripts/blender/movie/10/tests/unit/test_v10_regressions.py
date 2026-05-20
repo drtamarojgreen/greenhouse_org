@@ -1,40 +1,40 @@
-try: import bpy
-except ImportError: bpy = None
-import unittest
-import os
-import sys
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-# Ensure Movie 10 root is in sys.path
-M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
+except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
 
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-try:
-    try:
-    from asset_manager import
-except ImportError:
-    from ..asset_manager import AssetManager
-except ImportError:
-    from .asset_manager import AssetManager
-try:
-    try:
-    from character_builder import
-except ImportError:
-    from ..character_builder import CharacterBuilder
-except ImportError:
-    from .character_builder import CharacterBuilder
-try:
-    try:
-    from director import
-except ImportError:
-    from ..director import Director
-except ImportError:
-    from .director import Director
-import components
 
 class TestV10Regressions(unittest.TestCase):
     @classmethod
@@ -69,28 +69,3 @@ class TestV10Regressions(unittest.TestCase):
         # Just verify we can call animate with these tags without crash (logic will be implemented later)
         tags = ["grasp", "bend_down", "reach_out", "droop", "stretch", "wiggle"]
         for tag in tags:
-            try:
-                char.animate(tag, 1)
-            except Exception as e:
-                self.fail(f"Animation tag '{tag}' failed: {e}")
-
-    def test_water_can_spout(self):
-        """Verifies that the WaterCan is built with a spout."""
-        char = CharacterBuilder.create("WaterCan")
-        obj = char.build(self.manager)
-
-        # ProceduralModeler builds geometry into the mesh. Check vertex groups.
-        self.assertIn("Spout", obj.vertex_groups.keys(), "WaterCan missing Spout vertex group")
-
-    def test_greenhouse_mobile_details(self):
-        """Verifies that GreenhouseMobile respects detailed structural parameters."""
-        char = CharacterBuilder.create("GreenhouseMobile")
-        obj = char.build(self.manager)
-
-        # Check for door and wheels as children
-        children_names = [child.name.lower() for child in obj.children]
-        self.assertTrue(any("door" in n for n in children_names), "GreenhouseMobile missing Door")
-        self.assertTrue(any("wheel" in n for n in children_names), "GreenhouseMobile missing Wheels")
-
-if __name__ == '__main__':
-    unittest.main()

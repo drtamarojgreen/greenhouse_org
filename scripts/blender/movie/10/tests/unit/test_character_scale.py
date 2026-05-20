@@ -1,35 +1,38 @@
-import unittest
-try: import bpy
-except ImportError: bpy = None
-import os
-import sys
-
-# Standard Path setup for tests
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M10_ROOT = os.path.dirname(os.path.dirname(TEST_DIR))
-
-if M10_ROOT not in sys.path:
-    sys.path.insert(0, M10_ROOT)
 try:
-    import movie_configuration as mc
+    import bpy
+    import bmesh
+    import mathutils
 except ImportError:
-    from . import movie_configuration as mc
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-try:
-    try:
-    from asset_manager import
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
 except ImportError:
     from ..asset_manager import AssetManager
-except ImportError:
-    from .asset_manager import AssetManager
-try:
-    try:
-    from character_builder import
-except ImportError:
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
     from ..character_builder import CharacterBuilder
-except ImportError:
-    from .character_builder import CharacterBuilder
-import components
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
 
 class TestMovie10CharacterScale(unittest.TestCase):
     def setUp(self):

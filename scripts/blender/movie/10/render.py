@@ -1,5 +1,4 @@
-try: import bpy
-except ImportError: bpy = None
+import bpy
 import os
 import sys
 import argparse
@@ -9,23 +8,11 @@ M9_ROOT = os.path.dirname(os.path.abspath(__file__))
 if M9_ROOT not in sys.path:
     sys.path.insert(0, M9_ROOT)
 
-try:
-    from asset_manager import AssetManager
-except ImportError:
-    from .asset_manager import AssetManager
-try:
-    from character_builder import CharacterBuilder
-except ImportError:
-    from .character_builder import CharacterBuilder
+from asset_manager import AssetManager
+from character_builder import CharacterBuilder
 import components
-try:
-    from director import Director
-except ImportError:
-    from .director import Director
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
+from director import Director
+import movie_configuration as mc
 
 def validate_scene_integrity():
     """Hard gate before rendering: armature count must match character expectations."""

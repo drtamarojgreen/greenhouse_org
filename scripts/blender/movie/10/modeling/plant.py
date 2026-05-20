@@ -1,13 +1,29 @@
 try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
-try: import bmesh
-except ImportError: bmesh = None
-try: import mathutils
-except ImportError: mathutils = None
 import math
 import random
 import os
@@ -15,7 +31,6 @@ import sys
 import json
 
 from base import Modeler
-try:
     from registry import registry
 except ImportError:
     from .registry import registry

@@ -1,13 +1,29 @@
-try: import bpy
-except ImportError: bpy = None
-try: import bmesh
-except ImportError: bmesh = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 import math
 import random
-try: import mathutils
-except ImportError: mathutils = None
 from base import Modeler
-try:
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
@@ -207,7 +223,6 @@ class ExteriorModeler(Modeler):
         out = nodes.get("World Output")
         if out: links.new(vol.outputs['Volume'], out.inputs['Volume'])
 
-try:
     from registry import registry
 except ImportError:
     from .registry import registry

@@ -1,11 +1,28 @@
-try: import bpy
-except ImportError: bpy = None
-try: import bmesh
-except ImportError: bmesh = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 import math
 import random
-try: import mathutils
-except ImportError: mathutils = None
 
 def create_leaf_material(name, base_color, leaf_cfg):
     """Creates a procedural node-based leaf material with translucency and variation."""

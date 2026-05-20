@@ -1,28 +1,37 @@
 try:
-    import movie_configuration as mc
+    import bpy
+    import bmesh
+    import mathutils
 except ImportError:
-    from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
-import unittest
-try: import mathutils
-except ImportError: mathutils = None
-import math
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-class TestRestorationComprehensive(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        pass
-
-    def test_animation_tags_presence(self):
-        """Verifies that all Movie 6 emotional tags are handled by AnimationHandler."""
-        try:
-    try:
-    from animation_handler import
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
 except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
     from ..animation_handler import AnimationHandler
-except ImportError:
-    from .animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
         handler = AnimationHandler()
         obj = bpy.data.objects.get("Herbaceous_HF.Rig")
         if not obj: return
@@ -35,10 +44,6 @@ except ImportError:
 
     def test_bone_mapping_fidelity(self):
         """Verifies that high-fidelity facial bones are mapped correctly."""
-        try:
-    from animation_handler import
-except ImportError:
-    from ..animation_handler import BONE_NAME_MAP
         required_bones = [
             "Lip.Corner.Ctrl.L", "Lip.Corner.Ctrl.R", "Jaw.Ctrl",
             "Pupil.Ctrl.L", "Pupil.Ctrl.R",

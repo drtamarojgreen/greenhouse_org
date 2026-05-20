@@ -1,8 +1,27 @@
-try: import bpy
-except ImportError: bpy = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 import math
-try: import mathutils
-except ImportError: mathutils = None
 import os
 import json
 
@@ -87,7 +106,6 @@ def execute_event(event, context_director=None):
                 obj.location = dest
                 obj.keyframe_insert(data_path="location", frame=start_f)
             else:
-                try:
     from animation_handler import AnimationHandler
 except ImportError:
     from .animation_handler import AnimationHandler

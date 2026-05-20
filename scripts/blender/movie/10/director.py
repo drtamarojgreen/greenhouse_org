@@ -1,9 +1,5 @@
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
+import movie_configuration as mc
+import bpy
 import os
 import json
 import math
@@ -11,10 +7,7 @@ from calligraphy import CalligraphyDirector
 from camera.controls import CameraControls
 from camera.lighting import LightingManager
 from environment import character_placement
-try:
-    from registry import registry
-except ImportError:
-    from .registry import registry
+from registry import registry
 
 M9_ROOT = os.path.dirname(os.path.abspath(__file__))
 

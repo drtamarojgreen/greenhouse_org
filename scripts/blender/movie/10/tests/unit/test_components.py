@@ -1,32 +1,38 @@
-import unittest
-try: import bpy
-except ImportError: bpy = None
-import os
-import sys
-
-# Ensure Movie 10 is in path
-M10_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M10_DIR not in sys.path:
-    sys.path.append(M10_DIR)
 try:
-    import movie_configuration as mc
+    import bpy
+    import bmesh
+    import mathutils
 except ImportError:
-    from . import movie_configuration as mc
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-try:
-    try:
-    from asset_manager import
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
 except ImportError:
     from ..asset_manager import AssetManager
-except ImportError:
-    from .asset_manager import AssetManager
-try:
-    try:
-    from character_builder import
-except ImportError:
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
     from ..character_builder import CharacterBuilder
-except ImportError:
-    from .character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
 
 class TestComponentParity(unittest.TestCase):
     def setUp(self):

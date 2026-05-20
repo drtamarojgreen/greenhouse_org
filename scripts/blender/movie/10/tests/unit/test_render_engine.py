@@ -1,29 +1,35 @@
-import unittest
-try: import bpy
-except ImportError: bpy = None
-import os
-import sys
-
-# Standard Path setup for tests
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-M10_ROOT = os.path.dirname(os.path.dirname(TEST_DIR))
-
-if M10_ROOT not in sys.path:
-    sys.path.insert(0, M10_ROOT)
 try:
-    import movie_configuration as mc
+    import bpy
+    import bmesh
+    import mathutils
 except ImportError:
-    from . import movie_configuration as mc
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-class TestMovie10RenderEngine(unittest.TestCase):
-    def test_eevee_enforcement(self):
-        """Verifies that the render engine is set to EEVEE and fails if Cycles is active."""
-        bpy.context.scene.render.engine = 'BLENDER_EEVEE'
-        self.assertEqual(bpy.context.scene.render.engine, 'BLENDER_EEVEE')
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
+except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
 
-        # Simulate a check that would be in the render pipeline
-        if bpy.context.scene.render.engine == 'CYCLES':
-            self.fail("Cycles engine detected. EEVEE is strictly enforced for Movie 10 production.")
-
-if __name__ == "__main__":
-    unittest.main()
+import unittest

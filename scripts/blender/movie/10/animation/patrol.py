@@ -1,12 +1,30 @@
 try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
     import movie_configuration as mc
 except ImportError:
     from . import movie_configuration as mc
-try: import bpy
-except ImportError: bpy = None
 import math
-try: import mathutils
-except ImportError: mathutils = None
 
 def apply_patrol(rig, patrol_cfg, total_frames):
     """Applies path-following patrol animation to a rig."""

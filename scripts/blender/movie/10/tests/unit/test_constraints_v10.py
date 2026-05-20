@@ -1,26 +1,40 @@
-import unittest
-try: import bpy
-except ImportError: bpy = None
-import os
-import sys
-import json
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 
-# Ensure we can import Movie 10 modules
-M10_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
+except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
-try:
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-
-try:
-    try:
-    from director import
-except ImportError:
-    from ..director import Director
-except ImportError:
-    from .director import Director
 
 class TestContextConstraintsV10(unittest.TestCase):
     def test_asset_filtering(self):

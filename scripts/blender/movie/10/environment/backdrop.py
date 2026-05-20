@@ -1,5 +1,26 @@
-try: import bpy
-except ImportError: bpy = None
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
 import math
 import os
 import json
@@ -38,9 +59,7 @@ class BackdropModeler(Modeler):
         return None
 
     def _load_v6_background_images(self, m6_root_override=None):
-        try:
     import movie_configuration as mc
-except ImportError:
     from . import movie_configuration as mc
         m9_root = os.path.dirname(os.path.dirname(__file__))
         m6_root = m6_root_override or mc.get("paths.m6_root") or os.path.join(m9_root, "..", "6")
@@ -49,7 +68,6 @@ except ImportError:
         images = []
 
         if os.path.exists(m6_config_json):
-            try:
                 with open(m6_config_json, "r") as f:
                     images = json.load(f).get("background_images", [])
             except Exception as e:
@@ -103,7 +121,6 @@ except ImportError:
         if bg_path and os.path.exists(bg_path):
             tex_img = nodes.new(type='ShaderNodeTexImage')
             tex_coord = nodes.new(type='ShaderNodeTexCoord')
-            try:
                 tex_img.image = bpy.data.images.load(filepath=bg_path)
                 mat.node_tree.links.new(tex_coord.outputs['Window'], tex_img.inputs['Vector'])
                 mat.node_tree.links.new(tex_img.outputs['Color'], emit.inputs['Color'])
@@ -117,8 +134,6 @@ except ImportError:
         mat.blend_method = 'BLEND'
         return mat
 
-try:
     from registry import registry
-except ImportError:
     from .registry import registry
 registry.register_modeling("BackdropModeler", BackdropModeler)
