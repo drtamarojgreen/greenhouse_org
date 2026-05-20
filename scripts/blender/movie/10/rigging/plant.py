@@ -1,20 +1,43 @@
-import movie_configuration as mc
-import bpy
-import bmesh
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 import os
 import sys
 import math
-import mathutils
 
 from base import Rigger
-from registry import registry
+    from registry import registry
+except ImportError:
+    from .registry import registry
 
 # Make sure we can import facial_utilities_v6 if needed, or we implement facial bones locally.
 M6_ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "6", "assets_v6")
 if M6_ASSETS not in sys.path:
     sys.path.insert(0, M6_ASSETS)
 
-try:
     from facial_utilities_v6 import create_facial_props_v6
 except ImportError:
     create_facial_props_v6 = None

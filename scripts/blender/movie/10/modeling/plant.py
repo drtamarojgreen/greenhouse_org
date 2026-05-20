@@ -1,7 +1,29 @@
-import movie_configuration as mc
-import bpy
-import bmesh
-import mathutils
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 import math
 import random
 import os
@@ -9,7 +31,9 @@ import sys
 import json
 
 from base import Modeler
-from registry import registry
+    from registry import registry
+except ImportError:
+    from .registry import registry
 
 class PlantModeler(Modeler):
     """

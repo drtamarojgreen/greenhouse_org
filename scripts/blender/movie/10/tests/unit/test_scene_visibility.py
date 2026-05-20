@@ -1,0 +1,86 @@
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
+except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
+
+
+class TestSceneVisibilityAndRigging(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        build_scene()
+
+    def test_calligraphy_visibility_windows(self):
+        obj = bpy.data.objects.get("GreenhouseMD_Calligraphy")
+        self.assertIsNotNone(obj, "GreenhouseMD calligraphy text object is missing.")
+
+        scene = bpy.context.scene
+        scene.frame_set(1)
+        self.assertFalse(obj.hide_render, "Calligraphy should be visible at frame 1.")
+        scene.frame_set(6)
+        self.assertTrue(obj.hide_render, "Calligraphy should be hidden after intro window.")
+        scene.frame_set(mc.total_frames - 4)
+        self.assertFalse(obj.hide_render, "Calligraphy should be visible at start of outro window.")
+
+    def test_calligraphy_location_near_intro_camera(self):
+        obj = bpy.data.objects.get("GreenhouseMD_Calligraphy")
+        cam = bpy.data.objects.get("Exterior")
+        self.assertIsNotNone(obj, "GreenhouseMD calligraphy text object is missing.")
+        self.assertIsNotNone(cam, "Exterior camera missing.")
+
+        bpy.context.scene.frame_set(1)
+        dist = (obj.matrix_world.translation - cam.matrix_world.translation).length
+        self.assertGreater(dist, 1.0)
+        self.assertLess(dist, 10.0)
+
+    def test_character_rigs_and_grounding(self):
+        for entity in mc.get("ensemble.entities", []):
+            char_id = entity["id"]
+            expects_rig = (entity.get("type") != "DYNAMIC" and entity.get("source_rig")) or (
+                entity.get("type") == "DYNAMIC" and entity.get("components", {}).get("rigging")
+            )
+
+            rig = bpy.data.objects.get(f"{char_id}.Rig")
+            if expects_rig:
+                self.assertIsNotNone(rig, f"{char_id} rig missing")
+                self.assertGreaterEqual(rig.location.z, -20.0, f"{char_id} has extreme below-ground placement")
+
+            mesh = bpy.data.objects.get(f"{char_id}.Body")
+            if rig and mesh:
+                has_bound_modifier = any(m.type == 'ARMATURE' and m.object == rig for m in mesh.modifiers)
+                self.assertTrue(mesh.parent == rig or has_bound_modifier, f"{char_id} mesh is not rig-bound")
+
+
+if __name__ == "__main__":
+    unittest.main()

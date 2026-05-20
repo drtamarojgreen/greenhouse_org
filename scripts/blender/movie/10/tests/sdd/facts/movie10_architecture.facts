@@ -1,0 +1,5 @@
+Fact movie10_root = scripts/blender/movie/10/
+Fact required_files = master.py,registry.py,modelers.py,riggers.py,shaders.py,movie_config.json,movie_configuration.py,components.py,asset_manager.py,director.py,render.py,animation_handler.py,character_builder.py,docs/storyline.md,docs/README.md
+Fact localized_imports = try:\n    from registry import registry,from . import modelers,from . import riggers,from . import shaders
+Fact total_frames = 10000
+Fact ensemble_size = 6

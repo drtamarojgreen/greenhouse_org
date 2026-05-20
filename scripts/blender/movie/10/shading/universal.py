@@ -1,7 +1,32 @@
-import movie_configuration as mc
-import bpy
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+    import movie_configuration as mc
+except ImportError:
+    from . import movie_configuration as mc
 from base import Shader
-from registry import registry
+    from registry import registry
+    from .registry import registry
 import os
 import sys
 

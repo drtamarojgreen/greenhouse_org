@@ -1,0 +1,7 @@
+# Movie 10 High-Fidelity Standards
+Situation: Anatomical Correctness and Character Quality
+
+Fact modeling_standards = Iris,Pupil
+Fact rigging_standards = Lip.Upper,Lip.Lower,Eyelid.Upper,Eyelid.Lower,Ear.L,Ear.R
+Fact minimum_foliage_density = 10
+Fact protagonist_suffix = _HF

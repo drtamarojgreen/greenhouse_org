@@ -44,46 +44,60 @@
                 const face = brainShell.faces[i];
                 const indices = face.indices || face;
                 const p1 = projectedVertices[indices[0]], p2 = projectedVertices[indices[1]], p3 = projectedVertices[indices[2]];
+
                 if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                    // Backface Culling (cross product < 0 for CCW in right-handed space)
                     const cross = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
                     if (cross < 0) {
                         const v1 = brainShell.vertices[indices[0]], v2 = brainShell.vertices[indices[1]], v3 = brainShell.vertices[indices[2]];
                         const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
-                        facesToDraw.push({ indices, p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: face.region || v1.region });
+                        facesToDraw.push({
+                            indices,
+                            p1, p2, p3,
+                            depth: (p1.depth + p2.depth + p3.depth) / 3,
+                            normal,
+                            region: face.region || v1.region
+                        });
                     }
                 }
             }
 
+            // Sort by depth (Back to Front)
             facesToDraw.sort((a, b) => b.depth - a.depth);
 
-            brainShell.faces.forEach(f => {
-                const p1 = projectedVertices[f.indices[0]], p2 = projectedVertices[f.indices[1]], p3 = projectedVertices[f.indices[2]];
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
-                    const isFront = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) < 0;
-                    const v1 = brainShell.vertices[f.indices[0]], v2 = brainShell.vertices[f.indices[1]], v3 = brainShell.vertices[f.indices[2]];
-                    const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
-                    facesToDraw.push({ p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: f.region, isFront, indices: f.indices });
-                }
-            });
-
-            facesToDraw.sort((a, b) => b.depth - a.depth);
-
+            // Draw Faces
             facesToDraw.forEach(f => {
-                const material = { baseColor: { r: 160, g: 174, b: 192 }, roughness: 0.5, metalness: 0.1, sss: true, alpha: 0.20 };
-                const center = {
-                    x: (brainShell.vertices[f.indices[0]].x + brainShell.vertices[f.indices[1]].x + brainShell.vertices[f.indices[2]].x) / 3,
-                    y: (brainShell.vertices[f.indices[0]].y + brainShell.vertices[f.indices[1]].y + brainShell.vertices[f.indices[2]].y) / 3,
-                    z: (brainShell.vertices[f.indices[0]].z + brainShell.vertices[f.indices[1]].z + brainShell.vertices[f.indices[2]].z) / 3
+                const material = {
+                    baseColor: { r: 180, g: 190, b: 200 }, // Slightly brighter base
+                    roughness: 0.4,
+                    metalness: 0.05,
+                    sss: true,
+                    alpha: 0.25
                 };
 
                 const v0 = brainShell.vertices[f.indices[0]];
-                const ao = 1.0 - (v0.curvature || 0) * 2.0;
+                const v1 = brainShell.vertices[f.indices[1]];
+                const v2 = brainShell.vertices[f.indices[2]];
+
+                const center = {
+                    x: (v0.x + v1.x + v2.x) / 3,
+                    y: (v0.y + v1.y + v2.y) / 3,
+                    z: (v0.z + v1.z + v2.z) / 3
+                };
+
+                // Ambient Occlusion: Proxy sulcal depth using curvature
+                // v.curvature is 0..1, higher values = more "fold"
+                const ao = Math.max(0.1, 1.0 - (v0.curvature || 0) * 2.5);
 
                 const color = GreenhouseGeneticLighting.calculateLighting(f.normal, center, camera, material);
+
+                // Apply AO for anatomical depth
                 color.r *= ao; color.g *= ao; color.b *= ao;
 
                 const isTarget = targetRegion && (f.region === targetRegion);
-                const alphaToUse = isTarget ? 0.9 : (color.a || 0.2);
+
+                // Enhanced Target Highlighting
+                const alphaToUse = isTarget ? 0.85 : material.alpha;
                 const fog = GreenhouseModels3DMath.applyDepthFog(alphaToUse, f.depth);
 
                 ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${fog})`;
@@ -95,7 +109,7 @@
 
                 if (isTarget) {
                     ctx.strokeStyle = `rgba(255, 255, 255, ${fog})`;
-                    ctx.lineWidth = 1.5;
+                    ctx.lineWidth = 1.2;
                     ctx.stroke();
                 }
             });

@@ -1,0 +1,69 @@
+try:
+    import bpy
+    import bmesh
+    import mathutils
+except ImportError:
+    bpy = None
+    bmesh = None
+    mathutils = None
+
+    from asset_manager import AssetManager
+    from director import Director
+    from render import build_scene
+    from animation_handler import AnimationHandler
+    from character_builder import CharacterBuilder
+    import components
+except ImportError:
+    from ..asset_manager import AssetManager
+    from ..director import Director
+    from ..render import build_scene
+    from ..animation_handler import AnimationHandler
+    from ..character_builder import CharacterBuilder
+    from .. import components
+    import bpy
+    import bmesh
+    import mathutils
+    bpy = None
+    bmesh = None
+    mathutils = None
+        AssetManager = None
+        Director = None
+        build_scene = None
+        AnimationHandler = None
+        CharacterBuilder = None
+
+import unittest
+if M10_ROOT not in sys.path:
+    sys.path.insert(0, M10_ROOT)
+
+class TestWalkingV10(unittest.TestCase):
+    def test_independent_limb_coordination(self):
+        """Verifies that the walk cycle coordinates limbs independently."""
+        # Create a dummy armature
+        bpy.ops.object.armature_add()
+        rig = bpy.context.active_object
+
+        # Create dummy bones
+        bpy.ops.object.mode_set(mode='EDIT')
+        for bname in ["Torso", "Leg.L", "Leg.R", "Hand.L", "Hand.R"]:
+            if bname not in rig.data.edit_bones:
+                b = rig.data.edit_bones.new(bname)
+                b.head = (0,0,0); b.tail = (0,0,1)
+        bpy.ops.object.mode_set(mode='POSE')
+
+        handler = AnimationHandler()
+        handler.apply_animation(rig, "walk", 1, 40)
+
+        # Check a frame where Leg.L and Leg.R should be offset
+        # Leg.L uses cos(phase * 2pi), Leg.R uses cos((phase + 0.5) * 2pi)
+        # At f=1, phase=0. Leg.L ~ cos(0)=1, Leg.R ~ cos(pi)=-1
+
+        # Note: keyframe_insert might not update pose until frame_set
+        bpy.context.scene.frame_set(1)
+        leg_l = rig.pose.bones["Leg.L"].rotation_euler[0]
+        leg_r = rig.pose.bones["Leg.R"].rotation_euler[0]
+
+        self.assertNotAlmostEqual(leg_l, leg_r, places=2, msg="Legs are moving in perfect sync; independent stride failed.")
+
+if __name__ == "__main__":
+    unittest.main()
