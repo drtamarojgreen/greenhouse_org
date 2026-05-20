@@ -15,28 +15,33 @@ The production utilizes a beat-driven visibility system. Each beat triggers visi
 
 ## Environmental Orchestration
 
-At frame 5001, the production transitions into "The Creeping Standardization". This involves the introduction of standardizing elements into the mental landscape.
+### Vegetation Scatter (Updated)
+Vegetation is scattered peripherally to avoid the center where the protagonists are located.
+- **Minimum Distance:** 120 units from origin.
+- **Maximum Distance:** 250 units from origin.
+- **Logic:** This ensures a clear line of sight for the cameras focusing on the characters while maintaining a dense, "standardized" horizon.
 
-### Vegetation and "Overpowering Trees"
-The `ExteriorModeler` (in `exterior.py`) scatters vegetation based on the `environment.vegetation` configuration.
-- **Count:** 8 trees (as per `movie_config.json`).
-- **Placement:** Randomized within a distance of 80 to 200 units from the origin.
-- **Scale:** Randomized between 2.5 and 5.0.
+### Camera Dynamics (Frames 5001-10000)
+A high-frequency camera cycle is active during the second half:
+- **Switch Frequency:** Every 25-50 frames.
+- **Angles:** Rotates between `Hero_track`, `Low_angle`, `Ots1`, `Ots2`, `Bird_eye`, and `Detail_cu`.
+- **Purpose:** To heighten the narrative tension and provide a more dynamic, cinematic experience during the "Conflict" and "Realization" phases.
 
-If the trees appear to "overpower" the characters at frame 5001, it is likely due to the camera transition associated with the new narrative beat, or the randomized placement of a large tree (`ext_tree_X`) between the camera and the protagonists.
+---
 
-### Visibility Transitions
-The `Director` manages visibility through keyframes on `hide_render` and `hide_viewport`. When a new beat starts at 5001:
-1. The entities defined in the `storyline` for that beat are toggled to `visible`.
-2. Any objects in the `greenhouse` context that are listed in `disallowed_assets` are hidden.
+## Static Quality Review (Frames 5001-10000)
 
-## Technical Execution (Render Pipeline)
-The `render.py` script executes the following at frame 5001:
-1. **Frame Set:** `bpy.context.scene.frame_set(5001)`.
-2. **Camera Selection:** The `Director`'s `apply_sequencing` logic determines the active camera based on the `sequencing` and `cycle` configuration.
-3. **Engine:** EEVEE with 32 samples.
-4. **Output:** Saved as `frame_5001.png` in the `renders/` directory.
+### Capabilities
+- **Modular Visibility:** The system efficiently handles entity introduction without destructive scene changes.
+- **Dynamic Pacing:** The extended camera cycle allows for professional-grade narrative pacing and diverse perspectives.
+- **Scale and Fidelity:** The use of `DYNAMIC` components for high-fidelity (HF) models ensures visual consistency across the production.
 
-## Known Issues and Mitigation
-- **Tree Occlusion:** If a tree is blocking the shot, the `seed` in `movie_config.json` for the environment should be adjusted to change the randomized scatter positions.
-- **Standardization Beat:** The "overpowering" nature of the environment at 5001 is a thematic choice representing "The Creeping Standardization," where the mental landscape becomes more crowded and rigid.
+### Limitations
+- **Randomized Occlusion:** Despite peripheral scattering, extreme camera angles (like `Low_angle` at a distance) might still experience occasional occlusion from larger trees.
+- **Manual Transition Points:** Beat transitions are hardcoded in the configuration, which requires manual adjustment for timing changes.
+- **Lighting Continuity:** Global lighting (Sun/Key) is static; it does not currently react to the "Conflict" beat with atmospheric shifts.
+
+### Areas for Improvement
+- **Atmospheric Reactivity:** Implement a lighting "mood" system where intensity or color shifts automatically based on the active narrative beat (e.g., darker/cooler for "The Creeping Standardization").
+- **Dynamic Culling:** Implement a camera-frustum-aware culling system for vegetation to ensure absolute visibility of characters at all times without manual distance tweaking.
+- **Automated Shot Selection:** Move from a fixed cycle to an AI-driven shot selector that chooses the best angle based on current character proximity and animation intensity.

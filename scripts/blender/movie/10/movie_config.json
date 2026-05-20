@@ -251,13 +251,17 @@
     {
       "beat": "The Deep Root Conflict", "start": 8001, "end": 9500,
       "events": [
-        { "target": "Arbor_HF", "action": "panic", "params": { "intensity": 0.8 } }
+        { "target": "Arbor_HF", "action": "panic", "params": { "intensity": 0.8 } },
+        { "target": "Herbaceous_HF", "action": "animate", "start": 8200, "params": { "tag": "resolve", "duration": 200 } },
+        { "target": "Drone_X10", "action": "move_to", "start": 8500, "params": { "destination_pos": [0.0, 0.0, 2.0], "duration_frames": 120 } }
       ]
     },
     {
       "beat": "The Horizon Realized", "start": 9501, "end": 10000,
       "events": [
-        { "target": "Herbaceous_HF", "action": "victory_pose", "params": { "frame": 9800 } }
+        { "target": "Herbaceous_HF", "action": "victory_pose", "params": { "frame": 9800 } },
+        { "target": "Arbor_HF", "action": "animate", "start": 9600, "params": { "tag": "rejoice", "duration": 150 } },
+        { "target": "Lichen_HF", "action": "animate", "start": 9700, "params": { "tag": "bloom", "duration": 100 } }
       ]
     }
   ]

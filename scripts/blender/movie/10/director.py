@@ -203,6 +203,25 @@ class Director:
             m = scene.timeline_markers.new(m_name, frame=beat["start"])
             m.camera = bpy.data.objects.get(beat["camera"])
 
+        # V10 Extended Cycle Support (5001-10000)
+        v10_seq = seq_cfg.get("v10_extended_cycle", {})
+        if v10_seq and v10_seq.get("cycle"):
+            v10_cycle = v10_seq["cycle"]
+            curr = v10_seq.get("start", 5001)
+            end = v10_seq.get("end", 10000)
+            order = v10_cycle.get("order", [])
+            durations = v10_cycle.get("durations", {})
+
+            while curr < end:
+                for cam_tag in order:
+                    if curr >= end: break
+                    dur = durations.get(cam_tag, 60)
+                    cam_obj = bpy.data.objects.get(cam_tag)
+                    if cam_obj:
+                        m = scene.timeline_markers.new(f"V10_Shot_{cam_tag}", frame=curr)
+                        m.camera = cam_obj
+                    curr += dur
+
     def apply_extended_scene(self, path):
         character_placement.load_extended_scene(path, self)
 
