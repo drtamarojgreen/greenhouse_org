@@ -7,35 +7,13 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
+import json
 import os
 import sys
-import json
-
-# Setup localized environment
-    from registry import registry
-    from .registry import registry
-    import modelers
-    import riggers
-    import shaders
-except (ImportError, ModuleNotFoundError):
-    from .registry import registry
-    from . import modelers
-    from . import riggers
-    from . import shaders
+from registry import registry
+import modelers
+import riggers
+import shaders
 
 class Movie10Master:
     """

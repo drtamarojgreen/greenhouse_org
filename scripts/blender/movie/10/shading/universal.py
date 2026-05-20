@@ -7,30 +7,10 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-from base import Shader
-    from registry import registry
-    from .registry import registry
 import os
 import sys
-
-# Ensure shading dir is in path for utils
+from base import Shader
+from registry import registry
 SHADING_DIR = os.path.dirname(os.path.abspath(__file__))
 if SHADING_DIR not in sys.path:
     sys.path.insert(0, SHADING_DIR)

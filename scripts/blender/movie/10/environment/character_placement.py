@@ -7,23 +7,10 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
+import json
 import math
 import os
-import json
+from animation_handler import AnimationHandler
 
 def ground_to_zero(rig):
     """Accurately grounds a rig to Z=0 based on evaluated mesh bounds."""
@@ -106,9 +93,6 @@ def execute_event(event, context_director=None):
                 obj.location = dest
                 obj.keyframe_insert(data_path="location", frame=start_f)
             else:
-    from animation_handler import AnimationHandler
-except ImportError:
-    from .animation_handler import AnimationHandler
                 AnimationHandler().apply_animation(obj, params["tag"], event.get("start", 1), params.get("duration", 100))
         elif action == "move_to":
             if not obj.animation_data: obj.animation_data_create()

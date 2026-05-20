@@ -7,43 +7,14 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
+import math
 import os
 import sys
-import math
-
 from base import Rigger
-    from registry import registry
-except ImportError:
-    from .registry import registry
-
-# Make sure we can import facial_utilities_v6 if needed, or we implement facial bones locally.
-M6_ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "6", "assets_v6")
-if M6_ASSETS not in sys.path:
-    sys.path.insert(0, M6_ASSETS)
-
-    from facial_utilities_v6 import create_facial_props_v6
-except ImportError:
-    create_facial_props_v6 = None
-
-# Shading utils access
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "shading"))
+from registry import registry
+SHADING_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "shading"))
+if SHADING_DIR not in sys.path:
+    sys.path.insert(0, SHADING_DIR)
 import shading_utils
 
 class PlantRigger(Rigger):

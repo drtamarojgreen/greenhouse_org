@@ -7,27 +7,12 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
 import math
 import random
+import movie_configuration as mc
 from base import Modeler
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
 from environment.vegetation_utils import create_branching_tree, create_bush, apply_mat
+from registry import registry
 
 class ExteriorModeler(Modeler):
     """
@@ -223,7 +208,4 @@ class ExteriorModeler(Modeler):
         out = nodes.get("World Output")
         if out: links.new(vol.outputs['Volume'], out.inputs['Volume'])
 
-    from registry import registry
-except ImportError:
-    from .registry import registry
 registry.register_modeling("ExteriorModeler", ExteriorModeler)

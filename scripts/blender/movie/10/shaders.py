@@ -7,36 +7,8 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-
-    from .base import Shader
-    from .registry import registry
-except (ImportError, ValueError):
-        from base import Shader
-        from registry import registry
-    except ImportError:
-        Shader = object
-        registry = None
+from base import Shader
+from registry import registry
 
 class UniversalShader(Shader):
     """

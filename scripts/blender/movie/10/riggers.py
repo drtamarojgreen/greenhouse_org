@@ -7,38 +7,10 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
 import math
 import os
-
-    from .base import Rigger
-    from .registry import registry
-except (ImportError, ValueError):
-        from base import Rigger
-        from registry import registry
-    except ImportError:
-        Rigger = object
-        registry = None
+from base import Rigger
+from registry import registry
 
 class PlantRigger(Rigger):
     """

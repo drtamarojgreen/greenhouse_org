@@ -36,7 +36,9 @@ _load_config()
 total_frames = get("production.total_frames", 10000)
 output_dir = get("paths.output_dir", "scripts/blender/movie/10/assets/")
 coll_assets = get("collections.characters", "CHARACTERS")
+coll_environment = get("collections.environment", "9b.ENVIRONMENT")
 coll_cameras = get("collections.cameras", "CAMERAS")
+coll_lights = get("collections.lights", "LIGHTS")
 equipment_dir = "/home/tamarojgreen/Documents/Movie_Equipment/"
 assets_blend = os.path.join(equipment_dir, "MHD2_animation133.blend")
 
@@ -47,4 +49,6 @@ def get_character_config(char_id):
     return None
 
 COLL_ASSETS = coll_assets
+COLL_ENVIRONMENT = coll_environment
 COLL_CAMERAS = coll_cameras
+COLL_LIGHTS = coll_lights

@@ -13,6 +13,7 @@ from character_builder import CharacterBuilder
 import components
 from director import Director
 import movie_configuration as mc
+from environment.interior import InteriorModeler
 
 def validate_scene_integrity():
     """Hard gate before rendering: armature count must match character expectations."""
@@ -73,6 +74,8 @@ def build_scene():
     for scene_path in extended:
         print(f"  Integrating Extended Scene: {scene_path}...")
         director.apply_extended_scene(scene_path)
+
+    InteriorModeler().build_mesh("Interior_Final", mc.get("interior", {}))
 
     # Apply lighting AFTER all markers are set by extended scenes
     print("Finalizing Global Lighting...")

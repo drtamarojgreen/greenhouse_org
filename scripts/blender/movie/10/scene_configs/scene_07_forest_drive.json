@@ -1,0 +1,13 @@
+{
+  "start_frame": 4401,
+  "end_frame": 4650,
+  "environment": {
+    "type": "forest_road",
+    "context": "exterior",
+    "road": { "length": 120, "width": 4, "ruts": true },
+    "trees": { "count": 12, "corridor_width": 6, "depth": 20 }
+  },
+  "camera_sequence": [
+    { "camera": "Forest_cam", "start": 4401 }
+  ]
+}

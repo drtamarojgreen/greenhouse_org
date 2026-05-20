@@ -7,36 +7,11 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
 import math
 import os
 import sys
-
-# Ensure Movie 9 root is in sys.path
-M9_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if M9_ROOT not in sys.path:
-    sys.path.insert(0, M9_ROOT)
-
 import base
-    from registry import registry
-except ImportError:
-    from .registry import registry
+from registry import registry
 
 class ProceduralModeler(base.Modeler):
     """

@@ -7,27 +7,12 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
 import math
 import random
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
+import movie_configuration as mc
 from base import Modeler
 from environment.vegetation_utils import create_bush, apply_mat
+from registry import registry
 
 class MountainBaseModeler(Modeler):
     """
@@ -101,7 +86,4 @@ class MountainBaseModeler(Modeler):
                 bush = bpy.data.objects.get(b_name)
                 if bush: bush.parent = parent
 
-    from registry import registry
-except ImportError:
-    from .registry import registry
 registry.register_modeling("MountainBaseModeler", MountainBaseModeler)

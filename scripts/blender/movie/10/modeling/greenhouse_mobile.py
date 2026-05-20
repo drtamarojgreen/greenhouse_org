@@ -7,29 +7,14 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
-import math
-import random
-import os
 import json
+import math
+import os
+import random
+import movie_configuration as mc
 from base import Modeler
 from environment.vegetation_utils import create_bush, apply_mat
+from registry import registry
 
 class GreenhouseMobileModeler(Modeler):
     """
@@ -75,6 +60,7 @@ class GreenhouseMobileModeler(Modeler):
             bmesh.ops.create_cube(bm, size=0.2, matrix=mathutils.Matrix.Translation((-L/4 + i*0.5, W/2, 1.2)))
 
         bm.to_mesh(mesh); bm.free()
+        mesh.update()
 
         # Apply Materials
         m_cfg = self.gm_cfg["materials"]
@@ -82,6 +68,10 @@ class GreenhouseMobileModeler(Modeler):
         m_glass = apply_mat(obj, "mat_gm_glass", m_cfg["glass"], alpha=True, emission=0.2)
         m_chrome = apply_mat(obj, "mat_gm_chrome", m_cfg["chrome"], metallic=1.0, roughness=0.05)
         m_tire = apply_mat(obj, "mat_gm_tire", m_cfg["tire"], roughness=0.9)
+        for poly in mesh.polygons:
+            world_z = obj.matrix_world @ poly.center
+            if poly.normal.z > 0.9 and world_z.z > body["cabin_z_offset"]:
+                poly.material_index = 1
 
         # 2. Doors
         d_w = params.get("door_width", 0.9)
@@ -94,6 +84,18 @@ class GreenhouseMobileModeler(Modeler):
             w_obj = self._create_muscle_wheel(f"{char_id}_Wheel_{i}", r_tire, 0.4, coll, m_tire, m_chrome)
             w_obj.parent = obj
             w_obj.location = (lx, ly, r_tire)
+
+        # 4. Greenhouse bed plants
+        for i in range(params.get("bed_plant_count", 6)):
+            plant = create_bush(
+                f"{char_id}_BedPlant_{i}",
+                (-L * 0.28 + i * (L * 0.56 / 5), 0.0, body["chassis_height"] + 0.15),
+                0.18,
+                coll,
+                [[0.08, 0.35, 0.08], [0.12, 0.5, 0.12]],
+            )
+            if plant:
+                plant.parent = obj
 
         return obj
 
@@ -123,7 +125,4 @@ class GreenhouseMobileModeler(Modeler):
         obj.data.materials.append(mat)
         return obj
 
-    from registry import registry
-except ImportError:
-    from .registry import registry
 registry.register_modeling("GreenhouseMobileModeler", GreenhouseMobileModeler)

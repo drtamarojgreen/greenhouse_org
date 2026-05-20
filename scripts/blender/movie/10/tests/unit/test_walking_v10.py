@@ -1,3 +1,9 @@
+import json
+import math
+import os
+import sys
+import unittest
+
 try:
     import bpy
     import bmesh
@@ -7,34 +13,23 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    from asset_manager import AssetManager
-    from director import Director
-    from render import build_scene
-    from animation_handler import AnimationHandler
-    from character_builder import CharacterBuilder
-    import components
-except ImportError:
-    from ..asset_manager import AssetManager
-    from ..director import Director
-    from ..render import build_scene
-    from ..animation_handler import AnimationHandler
-    from ..character_builder import CharacterBuilder
-    from .. import components
-    import bpy
-    import bmesh
-    import mathutils
-    bpy = None
-    bmesh = None
-    mathutils = None
-        AssetManager = None
-        Director = None
-        build_scene = None
-        AnimationHandler = None
-        CharacterBuilder = None
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+M10_ROOT = os.path.abspath(os.path.join(TEST_DIR, "..", ".."))
+M9_ROOT = os.path.abspath(os.path.join(M10_ROOT, "..", "9"))
 
-import unittest
 if M10_ROOT not in sys.path:
     sys.path.insert(0, M10_ROOT)
+if M9_ROOT not in sys.path:
+    sys.path.append(M9_ROOT)
+
+import movie_configuration as mc
+from asset_manager import AssetManager
+from director import Director
+from render import build_scene
+from animation_handler import AnimationHandler
+from character_builder import CharacterBuilder
+from modeling.greenhouse_mobile import GreenhouseMobileModeler
+import components
 
 class TestWalkingV10(unittest.TestCase):
     def test_independent_limb_coordination(self):

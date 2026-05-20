@@ -7,28 +7,13 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-import math
-import random
 import json
+import math
 import os
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
+import random
+import movie_configuration as mc
 from base import Modeler
+from registry import registry
 
 class InteriorModeler(Modeler):
     """
@@ -300,7 +285,4 @@ class InteriorModeler(Modeler):
         if "rot" in cfg: obj.rotation_euler = [math.radians(r) for r in cfg["rot"]]
         if "scale" in cfg: obj.scale = cfg["scale"]
 
-    from registry import registry
-except ImportError:
-    from .registry import registry
 registry.register_modeling("InteriorModeler", InteriorModeler)

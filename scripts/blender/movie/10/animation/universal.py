@@ -7,27 +7,9 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
 import math
 from base import Animator, Action, ProceduralAction
-    from registry import registry
-    from .registry import registry
+from registry import registry
 
 class ConfigurableAction(ProceduralAction):
     """Procedural action driven by configuration parameters."""

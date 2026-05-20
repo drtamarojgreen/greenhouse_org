@@ -7,27 +7,12 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
-    import bpy
-    import bmesh
-    import mathutils
-except ImportError:
-    bpy = None
-    bmesh = None
-    mathutils = None
 import math
 import random
-    import movie_configuration as mc
-except ImportError:
-    from . import movie_configuration as mc
+import movie_configuration as mc
 from base import Modeler
 from environment.vegetation_utils import create_branching_tree, apply_mat
+from registry import registry
 
 class ForestRoadModeler(Modeler):
     """
@@ -98,7 +83,4 @@ class ForestRoadModeler(Modeler):
             if c != coll: c.objects.unlink(apron)
         return apron
 
-    from registry import registry
-except ImportError:
-    from .registry import registry
 registry.register_modeling("ForestRoadModeler", ForestRoadModeler)

@@ -47,6 +47,7 @@ class Director:
 
     def setup_environment(self, force=False, start_f=1, end_f=None):
         """Assembles environment by filtering parameters based on context."""
+        bpy.data.collections.get(mc.coll_assets) or bpy.data.collections.new(mc.coll_assets)
         # Instead of destructively purging, we manage visibility for multi-scene files
         coll = bpy.data.collections.get(mc.coll_environment)
         if not coll:
@@ -72,7 +73,7 @@ class Director:
             if mesh_root:
                 mesh_root.parent = env_root
 
-        self._build_ancillary_systems(start_f, env_type, env_root)
+        self._build_ancillary_systems(start_f, env_type, env_root, force=force)
 
         # Keyframe visibility
         if start_f > 1 or end_f is not None:
@@ -96,6 +97,11 @@ class Director:
                             self._keyframe_visibility(other, end_f + 1, False)
         else:
             self._keyframe_visibility(env_root, 1, False)
+        for asset_id in mc.get("context_constraints.greenhouse.disallowed_assets", []):
+            obj = bpy.data.objects.get(asset_id)
+            if obj:
+                obj.hide_render = True
+                obj.hide_viewport = True
 
     def _filter_params(self, params, context):
         disallowed = mc.get(f"context_constraints.{context}.disallowed_assets", [])
@@ -127,11 +133,11 @@ class Director:
         for obj in list(coll.objects): bpy.data.objects.remove(obj, do_unlink=True)
         for sub in list(coll.children): self._recursive_purge(sub)
 
-    def _build_ancillary_systems(self, start_f, env_type, parent_root=None):
+    def _build_ancillary_systems(self, start_f, env_type, parent_root=None, force=False):
         # Interior Model
         int_cfg = self.scene_cfg.get("interior", mc.get("interior", {}))
         int_cls = registry.get_modeling("InteriorModeler")
-        if int_cls and (int_cfg or env_type == "interior"):
+        if int_cls and (env_type == "interior" or (int_cfg and not force)):
             mesh = int_cls().build_mesh(f"Interior_{start_f}", int_cfg)
             if mesh and parent_root: mesh.parent = parent_root
 
@@ -202,7 +208,19 @@ class Director:
 
     # Required Shims for Test Compatibility
     def setup_cinematics(self): self.apply_sequencing()
-    def setup_calligraphy(self): CalligraphyDirector(self.lc_cfg, mc.total_frames, M9_ROOT).apply()
+    def setup_calligraphy(self):
+        CalligraphyDirector(self.lc_cfg, mc.total_frames, M9_ROOT).apply()
+        def _calligraphy_visibility(scene):
+            obj = bpy.data.objects.get("GreenhouseMD_Calligraphy")
+            if obj:
+                visible = scene.frame_current <= 5 or scene.frame_current >= mc.total_frames - 4
+                obj.hide_render = not visible
+                obj.hide_viewport = not visible
+        bpy.app.handlers.frame_change_post[:] = [
+            h for h in bpy.app.handlers.frame_change_post
+            if getattr(h, "__name__", "") != "_calligraphy_visibility"
+        ]
+        bpy.app.handlers.frame_change_post.append(_calligraphy_visibility)
     def initialize_entities(self):
         for ent in self.scene_cfg.get("entities", []):
             obj = bpy.data.objects.get(f"{ent['id']}.Rig") or bpy.data.objects.get(ent['id'])
