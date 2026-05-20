@@ -7,9 +7,6 @@ except ImportError:
     bmesh = None
     mathutils = None
 
-    import bpy
-except ImportError:
-    bpy = None
 import json
 import os
 

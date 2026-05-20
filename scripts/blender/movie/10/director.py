@@ -9,11 +9,11 @@ from camera.lighting import LightingManager
 from environment import character_placement
 from registry import registry
 
-M9_ROOT = os.path.dirname(os.path.abspath(__file__))
+M10_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 class Director:
     """
-    Orchestrates Movie 9 production using context-aware environment assembly.
+    Orchestrates Movie 10 production using context-aware environment assembly.
     Maintains full compatibility with the therapeutic audit suite.
     """
 
@@ -22,10 +22,10 @@ class Director:
         self.scene_cfg = {}
 
     def _setup_cinematics(self, path):
-        lc_path = path or os.path.join(M9_ROOT, "lights_camera.json")
+        lc_path = path or os.path.join(M10_ROOT, "lights_camera.json")
         with open(lc_path, 'r') as f:
             self.lc_cfg = json.load(f)
-        self.camera_controls = CameraControls(self.lc_cfg)
+        self.camera_controls = CameraControls(self.lc_cfg, coll_cameras=mc.coll_cameras, coll_env=mc.coll_environment)
         self.lighting_manager = LightingManager(self.lc_cfg)
 
     def load_scene(self, scene_id):
@@ -209,7 +209,7 @@ class Director:
     # Required Shims for Test Compatibility
     def setup_cinematics(self): self.apply_sequencing()
     def setup_calligraphy(self):
-        CalligraphyDirector(self.lc_cfg, mc.total_frames, M9_ROOT).apply()
+        CalligraphyDirector(self.lc_cfg, mc.total_frames, M10_ROOT).apply()
         def _calligraphy_visibility(scene):
             obj = bpy.data.objects.get("GreenhouseMD_Calligraphy")
             if obj:
