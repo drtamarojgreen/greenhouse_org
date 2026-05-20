@@ -58,6 +58,7 @@ def build_scene():
 
     print("Setting up Scene Orchestration...")
     director = Director(); director.setup_environment(); director.setup_cinematics(); director.setup_calligraphy()
+    director.setup_dynamic_culling()
 
     print("Composing Cinematic Layout...")
     director.compose_ensemble(); director.position_protagonists()

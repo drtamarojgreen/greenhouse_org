@@ -8,14 +8,18 @@ class LightingManager:
     def __init__(self, lc_cfg):
         self.lc_cfg = lc_cfg
 
-    def setup_lights(self, override_type=None, start_f=1):
+    def setup_lights(self, override_type=None, start_f=1, mood=None):
         """Constructs/Updates lights based on mc."""
         light_cfg = self.lc_cfg.get("lighting", {})
+
+        # Atmospheric Mood System
+        mood_cfg = self._get_mood_params(mood)
+        multiplier = mood_cfg.get("multiplier", 1.0)
+        mood_tint = mood_cfg.get("color_tint", (1,1,1))
+
         if override_type:
             # Simple multiplier for overrides (e.g. 'Clinical' might be brighter)
-            multiplier = 1.5 if "Clinical" in override_type else 1.0
-        else:
-            multiplier = 1.0
+            multiplier *= 1.5 if "Clinical" in override_type else 1.0
 
         # Only clear lights on the initial setup (start_f=1 and no override)
         if start_f == 1 and not override_type:
@@ -28,17 +32,27 @@ class LightingManager:
         # 1. Sun/Directional Light
         sun_cfg = light_cfg.get("Sun") or light_cfg.get("sun", {})
         if sun_cfg:
-            self._create_light("Sun", 'SUN', sun_cfg, multiplier, start_f)
+            self._create_light("Sun", 'SUN', sun_cfg, multiplier, start_f, mood_tint)
 
         # 2. Ambience/Fill
         for key in ["Key", "Rim", "Leg", "fills"]:
             val = light_cfg.get(key)
             if isinstance(val, list):
-                for fill in val: self._create_light(fill["id"], 'AREA', fill, multiplier, start_f)
+                for fill in val: self._create_light(fill["id"], 'AREA', fill, multiplier, start_f, mood_tint)
             elif isinstance(val, dict):
-                self._create_light(key, val.get("type", 'AREA'), val, multiplier, start_f)
+                self._create_light(key, val.get("type", 'AREA'), val, multiplier, start_f, mood_tint)
 
-    def _create_light(self, name, l_type, cfg, multiplier=1.0, start_f=1):
+    def _get_mood_params(self, mood):
+        """Returns lighting parameters based on narrative mood."""
+        moods = {
+            "standardization": {"multiplier": 0.7, "color_tint": (0.8, 0.8, 1.0)}, # Cooler, dimmer
+            "conflict": {"multiplier": 1.2, "color_tint": (1.0, 0.8, 0.8)},        # Reddish, intense
+            "realization": {"multiplier": 1.1, "color_tint": (1.0, 1.0, 0.9)},     # Golden, warm
+            "awakening": {"multiplier": 1.0, "color_tint": (1.0, 1.0, 1.0)}        # Balanced
+        }
+        return moods.get(mood.lower() if mood else None, {"multiplier": 1.0, "color_tint": (1.0, 1.0, 1.0)})
+
+    def _create_light(self, name, l_type, cfg, multiplier=1.0, start_f=1, mood_tint=(1,1,1)):
         light_obj = bpy.data.objects.get(name)
         if not light_obj:
             light_data = bpy.data.lights.new(name=name, type=l_type)
@@ -56,10 +70,12 @@ class LightingManager:
 
         energy = cfg.get("energy", 10.0) * multiplier
         light_data.energy = energy
-        light_data.color = cfg.get("color", (1,1,1))
+        base_color = cfg.get("color", (1,1,1))
+        light_data.color = [base_color[i] * mood_tint[i] for i in range(3)]
 
         # Explicitly keyframe at the start of the range to ensure visibility
         light_data.keyframe_insert(data_path="energy", frame=start_f)
+        light_data.keyframe_insert(data_path="color", frame=start_f)
 
         # Heartbeat Pulse (Ported from Movie 6 aesthetics)
         if name == "Key" or cfg.get("heartbeat"):

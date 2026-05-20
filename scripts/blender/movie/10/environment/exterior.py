@@ -196,7 +196,17 @@ class ExteriorModeler(Modeler):
             angle, dist = random.uniform(0, math.pi * 2), random.uniform(min_dist, max_dist); loc = (math.sin(angle)*dist, math.cos(angle)*dist, 0)
             create_branching_tree(f"ext_tree_{i}", loc, random.uniform(2.5, 5.0), coll, shades, 'round')
             tree = bpy.data.objects.get(f"ext_tree_{i}")
-            if tree: tree.parent = veg_root
+            if tree:
+                tree.parent = veg_root
+                if cfg.get("enable_dynamic_culling", True):
+                    self._setup_dynamic_culling(tree)
+
+    def _setup_dynamic_culling(self, tree):
+        """Adds a driver to toggle visibility if tree occludes center from camera."""
+        # Note: In a headless script, we can't easily add complex drivers that evaluate 3D space.
+        # Instead, we add a frame_change_post handler to the app in Director.
+        # But we mark the object for culling here.
+        tree["dynamic_culling"] = True
 
     def _setup_fog(self, cfg):
         """Sets up Volume Scatter for environmental fog."""
