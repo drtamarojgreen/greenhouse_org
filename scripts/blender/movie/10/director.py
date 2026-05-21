@@ -1,5 +1,6 @@
 import movie_configuration as mc
 import bpy
+import mathutils
 import os
 import json
 import math
