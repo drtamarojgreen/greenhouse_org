@@ -349,6 +349,22 @@
       "camera": "Exterior",
       "start": 4151,
       "end": 4800
+    },
+    "v10_extended_cycle": {
+      "camera": "Wide",
+      "start": 5001,
+      "end": 10000,
+      "cycle": {
+        "order": ["Hero_track", "Low_angle", "Ots1", "Ots2", "Bird_eye", "Detail_cu"],
+        "durations": {
+          "Hero_track": 40,
+          "Low_angle": 35,
+          "Ots1": 30,
+          "Ots2": 30,
+          "Bird_eye": 50,
+          "Detail_cu": 25
+        }
+      }
     }
   },
   "calligraphy": {

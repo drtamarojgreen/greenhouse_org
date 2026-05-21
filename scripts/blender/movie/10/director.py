@@ -1,5 +1,6 @@
 import movie_configuration as mc
 import bpy
+import mathutils
 import os
 import json
 import math
@@ -9,11 +10,11 @@ from camera.lighting import LightingManager
 from environment import character_placement
 from registry import registry
 
-M9_ROOT = os.path.dirname(os.path.abspath(__file__))
+M10_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 class Director:
     """
-    Orchestrates Movie 9 production using context-aware environment assembly.
+    Orchestrates Movie 10 production using context-aware environment assembly.
     Maintains full compatibility with the therapeutic audit suite.
     """
 
@@ -22,10 +23,10 @@ class Director:
         self.scene_cfg = {}
 
     def _setup_cinematics(self, path):
-        lc_path = path or os.path.join(M9_ROOT, "lights_camera.json")
+        lc_path = path or os.path.join(M10_ROOT, "lights_camera.json")
         with open(lc_path, 'r') as f:
             self.lc_cfg = json.load(f)
-        self.camera_controls = CameraControls(self.lc_cfg)
+        self.camera_controls = CameraControls(self.lc_cfg, coll_cameras=mc.coll_cameras, coll_env=mc.coll_environment)
         self.lighting_manager = LightingManager(self.lc_cfg)
 
     def load_scene(self, scene_id):
@@ -157,6 +158,9 @@ class Director:
         self.camera_controls.setup_cinematics(mc.total_frames)
         scene = bpy.context.scene; scene.timeline_markers.clear()
 
+        # Smart Camera Selection for high-intensity animations
+        self._apply_smart_camera_selection()
+
         # Resolve fixed beats from config
         fixed_beats = []
         seq_cfg = self.lc_cfg.get("sequencing", {})
@@ -203,13 +207,32 @@ class Director:
             m = scene.timeline_markers.new(m_name, frame=beat["start"])
             m.camera = bpy.data.objects.get(beat["camera"])
 
+        # V10 Extended Cycle Support (5001-10000)
+        v10_seq = seq_cfg.get("v10_extended_cycle", {})
+        if v10_seq and v10_seq.get("cycle"):
+            v10_cycle = v10_seq["cycle"]
+            curr = v10_seq.get("start", 5001)
+            end = v10_seq.get("end", 10000)
+            order = v10_cycle.get("order", [])
+            durations = v10_cycle.get("durations", {})
+
+            while curr < end:
+                for cam_tag in order:
+                    if curr >= end: break
+                    dur = durations.get(cam_tag, 60)
+                    cam_obj = bpy.data.objects.get(cam_tag)
+                    if cam_obj:
+                        m = scene.timeline_markers.new(f"V10_Shot_{cam_tag}", frame=curr)
+                        m.camera = cam_obj
+                    curr += dur
+
     def apply_extended_scene(self, path):
         character_placement.load_extended_scene(path, self)
 
     # Required Shims for Test Compatibility
     def setup_cinematics(self): self.apply_sequencing()
     def setup_calligraphy(self):
-        CalligraphyDirector(self.lc_cfg, mc.total_frames, M9_ROOT).apply()
+        CalligraphyDirector(self.lc_cfg, mc.total_frames, M10_ROOT).apply()
         def _calligraphy_visibility(scene):
             obj = bpy.data.objects.get("GreenhouseMD_Calligraphy")
             if obj:
@@ -221,6 +244,66 @@ class Director:
             if getattr(h, "__name__", "") != "_calligraphy_visibility"
         ]
         bpy.app.handlers.frame_change_post.append(_calligraphy_visibility)
+
+    def _apply_smart_camera_selection(self):
+        """Injects high-intensity camera switches during action-heavy events."""
+        storyline = self.scene_cfg.get("storyline", mc.get("storyline", []))
+        scene = bpy.context.scene
+
+        for beat in storyline:
+            for event in beat.get("events", []):
+                if event.get("action") == "animate":
+                    params = event.get("params", {})
+                    # If high intensity or specific tag, override with a dramatic shot
+                    if params.get("tag") in ["panic", "resolve", "victory_pose"]:
+                        start_f = event.get("start", 1)
+                        m = scene.timeline_markers.new(f"SmartShot_{params['tag']}", frame=start_f)
+                        # Detail CU or Low Angle for drama
+                        cam_id = "Detail_cu" if params["tag"] == "panic" else "Low_angle"
+                        m.camera = bpy.data.objects.get(cam_id)
+
+                        # Return to wide after duration
+                        duration = params.get("duration") or params.get("duration_frames") or 60
+                        end_f = start_f + duration
+                        m_end = scene.timeline_markers.new(f"Shot_Resume_Wide", frame=end_f)
+                        m_end.camera = bpy.data.objects.get("Wide")
+
+    def setup_dynamic_culling(self):
+        """Initializes high-fidelity frustum culling for vegetation."""
+        # Cache culling targets for performance
+        targets = [o for o in bpy.data.objects if o.get("dynamic_culling")]
+
+        def _execute_culling(scene):
+            cam = scene.camera
+            if not cam: return
+
+            # Center of interest (protagonists)
+            target_loc = mathutils.Vector((0, 0, 1.5))
+
+            for obj in targets:
+                    # Vector from camera to tree
+                    to_tree = obj.location - cam.matrix_world.translation
+                    # Vector from camera to protagonists
+                    to_target = target_loc - cam.matrix_world.translation
+
+                    # Check for occlusion: if tree is close to the line between cam and target
+                    # and is significantly closer to camera than target is.
+                    dist_to_target = to_target.length
+                    dist_to_tree = to_tree.length
+
+                    if dist_to_tree < dist_to_target:
+                        # Angle between vectors
+                        angle = to_tree.angle(to_target)
+                        # If angle is small (e.g. < 5 degrees), tree might be occluding
+                        is_occluding = angle < math.radians(5.0)
+                        obj.hide_render = is_occluding
+                        obj.hide_viewport = is_occluding
+
+        bpy.app.handlers.frame_change_post[:] = [
+            h for h in bpy.app.handlers.frame_change_post
+            if getattr(h, "__name__", "") != "_execute_culling"
+        ]
+        bpy.app.handlers.frame_change_post.append(_execute_culling)
     def initialize_entities(self):
         for ent in self.scene_cfg.get("entities", []):
             obj = bpy.data.objects.get(f"{ent['id']}.Rig") or bpy.data.objects.get(ent['id'])
@@ -242,5 +325,21 @@ class Director:
         for beat in beats:
             for event in beat.get("events", []):
                 character_placement.execute_event(event, context_director=self)
-    def setup_lighting(self): self.lighting_manager.setup_lights()
+    def setup_lighting(self):
+        """Orchestrates multi-beat atmospheric lighting shifts."""
+        storyline = self.scene_cfg.get("storyline", mc.get("storyline", []))
+
+        # Initial Setup (Frame 1)
+        self.lighting_manager.setup_lights(start_f=1, mood="awakening")
+
+        # Beat-based transitions
+        for beat in storyline:
+            mood = None
+            title = beat.get("beat", "").lower()
+            if "standardization" in title: mood = "standardization"
+            elif "conflict" in title: mood = "conflict"
+            elif "horizon" in title or "realized" in title: mood = "realization"
+
+            if mood:
+                self.lighting_manager.setup_lights(start_f=beat.get("start", 1), mood=mood)
     def apply_context_constraints(self, name): pass
