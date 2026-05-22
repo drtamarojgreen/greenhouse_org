@@ -1,0 +1,13 @@
+{
+  "start_frame": 4651,
+  "end_frame": 5000,
+  "environment": {
+    "type": "mountain_base",
+    "context": "exterior",
+    "mountain": { "width": 80, "height": 60, "slope_angle_deg": 55 },
+    "vegetation": { "count": 8 }
+  },
+  "camera_sequence": [
+    { "camera": "Mountain_cam", "start": 4651 }
+  ]
+}

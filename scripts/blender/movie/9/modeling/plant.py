@@ -67,11 +67,11 @@ class PlantModeler(Modeler):
             seg = l_cfg["arm_segments"]
             self._add_joint_bulb(bm, mesh_obj, dlayer, s_loc, 0.16, f"Arm.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.14, 0.11, seg[0], (s_loc[0], s_loc[1], s_loc[2]-seg[0]/2), f"Arm.{side}")
-            
+
             e_loc = (s_loc[0], s_loc[1], s_loc[2]-seg[0])
             self._add_joint_bulb(bm, mesh_obj, dlayer, e_loc, 0.14, f"Elbow.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.11, 0.08, seg[1], (e_loc[0], e_loc[1], e_loc[2]-seg[1]/2), f"Elbow.{side}")
-            
+
             h_loc = (e_loc[0], e_loc[1], e_loc[2]-seg[1])
             self._add_joint_bulb(bm, mesh_obj, dlayer, h_loc, 0.12, f"Hand.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.08, 0.04, seg[2], (h_loc[0], h_loc[1], h_loc[2]-seg[2]/2), f"Hand.{side}")
@@ -83,22 +83,22 @@ class PlantModeler(Modeler):
             lseg = l_cfg["leg_segments"]
             self._add_joint_bulb(bm, mesh_obj, dlayer, hip_loc, 0.18, f"Thigh.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.16, 0.13, lseg[0], (hip_loc[0], hip_loc[1], hip_loc[2]-lseg[0]/2), f"Thigh.{side}")
-            
+
             k_loc = (hip_loc[0], hip_loc[1], hip_loc[2]-lseg[0])
             self._add_joint_bulb(bm, mesh_obj, dlayer, k_loc, 0.15, f"Knee.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.13, 0.10, lseg[1], (k_loc[0], k_loc[1], k_loc[2]-lseg[1]/2), f"Knee.{side}")
-            
+
             f_loc = (k_loc[0], k_loc[1], k_loc[2]-lseg[1])
             self._add_joint_bulb(bm, mesh_obj, dlayer, f_loc, 0.13, f"Foot.{side}")
             self._add_organic_part(bm, mesh_obj, dlayer, 0.10, 0.06, lseg[2], (f_loc[0], f_loc[1]-lseg[2]/2, f_loc[2]), f"Foot.{side}", rot=(math.radians(90), 0, 0))
 
             # Fingers (Simplified for modular rig compatibility)
             # Offset to tail of hand bone
-            fing_base_z = h_loc[2] - 0.15 
+            fing_base_z = h_loc[2] - 0.15
             for i in range(1, 4):
                 f_name = f"Finger.{i}.{side}"
                 self._add_organic_part(bm, mesh_obj, dlayer, 0.03, 0.01, 0.15, (h_loc[0] + (i-2)*0.05, h_loc[1], fing_base_z - 0.07), f_name, rot=(math.radians(0), 0, 0))
-            
+
             # Toes
             # Offset to tail of foot bone
             toe_base_y = f_loc[1] - 0.15
@@ -173,7 +173,7 @@ class PlantModeler(Modeler):
         m_cfg = self.p_cfg["modifiers"]
         disp = mesh_obj.modifiers.new(name="BarkBump", type='DISPLACE')
         disp.strength = m_cfg["bark_bump_strength"]
-        
+
         wave = mesh_obj.modifiers.new(name="WindSway", type='WAVE')
         wave.height = m_cfg["wind_sway"]["height"]
         wave.width = m_cfg["wind_sway"]["width"]

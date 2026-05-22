@@ -1,0 +1,29 @@
+{
+  "proportions": {
+    "torso_h": 1.5,
+    "head_r": 0.4,
+    "neck_h": 0.2
+  },
+  "limbs": {
+    "arm_shoulder_pos": [0.4, 0, 0.9],
+    "arm_segments": [0.4, 0.4, 0.15],
+    "leg_hip_pos": [0.25, 0, 0.1],
+    "leg_segments": [0.5, 0.5, 0.25]
+  },
+  "foliage": {
+    "head_count": 20,
+    "head_tilt_range": [0.2, 0.8],
+    "branch_len_range": [0.4, 0.8],
+    "leaf_size_range": [0.25, 0.5],
+    "limb_foliage_density": 6
+  },
+  "modifiers": {
+    "bark_bump_strength": 0.055,
+    "bark_noise_scale": 0.04,
+    "wind_sway": {
+      "height": 0.05,
+      "width": 1.5,
+      "speed": 0.2
+    }
+  }
+}

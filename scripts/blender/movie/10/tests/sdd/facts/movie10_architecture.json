@@ -1,0 +1,8 @@
+{
+  "localized_directory": "scripts/blender/movie/10/",
+  "required_files": ["base.py", "registry.py", "modelers.py", "riggers.py", "shaders.py", "master.py"],
+  "hf_standards": {
+    "modeling": ["Eye", "Iris", "Pupil", "Lip", "Eyelid"],
+    "foliage_density_min": 10
+  }
+}

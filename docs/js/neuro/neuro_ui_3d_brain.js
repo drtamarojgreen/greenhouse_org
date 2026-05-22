@@ -58,11 +58,11 @@
             // Draw Faces
             facesToDraw.forEach(f => {
                 const material = {
-                    baseColor: { r: 160, g: 174, b: 192 },
-                    roughness: 0.5,
-                    metalness: 0.1,
+                    baseColor: { r: 180, g: 190, b: 200 },
+                    roughness: 0.4,
+                    metalness: 0.05,
                     sss: true,
-                    alpha: 0.20
+                    alpha: 0.25
                 };
 
                 const v0 = brainShell.vertices[f.indices[0]];
@@ -76,16 +76,18 @@
                     z: (v0.z + v1.z + v2.z) / 3
                 };
 
-                // Item 6: Ambient Occlusion (using Curvature as a proxy for Sulcal Depth)
-                const ao = 1.0 - (v0.curvature || 0) * 2.0;
+                // Ambient Occlusion: Proxy sulcal depth using curvature
+                // v.curvature is 0..1, higher values = more "fold"
+                const ao = Math.max(0.1, 1.0 - (v0.curvature || 0) * 2.5);
 
                 const color = GreenhouseNeuroLighting.calculateLighting(f.normal, center, camera, material);
 
-                // Apply AO
+                // Apply AO for anatomical depth
                 color.r *= ao; color.g *= ao; color.b *= ao;
 
                 const isTarget = targetRegion && (f.region === targetRegion);
-                const fog = GreenhouseModels3DMath.applyDepthFog(isTarget ? 0.9 : color.a, f.depth);
+                const alphaToUse = isTarget ? 0.85 : material.alpha;
+                const fog = GreenhouseModels3DMath.applyDepthFog(alphaToUse, f.depth);
 
                 ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${fog})`;
                 ctx.beginPath();
@@ -97,7 +99,7 @@
                 // Item 20: Clean outline pass for educational segmentation
                 if (isTarget) {
                     ctx.strokeStyle = `rgba(255, 255, 255, ${fog})`;
-                    ctx.lineWidth = 1.5;
+                    ctx.lineWidth = 1.2;
                     ctx.stroke();
                 }
             });

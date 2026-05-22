@@ -1,0 +1,42 @@
+{
+  "start_frame": 1000,
+  "end_frame": 1800,
+  "environment": {
+    "type": "interior",
+    "context": "greenhouse"
+  },
+  "story_beats": [
+    {
+      "beat": "Clinical Exchange",
+      "events": [
+        {
+          "target": "Herbaceous_HF",
+          "action": "move_to",
+          "start": 1000,
+          "params": { "destination_pos": [-1.5, -3.2, 0.0], "duration_frames": 100 }
+        },
+        {
+          "target": "Arbor_HF",
+          "action": "move_to",
+          "start": 1000,
+          "params": { "destination_pos": [-4.0, -3.0, 0.0], "duration_frames": 100 }
+        },
+        {
+          "target": "Herbaceous_HF",
+          "action": "animate",
+          "start": 1540,
+          "params": { "tag": "swap_position", "target_pos": [-4.0, -3.0] }
+        },
+        {
+          "target": "Arbor_HF",
+          "action": "animate",
+          "start": 1540,
+          "params": { "tag": "swap_position", "target_pos": [-1.5, -3.2] }
+        }
+      ]
+    }
+  ],
+  "camera_sequence": [
+    { "camera": "Clinical_twoshot", "start": 1000 }
+  ]
+}

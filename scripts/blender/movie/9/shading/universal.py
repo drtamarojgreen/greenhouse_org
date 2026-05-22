@@ -46,7 +46,7 @@ class UniversalShader(Shader):
         # Add any others (accent, etc.)
         for k in materials:
             if k not in ordered: ordered.append(k)
-        
+
         for mat_id in ordered:
             mat = materials.get(mat_id)
             if mat and mat.name not in [m.name for m in mesh.data.materials if m]:
@@ -78,7 +78,7 @@ class UniversalShader(Shader):
                  strength_input = bsdf.inputs.get('Emission Strength') or bsdf.inputs.get('Emission')
                  if strength_input and hasattr(strength_input, "default_value"):
                      strength_input.default_value = emission
-            
+
             if "Leaf" in name:
                 shading_utils.setup_sss(bsdf)
 
