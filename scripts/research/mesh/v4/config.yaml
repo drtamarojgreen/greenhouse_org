@@ -8,10 +8,10 @@ discovery:
   max_levels: 4
   # Minimum publication count required to "expand" a term at each level
   level_thresholds:
-    1: 20000  # Root/Seed Level
-    2: 10000  # Level 2 (Directly related)
-    3: 5000   # Level 3 (Extended depth)
-    4: 1000   # Level 4 (Exploratory depth)
+    1: 30000  # Root/Seed Level
+    2: 20000  # Level 2 (Directly related)
+    3: 10000   # Level 3 (Extended depth)
+    4: 5000   # Level 4 (Exploratory depth)
   
   # Safety limits
   max_children_per_node: 15

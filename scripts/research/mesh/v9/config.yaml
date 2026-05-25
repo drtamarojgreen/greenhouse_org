@@ -1,6 +1,6 @@
 # V9 Pipeline Configuration
 
-seed_term: "Depression"
+seed_term: "Attention-Deficit/Hyperactivity Disorder"
 
 discovery:
   max_levels: 2

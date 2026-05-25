@@ -12,14 +12,14 @@ import argparse
 from datetime import datetime
 from typing import List, Dict, Any
 
-from core.client import PubMedClientV9
-from core.ct_client import ClinicalTrialsClientV9
-from core.engine import DiscoveryEngineV9
-from core.temporal_engine import TemporalEngineV9
-from analytics.processor import DataProcessorV9
-from graph.builder import GraphBuilderV9
-from viz.visualizer import VisualizerV9
-from ui.cli import CLIV9
+from .core.client import PubMedClientV9
+from .core.ct_client import ClinicalTrialsClientV9
+from .core.engine import DiscoveryEngineV9
+from .core.temporal_engine import TemporalEngineV9
+from .analytics.processor import DataProcessorV9
+from .graph.builder import GraphBuilderV9
+from .viz.visualizer import VisualizerV9
+from .ui.cli import CLIV9
 
 # Set up logging
 logging.basicConfig(
