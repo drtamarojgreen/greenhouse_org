@@ -15,6 +15,9 @@
 - [x] JSLongTaskAudit: Detects unthrottled listeners and deep loop nesting.
 - [x] JSComplexityAudit: Reports heuristic cyclomatic complexity scores.
 - [x] JSVarUsageAudit: Reports usage of 'var' instead of 'const'/'let'.
+- [x] JSMagicNumberDetailedAudit: Detects magic numbers across multiple directories with context.
+- [x] JSWasteDetailedAudit: Detects AI markers and skeletal placeholders.
+- [x] JSRawPatternDetailedAudit: Reports manual memory/object management patterns.
 
 ## Open
 

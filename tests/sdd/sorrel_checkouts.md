@@ -23,3 +23,9 @@
   - Granular: Magic number `random_state=42` found in `scripts/research/mesh/v3/nlp/nlp_engine.py:77`.
 - **scripts/blender/movie/**: LOC = 55636, Violations = 75, Waste = 6, Health = 0.2500, Score = 169.6220.
   - Granular: Magic placeholder `"Test"` found in `scripts/blender/movie/10/tests/unit/test_v5_1_compatibility.py:42`.
+
+## Enhanced SDD Audit Empirical Evidence (2024-05-31)
+
+- **JSMagicNumberDetailedAudit**: Found 9 violations across 905 files. Key locations: `GreenhouseAdminApp.js:197`, `nlp_engine.py:77`.
+- **JSWasteDetailedAudit**: Found 4 waste markers. Key locations: `schedulerVelo.js:548`, `genetic_ui_3d_gene.js:32`.
+- **JSRawPatternDetailedAudit**: Found 255 manual management patterns (excluding common safe uses). High density in `models_ui_environment_background.js`.

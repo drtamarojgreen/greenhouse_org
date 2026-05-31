@@ -3,3 +3,5 @@ Is js_source_dir = ../../docs/js/
 Is genetic_js_dir = ../../docs/js/genetic/
 Is models_js_dir = ../../docs/js/
 Is genetic_ui_target_file = ../../docs/js/genetic/genetic_ui_3d.js
+Is research_mesh_dir = ../../scripts/research/mesh/
+Is blender_movie_dir = ../../scripts/blender/movie/
