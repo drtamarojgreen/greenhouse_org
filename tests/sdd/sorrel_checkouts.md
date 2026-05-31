@@ -20,4 +20,6 @@
 
 - **docs/js/**: LOC = 63560, Violations = 459, Waste = 44, Health = 0.0000, Score = 0.0000.
 - **scripts/research/mesh/**: LOC = 11343, Violations = 8, Waste = 14, Health = 0.9200, Score = 453.7200.
+  - Granular: Magic number `random_state=42` found in `scripts/research/mesh/v3/nlp/nlp_engine.py:77`.
 - **scripts/blender/movie/**: LOC = 55636, Violations = 75, Waste = 6, Health = 0.2500, Score = 169.6220.
+  - Granular: Magic placeholder `"Test"` found in `scripts/blender/movie/10/tests/unit/test_v5_1_compatibility.py:42`.
