@@ -20,4 +20,5 @@
 
 - [ ] Refine JSUnusedSymbolAudit: Further reduce false positives for global library objects.
 - [ ] Refine JSCodeDuplicationAudit: Implement fuzzy matching for near-duplicate code blocks.
-- [ ] Expand models JS evaluation: Evaluate all files in `docs/js/` for quality compliance.
+- [x] Expand models JS evaluation: Evaluate all files in `docs/js/` for quality compliance.
+- [x] Execute comprehensive code analysis: Score `docs/js/`, `scripts/research/mesh/`, and `scripts/blender/movie/` using QuantaGlia tools.

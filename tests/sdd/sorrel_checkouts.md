@@ -15,3 +15,9 @@
 - **JSLongTaskAudit**: Reports 16 unthrottled listeners (e.g., `mousemove`, `scroll`, `resize`) and 3 instances of triple-nested loops.
 - **JSComplexityAudit**: Reports 4 complex files (score > 100): `genetic_ui_3d.js:126`, `rna_repair.js:167`, `books.js:101`, `GreenhouseUtils.js:130`.
 - **JSVarUsageAudit**: Reports 4 instances of 'var' usage, all in `models_lang.js`.
+
+## QuantaGlia Comprehensive Analysis Results
+
+- **docs/js/**: LOC = 63560, Violations = 459, Waste = 44, Health = 0.0000, Score = 0.0000.
+- **scripts/research/mesh/**: LOC = 11343, Violations = 8, Waste = 14, Health = 0.9200, Score = 453.7200.
+- **scripts/blender/movie/**: LOC = 55636, Violations = 75, Waste = 6, Health = 0.2500, Score = 169.6220.
