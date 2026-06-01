@@ -19,7 +19,10 @@ TARGETS = \
 	$(BIN_DIR)/JSFileLengthAudit \
 	$(BIN_DIR)/JSLongTaskAudit \
 	$(BIN_DIR)/JSComplexityAudit \
-	$(BIN_DIR)/JSVarUsageAudit
+	$(BIN_DIR)/JSVarUsageAudit \
+	$(BIN_DIR)/JSMagicNumberDetailedAudit \
+	$(BIN_DIR)/JSWasteDetailedAudit \
+	$(BIN_DIR)/JSRawPatternDetailedAudit
 
 all: $(TARGETS)
 
@@ -40,6 +43,9 @@ run: all
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSLongTaskAudit
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSComplexityAudit
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSVarUsageAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSMagicNumberDetailedAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSWasteDetailedAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSRawPatternDetailedAudit
 
 verify: run
 
