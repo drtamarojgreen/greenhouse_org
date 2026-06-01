@@ -25,7 +25,11 @@ TARGETS = \
 	$(BIN_DIR)/JSRawPatternDetailedAudit \
 	$(BIN_DIR)/MovieStandardizationAudit \
 	$(BIN_DIR)/MovieBlenderLogicAudit \
-	$(BIN_DIR)/MovieDirectorRegistryAudit
+	$(BIN_DIR)/MovieDirectorRegistryAudit \
+	$(BIN_DIR)/MovieSourceQualityAudit \
+	$(BIN_DIR)/MovieRedundancyAudit \
+	$(BIN_DIR)/MovieConfigHygieneAudit \
+	$(BIN_DIR)/MovieFilesystemHygieneAudit
 
 all: $(TARGETS)
 
@@ -52,6 +56,10 @@ run: all
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieStandardizationAudit
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieBlenderLogicAudit
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieDirectorRegistryAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieSourceQualityAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieRedundancyAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieConfigHygieneAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieFilesystemHygieneAudit
 
 verify: run
 
