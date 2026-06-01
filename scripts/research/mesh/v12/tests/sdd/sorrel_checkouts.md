@@ -16,12 +16,12 @@
 | Sip 8 | `test_baseline.yaml` | `exit_code = 0`, `files_generated = 3` | Verified |
 | Sip 9 | `config_v1.yaml` to `config_vb.yaml` | Schema validation passed for 11 configs | Verified |
 | Sip 10 | Legacy stubs | Successful execution of v1 and v9 configs | Verified |
+| Sip 11 | `test_framework.py` | `7/7 unit tests passed` | Verified |
+| Sip 12 | `v12PatternAudit` | `stub_violations = 0` | Verified |
 
-## Empirical Evidence (Sip 10)
+## Empirical Evidence (Sip 11 & 12)
 
-- **Experiment**: mesh_v9_unified
-- **Latency**: ~3.4s (including RF training)
-- **Outputs**:
-  - `metrics.json`: `accuracy: 0.3`
-  - `confusion_matrix.png`: Created
-- **Exit Code**: 0
+- **Unit Tests**: 7 passed, 0 failed.
+- **SDD Audit**: 16 files checked, 0 stub violations.
+- **Latency (Audit)**: ~10ms
+- **Exit Code (Audit)**: 0

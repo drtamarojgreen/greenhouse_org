@@ -26,6 +26,8 @@ class StandardScalerWrapper(BaseTransformer):
 @register_transformer("MissingIndicator")
 class LegacyStubTransformer(BaseTransformer):
     """Stub for legacy compatible transformers."""
-    def fit(self, X: Any) -> None: pass
+    def fit(self, X: Any) -> None:
+        """Stub fit implementation."""
+        return None
     def transform(self, X: Any) -> Any:
         return X

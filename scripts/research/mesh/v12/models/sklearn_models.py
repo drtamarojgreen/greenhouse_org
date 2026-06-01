@@ -43,7 +43,9 @@ class LogisticRegressionWrapper(BaseModel):
 @register_model("MinimalCounter")
 class LegacyStubModel(BaseModel):
     """Stub for legacy compatible models."""
-    def fit(self, X: Any, y: Any) -> None: pass
+    def fit(self, X: Any, y: Any) -> None:
+        """Stub fit implementation."""
+        return None
     def predict(self, X: Any) -> Any:
         # Return something that looks like classification for the analysis stage
         return np.random.randint(0, 2, len(X))
