@@ -1,0 +1,25 @@
+experiment_name: "mesh_va_dashboard"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/va"
+
+data_collection:
+  loader: "RealtimeAPIStreamer"
+  loader_params:
+    batch_size: 50
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "InteractiveClustering"
+    params: {}
+  validation:
+    strategy: "HumanInTheLoop"
+    params: {}
+  metrics: ["user_relevance_score"]
+
+results:
+  plots: ["interactive_scatter", "time_evolution"]
+  export:
+    format: "web_json"

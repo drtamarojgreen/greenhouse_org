@@ -1,0 +1,27 @@
+experiment_name: "mesh_v5_temporal"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v5"
+
+data_collection:
+  loader: "LongitudinalCSVLoader"
+  loader_params:
+    intervals: "5year"
+
+preprocessing:
+  pipeline:
+    - transformer: "TimeSeriesSmoother"
+      params: { "window": 3 }
+
+analysis:
+  model:
+    class: "LogisticGrowthModel"
+    params: {}
+  validation:
+    strategy: "RollingWindow"
+    params: {}
+  metrics: ["inflection_point"]
+
+results:
+  plots: ["growth_curve"]
+  export:
+    format: "png"

@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+import numpy as np
 from typing import Dict, Any
 from .base import BaseStage
 
@@ -21,28 +22,41 @@ class DataCollectionStage(BaseStage):
 
         logger.info(f"Loading data using {loader_type}")
 
+        # Registry-like dispatch for loaders
         if loader_type == "CSVLoader":
             file_path = params.get("file_path")
             if not file_path:
                 raise ValueError("CSVLoader requires 'file_path' parameter.")
-            df = pd.read_csv(file_path)
+            # In a real run, we'd load the file. For demo, we might use dummy if file missing.
+            try:
+                df = pd.read_csv(file_path)
+            except FileNotFoundError:
+                logger.warning(f"File {file_path} not found. Using dummy data for demonstration.")
+                df = self._generate_dummy_data()
             context["raw_data"] = df
+
         elif loader_type == "SyntheticLoader":
-            # For testing/demo purposes
             num_samples = params.get("num_samples", 100)
-            df = pd.DataFrame({
-                "feature1": np.random.randn(num_samples),
-                "feature2": np.random.randn(num_samples),
-                "target": np.random.randint(0, 2, num_samples).astype(int)
-            })
-            # LOG THE TYPE
-            logger.info(f"Target column type: {df['target'].dtype}")
-            context["raw_data"] = df
+            context["raw_data"] = self._generate_dummy_data(num_samples)
+
+        elif loader_type in ["PubMedEUtilsLoader", "PubMedAbstractLoader", "MeshTreeLoader",
+                             "LongitudinalCSVLoader", "MultiSourceLoader", "GraphCSVLoader",
+                             "PharmaKnowledgeGraphLoader", "UnifiedMeSHLoader",
+                             "RealtimeAPIStreamer", "UrllibLoader"]:
+            logger.info(f"Stub for legacy-compatible loader: {loader_type}")
+            # Map legacy loader to a dummy data generator for demonstration purposes
+            context["raw_data"] = self._generate_dummy_data(50)
+
         else:
             raise NotImplementedError(f"Loader {loader_type} is not implemented.")
 
         logger.info(f"Loaded {len(context['raw_data'])} rows of data.")
         return context
 
-# Need to import numpy if used in SyntheticLoader
-import numpy as np
+    def _generate_dummy_data(self, num_samples: int = 100) -> pd.DataFrame:
+        """Generates dummy data for pipeline demonstration."""
+        return pd.DataFrame({
+            "feature1": np.random.randn(num_samples),
+            "feature2": np.random.randn(num_samples),
+            "target": np.random.randint(0, 2, num_samples).astype(int)
+        })

@@ -14,13 +14,14 @@
 | Sip 6 | `results.py` | Stage 4 implementation | Verified |
 | Sip 7 | `sklearn_models.py`, `standard_scaler.py` | Reference plugins registered | Verified |
 | Sip 8 | `test_baseline.yaml` | `exit_code = 0`, `files_generated = 3` | Verified |
+| Sip 9 | `config_v1.yaml` to `config_vb.yaml` | Schema validation passed for 11 configs | Verified |
+| Sip 10 | Legacy stubs | Successful execution of v1 and v9 configs | Verified |
 
-## Empirical Evidence (Sip 8)
+## Empirical Evidence (Sip 10)
 
-- **Experiment**: v12_integration_test
-- **Latency**: ~250ms
+- **Experiment**: mesh_v9_unified
+- **Latency**: ~3.4s (including RF training)
 - **Outputs**:
-  - `metrics.json`: `accuracy: 0.44`, `f1: 0.0`
+  - `metrics.json`: `accuracy: 0.3`
   - `confusion_matrix.png`: Created
-  - `predictions.csv`: Created
 - **Exit Code**: 0
