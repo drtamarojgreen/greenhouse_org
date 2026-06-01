@@ -1,0 +1,27 @@
+experiment_name: "mesh_v8_multi_pharma"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v8"
+
+data_collection:
+  loader: "PharmaKnowledgeGraphLoader"
+  loader_params:
+    apis: ["DrugBank", "ClinicalTrials", "OpenTargets"]
+
+preprocessing:
+  pipeline:
+    - transformer: "EntityResolver"
+      params: {}
+
+analysis:
+  model:
+    class: "EnsembleLinkPredictor"
+    params: {}
+  validation:
+    strategy: "HoldOutLinks"
+    params: { "ratio": 0.2 }
+  metrics: ["precision_at_k", "mrr"]
+
+results:
+  plots: ["link_probability_dist"]
+  export:
+    format: "json"

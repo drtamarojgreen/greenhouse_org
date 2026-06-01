@@ -1,0 +1,25 @@
+experiment_name: "mesh_v7_network_analytics"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v7"
+
+data_collection:
+  loader: "GraphCSVLoader"
+  loader_params:
+    file_path: "docs/endpoints/graph.csv"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "NetworkXCentralityAnalyzer"
+    params: { "metrics": ["betweenness", "pagerank"] }
+  validation:
+    strategy: "RobustnessCheck"
+    params: { "node_removal_ratio": 0.1 }
+  metrics: ["graph_density", "wcc_count"]
+
+results:
+  plots: ["centrality_heatmap"]
+  export:
+    format: "csv"

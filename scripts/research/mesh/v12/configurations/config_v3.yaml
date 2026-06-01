@@ -1,0 +1,29 @@
+experiment_name: "mesh_v3_nlp"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v3"
+
+data_collection:
+  loader: "PubMedAbstractLoader"
+  loader_params:
+    max_articles: 1000
+
+preprocessing:
+  pipeline:
+    - transformer: "TextCleaner"
+      params: {}
+    - transformer: "TFIDFVectorizer"
+      params: { "max_features": 500 }
+
+analysis:
+  model:
+    class: "TopicModeler"
+    params: { "n_topics": 5 }
+  validation:
+    strategy: "InternalCoherence"
+    params: {}
+  metrics: ["coherence_score"]
+
+results:
+  plots: ["wordcloud", "sunburst"]
+  export:
+    format: "html"

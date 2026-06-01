@@ -1,4 +1,5 @@
 import logging
+import pandas as pd
 from typing import Dict, Any, List
 from .base import BaseStage
 from ..transformers import TRANSFORMER_REGISTRY
@@ -41,10 +42,7 @@ class PreprocessingStage(BaseStage):
             fitted_transformers.append(transformer)
 
         # Re-merge features and target
-        # Ensure target is still integer
         context["processed_data"] = pd.concat([features, target], axis=1)
         context["fitted_transformers"] = fitted_transformers
         logger.info(f"Preprocessing complete. Target type: {context['processed_data']['target'].dtype}")
         return context
-
-import pandas as pd
