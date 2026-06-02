@@ -29,3 +29,16 @@
 - **JSMagicNumberDetailedAudit**: Found 9 violations across 905 files. Key locations: `GreenhouseAdminApp.js:197`, `nlp_engine.py:77`.
 - **JSWasteDetailedAudit**: Found 4 waste markers. Key locations: `schedulerVelo.js:548`, `genetic_ui_3d_gene.js:32`.
 - **JSRawPatternDetailedAudit**: Found 255 manual management patterns (excluding common safe uses). High density in `models_ui_environment_background.js`.
+
+## Blender Movie Pipeline SDD Evidence (2024-05-31)
+
+- **MovieStandardizationAudit**: Compliance Score 0.83. Missing `master.py` in projects 7 and 9.
+- **MovieBlenderLogicAudit**: Audited 600 files. 402 instances of `bpy.ops` found (Target: reduce). `mathutils` presence ratio: 0.385.
+- **MovieDirectorRegistryAudit**: 3 Directors found, 56 registry mentions. Modularity confirmed.
+
+## Advanced Movie Hygiene SDD Evidence (2024-05-31)
+
+- **MovieSourceQualityAudit**: 1855 hardcoded numeric constants (Threshold: high). 506 casing inconsistencies detected. 15 bloated files (>500 LOC).
+- **MovieRedundancyAudit**: 450 repeated function signatures across 2345 total functions. Refactoring suggested.
+- **MovieConfigHygieneAudit**: 166 config keys defined, only 13 uniquely referenced in source using `mc.get`. 150 potentially unused keys.
+- **MovieFilesystemHygieneAudit**: 600 files scanned. 234 naming pattern violations. 230 potentially orphaned files (no internal imports).

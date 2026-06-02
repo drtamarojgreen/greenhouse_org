@@ -1,0 +1,15 @@
+Situation: Movie_Quality_Audit
+Fact max_file_lines = 500
+Fact discouraged_naming_pattern = ^(test_|temp_).*
+Fact required_naming_pattern = .*(Director|Manager|Modeler|Rigger|Shader).*
+Fact config_reference_prefix = mc.get
+Fact frame_range_start = 1
+Fact frame_range_end = 10000
+Fact total_python_files = 600
+Fact hardcoded_numeric_constants = 1855
+Fact casing_inconsistencies = 506
+Fact bloated_files_count = 15
+Fact repeated_functions_count = 450
+Fact unused_config_keys = 150
+Fact inconsistent_file_names = 234
+Fact orphaned_python_files = 230

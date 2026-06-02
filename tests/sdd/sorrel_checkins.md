@@ -18,6 +18,13 @@
 - [x] JSMagicNumberDetailedAudit: Detects magic numbers across multiple directories with context.
 - [x] JSWasteDetailedAudit: Detects AI markers and skeletal placeholders.
 - [x] JSRawPatternDetailedAudit: Reports manual memory/object management patterns.
+- [x] MovieStandardizationAudit: Verifies modular components in Blender movie projects.
+- [x] MovieBlenderLogicAudit: Audits Python API usage (ops vs data) in animation scripts.
+- [x] MovieDirectorRegistryAudit: Ensures valid registry of movie Director classes.
+- [x] MovieSourceQualityAudit: Reports hardcoded constants, casing, and bloat.
+- [x] MovieRedundancyAudit: Identifies repeated function signatures.
+- [x] MovieConfigHygieneAudit: Detects unused configuration keys.
+- [x] MovieFilesystemHygieneAudit: Audits file naming and orphaned files.
 
 ## Open
 

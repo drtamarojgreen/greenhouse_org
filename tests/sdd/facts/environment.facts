@@ -5,3 +5,6 @@ Is models_js_dir = ../../docs/js/
 Is genetic_ui_target_file = ../../docs/js/genetic/genetic_ui_3d.js
 Is research_mesh_dir = ../../scripts/research/mesh/
 Is blender_movie_dir = ../../scripts/blender/movie/
+Is active_movie_projects = 7,9,10
+Is movie_hf_frame_threshold = 5000
+Is movie_required_modules = master.py,registry.py,director.py,movie_config.json

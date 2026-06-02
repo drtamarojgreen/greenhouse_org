@@ -22,7 +22,14 @@ TARGETS = \
 	$(BIN_DIR)/JSVarUsageAudit \
 	$(BIN_DIR)/JSMagicNumberDetailedAudit \
 	$(BIN_DIR)/JSWasteDetailedAudit \
-	$(BIN_DIR)/JSRawPatternDetailedAudit
+	$(BIN_DIR)/JSRawPatternDetailedAudit \
+	$(BIN_DIR)/MovieStandardizationAudit \
+	$(BIN_DIR)/MovieBlenderLogicAudit \
+	$(BIN_DIR)/MovieDirectorRegistryAudit \
+	$(BIN_DIR)/MovieSourceQualityAudit \
+	$(BIN_DIR)/MovieRedundancyAudit \
+	$(BIN_DIR)/MovieConfigHygieneAudit \
+	$(BIN_DIR)/MovieFilesystemHygieneAudit
 
 all: $(TARGETS)
 
@@ -46,6 +53,13 @@ run: all
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSMagicNumberDetailedAudit
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSWasteDetailedAudit
 	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/JSRawPatternDetailedAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieStandardizationAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieBlenderLogicAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieDirectorRegistryAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieSourceQualityAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieRedundancyAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieConfigHygieneAudit
+	-@SORREL_FACTS_DIR=$(FACTS_DIR) ./$(BIN_DIR)/MovieFilesystemHygieneAudit
 
 verify: run
 
