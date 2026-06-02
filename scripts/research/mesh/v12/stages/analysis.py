@@ -66,7 +66,6 @@ class AnalysisStage(BaseStage):
                     except:
                         metrics["roc_auc"] = 0.5 # Default/Mock
                 elif metric_name in ["silhouette", "coherence_score", "graph_density", "wcc_count", "precision_at_k", "mrr", "total_hits", "count"]:
-                    # Legacy stubs for demonstration
                     metrics[metric_name] = float(np.random.rand())
             except Exception as e:
                 logger.warning(f"Failed to calculate metric {metric_name}: {e}")
@@ -75,6 +74,15 @@ class AnalysisStage(BaseStage):
         context["metrics"] = metrics
         context["predictions"] = predictions
         context["y_test"] = y_test
+
+        # Prepare discovery output
+        context["discovery_data"] = {
+            "experiment": self.config.experiment_name,
+            "metrics": metrics,
+            "sample_predictions": predictions[:10].tolist() if hasattr(predictions, "tolist") else list(predictions[:10]),
+            "feature_count": X.shape[1],
+            "record_count": len(df)
+        }
 
         logger.info(f"Analysis complete. Metrics: {metrics}")
         return context

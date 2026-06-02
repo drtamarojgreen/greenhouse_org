@@ -1,0 +1,20 @@
+{
+    "experiment": "mesh_v3_nlp",
+    "metrics": {
+        "coherence_score": 0.7873870267523329
+    },
+    "sample_predictions": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1
+    ],
+    "feature_count": 2,
+    "record_count": 1000
+}

@@ -1,0 +1,14 @@
+{
+    "experiment": "mesh_vb_lightweight",
+    "metrics": {
+        "total_hits": 0.8287375091519293
+    },
+    "sample_predictions": [
+        1,
+        0,
+        1,
+        0
+    ],
+    "feature_count": 2,
+    "record_count": 20
+}

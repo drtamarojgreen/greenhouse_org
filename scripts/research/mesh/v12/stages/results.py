@@ -30,6 +30,13 @@ class ResultsStage(BaseStage):
             json.dump(metrics, f, indent=4)
         logger.info(f"Exported metrics to {metrics_file}")
 
+        # Export discovery.json
+        discovery_data = context.get("discovery_data", {})
+        discovery_file = os.path.join(output_dir, "discovery.json")
+        with open(discovery_file, "w") as f:
+            json.dump(discovery_data, f, indent=4)
+        logger.info(f"Exported discovery to {discovery_file}")
+
         # Generate plots
         if "confusion_matrix" in self.config.results.plots:
             from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
