@@ -6,6 +6,7 @@ data_collection:
   loader: "PharmaKnowledgeGraphLoader"
   loader_params:
     apis: ["DrugBank", "ClinicalTrials", "OpenTargets"]
+    total_max_terms: 200
 
 preprocessing:
   pipeline:

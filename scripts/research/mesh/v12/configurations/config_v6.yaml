@@ -6,6 +6,7 @@ data_collection:
   loader: "MultiSourceLoader"
   loader_params:
     sources: ["pubmed", "fda_labels"]
+    num_samples: 300
 
 preprocessing:
   pipeline:

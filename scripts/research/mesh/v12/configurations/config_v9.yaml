@@ -6,6 +6,7 @@ data_collection:
   loader: "UnifiedMeSHLoader"
   loader_params:
     exclude_generic: true
+    total_max_terms: 400
 
 preprocessing:
   pipeline:

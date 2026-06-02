@@ -6,6 +6,7 @@ data_collection:
   loader: "UrllibLoader"
   loader_params:
     url: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+    max_articles: 20
 
 preprocessing:
   pipeline: []

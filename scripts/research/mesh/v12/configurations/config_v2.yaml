@@ -6,6 +6,7 @@ data_collection:
   loader: "CSVLoader"
   loader_params:
     file_path: "data/mesh_trends.csv"
+    num_samples: 250
 
 preprocessing:
   pipeline:

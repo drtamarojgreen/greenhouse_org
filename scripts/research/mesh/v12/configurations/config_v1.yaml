@@ -7,6 +7,7 @@ data_collection:
   loader_params:
     terms: ["Depression"]
     major_topic_only: true
+    max_articles: 100
 
 preprocessing:
   pipeline: []
