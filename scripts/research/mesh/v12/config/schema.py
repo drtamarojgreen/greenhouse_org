@@ -20,10 +20,15 @@ class ValidationConfig(BaseModel):
     strategy: str
     params: Dict[str, Any] = Field(default_factory=dict)
 
+class HyperparameterTuningConfig(BaseModel):
+    method: str
+    param_grid: Dict[str, List[Any]]
+
 class AnalysisConfig(BaseModel):
     model: ModelConfig
     validation: ValidationConfig
     metrics: List[str] = Field(default_factory=lambda: ["accuracy"])
+    hyperparameter_tuning: Optional[HyperparameterTuningConfig] = None
 
 class ResultsConfig(BaseModel):
     plots: List[str] = Field(default_factory=list)

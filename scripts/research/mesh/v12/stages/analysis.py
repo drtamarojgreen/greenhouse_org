@@ -40,8 +40,29 @@ class AnalysisStage(BaseStage):
 
         logger.info(f"Instantiating model: {model_name}")
         model_cls = MODEL_REGISTRY[model_name]
-        model = model_cls(model_cfg.params)
+        model_instance = model_cls(model_cfg.params)
 
+        # Hyperparameter Tuning
+        tuning_cfg = self.config.analysis.hyperparameter_tuning
+        if tuning_cfg and tuning_cfg.method == "GridSearchCV":
+            logger.info(f"Performing Hyperparameter Tuning using {tuning_cfg.method}")
+            from sklearn.model_selection import GridSearchCV
+
+            # GridSearchCV expects a base sklearn estimator
+            if hasattr(model_instance.model, "fit"):
+                grid_search = GridSearchCV(
+                    estimator=model_instance.model,
+                    param_grid=tuning_cfg.param_grid,
+                    cv=val_params.get("n_splits", 5),
+                    scoring=self.config.analysis.metrics[0] if self.config.analysis.metrics else "accuracy"
+                )
+                grid_search.fit(X_train, y_train)
+                logger.info(f"Best parameters: {grid_search.best_params_}")
+                model_instance.model = grid_search.best_estimator_
+            else:
+                logger.warning(f"Model {model_name} does not support GridSearchCV. Skipping tuning.")
+
+        model = model_instance
         logger.info("Training model...")
         model.fit(X_train, y_train)
 

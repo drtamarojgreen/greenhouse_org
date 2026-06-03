@@ -21,6 +21,8 @@
 | Sip 13 | `v12ConfigAudit` | `configs_found = 11`, `valid_configs = 11` | Verified |
 | Sip 14 | Parameter Sync | Configs updated with explicit record counts | Verified |
 | Sip 15 | Discovery Harvest | 11 `discovery_vX.json` files generated | Verified |
+| Sip 16 | Legacy Migration | Moved legacy scripts and v2-v10 into `legacy/` | Verified |
+| Sip 17 | Hyperparameter Tuning | `GridSearchCV` implemented and verified | Verified |
 
 ## Empirical Evidence (Sip 15: Final Pipeline Execution)
 
