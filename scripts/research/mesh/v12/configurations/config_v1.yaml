@@ -1,0 +1,27 @@
+experiment_name: "mesh_v1_baseline"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v1"
+
+data_collection:
+  loader: "PubMedEUtilsLoader"
+  loader_params:
+    terms: ["Depression"]
+    major_topic_only: true
+    max_articles: 100
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "IdentityModel"
+    params: {}
+  validation:
+    strategy: "NoValidation"
+    params: {}
+  metrics: ["count"]
+
+results:
+  plots: []
+  export:
+    format: "json"

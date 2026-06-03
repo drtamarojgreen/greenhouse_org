@@ -1,0 +1,30 @@
+experiment_name: "mesh_v9_unified"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v9"
+
+data_collection:
+  loader: "UnifiedMeSHLoader"
+  loader_params:
+    exclude_generic: true
+    total_max_terms: 400
+
+preprocessing:
+  pipeline:
+    - transformer: "StandardScaler"
+      params: {}
+    - transformer: "MissingIndicator"
+      params: {}
+
+analysis:
+  model:
+    class: "RandomForest"
+    params: { "n_estimators": 100 }
+  validation:
+    strategy: "StratifiedKFold"
+    params: { "n_splits": 5 }
+  metrics: ["accuracy", "roc_auc"]
+
+results:
+  plots: ["confusion_matrix", "feature_importance"]
+  export:
+    format: "pdf"

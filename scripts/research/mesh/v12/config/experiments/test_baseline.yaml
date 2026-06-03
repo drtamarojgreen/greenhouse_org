@@ -1,0 +1,29 @@
+experiment_name: "v12_integration_test"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/test_run"
+
+data_collection:
+  loader: "SyntheticLoader"
+  loader_params:
+    num_samples: 200
+
+preprocessing:
+  pipeline:
+    - transformer: "StandardScaler"
+      params: {}
+
+analysis:
+  model:
+    class: "LogisticRegression"
+    params:
+      C: 1.0
+  validation:
+    strategy: "SimpleSplit"
+    params:
+      test_size: 0.25
+  metrics: ["accuracy", "f1"]
+
+results:
+  plots: ["confusion_matrix"]
+  export:
+    format: "csv"

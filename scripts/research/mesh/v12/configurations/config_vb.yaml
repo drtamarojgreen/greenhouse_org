@@ -1,0 +1,26 @@
+experiment_name: "mesh_vb_lightweight"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/vb"
+
+data_collection:
+  loader: "UrllibLoader"
+  loader_params:
+    url: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+    max_articles: 20
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "MinimalCounter"
+    params: {}
+  validation:
+    strategy: "NoValidation"
+    params: {}
+  metrics: ["total_hits"]
+
+results:
+  plots: []
+  export:
+    format: "stdout"

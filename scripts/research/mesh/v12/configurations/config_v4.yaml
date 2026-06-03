@@ -1,0 +1,25 @@
+experiment_name: "mesh_v4_hierarchy"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v4"
+
+data_collection:
+  loader: "MeshTreeLoader"
+  loader_params:
+    num_samples: 100
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "HierarchicalClustering"
+    params: { "n_clusters": 10 }
+  validation:
+    strategy: "DendrogramCut"
+    params: {}
+  metrics: ["silhouette"]
+
+results:
+  plots: ["dendrogram"]
+  export:
+    format: "json"

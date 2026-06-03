@@ -1,0 +1,6 @@
+Situation: v12_Framework_Discovery
+Is python_version = 3.12.13
+Is v12_root = /app/scripts/research/mesh/v12
+Is legacy_mesh_scripts_present = true
+Is dependencies_installed = true
+Is pydantic_v2_available = true
