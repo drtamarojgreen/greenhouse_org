@@ -12,3 +12,5 @@ def register_model(name: str):
 
 # Import submodules to trigger registration
 from . import sklearn_models
+from . import xgboost_model
+from . import custom_neural_net

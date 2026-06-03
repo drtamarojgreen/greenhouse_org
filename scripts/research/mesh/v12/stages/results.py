@@ -2,9 +2,9 @@ import logging
 import json
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 from typing import Dict, Any
 from .base import BaseStage
+from ..reporting import METRIC_REGISTRY, PLOT_REGISTRY, EXPORT_REGISTRY
 
 class ResultsStage(BaseStage):
     """Stage 4: Reporting, visualization, and exports."""
@@ -21,42 +21,75 @@ class ResultsStage(BaseStage):
         logger = context.get("logger", logging.getLogger(__name__))
         output_dir = self.config.output_dir
 
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            logger.info(f"Created output directory: {output_dir}")
+
         logger.info(f"Generating results in {output_dir}")
 
+        # 1. Metrics Calculation
+        metrics_results = {}
+        y_true = context.get("y_test")
+        y_pred = context.get("predictions")
+        y_score = context.get("y_score") # Might be needed for ROC AUC
+
+        if y_true is not None and y_pred is not None:
+            for metric_name in self.config.analysis.metrics:
+                if metric_name in METRIC_REGISTRY:
+                    try:
+                        # Use y_score if available and appropriate for the metric
+                        if metric_name == "roc_auc" and y_score is not None:
+                            val = METRIC_REGISTRY[metric_name](y_true, y_score)
+                        else:
+                            val = METRIC_REGISTRY[metric_name](y_true, y_pred)
+                        metrics_results[metric_name] = float(val)
+                        logger.info(f"Calculated metric {metric_name}: {val}")
+                    except Exception as e:
+                        logger.error(f"Error calculating metric {metric_name}: {e}")
+                else:
+                    logger.warning(f"Metric {metric_name} not found in registry.")
+
+        context["metrics"] = metrics_results
+
         # Export metrics
-        metrics = context.get("metrics", {})
         metrics_file = os.path.join(output_dir, "metrics.json")
         with open(metrics_file, "w") as f:
-            json.dump(metrics, f, indent=4)
+            json.dump(metrics_results, f, indent=4)
         logger.info(f"Exported metrics to {metrics_file}")
 
-        # Export discovery.json
+        # 2. Export discovery.json
         discovery_data = context.get("discovery_data", {})
         discovery_file = os.path.join(output_dir, "discovery.json")
         with open(discovery_file, "w") as f:
             json.dump(discovery_data, f, indent=4)
         logger.info(f"Exported discovery to {discovery_file}")
 
-        # Generate plots
-        if "confusion_matrix" in self.config.results.plots:
-            from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-            cm = confusion_matrix(context["y_test"], context["predictions"])
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-            disp.plot()
-            plt.title(f"Confusion Matrix - {self.config.experiment_name}")
-            plot_file = os.path.join(output_dir, "confusion_matrix.png")
-            plt.savefig(plot_file)
-            plt.close()
-            logger.info(f"Generated confusion matrix plot: {plot_file}")
+        # 3. Generate plots
+        for plot_name in self.config.results.plots:
+            if plot_name in PLOT_REGISTRY:
+                try:
+                    plot_file = PLOT_REGISTRY[plot_name](context, output_dir)
+                    logger.info(f"Generated plot {plot_name}: {plot_file}")
+                except Exception as e:
+                    logger.error(f"Error generating plot {plot_name}: {e}")
+            else:
+                logger.warning(f"Plot {plot_name} not found in registry.")
 
-        # Export predictions
-        if self.config.results.export.get("format") == "csv":
-            results_df = pd.DataFrame({
-                "actual": context["y_test"],
-                "predicted": context["predictions"]
-            })
-            csv_file = os.path.join(output_dir, "predictions.csv")
-            results_df.to_csv(csv_file, index=False)
-            logger.info(f"Exported predictions to {csv_file}")
+        # 4. Export predictions
+        export_formats = self.config.results.export.get("formats", [])
+        # Handle legacy 'format' key if present
+        legacy_format = self.config.results.export.get("format")
+        if legacy_format and legacy_format not in export_formats:
+            export_formats.append(legacy_format)
+
+        for fmt in export_formats:
+            if fmt in EXPORT_REGISTRY:
+                try:
+                    export_file = EXPORT_REGISTRY[fmt](context, output_dir)
+                    logger.info(f"Exported results in {fmt} format: {export_file}")
+                except Exception as e:
+                    logger.error(f"Error exporting in {fmt} format: {e}")
+            else:
+                logger.warning(f"Export format {fmt} not found in registry.")
 
         return context

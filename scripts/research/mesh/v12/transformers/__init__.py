@@ -12,3 +12,5 @@ def register_transformer(name: str):
 
 # Import submodules to trigger registration
 from . import standard_scaler
+from . import mesh_tokenizer
+from . import missing_imputer
