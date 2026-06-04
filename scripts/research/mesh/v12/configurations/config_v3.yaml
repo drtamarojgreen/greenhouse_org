@@ -5,25 +5,21 @@ output_dir: "scripts/research/mesh/v12/output/v3"
 data_collection:
   loader: "PubMedAbstractLoader"
   loader_params:
-    max_articles: 1000
+    seed_term: "Mental Health"
+    max_articles: 100
 
 preprocessing:
-  pipeline:
-    - transformer: "TextCleaner"
-      params: {}
-    - transformer: "TFIDFVectorizer"
-      params: { "max_features": 500 }
+  pipeline: []
 
 analysis:
   model:
-    class: "TopicModeler"
-    params: { "n_topics": 5 }
-  validation:
-    strategy: "InternalCoherence"
-    params: {}
-  metrics: ["coherence_score"]
+    class: "NativeV3Engine"
+    params:
+      min_count: 50
+      max_terms: 10
+  metrics: ["completed"]
 
 results:
-  plots: ["wordcloud", "sunburst"]
+  plots: ["NativeVisualizer"]
   export:
-    format: "html"
+    format: "json"

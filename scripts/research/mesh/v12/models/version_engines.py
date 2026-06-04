@@ -8,6 +8,7 @@ from xml.etree import ElementTree
 from .base import BaseModel
 from . import register_model
 from ..utils.async_pubmed_client import NativeAsyncPubMedClient
+from ..utils.ct_client import NativeClinicalTrialsClient
 
 logger = logging.getLogger(__name__)
 

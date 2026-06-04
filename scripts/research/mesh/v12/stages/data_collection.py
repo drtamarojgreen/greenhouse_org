@@ -38,6 +38,30 @@ class DataCollectionStage(BaseStage):
                 "options": params
             }
 
+        elif loader_type == "PubMedEUtilsLoader":
+            context["raw_data"] = params.get("seed_term", "Mental Health")
+
+        elif loader_type == "PubMedAbstractLoader":
+            context["raw_data"] = params.get("seed_term", "Mental Health")
+
+        elif loader_type == "LongitudinalCSVLoader":
+            context["raw_data"] = params
+
+        elif loader_type == "MultiSourceLoader":
+            context["raw_data"] = params
+
+        elif loader_type == "GraphCSVLoader":
+            context["raw_data"] = params
+
+        elif loader_type == "PharmaKnowledgeGraphLoader":
+            context["raw_data"] = params
+
+        elif loader_type == "RealtimeAPIStreamer":
+            context["raw_data"] = params.get("seed_term", "Mental Health")
+
+        elif loader_type == "UrllibLoader":
+            context["raw_data"] = params.get("seed_term", "Mental Health")
+
         elif loader_type == "NativeDiscoveryLoader":
             seed_term = params.get("seed_term", "Mental Health")
             min_count = params.get("min_count", 1000)

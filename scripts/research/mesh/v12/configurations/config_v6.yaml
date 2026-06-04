@@ -1,28 +1,25 @@
-experiment_name: "mesh_v6_graph_integration"
+experiment_name: "mesh_v6_integration"
 seed: 42
 output_dir: "scripts/research/mesh/v12/output/v6"
 
 data_collection:
   loader: "MultiSourceLoader"
   loader_params:
-    sources: ["pubmed", "fda_labels"]
-    num_samples: 300
+    csv_path: "scripts/research/mesh/v12/output/v9/graph_mesh_v9_unified.csv"
+    top_nodes_limit: 20
 
 preprocessing:
-  pipeline:
-    - transformer: "GraphEdgeWeightNormalizer"
-      params: {}
+  pipeline: []
 
 analysis:
   model:
-    class: "GraphIntegrationEngine"
-    params: {}
-  validation:
-    strategy: "CrossSourceAgreement"
-    params: {}
-  metrics: ["node_coverage"]
+    class: "NativeV6Engine"
+    params:
+      csv_path: "scripts/research/mesh/v12/output/v9/graph_mesh_v9_unified.csv"
+      top_nodes_limit: 20
+  metrics: ["completed"]
 
 results:
-  plots: ["network_graph"]
+  plots: ["NativeVisualizer"]
   export:
-    format: "gexf"
+    format: "json"

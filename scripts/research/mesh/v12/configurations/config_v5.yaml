@@ -5,24 +5,24 @@ output_dir: "scripts/research/mesh/v12/output/v5"
 data_collection:
   loader: "LongitudinalCSVLoader"
   loader_params:
-    intervals: "5year"
-    max_articles: 500
+    conditions: ["Depression", "Anxiety"]
+    start_year: 2020
+    end_year: 2024
 
 preprocessing:
-  pipeline:
-    - transformer: "TimeSeriesSmoother"
-      params: { "window": 3 }
+  pipeline: []
 
 analysis:
   model:
-    class: "LogisticGrowthModel"
-    params: {}
-  validation:
-    strategy: "RollingWindow"
-    params: {}
-  metrics: ["inflection_point"]
+    class: "NativeV5Engine"
+    params:
+      start_year: 2020
+      end_year: 2024
+      interval_years: 1
+      conditions: ["Depression", "Anxiety"]
+  metrics: ["completed"]
 
 results:
-  plots: ["growth_curve"]
+  plots: ["NativeVisualizer"]
   export:
-    format: "png"
+    format: "json"
