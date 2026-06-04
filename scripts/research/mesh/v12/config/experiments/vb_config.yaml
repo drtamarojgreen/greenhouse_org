@@ -1,0 +1,22 @@
+experiment_name: "vb_replication"
+seed: 42
+output_dir: "./results/vb"
+
+data_collection:
+  loader: "LegacyLoader"
+  loader_params:
+    version: "vb"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "LegacySimulatorModel"
+    params:
+      version: "vb"
+
+results:
+  plots: []
+  export:
+    format: "json"

@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional
 
 class DataCollectionConfig(BaseModel):
     loader: str
-    loader_params: Dict[str, Any]
+    loader_params: Dict[str, Any] = Field(default_factory=dict)
 
 class TransformerConfig(BaseModel):
     transformer: str
@@ -17,13 +17,13 @@ class ModelConfig(BaseModel):
     params: Dict[str, Any] = Field(default_factory=dict)
 
 class ValidationConfig(BaseModel):
-    strategy: str
+    strategy: Optional[str] = None
     params: Dict[str, Any] = Field(default_factory=dict)
 
 class AnalysisConfig(BaseModel):
     model: ModelConfig
-    validation: ValidationConfig
-    metrics: List[str] = Field(default_factory=lambda: ["accuracy"])
+    validation: Optional[ValidationConfig] = None
+    metrics: List[str] = Field(default_factory=list)
 
 class ResultsConfig(BaseModel):
     plots: List[str] = Field(default_factory=list)
@@ -34,6 +34,6 @@ class PipelineConfig(BaseModel):
     seed: int = 42
     output_dir: str
     data_collection: DataCollectionConfig
-    preprocessing: PreprocessingConfig
+    preprocessing: Optional[PreprocessingConfig] = Field(default_factory=lambda: PreprocessingConfig(pipeline=[]))
     analysis: AnalysisConfig
-    results: ResultsConfig
+    results: Optional[ResultsConfig] = Field(default_factory=ResultsConfig)

@@ -32,6 +32,14 @@ class LogisticRegressionWrapper(BaseModel):
         return self.model.predict_proba(X)
 
 @register_model("IdentityModel")
+class IdentityModel(BaseModel):
+    """Passes data through unchanged."""
+    def run(self, data: Any) -> Any:
+        return data
+    def fit(self, X: Any, y: Any) -> None: pass
+    def predict(self, X: Any) -> Any: return X
+    def predict_proba(self, X: Any) -> Any: return X
+
 @register_model("CAGRCalculator")
 @register_model("TopicModeler")
 @register_model("HierarchicalClustering")

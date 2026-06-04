@@ -1,62 +1,113 @@
 import logging
 import json
 import os
-import pandas as pd
-import matplotlib.pyplot as plt
 from typing import Dict, Any
 from .base import BaseStage
+from ..reporting.plots import NativeVisualizer
 
 class ResultsStage(BaseStage):
     """Stage 4: Reporting, visualization, and exports."""
 
     def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Generates plots and exports results.
-
-        Args:
-            context: Shared pipeline context.
-
-        Returns:
-            Updated context.
-        """
         logger = context.get("logger", logging.getLogger(__name__))
         output_dir = self.config.output_dir
+        os.makedirs(output_dir, exist_ok=True)
 
-        logger.info(f"Generating results in {output_dir}")
+        if not self.config.results:
+            return context
 
-        # Export metrics
-        metrics = context.get("metrics", {})
-        metrics_file = os.path.join(output_dir, "metrics.json")
-        with open(metrics_file, "w") as f:
-            json.dump(metrics, f, indent=4)
-        logger.info(f"Exported metrics to {metrics_file}")
+        data_to_export = context.get("discovery_data") or context.get("predictions")
 
-        # Export discovery.json
-        discovery_data = context.get("discovery_data", {})
-        discovery_file = os.path.join(output_dir, "discovery.json")
-        with open(discovery_file, "w") as f:
-            json.dump(discovery_data, f, indent=4)
-        logger.info(f"Exported discovery to {discovery_file}")
+        # Export metrics if present
+        if "metrics" in context and isinstance(context["metrics"], dict) and "status" not in context["metrics"]:
+            metrics_file = os.path.join(output_dir, "metrics.json")
+            with open(metrics_file, "w") as f:
+                json.dump(context["metrics"], f, indent=4, default=str)
+            logger.info(f"Exported metrics to {metrics_file}")
 
-        # Generate plots
-        if "confusion_matrix" in self.config.results.plots:
-            from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-            cm = confusion_matrix(context["y_test"], context["predictions"])
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-            disp.plot()
-            plt.title(f"Confusion Matrix - {self.config.experiment_name}")
-            plot_file = os.path.join(output_dir, "confusion_matrix.png")
-            plt.savefig(plot_file)
-            plt.close()
-            logger.info(f"Generated confusion matrix plot: {plot_file}")
+        # Handle structured V9-style output (dict with discovery, temporal, graph keys)
+        if isinstance(data_to_export, dict) and "discovery" in data_to_export:
+            v9_data = data_to_export
 
-        # Export predictions
-        if self.config.results.export.get("format") == "csv":
-            results_df = pd.DataFrame({
-                "actual": context["y_test"],
-                "predicted": context["predictions"]
-            })
-            csv_file = os.path.join(output_dir, "predictions.csv")
-            results_df.to_csv(csv_file, index=False)
-            logger.info(f"Exported predictions to {csv_file}")
+            # Main discovery JSON
+            discovery_file = os.path.join(output_dir, f"discovery_{self.config.experiment_name}.json")
+            export_payload = {
+                "seed_term": v9_data.get("seed_term"),
+                "generated_at": v9_data.get("generated_at"),
+                "discovery": v9_data.get("discovery", []),
+                "graph_top_nodes": v9_data.get("graph_top_nodes", [])
+            }
+            with open(discovery_file, "w") as f:
+                json.dump(export_payload, f, indent=2, default=str)
+            logger.info(f"Exported discovery to {discovery_file}")
+
+            # Temporal data
+            if v9_data.get("temporal"):
+                temporal_file = os.path.join(output_dir, f"temporal_{self.config.experiment_name}.json")
+                with open(temporal_file, "w") as f:
+                    json.dump(v9_data["temporal"], f, indent=2, default=str)
+                logger.info(f"Exported temporal data to {temporal_file}")
+
+            # Graph exports
+            graph_builder = v9_data.get("graph")
+            if graph_builder and hasattr(graph_builder, 'export_csv'):
+                graph_builder.export_csv(os.path.join(output_dir, f"graph_{self.config.experiment_name}.csv"))
+                graph_builder.export_json(os.path.join(output_dir, f"graph_{self.config.experiment_name}.json"))
+                logger.info(f"Exported graph to {output_dir}")
+
+            # Summary CSV
+            enriched = v9_data.get("discovery", [])
+            if enriched:
+                try:
+                    from ..utils.analytics import NativeAnalyticsProcessor
+                    processor = NativeAnalyticsProcessor()
+                    results_df = processor.compare_conditions({r["term"]: r for r in enriched})
+                    results_df.to_csv(os.path.join(output_dir, f"summary_{self.config.experiment_name}.csv"), index=False)
+                    logger.info(f"Exported summary CSV")
+                except Exception as e:
+                    logger.warning(f"Could not export summary CSV: {e}")
+
+            # Plots
+            viz = NativeVisualizer(output_dir=os.path.join(output_dir, "plots"))
+            if v9_data.get("temporal"):
+                viz.plot_timeline(v9_data["temporal"])
+            if graph_builder and hasattr(graph_builder, 'G'):
+                viz.plot_network(graph_builder.G)
+            if v9_data.get("phase_data"):
+                viz.plot_trial_phases(v9_data["phase_data"])
+
+        # Handle list-style output (v2, v3, vb discovery results)
+        elif isinstance(data_to_export, list) and data_to_export:
+            seed = context.get("seed_term", "unknown")
+            final_data = {
+                "seed": seed,
+                "discovery_results": data_to_export,
+                "summary": {"total_terms": len(data_to_export)}
+            }
+            discovery_file = os.path.join(output_dir, f"discovery_{self.config.experiment_name}.json")
+            with open(discovery_file, "w") as f:
+                json.dump(final_data, f, indent=4, default=str)
+            logger.info(f"Exported discovery to {discovery_file}")
+
+            # Plots
+            for plot_name in (self.config.results.plots or []):
+                if plot_name == "NativeVisualizer":
+                    viz = NativeVisualizer(output_dir=os.path.join(output_dir, "plots"))
+                    if data_to_export and isinstance(data_to_export[0], dict) and "count" in data_to_export[0]:
+                        viz.plot_growth_comparison(data_to_export)
+                        logger.info(f"Generated growth comparison plot")
+
+        # Handle dict-style output (v6, v7, v8 graph results)
+        elif isinstance(data_to_export, dict):
+            result_file = os.path.join(output_dir, f"results_{self.config.experiment_name}.json")
+            # Remove non-serializable objects
+            serializable = {k: v for k, v in data_to_export.items() if not hasattr(v, '__dict__') or isinstance(v, (dict, list, str, int, float))}
+            if "graph" in data_to_export and hasattr(data_to_export["graph"], 'export_csv'):
+                data_to_export["graph"].export_csv(os.path.join(output_dir, f"graph_{self.config.experiment_name}.csv"))
+                data_to_export["graph"].export_json(os.path.join(output_dir, f"graph_{self.config.experiment_name}.json"))
+                serializable.pop("graph", None)
+            with open(result_file, "w") as f:
+                json.dump(serializable, f, indent=2, default=str)
+            logger.info(f"Exported results to {result_file}")
 
         return context

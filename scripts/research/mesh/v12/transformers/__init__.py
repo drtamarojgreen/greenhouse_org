@@ -1,14 +1,14 @@
-from typing import Dict, Any, Type
-from ..transformers.base import BaseTransformer
+from typing import Type
+from .base import BaseTransformer
 
-TRANSFORMER_REGISTRY: Dict[str, Type[BaseTransformer]] = {}
+TRANSFORMER_REGISTRY = {}
 
 def register_transformer(name: str):
-    """Decorator to register a transformer class."""
     def decorator(cls: Type[BaseTransformer]):
         TRANSFORMER_REGISTRY[name] = cls
         return cls
     return decorator
 
-# Import submodules to trigger registration
-from . import standard_scaler
+# Import transformers to trigger registration
+from .standard_scaler import StandardScalerWrapper, LegacyStubTransformer
+from .historical_enrichment import HistoricalEnrichmentTransformer

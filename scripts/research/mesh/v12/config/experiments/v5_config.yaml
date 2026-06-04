@@ -1,0 +1,22 @@
+experiment_name: "v5_replication"
+seed: 42
+output_dir: "./results/v5"
+
+data_collection:
+  loader: "LegacyLoader"
+  loader_params:
+    version: "v5"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "LegacySimulatorModel"
+    params:
+      version: "v5"
+
+results:
+  plots: []
+  export:
+    format: "json"

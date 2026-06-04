@@ -16,14 +16,9 @@ class Pipeline:
     """Main orchestrator for the v12 data analysis pipeline."""
 
     def __init__(self, config_path: str):
-        """Initializes the pipeline with a configuration file.
-
-        Args:
-            config_path: Path to the YAML configuration file.
-        """
         with open(config_path, "r") as f:
             raw_config = yaml.safe_load(f)
-
+        
         self.config = PipelineConfig(**raw_config)
         self.stages = [
             RequirementsStage(self.config),
@@ -34,7 +29,6 @@ class Pipeline:
         ]
 
     def run(self):
-        """Executes all pipeline stages sequentially."""
         context: Dict[str, Any] = {}
         logger.info(f"Starting experiment: {self.config.experiment_name}")
 
@@ -51,7 +45,6 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, required=True, help="Path to the config file")
     args = parser.parse_args()
 
-    # Simple logging setup for standalone execution before Stage 0 runs
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     pipeline = Pipeline(args.config)

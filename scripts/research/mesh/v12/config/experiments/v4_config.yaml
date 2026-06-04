@@ -1,0 +1,28 @@
+experiment_name: "v4_replication"
+seed: 42
+output_dir: "./results/v4"
+
+data_collection:
+  loader: "SeedLoader"
+  loader_params:
+    seed_term: "Mental Health"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "NativeHierarchicalEngine"
+    params:
+      max_levels: 3
+      level_thresholds:
+        1: 10000
+        2: 5000
+        3: 1000
+      max_children_per_node: 10
+      total_max_terms: 50
+
+results:
+  plots: []
+  export:
+    format: "json"
