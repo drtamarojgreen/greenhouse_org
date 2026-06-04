@@ -1,18 +1,1012 @@
 {
     "experiment": "mesh_v2_analytics",
-    "metrics": {},
-    "sample_predictions": [
-        0,
-        1,
-        0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        0
+    "metrics": {
+        "cagr": 0.0,
+        "z_score": 0.0
+    },
+    "discovery_results": [
+        {
+            "term": "term_0",
+            "count": 15895
+        },
+        {
+            "term": "term_1",
+            "count": 960
+        },
+        {
+            "term": "term_2",
+            "count": 76920
+        },
+        {
+            "term": "term_3",
+            "count": 54986
+        },
+        {
+            "term": "term_4",
+            "count": 6365
+        },
+        {
+            "term": "term_5",
+            "count": 82486
+        },
+        {
+            "term": "term_6",
+            "count": 37294
+        },
+        {
+            "term": "term_7",
+            "count": 87598
+        },
+        {
+            "term": "term_8",
+            "count": 44231
+        },
+        {
+            "term": "term_9",
+            "count": 60363
+        },
+        {
+            "term": "term_10",
+            "count": 16123
+        },
+        {
+            "term": "term_11",
+            "count": 41190
+        },
+        {
+            "term": "term_12",
+            "count": 67321
+        },
+        {
+            "term": "term_13",
+            "count": 64920
+        },
+        {
+            "term": "term_14",
+            "count": 869
+        },
+        {
+            "term": "term_15",
+            "count": 59835
+        },
+        {
+            "term": "term_16",
+            "count": 63055
+        },
+        {
+            "term": "term_17",
+            "count": 65025
+        },
+        {
+            "term": "term_18",
+            "count": 68069
+        },
+        {
+            "term": "term_19",
+            "count": 5411
+        },
+        {
+            "term": "term_20",
+            "count": 83204
+        },
+        {
+            "term": "term_21",
+            "count": 53807
+        },
+        {
+            "term": "term_22",
+            "count": 85405
+        },
+        {
+            "term": "term_23",
+            "count": 28793
+        },
+        {
+            "term": "term_24",
+            "count": 72032
+        },
+        {
+            "term": "term_25",
+            "count": 93116
+        },
+        {
+            "term": "term_26",
+            "count": 25758
+        },
+        {
+            "term": "term_27",
+            "count": 84578
+        },
+        {
+            "term": "term_28",
+            "count": 18531
+        },
+        {
+            "term": "term_29",
+            "count": 2847
+        },
+        {
+            "term": "term_30",
+            "count": 59250
+        },
+        {
+            "term": "term_31",
+            "count": 65825
+        },
+        {
+            "term": "term_32",
+            "count": 84754
+        },
+        {
+            "term": "term_33",
+            "count": 35873
+        },
+        {
+            "term": "term_34",
+            "count": 67535
+        },
+        {
+            "term": "term_35",
+            "count": 56986
+        },
+        {
+            "term": "term_36",
+            "count": 66903
+        },
+        {
+            "term": "term_37",
+            "count": 31651
+        },
+        {
+            "term": "term_38",
+            "count": 11494
+        },
+        {
+            "term": "term_39",
+            "count": 69192
+        },
+        {
+            "term": "term_40",
+            "count": 3990
+        },
+        {
+            "term": "term_41",
+            "count": 41706
+        },
+        {
+            "term": "term_42",
+            "count": 96376
+        },
+        {
+            "term": "term_43",
+            "count": 80138
+        },
+        {
+            "term": "term_44",
+            "count": 87413
+        },
+        {
+            "term": "term_45",
+            "count": 10727
+        },
+        {
+            "term": "term_46",
+            "count": 8892
+        },
+        {
+            "term": "term_47",
+            "count": 74069
+        },
+        {
+            "term": "term_48",
+            "count": 43101
+        },
+        {
+            "term": "term_49",
+            "count": 76652
+        },
+        {
+            "term": "term_50",
+            "count": 23997
+        },
+        {
+            "term": "term_51",
+            "count": 68248
+        },
+        {
+            "term": "term_52",
+            "count": 23583
+        },
+        {
+            "term": "term_53",
+            "count": 48655
+        },
+        {
+            "term": "term_54",
+            "count": 17259
+        },
+        {
+            "term": "term_55",
+            "count": 80177
+        },
+        {
+            "term": "term_56",
+            "count": 36020
+        },
+        {
+            "term": "term_57",
+            "count": 92167
+        },
+        {
+            "term": "term_58",
+            "count": 67221
+        },
+        {
+            "term": "term_59",
+            "count": 69579
+        },
+        {
+            "term": "term_60",
+            "count": 89575
+        },
+        {
+            "term": "term_61",
+            "count": 19557
+        },
+        {
+            "term": "term_62",
+            "count": 66657
+        },
+        {
+            "term": "term_63",
+            "count": 77289
+        },
+        {
+            "term": "term_64",
+            "count": 79053
+        },
+        {
+            "term": "term_65",
+            "count": 53095
+        },
+        {
+            "term": "term_66",
+            "count": 40857
+        },
+        {
+            "term": "term_67",
+            "count": 9792
+        },
+        {
+            "term": "term_68",
+            "count": 45858
+        },
+        {
+            "term": "term_69",
+            "count": 72509
+        },
+        {
+            "term": "term_70",
+            "count": 71311
+        },
+        {
+            "term": "term_71",
+            "count": 65797
+        },
+        {
+            "term": "term_72",
+            "count": 37165
+        },
+        {
+            "term": "term_73",
+            "count": 92193
+        },
+        {
+            "term": "term_74",
+            "count": 99399
+        },
+        {
+            "term": "term_75",
+            "count": 32706
+        },
+        {
+            "term": "term_76",
+            "count": 11634
+        },
+        {
+            "term": "term_77",
+            "count": 94763
+        },
+        {
+            "term": "term_78",
+            "count": 40497
+        },
+        {
+            "term": "term_79",
+            "count": 91487
+        },
+        {
+            "term": "term_80",
+            "count": 1116
+        },
+        {
+            "term": "term_81",
+            "count": 89889
+        },
+        {
+            "term": "term_82",
+            "count": 55691
+        },
+        {
+            "term": "term_83",
+            "count": 89912
+        },
+        {
+            "term": "term_84",
+            "count": 23347
+        },
+        {
+            "term": "term_85",
+            "count": 24400
+        },
+        {
+            "term": "term_86",
+            "count": 74165
+        },
+        {
+            "term": "term_87",
+            "count": 82898
+        },
+        {
+            "term": "term_88",
+            "count": 9368
+        },
+        {
+            "term": "term_89",
+            "count": 86907
+        },
+        {
+            "term": "term_90",
+            "count": 12285
+        },
+        {
+            "term": "term_91",
+            "count": 63804
+        },
+        {
+            "term": "term_92",
+            "count": 86879
+        },
+        {
+            "term": "term_93",
+            "count": 39199
+        },
+        {
+            "term": "term_94",
+            "count": 8671
+        },
+        {
+            "term": "term_95",
+            "count": 38144
+        },
+        {
+            "term": "term_96",
+            "count": 51314
+        },
+        {
+            "term": "term_97",
+            "count": 61328
+        },
+        {
+            "term": "term_98",
+            "count": 49084
+        },
+        {
+            "term": "term_99",
+            "count": 40874
+        },
+        {
+            "term": "term_100",
+            "count": 2668
+        },
+        {
+            "term": "term_101",
+            "count": 62692
+        },
+        {
+            "term": "term_102",
+            "count": 67663
+        },
+        {
+            "term": "term_103",
+            "count": 2795
+        },
+        {
+            "term": "term_104",
+            "count": 48290
+        },
+        {
+            "term": "term_105",
+            "count": 5358
+        },
+        {
+            "term": "term_106",
+            "count": 87638
+        },
+        {
+            "term": "term_107",
+            "count": 39604
+        },
+        {
+            "term": "term_108",
+            "count": 33259
+        },
+        {
+            "term": "term_109",
+            "count": 14086
+        },
+        {
+            "term": "term_110",
+            "count": 61958
+        },
+        {
+            "term": "term_111",
+            "count": 12766
+        },
+        {
+            "term": "term_112",
+            "count": 38760
+        },
+        {
+            "term": "term_113",
+            "count": 3661
+        },
+        {
+            "term": "term_114",
+            "count": 26954
+        },
+        {
+            "term": "term_115",
+            "count": 64605
+        },
+        {
+            "term": "term_116",
+            "count": 52351
+        },
+        {
+            "term": "term_117",
+            "count": 22762
+        },
+        {
+            "term": "term_118",
+            "count": 8492
+        },
+        {
+            "term": "term_119",
+            "count": 30635
+        },
+        {
+            "term": "term_120",
+            "count": 78703
+        },
+        {
+            "term": "term_121",
+            "count": 52356
+        },
+        {
+            "term": "term_122",
+            "count": 89235
+        },
+        {
+            "term": "term_123",
+            "count": 35322
+        },
+        {
+            "term": "term_124",
+            "count": 77473
+        },
+        {
+            "term": "term_125",
+            "count": 79675
+        },
+        {
+            "term": "term_126",
+            "count": 96454
+        },
+        {
+            "term": "term_127",
+            "count": 84751
+        },
+        {
+            "term": "term_128",
+            "count": 63435
+        },
+        {
+            "term": "term_129",
+            "count": 11065
+        },
+        {
+            "term": "term_130",
+            "count": 24638
+        },
+        {
+            "term": "term_131",
+            "count": 70692
+        },
+        {
+            "term": "term_132",
+            "count": 98118
+        },
+        {
+            "term": "term_133",
+            "count": 8210
+        },
+        {
+            "term": "term_134",
+            "count": 79409
+        },
+        {
+            "term": "term_135",
+            "count": 27366
+        },
+        {
+            "term": "term_136",
+            "count": 53092
+        },
+        {
+            "term": "term_137",
+            "count": 83048
+        },
+        {
+            "term": "term_138",
+            "count": 98906
+        },
+        {
+            "term": "term_139",
+            "count": 7010
+        },
+        {
+            "term": "term_140",
+            "count": 91082
+        },
+        {
+            "term": "term_141",
+            "count": 306
+        },
+        {
+            "term": "term_142",
+            "count": 87154
+        },
+        {
+            "term": "term_143",
+            "count": 87997
+        },
+        {
+            "term": "term_144",
+            "count": 23519
+        },
+        {
+            "term": "term_145",
+            "count": 50736
+        },
+        {
+            "term": "term_146",
+            "count": 50115
+        },
+        {
+            "term": "term_147",
+            "count": 54368
+        },
+        {
+            "term": "term_148",
+            "count": 88039
+        },
+        {
+            "term": "term_149",
+            "count": 18241
+        },
+        {
+            "term": "term_150",
+            "count": 80456
+        },
+        {
+            "term": "term_151",
+            "count": 72010
+        },
+        {
+            "term": "term_152",
+            "count": 56144
+        },
+        {
+            "term": "term_153",
+            "count": 67314
+        },
+        {
+            "term": "term_154",
+            "count": 33927
+        },
+        {
+            "term": "term_155",
+            "count": 55920
+        },
+        {
+            "term": "term_156",
+            "count": 62723
+        },
+        {
+            "term": "term_157",
+            "count": 81834
+        },
+        {
+            "term": "term_158",
+            "count": 75550
+        },
+        {
+            "term": "term_159",
+            "count": 93526
+        },
+        {
+            "term": "term_160",
+            "count": 22399
+        },
+        {
+            "term": "term_161",
+            "count": 43685
+        },
+        {
+            "term": "term_162",
+            "count": 64144
+        },
+        {
+            "term": "term_163",
+            "count": 42657
+        },
+        {
+            "term": "term_164",
+            "count": 49180
+        },
+        {
+            "term": "term_165",
+            "count": 2793
+        },
+        {
+            "term": "term_166",
+            "count": 95103
+        },
+        {
+            "term": "term_167",
+            "count": 95359
+        },
+        {
+            "term": "term_168",
+            "count": 69263
+        },
+        {
+            "term": "term_169",
+            "count": 26039
+        },
+        {
+            "term": "term_170",
+            "count": 49025
+        },
+        {
+            "term": "term_171",
+            "count": 43041
+        },
+        {
+            "term": "term_172",
+            "count": 21934
+        },
+        {
+            "term": "term_173",
+            "count": 18147
+        },
+        {
+            "term": "term_174",
+            "count": 26205
+        },
+        {
+            "term": "term_175",
+            "count": 75866
+        },
+        {
+            "term": "term_176",
+            "count": 15807
+        },
+        {
+            "term": "term_177",
+            "count": 22076
+        },
+        {
+            "term": "term_178",
+            "count": 44362
+        },
+        {
+            "term": "term_179",
+            "count": 23876
+        },
+        {
+            "term": "term_180",
+            "count": 30180
+        },
+        {
+            "term": "term_181",
+            "count": 66942
+        },
+        {
+            "term": "term_182",
+            "count": 61473
+        },
+        {
+            "term": "term_183",
+            "count": 6876
+        },
+        {
+            "term": "term_184",
+            "count": 92887
+        },
+        {
+            "term": "term_185",
+            "count": 55116
+        },
+        {
+            "term": "term_186",
+            "count": 9574
+        },
+        {
+            "term": "term_187",
+            "count": 58153
+        },
+        {
+            "term": "term_188",
+            "count": 22059
+        },
+        {
+            "term": "term_189",
+            "count": 5630
+        },
+        {
+            "term": "term_190",
+            "count": 94956
+        },
+        {
+            "term": "term_191",
+            "count": 3848
+        },
+        {
+            "term": "term_192",
+            "count": 97604
+        },
+        {
+            "term": "term_193",
+            "count": 98198
+        },
+        {
+            "term": "term_194",
+            "count": 13645
+        },
+        {
+            "term": "term_195",
+            "count": 66299
+        },
+        {
+            "term": "term_196",
+            "count": 34866
+        },
+        {
+            "term": "term_197",
+            "count": 73630
+        },
+        {
+            "term": "term_198",
+            "count": 93657
+        },
+        {
+            "term": "term_199",
+            "count": 61187
+        },
+        {
+            "term": "term_200",
+            "count": 95939
+        },
+        {
+            "term": "term_201",
+            "count": 68940
+        },
+        {
+            "term": "term_202",
+            "count": 54484
+        },
+        {
+            "term": "term_203",
+            "count": 51105
+        },
+        {
+            "term": "term_204",
+            "count": 46676
+        },
+        {
+            "term": "term_205",
+            "count": 39453
+        },
+        {
+            "term": "term_206",
+            "count": 62103
+        },
+        {
+            "term": "term_207",
+            "count": 83311
+        },
+        {
+            "term": "term_208",
+            "count": 52833
+        },
+        {
+            "term": "term_209",
+            "count": 65418
+        },
+        {
+            "term": "term_210",
+            "count": 89574
+        },
+        {
+            "term": "term_211",
+            "count": 23764
+        },
+        {
+            "term": "term_212",
+            "count": 67272
+        },
+        {
+            "term": "term_213",
+            "count": 85716
+        },
+        {
+            "term": "term_214",
+            "count": 93364
+        },
+        {
+            "term": "term_215",
+            "count": 26836
+        },
+        {
+            "term": "term_216",
+            "count": 94309
+        },
+        {
+            "term": "term_217",
+            "count": 954
+        },
+        {
+            "term": "term_218",
+            "count": 90184
+        },
+        {
+            "term": "term_219",
+            "count": 38723
+        },
+        {
+            "term": "term_220",
+            "count": 7492
+        },
+        {
+            "term": "term_221",
+            "count": 55780
+        },
+        {
+            "term": "term_222",
+            "count": 46817
+        },
+        {
+            "term": "term_223",
+            "count": 87192
+        },
+        {
+            "term": "term_224",
+            "count": 50959
+        },
+        {
+            "term": "term_225",
+            "count": 26409
+        },
+        {
+            "term": "term_226",
+            "count": 87555
+        },
+        {
+            "term": "term_227",
+            "count": 63834
+        },
+        {
+            "term": "term_228",
+            "count": 70567
+        },
+        {
+            "term": "term_229",
+            "count": 52762
+        },
+        {
+            "term": "term_230",
+            "count": 98606
+        },
+        {
+            "term": "term_231",
+            "count": 12788
+        },
+        {
+            "term": "term_232",
+            "count": 25442
+        },
+        {
+            "term": "term_233",
+            "count": 37257
+        },
+        {
+            "term": "term_234",
+            "count": 67963
+        },
+        {
+            "term": "term_235",
+            "count": 52183
+        },
+        {
+            "term": "term_236",
+            "count": 65833
+        },
+        {
+            "term": "term_237",
+            "count": 89145
+        },
+        {
+            "term": "term_238",
+            "count": 34798
+        },
+        {
+            "term": "term_239",
+            "count": 80723
+        },
+        {
+            "term": "term_240",
+            "count": 22771
+        },
+        {
+            "term": "term_241",
+            "count": 25284
+        },
+        {
+            "term": "term_242",
+            "count": 93484
+        },
+        {
+            "term": "term_243",
+            "count": 42207
+        },
+        {
+            "term": "term_244",
+            "count": 86302
+        },
+        {
+            "term": "term_245",
+            "count": 51763
+        },
+        {
+            "term": "term_246",
+            "count": 15808
+        },
+        {
+            "term": "term_247",
+            "count": 92006
+        },
+        {
+            "term": "term_248",
+            "count": 49911
+        },
+        {
+            "term": "term_249",
+            "count": 2911
+        }
     ],
-    "feature_count": 2,
-    "record_count": 250
+    "summary": {
+        "total_terms": 250
+    }
 }

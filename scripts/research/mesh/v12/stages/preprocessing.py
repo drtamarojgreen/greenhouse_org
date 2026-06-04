@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import numpy as np
 from typing import Dict, Any, List
 from .base import BaseStage
 from ..transformers import TRANSFORMER_REGISTRY
@@ -19,13 +20,19 @@ class PreprocessingStage(BaseStage):
         logger = context.get("logger", logging.getLogger(__name__))
         df = context["raw_data"].copy()
 
-        # Identify features vs target
-        # For this v12 demo, we assume 'target' column exists and should NOT be transformed
-        features = df.drop(columns=["target"])
-        target = df["target"]
+        # Identify target
+        if "target" in df.columns:
+            target = df["target"]
+            # We don't drop 'target' from df yet, because transformers might need it
+            # or we might want to keep it in the final processed_data
+        else:
+            target = pd.Series([0] * len(df), name="target")
 
         logger.info("Starting preprocessing pipeline...")
         fitted_transformers = []
+
+        # Current state of features
+        features = df.copy()
 
         for step in self.config.preprocessing.pipeline:
             name = step.transformer
@@ -38,11 +45,30 @@ class PreprocessingStage(BaseStage):
             transformer_cls = TRANSFORMER_REGISTRY[name]
             transformer = transformer_cls(params)
 
-            features = transformer.fit_transform(features)
+            # Robust handling: some transformers like StandardScaler only work on numeric data
+            if name == "StandardScaler":
+                numeric_cols = features.select_dtypes(include=[np.number]).columns.tolist()
+                if "target" in numeric_cols:
+                    numeric_cols.remove("target")
+
+                if numeric_cols:
+                    features[numeric_cols] = transformer.fit_transform(features[numeric_cols])
+                else:
+                    logger.warning("StandardScaler skipped: no numeric columns found.")
+            else:
+                # Generic application
+                try:
+                    features = transformer.fit_transform(features)
+                except Exception as e:
+                    logger.error(f"Transformer {name} failed: {e}")
+
             fitted_transformers.append(transformer)
 
-        # Re-merge features and target
-        context["processed_data"] = pd.concat([features, target], axis=1)
+        # Final assembly
+        if "target" not in features.columns:
+            features["target"] = target.reset_index(drop=True)
+
+        context["processed_data"] = features
         context["fitted_transformers"] = fitted_transformers
-        logger.info(f"Preprocessing complete. Target type: {context['processed_data']['target'].dtype}")
+        logger.info(f"Preprocessing complete. Columns: {context['processed_data'].columns.tolist()}")
         return context

@@ -1,21 +1,37 @@
 {
     "experiment": "mesh_v8_multi_pharma",
-    "metrics": {
-        "precision_at_k": 0.5935924535540487,
-        "mrr": 0.6791023191444896
-    },
-    "sample_predictions": [
-        1,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0
+    "metrics": {},
+    "results": [
+        {
+            "term": "Anxiety"
+        },
+        {
+            "term": "Mental Health Services"
+        },
+        {
+            "term": "Adult"
+        },
+        {
+            "term": "Bacteria"
+        },
+        {
+            "term": "Cross-Sectional Studies"
+        },
+        {
+            "term": "Case-Control Studies"
+        },
+        {
+            "term": "Pituitary-Adrenal System"
+        },
+        {
+            "term": "Dysbiosis"
+        },
+        {
+            "term": "Reproducibility of Results"
+        },
+        {
+            "term": "Male"
+        }
     ],
-    "feature_count": 2,
-    "record_count": 200
+    "record_count": 10
 }

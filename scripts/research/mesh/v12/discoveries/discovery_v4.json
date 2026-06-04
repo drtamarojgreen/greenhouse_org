@@ -1,20 +1,27 @@
 {
     "experiment": "mesh_v4_hierarchy",
-    "metrics": {
-        "silhouette": 0.9548652806631941
-    },
-    "sample_predictions": [
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        1,
-        1,
-        0,
-        0
-    ],
-    "feature_count": 2,
-    "record_count": 100
+    "metrics": {},
+    "term": "Mental Health",
+    "count": 42193,
+    "level": 0,
+    "children": [
+        {
+            "term": "Universities",
+            "count": 17662,
+            "level": 1,
+            "children": []
+        },
+        {
+            "term": "Students, Nursing",
+            "count": 28717,
+            "level": 1,
+            "children": []
+        },
+        {
+            "term": "Nutrition Surveys",
+            "count": 10455,
+            "level": 1,
+            "children": []
+        }
+    ]
 }

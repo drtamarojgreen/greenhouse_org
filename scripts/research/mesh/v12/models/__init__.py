@@ -14,3 +14,4 @@ def register_model(name: str):
 from . import sklearn_models
 from . import xgboost_model
 from . import custom_neural_net
+from . import legacy_models

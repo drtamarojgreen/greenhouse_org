@@ -30,24 +30,3 @@ class LogisticRegressionWrapper(BaseModel):
         return self.model.predict(X)
     def predict_proba(self, X: Any) -> Any:
         return self.model.predict_proba(X)
-
-@register_model("IdentityModel")
-@register_model("CAGRCalculator")
-@register_model("TopicModeler")
-@register_model("HierarchicalClustering")
-@register_model("LogisticGrowthModel")
-@register_model("GraphIntegrationEngine")
-@register_model("NetworkXCentralityAnalyzer")
-@register_model("EnsembleLinkPredictor")
-@register_model("InteractiveClustering")
-@register_model("MinimalCounter")
-class LegacyStubModel(BaseModel):
-    """Stub for legacy compatible models."""
-    def fit(self, X: Any, y: Any) -> None:
-        """Stub fit implementation."""
-        return None
-    def predict(self, X: Any) -> Any:
-        # Return something that looks like classification for the analysis stage
-        return np.random.randint(0, 2, len(X))
-    def predict_proba(self, X: Any) -> Any:
-        return np.random.rand(len(X), 2)

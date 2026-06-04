@@ -1,21 +1,110 @@
 {
     "experiment": "mesh_v9_unified",
     "metrics": {
-        "accuracy": 0.5625,
-        "roc_auc": 0.5588235294117647
+        "accuracy": 0.75,
+        "roc_auc": 0.75
     },
-    "sample_predictions": [
-        1,
-        0,
-        1,
-        1,
-        0,
-        0,
-        1,
-        1,
-        0,
-        1
+    "results": [
+        {
+            "term": "Rats, Sprague-Dawley",
+            "count": -0.3122929731912336,
+            "momentum": -0.19806296644793858
+        },
+        {
+            "term": "UK Biobank",
+            "count": -0.3257315058027469,
+            "momentum": -0.9390446964150828
+        },
+        {
+            "term": "Mindfulness",
+            "count": -0.29986192428215547,
+            "momentum": 0.6709217707100087
+        },
+        {
+            "term": "Mental Health Services",
+            "count": -0.08682787042854098,
+            "momentum": 0.07836333501352893
+        },
+        {
+            "term": "Patient Health Questionnaire",
+            "count": -0.3243957774101636,
+            "momentum": -1.425074745913046
+        },
+        {
+            "term": "Estrogen Replacement Therapy",
+            "count": -0.29032657853072136,
+            "momentum": -0.3563809023222942
+        },
+        {
+            "term": "Butyrates",
+            "count": -0.15347454231833613,
+            "momentum": 1.095158210321574
+        },
+        {
+            "term": "Resilience, Psychological",
+            "count": -0.2919288026123359,
+            "momentum": -1.4315577990861783
+        },
+        {
+            "term": "Stress Disorders, Post-Traumatic",
+            "count": -0.193790140152876,
+            "momentum": 1.5773841374184157
+        },
+        {
+            "term": "Randomized Controlled Trials as Topic",
+            "count": -0.24031963746824134,
+            "momentum": -1.6472655366847488
+        },
+        {
+            "term": "China",
+            "count": -0.3257542554347374,
+            "momentum": -0.9391621025404677
+        },
+        {
+            "term": "Schizophrenia",
+            "count": 0.002981176774979728,
+            "momentum": 0.7213066436488293
+        },
+        {
+            "term": "Case-Control Studies",
+            "count": -0.31951110642706704,
+            "momentum": 0.024515766365376158
+        },
+        {
+            "term": "Anxiety",
+            "count": -0.11826786183937037,
+            "momentum": 0.3844485259789161
+        },
+        {
+            "term": "Middle Aged",
+            "count": -0.3240447830880249,
+            "momentum": -1.1094189393470901
+        },
+        {
+            "term": "Adverse Childhood Experiences",
+            "count": -0.3081557901163953,
+            "momentum": 2.125303242530265
+        },
+        {
+            "term": "Analgesia, Obstetrical",
+            "count": -0.31283896435900493,
+            "momentum": 0.11805663632646883
+        },
+        {
+            "term": "Female",
+            "count": -0.32584525396269926,
+            "momentum": 0.74741223689015
+        },
+        {
+            "term": "Animals",
+            "count": 4.3155476645226765,
+            "momentum": 0.3435804253434329
+        },
+        {
+            "term": "Pregnancy",
+            "count": 0.23483892612699442,
+            "momentum": 0.15951675820988157
+        }
     ],
-    "feature_count": 2,
-    "record_count": 400
+    "record_count": 20
 }

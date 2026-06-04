@@ -1,18 +1,33 @@
 {
     "experiment": "mesh_v5_temporal",
     "metrics": {},
-    "sample_predictions": [
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0
+    "intervals": [
+        "2020-2020",
+        "2021-2021",
+        "2022-2022",
+        "2023-2023",
+        "2024-2024"
     ],
-    "feature_count": 2,
-    "record_count": 500
+    "datasets": [
+        {
+            "label": "Depression",
+            "counts": [
+                6619,
+                5292,
+                3493,
+                3943,
+                7272
+            ]
+        },
+        {
+            "label": "Anxiety",
+            "counts": [
+                3891,
+                2713,
+                1381,
+                1656,
+                4545
+            ]
+        }
+    ]
 }

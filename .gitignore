@@ -22,3 +22,7 @@ logs/
 # Coverage
 .coverage
 htmlcov/
+**/cache/
+**/__pycache__/
+scripts/research/mesh/v12/output/
+scripts/research/mesh/v2/cache/

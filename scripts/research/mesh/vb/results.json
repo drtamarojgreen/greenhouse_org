@@ -1,0 +1,342 @@
+[
+  {
+    "term": "Mental Health",
+    "count": 42194,
+    "depth": 0,
+    "related": [
+      "Actigraphy",
+      "Activities of Daily Living",
+      "Adaptation, Psychological",
+      "Adolescent",
+      "Adult",
+      "Afghanistan",
+      "Aged",
+      "Aged, 80 and over",
+      "Anthropology, Cultural",
+      "Anxiety"
+    ]
+  },
+  {
+    "term": "Activities of Daily Living",
+    "count": 55800,
+    "depth": 1,
+    "related": [
+      "Accidental Falls",
+      "Acute Disease",
+      "Adherence Interventions",
+      "Adolescent",
+      "Adult",
+      "Africa South of the Sahara",
+      "Aftercare",
+      "Age Factors",
+      "Aged",
+      "Aged, 80 and over"
+    ]
+  },
+  {
+    "term": "Adaptation, Psychological",
+    "count": 70909,
+    "depth": 1,
+    "related": [
+      "Accidents, Traffic",
+      "Adolescent",
+      "Adult",
+      "Afghanistan",
+      "Aftercare",
+      "Aged",
+      "Aged, 80 and over",
+      "Aging",
+      "Anxiety",
+      "Anxiety Disorders"
+    ]
+  },
+  {
+    "term": "Adolescent",
+    "count": 5557,
+    "depth": 1,
+    "related": [
+      "Adiposity",
+      "Administrative Personnel",
+      "Adolescent Behavior",
+      "Adolescent Development",
+      "Adolescent Health",
+      "Adolescent Health Services",
+      "Adult",
+      "Africa",
+      "Age Determination by Teeth",
+      "Age Factors"
+    ]
+  },
+  {
+    "term": "Adult",
+    "count": 29963,
+    "depth": 1,
+    "related": [
+      "Accidental Falls",
+      "Activities of Daily Living",
+      "Adaptation, Psychological",
+      "Advance Care Planning",
+      "Age Factors",
+      "Aged",
+      "Aged, 80 and over",
+      "Aging",
+      "Aging in Place",
+      "Algorithms"
+    ]
+  },
+  {
+    "term": "Aged",
+    "count": 29106,
+    "depth": 1,
+    "related": [
+      "Accidental Falls",
+      "Activities of Daily Living",
+      "Adaptation, Psychological",
+      "Adult",
+      "Advance Care Planning",
+      "Age Factors",
+      "Aged, 80 and over",
+      "Aging",
+      "Aging in Place",
+      "Algorithms"
+    ]
+  },
+  {
+    "term": "Anthropology, Cultural",
+    "count": 99376,
+    "depth": 1,
+    "related": [
+      "Acculturation",
+      "Acne Vulgaris",
+      "Adolescent",
+      "Adult",
+      "Africa",
+      "Age Factors",
+      "Aged",
+      "Aged, 80 and over",
+      "Aging",
+      "Algorithms"
+    ]
+  },
+  {
+    "term": "Anxiety",
+    "count": 63866,
+    "depth": 1,
+    "related": [
+      "Aconitum",
+      "Acupuncture Therapy",
+      "Adaptation, Psychological",
+      "Administration, Oral",
+      "Adolescent",
+      "Adrenocorticotropic Hormone",
+      "Adult",
+      "Adult Survivors of Child Abuse",
+      "Adverse Childhood Experiences",
+      "Affect"
+    ]
+  },
+  {
+    "term": "Artificial Intelligence",
+    "count": 183846,
+    "depth": 1,
+    "related": [
+      "Acute Kidney Injury",
+      "Adaptation, Physiological",
+      "Adenocarcinoma",
+      "Adult",
+      "Africa",
+      "Age Factors",
+      "Aged",
+      "Aged, 80 and over",
+      "Alaska",
+      "Alaska Natives"
+    ]
+  },
+  {
+    "term": "Athletes",
+    "count": 12023,
+    "depth": 1,
+    "related": [
+      "Accommodation, Ocular",
+      "Adaptation, Physiological",
+      "Adaptation, Psychological",
+      "Adolescent",
+      "Adult",
+      "Age Factors",
+      "Anemia, Iron-Deficiency",
+      "Anterior Cruciate Ligament Injuries",
+      "Anthropology, Cultural",
+      "Anxiety"
+    ]
+  },
+  {
+    "term": "Bereavement",
+    "count": 11343,
+    "depth": 1,
+    "related": [
+      "Abortion, Spontaneous",
+      "Accidents, Traffic",
+      "Adaptation, Psychological",
+      "Adolescent",
+      "Adult",
+      "Adult Children",
+      "Advance Care Planning",
+      "Aged",
+      "Aged, 80 and over",
+      "Aging"
+    ]
+  },
+  {
+    "term": "Brain",
+    "count": 991093,
+    "depth": 1,
+    "related": [
+      "Accidents, Traffic",
+      "Acetylcholinesterase",
+      "Adenomyosis",
+      "Administration, Intranasal",
+      "Adolescent",
+      "Adult",
+      "Aged",
+      "Aged, 80 and over",
+      "Air",
+      "Alcoholism"
+    ]
+  },
+  {
+    "term": "Bullying",
+    "count": 7039,
+    "depth": 1,
+    "related": [
+      "Adolescent",
+      "Adolescent Behavior",
+      "Adult",
+      "Adverse Childhood Experiences",
+      "Affective Symptoms",
+      "Aggression",
+      "Alcohol Drinking",
+      "Anxiety",
+      "Anxiety Disorders",
+      "Asia"
+    ]
+  },
+  {
+    "term": "COVID-19",
+    "count": 256524,
+    "depth": 1,
+    "related": [
+      "2019-nCoV Vaccine mRNA-1273",
+      "Adaptation, Psychological",
+      "Adenoviridae",
+      "Adiponectin",
+      "Adolescent",
+      "Adult",
+      "Adverse Drug Reaction Reporting Systems",
+      "Age Factors",
+      "Aged",
+      "Aged, 80 and over"
+    ]
+  },
+  {
+    "term": "Caregivers",
+    "count": 40539,
+    "depth": 1,
+    "related": [
+      "Academia",
+      "Accidental Falls",
+      "Adaptation, Psychological",
+      "Adolescent",
+      "Adult",
+      "Adverse Childhood Experiences",
+      "Age Factors",
+      "Aged",
+      "Aged, 80 and over",
+      "Aging in Place"
+    ]
+  },
+  {
+    "term": "Climate Change",
+    "count": 24793,
+    "depth": 1,
+    "related": [
+      "Adaptation, Psychological",
+      "Administration, Inhalation",
+      "Adolescent",
+      "Adult",
+      "Aerosols",
+      "Africa",
+      "Aged",
+      "Aged, 80 and over",
+      "Aging",
+      "Agricultural Irrigation"
+    ]
+  },
+  {
+    "term": "Cognitive Behavioral Therapy",
+    "count": 34335,
+    "depth": 1,
+    "related": [
+      "Acceptance and Commitment Therapy",
+      "Adaptation, Psychological",
+      "Adherence Interventions",
+      "Adolescent",
+      "Adult",
+      "Adverse Childhood Experiences",
+      "Affect",
+      "Affective Symptoms",
+      "Aftercare",
+      "Aged"
+    ]
+  },
+  {
+    "term": "Communication",
+    "count": 215862,
+    "depth": 1,
+    "related": [
+      "Academic Performance",
+      "Access to Information",
+      "Adaptation, Psychological",
+      "Adolescent",
+      "Adolescent Behavior",
+      "Adult",
+      "Age Factors",
+      "Aged",
+      "Aged, 80 and over",
+      "Analgesics, Opioid"
+    ]
+  },
+  {
+    "term": "Community Health Workers",
+    "count": 5110,
+    "depth": 1,
+    "related": [
+      "Adolescent",
+      "Adult",
+      "Africa South of the Sahara",
+      "Africa, Southern",
+      "Aged",
+      "Air Pollution, Indoor",
+      "Alcohol Drinking",
+      "Alcoholism",
+      "Anemia, Sickle Cell",
+      "Anthropology, Cultural"
+    ]
+  },
+  {
+    "term": "Cost of Illness",
+    "count": 19365,
+    "depth": 1,
+    "related": [
+      "Absenteeism",
+      "Activities of Daily Living",
+      "Adolescent",
+      "Adult",
+      "Age Factors",
+      "Age of Onset",
+      "Aged",
+      "Aged, 80 and over",
+      "Alcohol Drinking",
+      "Alzheimer Disease"
+    ]
+  }
+]

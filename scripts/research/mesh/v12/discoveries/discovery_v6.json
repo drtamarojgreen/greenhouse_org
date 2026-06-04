@@ -1,18 +1,831 @@
 {
     "experiment": "mesh_v6_graph_integration",
     "metrics": {},
-    "sample_predictions": [
-        1,
-        0,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        1
+    "results": [
+        {
+            "term": "Alzheimer's Disease",
+            "count": 10000
+        },
+        {
+            "term": "GALANTAMINE HYDROBROMIDE",
+            "count": 5000
+        },
+        {
+            "term": "DONEPEZIL HYDROCHLORIDE",
+            "count": 5000
+        },
+        {
+            "term": "MEMANTINE HYDROCHLORIDE",
+            "count": 5000
+        },
+        {
+            "term": "Multiple Dose Japanese Bridging Study...",
+            "count": 3000
+        },
+        {
+            "term": "BMS-708163",
+            "count": 2000
+        },
+        {
+            "term": "Placebo",
+            "count": 8000
+        },
+        {
+            "term": "Test of Reproducibility of [15O]H20-PET Assessment...",
+            "count": 3000
+        },
+        {
+            "term": "PET",
+            "count": 2000
+        },
+        {
+            "term": "Efficacy and Safety of Memantine for Parkinson's D...",
+            "count": 3000
+        },
+        {
+            "term": "Memantine",
+            "count": 2000
+        },
+        {
+            "term": "Study of LY2886721 in Mild Cognitive Impairment Du...",
+            "count": 3000
+        },
+        {
+            "term": "LY2886721",
+            "count": 2000
+        },
+        {
+            "term": "Education of Caregivers of Alzheimer's Patients...",
+            "count": 3000
+        },
+        {
+            "term": "Within the scope of the research, caregivers will be given face-to-face training in 2 sessions, 15 days apart.",
+            "count": 2000
+        },
+        {
+            "term": "Transcranial Magnetic Stimulation to Slow Down Cog...",
+            "count": 3000
+        },
+        {
+            "term": "repetitive transcranial magnetic stimulation",
+            "count": 2000
+        },
+        {
+            "term": "sham repetitive transcranial magnetic stimulation",
+            "count": 2000
+        },
+        {
+            "term": "China Longitudinal Aging and Cognitive Impairment ...",
+            "count": 3000
+        },
+        {
+            "term": "None of intervention",
+            "count": 2000
+        },
+        {
+            "term": "Vagus Nerve Stimulation to Enhance Memory in Aging...",
+            "count": 3000
+        },
+        {
+            "term": "Transcutaneous Auricular Vagus Nerve Stimulation (taVNS)",
+            "count": 2000
+        },
+        {
+            "term": "Addressing Dementia Via Agitation-Centered Evaluat...",
+            "count": 3000
+        },
+        {
+            "term": "AXS-05",
+            "count": 2000
+        },
+        {
+            "term": "Bupropion",
+            "count": 2000
+        },
+        {
+            "term": "AMPER Proof of Concept Study...",
+            "count": 3000
+        },
+        {
+            "term": "Personalised Agent-based Memory Prosthesis to Encourage Reminiscing (AMPER)",
+            "count": 2000
+        },
+        {
+            "term": "Non-Personalised Agent-based Memory Prosthesis to Encourage Reminiscing (AMPER)",
+            "count": 2000
+        },
+        {
+            "term": "Brexpiprazole for treating agitation in different ...",
+            "count": 2000
+        },
+        {
+            "term": "Jared Stroud",
+            "count": 1000
+        },
+        {
+            "term": "Jeffrey L Cummings",
+            "count": 1000
+        },
+        {
+            "term": "Sanjeda R Chumki",
+            "count": 1000
+        },
+        {
+            "term": "Pedro Such",
+            "count": 1000
+        },
+        {
+            "term": "David Wang",
+            "count": 1000
+        },
+        {
+            "term": "Anton M Palma",
+            "count": 1000
+        },
+        {
+            "term": "Zhen Zhang",
+            "count": 1000
+        },
+        {
+            "term": "George T Grossberg",
+            "count": 1000
+        },
+        {
+            "term": "aOhio State University Wexner Medical Center, Colu...",
+            "count": 1000
+        },
+        {
+            "term": "bDepartment of Brain Health, Chambers-Grundy Cente...",
+            "count": 1000
+        },
+        {
+            "term": "cMedical Affairs, Otsuka Pharmaceutical Developmen...",
+            "count": 1000
+        },
+        {
+            "term": "dMedical Affairs, H. Lundbeck A/S, Valby, Denmark....",
+            "count": 1000
+        },
+        {
+            "term": "eMedical Affairs, Lundbeck LLC, Deerfield, IL, USA...",
+            "count": 1000
+        },
+        {
+            "term": "fMedical and Real-World Data Analytics, Otsuka Pha...",
+            "count": 2000
+        },
+        {
+            "term": "gDepartment of Psychiatry and Behavioral Neuroscie...",
+            "count": 1000
+        },
+        {
+            "term": "Leading by example: How the Webster team's systema...",
+            "count": 2000
+        },
+        {
+            "term": "Jennifer H Lingler",
+            "count": 1000
+        },
+        {
+            "term": "Betty Irene Moore School of Nursing at University ...",
+            "count": 1000
+        },
+        {
+            "term": "Mitochondrial DNA: a molecular switch driving ster...",
+            "count": 2000
+        },
+        {
+            "term": "Abhishek Jauhari",
+            "count": 1000
+        },
+        {
+            "term": "Tanisha Singh",
+            "count": 1000
+        },
+        {
+            "term": "Diane L Carlisle",
+            "count": 1000
+        },
+        {
+            "term": "Robert M Friedlander",
+            "count": 1000
+        },
+        {
+            "term": "Neuroapoptosis Laboratory, Department of Neurologi...",
+            "count": 4000
+        },
+        {
+            "term": "MST1 promotes microglial pyroptosis and neuroinfla...",
+            "count": 2000
+        },
+        {
+            "term": "Dongqing Cui",
+            "count": 1000
+        },
+        {
+            "term": "Shuangwu Liu",
+            "count": 1000
+        },
+        {
+            "term": "Yanxia Liu",
+            "count": 1000
+        },
+        {
+            "term": "Shuqi Luo",
+            "count": 1000
+        },
+        {
+            "term": "Yurui Sheng",
+            "count": 1000
+        },
+        {
+            "term": "Shuaiyong Zhang",
+            "count": 1000
+        },
+        {
+            "term": "Pengfei Lin",
+            "count": 1000
+        },
+        {
+            "term": "Department of Neurology, Research Institute of Neu...",
+            "count": 4000
+        },
+        {
+            "term": "Department of Neurology, The Second Hospital of Sh...",
+            "count": 1000
+        },
+        {
+            "term": "Department of Radiology, The First Affiliated Hosp...",
+            "count": 1000
+        },
+        {
+            "term": "Department of Clinical Medicine, The Second Hospit...",
+            "count": 1000
+        },
+        {
+            "term": "Younger Age of First Exposure to American Football...",
+            "count": 2000
+        },
+        {
+            "term": "Sophia B Nosek",
+            "count": 1000
+        },
+        {
+            "term": "Stephanie Gonzalez Gil",
+            "count": 1000
+        },
+        {
+            "term": "Bobak Abdolmohammadi",
+            "count": 1000
+        },
+        {
+            "term": "Rachael Layden",
+            "count": 1000
+        },
+        {
+            "term": "Christopher J Nowinski",
+            "count": 1000
+        },
+        {
+            "term": "Yorghos Tripodis",
+            "count": 1000
+        },
+        {
+            "term": "Brett M Martin",
+            "count": 1000
+        },
+        {
+            "term": "Joseph N Palmisano",
+            "count": 1000
+        },
+        {
+            "term": "Alcy Torres",
+            "count": 1000
+        },
+        {
+            "term": "Brigid C Dwyer",
+            "count": 1000
+        },
+        {
+            "term": "Doug I Katz",
+            "count": 1000
+        },
+        {
+            "term": "Lee E Goldstein",
+            "count": 1000
+        },
+        {
+            "term": "Robert C Cantu",
+            "count": 1000
+        },
+        {
+            "term": "Robert A Stern",
+            "count": 1000
+        },
+        {
+            "term": "Thor D Stein",
+            "count": 1000
+        },
+        {
+            "term": "Ann C McKee",
+            "count": 1000
+        },
+        {
+            "term": "Jesse Mez",
+            "count": 1000
+        },
+        {
+            "term": "Michael L Alosco",
+            "count": 1000
+        },
+        {
+            "term": "Daniel H Daneshvar",
+            "count": 1000
+        },
+        {
+            "term": "Boston University Alzheimer's Disease Research and...",
+            "count": 17000
+        },
+        {
+            "term": "Pediatric Neurology, Boston University Chobanian &...",
+            "count": 1000
+        },
+        {
+            "term": "Department of Physical Medicine and Rehabilitation...",
+            "count": 1000
+        },
+        {
+            "term": "Immunometabolism Reframes Alzheimer's Disease: Fro...",
+            "count": 2000
+        },
+        {
+            "term": "Duc-Hiep Bach",
+            "count": 1000
+        },
+        {
+            "term": "Thanh Liem Nguyen",
+            "count": 1000
+        },
+        {
+            "term": "Vinmec Research Institute of Stem Cell and Gene Te...",
+            "count": 2000
+        },
+        {
+            "term": "Blood-based AT(N) biomarkers for Alzheimer's disea...",
+            "count": 2000
+        },
+        {
+            "term": "Ariel Caviedes",
+            "count": 1000
+        },
+        {
+            "term": "Felipe Cabral-Miranda",
+            "count": 1000
+        },
+        {
+            "term": "Paulina Orellana",
+            "count": 1000
+        },
+        {
+            "term": "Hern\u00e1n Hern\u00e1ndez",
+            "count": 1000
+        },
+        {
+            "term": "Fernando Henr\u00edquez",
+            "count": 1000
+        },
+        {
+            "term": "Raul Gonzalez-Gomez",
+            "count": 1000
+        },
+        {
+            "term": "Matias Pizarro",
+            "count": 1000
+        },
+        {
+            "term": "Joaquin Migeot",
+            "count": 1000
+        },
+        {
+            "term": "Carolina Ochoa-Rosales",
+            "count": 1000
+        },
+        {
+            "term": "Carolina Gonzalez-Silva",
+            "count": 1000
+        },
+        {
+            "term": "Nickole Marin-Diaz",
+            "count": 1000
+        },
+        {
+            "term": "Carlos Coronel-Oliveros",
+            "count": 1000
+        },
+        {
+            "term": "Hernando Santamar\u00eda-Garc\u00eda",
+            "count": 1000
+        },
+        {
+            "term": "Danilo Carmona",
+            "count": 1000
+        },
+        {
+            "term": "Adolfo M Garc\u00eda",
+            "count": 1000
+        },
+        {
+            "term": "Andrea Slachevsky",
+            "count": 1000
+        },
+        {
+            "term": "Andrew Singleton",
+            "count": 1000
+        },
+        {
+            "term": "Andy Yue Qi",
+            "count": 1000
+        },
+        {
+            "term": "Brian Lawlor",
+            "count": 1000
+        },
+        {
+            "term": "Bruce Miller",
+            "count": 1000
+        },
+        {
+            "term": "Catherine Dhooge",
+            "count": 1000
+        },
+        {
+            "term": "Caroline Pantazis",
+            "count": 1000
+        },
+        {
+            "term": "Chinedu T Udeh-Momoh",
+            "count": 1000
+        },
+        {
+            "term": "David Aguill\u00f3n",
+            "count": 1000
+        },
+        {
+            "term": "Diana L Matallana",
+            "count": 1000
+        },
+        {
+            "term": "Eduardo R Zimmer",
+            "count": 1000
+        },
+        {
+            "term": "Elisa de Paula Fran\u00e7a Resende",
+            "count": 1000
+        },
+        {
+            "term": "Francesca R Farina",
+            "count": 1000
+        },
+        {
+            "term": "Francisca Cabello",
+            "count": 1000
+        },
+        {
+            "term": "Francisco Lopera",
+            "count": 1000
+        },
+        {
+            "term": "Henrik Zetterberg",
+            "count": 1000
+        },
+        {
+            "term": "Jos\u00e9 Alberto Avila-Funes",
+            "count": 1000
+        },
+        {
+            "term": "Juliana Acosta-Uribe",
+            "count": 1000
+        },
+        {
+            "term": "Katherine L Possin",
+            "count": 1000
+        },
+        {
+            "term": "Kenneth S Kosik",
+            "count": 1000
+        },
+        {
+            "term": "Kun Hu",
+            "count": 1000
+        },
+        {
+            "term": "Leonel T Takada",
+            "count": 1000
+        },
+        {
+            "term": "Maira Okada de Oliveira",
+            "count": 1000
+        },
+        {
+            "term": "Marcelo Adrian Maito",
+            "count": 1000
+        },
+        {
+            "term": "Marc Su\u00e1rez-Calvet",
+            "count": 1000
+        },
+        {
+            "term": "Maria E Godoy",
+            "count": 1000
+        },
+        {
+            "term": "Maria Isabel Behrens",
+            "count": 1000
+        },
+        {
+            "term": "Mario A Parra",
+            "count": 1000
+        },
+        {
+            "term": "Marta Del Campo",
+            "count": 1000
+        },
+        {
+            "term": "Martin Bruno",
+            "count": 1000
+        },
+        {
+            "term": "Nancy Gelvez",
+            "count": 1000
+        },
+        {
+            "term": "Natalia Pozo-Castro",
+            "count": 1000
+        },
+        {
+            "term": "J Nicholas Cochran",
+            "count": 1000
+        },
+        {
+            "term": "Nilton Custodio",
+            "count": 1000
+        },
+        {
+            "term": "Rodrigo Ortega",
+            "count": 1000
+        },
+        {
+            "term": "Rodrigo Santibanez",
+            "count": 1000
+        },
+        {
+            "term": "Rolando de la Cruz",
+            "count": 1000
+        },
+        {
+            "term": "Rosa Montesinos",
+            "count": 1000
+        },
+        {
+            "term": "Sarah McDonagh",
+            "count": 1000
+        },
+        {
+            "term": "Sara Bandres-Ciga",
+            "count": 1000
+        },
+        {
+            "term": "Shireen Javandel",
+            "count": 1000
+        },
+        {
+            "term": "Sonia M D Brucki",
+            "count": 1000
+        },
+        {
+            "term": "Stefanie D Pina-Escudero",
+            "count": 1000
+        },
+        {
+            "term": "Victor Valcour",
+            "count": 1000
+        },
+        {
+            "term": "Ziyi Li",
+            "count": 1000
+        },
+        {
+            "term": "Jennifer S Yokoyama",
+            "count": 1000
+        },
+        {
+            "term": "Agustin Iba\u00f1ez",
+            "count": 1000
+        },
+        {
+            "term": "Claudia Duran-Aniotz",
+            "count": 1000
+        },
+        {
+            "term": "Latin American Brain Health Institute (BrainLat), ...",
+            "count": 18000
+        },
+        {
+            "term": "Institute of Biomedical Sciences, Universidade Fed...",
+            "count": 1000
+        },
+        {
+            "term": "Geroscience Center for Brain Health and Metabolism...",
+            "count": 2000
+        },
+        {
+            "term": "Global Brain Health Institute (GBHI), University o...",
+            "count": 13000
+        },
+        {
+            "term": "Center for Alzheimer's and Related Dementias (CARD...",
+            "count": 5000
+        },
+        {
+            "term": "School of Public Health Sciences, Wake Forest Univ...",
+            "count": 1000
+        },
+        {
+            "term": "Grupo de Neurociencias de Antioquia (GNA), Faculta...",
+            "count": 3000
+        },
+        {
+            "term": "Instituto de Gen\u00e9tica Humana. Facultad de Medicina...",
+            "count": 2000
+        },
+        {
+            "term": "Department of Pharmacology, Universidade Federal d...",
+            "count": 1000
+        },
+        {
+            "term": "Department of Psychiatry and Neurochemistry, Insti...",
+            "count": 1000
+        },
+        {
+            "term": "Direcci\u00f3n de Ense\u00f1anza. Instituto Nacional de Cien...",
+            "count": 1000
+        },
+        {
+            "term": "Medical Biodynamics Center, Department of Anesthes...",
+            "count": 1000
+        },
+        {
+            "term": "Hospital das Cl\u00ednicas, University of Sao Paulo Sch...",
+            "count": 1000
+        },
+        {
+            "term": "Barcelona\u03b2eta Brain Research Center (BBRC), Pasqua...",
+            "count": 2000
+        },
+        {
+            "term": "Departamento de Neurolog\u00eda y Psiquiatr\u00eda, Cl\u00ednica ...",
+            "count": 1000
+        },
+        {
+            "term": "School of Psychological Sciences and Health, Unive...",
+            "count": 1000
+        },
+        {
+            "term": "Institute of Biomedical Sciences (ICBM), Universid...",
+            "count": 1000
+        },
+        {
+            "term": "HudsonAlpha Institute for Biotechnology, Huntsvill...",
+            "count": 1000
+        },
+        {
+            "term": "Unidad de diagn\u00f3stico de deterioro cognitivo y pre...",
+            "count": 2000
+        },
+        {
+            "term": "Neurology Department, Pontificia Universidad Cat\u00f3l...",
+            "count": 1000
+        },
+        {
+            "term": "Faculty of Engineering and Sciences, Universidad A...",
+            "count": 1000
+        },
+        {
+            "term": "Cognitive and Behavioral Neurology Unit, Faculdade...",
+            "count": 1000
+        },
+        {
+            "term": "Memory and Aging Center, Department of Neurology, ...",
+            "count": 2000
+        },
+        {
+            "term": "Rethinking Alzheimer's: novel miRNAs illuminate a ...",
+            "count": 2000
+        },
+        {
+            "term": "J S Novotn\u00fd",
+            "count": 1000
+        },
+        {
+            "term": "M \u010carn\u00e1",
+            "count": 1000
+        },
+        {
+            "term": "E B Dammer",
+            "count": 1000
+        },
+        {
+            "term": "Z Mao",
+            "count": 1000
+        },
+        {
+            "term": "G B Stokin",
+            "count": 1000
+        },
+        {
+            "term": "Institute of Molecular and Translational Medicine,...",
+            "count": 3000
+        },
+        {
+            "term": "Departments of Pharmacology and Chemical Biology a...",
+            "count": 2000
+        },
+        {
+            "term": "Spatiotemporal transcriptomic profiling reveals up...",
+            "count": 2000
+        },
+        {
+            "term": "Shuai Wang",
+            "count": 1000
+        },
+        {
+            "term": "Moorthi Ponnusamy",
+            "count": 1000
+        },
+        {
+            "term": "Om Patel",
+            "count": 1000
+        },
+        {
+            "term": "Mitchell Hansen",
+            "count": 1000
+        },
+        {
+            "term": "Lisa Collier",
+            "count": 1000
+        },
+        {
+            "term": "Shane Collier",
+            "count": 1000
+        },
+        {
+            "term": "Gopal Thinakaran",
+            "count": 1000
+        },
+        {
+            "term": "Byrd Alzheimer's Center and Research Institute, Un...",
+            "count": 7000
+        },
+        {
+            "term": "Low concentrations of amyloid-beta oligomers induc...",
+            "count": 2000
+        },
+        {
+            "term": "Kaiyu Wu",
+            "count": 1000
+        },
+        {
+            "term": "Suji Lee",
+            "count": 1000
+        },
+        {
+            "term": "Raquel Martinez-Serra",
+            "count": 1000
+        },
+        {
+            "term": "Lanyue Zhang",
+            "count": 1000
+        },
+        {
+            "term": "Steven Lynham",
+            "count": 1000
+        },
+        {
+            "term": "Karl Peter Giese",
+            "count": 1000
+        },
+        {
+            "term": "Department of Basic and Clinical Neuroscience, Kin...",
+            "count": 4000
+        },
+        {
+            "term": "Institute for Stroke and Dementia Research (ISD), ...",
+            "count": 1000
+        },
+        {
+            "term": "Proteomics Core Facility, King's College London, J...",
+            "count": 1000
+        }
     ],
-    "feature_count": 2,
-    "record_count": 300
+    "record_count": 206
 }

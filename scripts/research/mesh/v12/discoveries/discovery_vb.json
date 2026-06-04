@@ -1,14 +1,68 @@
-{
-    "experiment": "mesh_vb_lightweight",
-    "metrics": {
-        "total_hits": 0.8287375091519293
+[
+    {
+        "term": "Mental Health",
+        "count": 42193,
+        "accepted": true,
+        "target": 1
     },
-    "sample_predictions": [
-        1,
-        0,
-        1,
-        0
-    ],
-    "feature_count": 2,
-    "record_count": 20
-}
+    {
+        "term": "Cross-Sectional Studies",
+        "count": 573,
+        "accepted": false,
+        "target": 0
+    },
+    {
+        "term": "Mental Disorders",
+        "count": 1366503,
+        "accepted": true,
+        "target": 0
+    },
+    {
+        "term": "Tai Ji",
+        "count": 1549,
+        "accepted": false,
+        "target": 0
+    },
+    {
+        "term": "United Kingdom",
+        "count": 6,
+        "accepted": false,
+        "target": 0
+    },
+    {
+        "term": "Stress, Psychological",
+        "count": 113053,
+        "accepted": true,
+        "target": 0
+    },
+    {
+        "term": "Universities",
+        "count": 17662,
+        "accepted": true,
+        "target": 0
+    },
+    {
+        "term": "Lebanon",
+        "count": 1,
+        "accepted": false,
+        "target": 0
+    },
+    {
+        "term": "Residence Characteristics",
+        "count": 37677,
+        "accepted": true,
+        "target": 0
+    },
+    {
+        "term": "Emotions",
+        "count": 281047,
+        "accepted": true,
+        "target": 0
+    },
+    {
+        "term": "Aged",
+        "count": 29107,
+        "accepted": true,
+        "target": 0
+    }
+]

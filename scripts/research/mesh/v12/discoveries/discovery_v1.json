@@ -1,20 +1,259 @@
 {
     "experiment": "mesh_v1_baseline",
     "metrics": {
-        "count": 0.9548652806631941
+        "count": 10.0
     },
-    "sample_predictions": [
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        1,
-        1,
-        0,
-        0
+    "results": [
+        {
+            "term": "Anti-Inflammatory Agents",
+            "count": 119296,
+            "seed": "Depression"
+        },
+        {
+            "term": "Sociodemographic Factors",
+            "count": 220,
+            "seed": "Depression"
+        },
+        {
+            "term": "Cholesterol, HDL",
+            "count": 8620,
+            "seed": "Depression"
+        },
+        {
+            "term": "Aspartic Acid",
+            "count": 12593,
+            "seed": "Depression"
+        },
+        {
+            "term": "Spectroscopy, Near-Infrared",
+            "count": 9106,
+            "seed": "Depression"
+        },
+        {
+            "term": "Chromatography, High Pressure Liquid",
+            "count": 37503,
+            "seed": "Depression"
+        },
+        {
+            "term": "Cause of Death",
+            "count": 13469,
+            "seed": "Depression"
+        },
+        {
+            "term": "Interpersonal Relations",
+            "count": 180259,
+            "seed": "Depression"
+        },
+        {
+            "term": "Sexual Dysfunction, Physiological",
+            "count": 28049,
+            "seed": "Depression"
+        },
+        {
+            "term": "Young Adult",
+            "count": 108,
+            "seed": "Depression"
+        },
+        {
+            "term": "Interleukin-17",
+            "count": 8585,
+            "seed": "Depression"
+        },
+        {
+            "term": "Health Status",
+            "count": 252592,
+            "seed": "Depression"
+        },
+        {
+            "term": "Restraint, Physical",
+            "count": 5765,
+            "seed": "Depression"
+        },
+        {
+            "term": "Quality of Life",
+            "count": 132588,
+            "seed": "Depression"
+        },
+        {
+            "term": "Exercise Therapy",
+            "count": 52498,
+            "seed": "Depression"
+        },
+        {
+            "term": "Biomarkers",
+            "count": 324282,
+            "seed": "Depression"
+        },
+        {
+            "term": "Reward",
+            "count": 13869,
+            "seed": "Depression"
+        },
+        {
+            "term": "Genocide",
+            "count": 1016,
+            "seed": "Depression"
+        },
+        {
+            "term": "Prospective Studies",
+            "count": 484,
+            "seed": "Depression"
+        },
+        {
+            "term": "Resilience, Psychological",
+            "count": 10437,
+            "seed": "Depression"
+        },
+        {
+            "term": "Pituitary Adenylate Cyclase-Activating Polypeptide",
+            "count": 1336,
+            "seed": "Depression"
+        },
+        {
+            "term": "Eucommiaceae",
+            "count": 482,
+            "seed": "Depression"
+        },
+        {
+            "term": "Multiomics",
+            "count": 584,
+            "seed": "Depression"
+        },
+        {
+            "term": "Genotype",
+            "count": 101708,
+            "seed": "Depression"
+        },
+        {
+            "term": "Cerebral Small Vessel Diseases",
+            "count": 10158,
+            "seed": "Depression"
+        },
+        {
+            "term": "Memory, Episodic",
+            "count": 6596,
+            "seed": "Depression"
+        },
+        {
+            "term": "Phenols",
+            "count": 352229,
+            "seed": "Depression"
+        },
+        {
+            "term": "Birth Cohort",
+            "count": 369,
+            "seed": "Depression"
+        },
+        {
+            "term": "Infant, Newborn",
+            "count": 69566,
+            "seed": "Depression"
+        },
+        {
+            "term": "Patient Acceptance of Health Care",
+            "count": 96927,
+            "seed": "Depression"
+        },
+        {
+            "term": "Neurons",
+            "count": 384960,
+            "seed": "Depression"
+        },
+        {
+            "term": "Lipidomics",
+            "count": 2216,
+            "seed": "Depression"
+        },
+        {
+            "term": "Tandem Mass Spectrometry",
+            "count": 28170,
+            "seed": "Depression"
+        },
+        {
+            "term": "Community Mental Health Services",
+            "count": 13896,
+            "seed": "Depression"
+        },
+        {
+            "term": "Adolescent",
+            "count": 5557,
+            "seed": "Depression"
+        },
+        {
+            "term": "Cluster Analysis",
+            "count": 4225,
+            "seed": "Depression"
+        },
+        {
+            "term": "Inflammatory Bowel Diseases",
+            "count": 97279,
+            "seed": "Depression"
+        },
+        {
+            "term": "G-Protein-Coupled Receptor Kinase 5",
+            "count": 167,
+            "seed": "Depression"
+        },
+        {
+            "term": "Climate Change",
+            "count": 24798,
+            "seed": "Depression"
+        },
+        {
+            "term": "Mechanistic Target of Rapamycin Complex 1",
+            "count": 1735,
+            "seed": "Depression"
+        },
+        {
+            "term": "Sleep Quality",
+            "count": 2989,
+            "seed": "Depression"
+        },
+        {
+            "term": "Sex Factors",
+            "count": 6426,
+            "seed": "Depression"
+        },
+        {
+            "term": "Network Meta-Analysis as Topic",
+            "count": 240,
+            "seed": "Depression"
+        },
+        {
+            "term": "Stroke",
+            "count": 159967,
+            "seed": "Depression"
+        },
+        {
+            "term": "Male",
+            "count": 1,
+            "seed": "Depression"
+        },
+        {
+            "term": "Psychopathology",
+            "count": 2985,
+            "seed": "Depression"
+        },
+        {
+            "term": "Qualitative Research",
+            "count": 10416,
+            "seed": "Depression"
+        },
+        {
+            "term": "Pain Measurement",
+            "count": 15479,
+            "seed": "Depression"
+        },
+        {
+            "term": "Bacteria",
+            "count": 1205382,
+            "seed": "Depression"
+        },
+        {
+            "term": "Mouth",
+            "count": 208309,
+            "seed": "Depression"
+        }
     ],
-    "feature_count": 2,
-    "record_count": 100
+    "record_count": 50
 }

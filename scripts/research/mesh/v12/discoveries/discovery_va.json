@@ -1,18 +1,207 @@
 {
     "experiment": "mesh_va_dashboard",
     "metrics": {},
-    "sample_predictions": [
-        1,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1
+    "results": [
+        {
+            "term": "realtime_0",
+            "count": 15895
+        },
+        {
+            "term": "realtime_1",
+            "count": 960
+        },
+        {
+            "term": "realtime_2",
+            "count": 76920
+        },
+        {
+            "term": "realtime_3",
+            "count": 54986
+        },
+        {
+            "term": "realtime_4",
+            "count": 6365
+        },
+        {
+            "term": "realtime_5",
+            "count": 82486
+        },
+        {
+            "term": "realtime_6",
+            "count": 37294
+        },
+        {
+            "term": "realtime_7",
+            "count": 87598
+        },
+        {
+            "term": "realtime_8",
+            "count": 44231
+        },
+        {
+            "term": "realtime_9",
+            "count": 60363
+        },
+        {
+            "term": "realtime_10",
+            "count": 16123
+        },
+        {
+            "term": "realtime_11",
+            "count": 41190
+        },
+        {
+            "term": "realtime_12",
+            "count": 67321
+        },
+        {
+            "term": "realtime_13",
+            "count": 64920
+        },
+        {
+            "term": "realtime_14",
+            "count": 869
+        },
+        {
+            "term": "realtime_15",
+            "count": 59835
+        },
+        {
+            "term": "realtime_16",
+            "count": 63055
+        },
+        {
+            "term": "realtime_17",
+            "count": 65025
+        },
+        {
+            "term": "realtime_18",
+            "count": 68069
+        },
+        {
+            "term": "realtime_19",
+            "count": 5411
+        },
+        {
+            "term": "realtime_20",
+            "count": 83204
+        },
+        {
+            "term": "realtime_21",
+            "count": 53807
+        },
+        {
+            "term": "realtime_22",
+            "count": 85405
+        },
+        {
+            "term": "realtime_23",
+            "count": 28793
+        },
+        {
+            "term": "realtime_24",
+            "count": 72032
+        },
+        {
+            "term": "realtime_25",
+            "count": 93116
+        },
+        {
+            "term": "realtime_26",
+            "count": 25758
+        },
+        {
+            "term": "realtime_27",
+            "count": 84578
+        },
+        {
+            "term": "realtime_28",
+            "count": 18531
+        },
+        {
+            "term": "realtime_29",
+            "count": 2847
+        },
+        {
+            "term": "realtime_30",
+            "count": 59250
+        },
+        {
+            "term": "realtime_31",
+            "count": 65825
+        },
+        {
+            "term": "realtime_32",
+            "count": 84754
+        },
+        {
+            "term": "realtime_33",
+            "count": 35873
+        },
+        {
+            "term": "realtime_34",
+            "count": 67535
+        },
+        {
+            "term": "realtime_35",
+            "count": 56986
+        },
+        {
+            "term": "realtime_36",
+            "count": 66903
+        },
+        {
+            "term": "realtime_37",
+            "count": 31651
+        },
+        {
+            "term": "realtime_38",
+            "count": 11494
+        },
+        {
+            "term": "realtime_39",
+            "count": 69192
+        },
+        {
+            "term": "realtime_40",
+            "count": 3990
+        },
+        {
+            "term": "realtime_41",
+            "count": 41706
+        },
+        {
+            "term": "realtime_42",
+            "count": 96376
+        },
+        {
+            "term": "realtime_43",
+            "count": 80138
+        },
+        {
+            "term": "realtime_44",
+            "count": 87413
+        },
+        {
+            "term": "realtime_45",
+            "count": 10727
+        },
+        {
+            "term": "realtime_46",
+            "count": 8892
+        },
+        {
+            "term": "realtime_47",
+            "count": 74069
+        },
+        {
+            "term": "realtime_48",
+            "count": 43101
+        },
+        {
+            "term": "realtime_49",
+            "count": 76652
+        }
     ],
-    "feature_count": 2,
     "record_count": 50
 }
