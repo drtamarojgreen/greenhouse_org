@@ -29,6 +29,11 @@ class PreprocessingStage(BaseStage):
 
             logger.info(f"Applying transformer: {name}")
             transformer_cls = TRANSFORMER_REGISTRY[name]
+
+            # Inject target_column if not present
+            if "target_column" not in params:
+                params["target_column"] = self.config.analysis.target_column
+
             transformer = transformer_cls(params)
             
             if hasattr(transformer, 'fit_transform'):

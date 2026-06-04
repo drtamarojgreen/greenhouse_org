@@ -83,6 +83,33 @@ def test_analysis_stage(full_config):
     assert "accuracy" in context["metrics"]
     assert "roc_auc" in context["metrics"]
 
+def test_analysis_stage_hyperparameter_tuning(full_config):
+    full_config["analysis"]["hyperparameter_tuning"] = {"n_estimators": [10, 50]}
+    full_config["analysis"]["model"]["class"] = "RandomForest"
+    config = PipelineConfig(**full_config)
+    stage = AnalysisStage(config)
+    processed_data = pd.DataFrame({
+        "feature1": np.random.randn(100),
+        "target": np.random.randint(0, 2, 100)
+    })
+    context = {"logger": pytest.importorskip("logging").getLogger("test"), "processed_data": processed_data}
+    context = stage.run(context)
+    assert "trained_model" in context
+    assert hasattr(context["trained_model"].model, "n_estimators")
+
+def test_analysis_stage_dynamic_target(full_config):
+    full_config["analysis"]["target_column"] = "label"
+    config = PipelineConfig(**full_config)
+    stage = AnalysisStage(config)
+    processed_data = pd.DataFrame({
+        "feature1": np.random.randn(100),
+        "label": np.random.randint(0, 2, 100)
+    })
+    context = {"logger": pytest.importorskip("logging").getLogger("test"), "processed_data": processed_data}
+    context = stage.run(context)
+    assert "trained_model" in context
+    assert "accuracy" in context["metrics"]
+
 def test_results_stage(full_config):
     config = PipelineConfig(**full_config)
     stage = ResultsStage(config)

@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 from typing import Dict, Any
 from .base import BaseStage
 from ..models import MODEL_REGISTRY
@@ -28,24 +29,54 @@ class AnalysisStage(BaseStage):
             results = model.run(df)
             context["discovery_data"] = results
             context["predictions"] = results
-            context["metrics"] = {"completed": True}
+            context["metrics"] = {"exit_code": 0, "engine": model_name}
         else:
             try:
-                X = df.drop(columns=["target"])
-                y = df["target"]
-                from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
-                model.fit(X, y)
+                target_col = self.config.analysis.target_column
+                X = df.drop(columns=[target_col])
+                y = df[target_col]
+
+                # Hyperparameter tuning
+                if self.config.analysis.hyperparameter_tuning:
+                    from sklearn.model_selection import GridSearchCV
+                    logger.info(f"Running GridSearchCV for {model_name}")
+
+                    # Ensure we pass the underlying scikit-learn model
+                    estimator = model.model if hasattr(model, 'model') else model
+
+                    grid = GridSearchCV(
+                        estimator,
+                        self.config.analysis.hyperparameter_tuning,
+                        cv=3
+                    )
+                    grid.fit(X, y)
+                    logger.info(f"Best params: {grid.best_params_}")
+                    # Update model with best estimator
+                    if hasattr(model, 'model'):
+                        model.model = grid.best_estimator_
+                    else:
+                        model = grid.best_estimator_
+                else:
+                    model.fit(X, y)
+
                 y_pred = model.predict(X)
                 context["predictions"] = y_pred
                 context["trained_model"] = model
+                context["y_test"] = y # In a real split this would be y_test
 
+                from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
                 metrics = {"accuracy": accuracy_score(y, y_pred)}
                 try:
-                    metrics["f1"] = f1_score(y, y_pred)
-                    if hasattr(model, "predict_proba"):
-                        metrics["roc_auc"] = roc_auc_score(y, model.predict_proba(X)[:, 1])
-                except:
-                    pass
+                    if len(np.unique(y)) > 1:
+                        metrics["f1"] = f1_score(y, y_pred, average='weighted')
+                        if hasattr(model, "predict_proba"):
+                            probs = model.predict_proba(X)
+                            if probs.shape[1] == 2:
+                                metrics["roc_auc"] = roc_auc_score(y, probs[:, 1])
+                            else:
+                                metrics["roc_auc"] = roc_auc_score(y, probs, multi_class='ovr')
+                except Exception as e:
+                    logger.warning(f"Could not calculate advanced metrics: {e}")
                 context["metrics"] = metrics
             except Exception as e:
                 logger.error(f"Analysis failed: {e}")

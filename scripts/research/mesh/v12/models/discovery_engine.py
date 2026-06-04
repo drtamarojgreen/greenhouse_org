@@ -56,6 +56,7 @@ class NativeDiscoveryEngine(BaseModel):
 
         return self.results
 
-    def fit(self, X, y): pass
+    def fit(self, X, y):
+        return None
     def predict(self, X): return self.results
     def predict_proba(self, X): return []

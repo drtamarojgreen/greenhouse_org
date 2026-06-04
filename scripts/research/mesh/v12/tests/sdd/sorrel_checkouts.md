@@ -5,23 +5,32 @@
 
 | Sip | Artifacts | Evidence | Status |
 |-----|-----------|----------|--------|
-| Discovery | `v12.facts` | `python_version = 3.12.13` | Verified |
-| Sip 1 | `base.py` | Abstract interfaces implemented | Verified |
-| Sip 2 | `schema.py` | Pydantic v2 schema verified | Verified |
-| Sip 3 | `pipeline.py` | Orchestrator logic verified | Verified |
-| Sip 4 | `requirements.py`, `data_collection.py` | Stage 0/1 implementation | Verified |
-| Sip 5 | `preprocessing.py`, `analysis.py` | Stage 2/3 implementation | Verified |
-| Sip 6 | `results.py` | Stage 4 implementation | Verified |
-| Sip 7 | `sklearn_models.py`, `standard_scaler.py` | Reference plugins registered | Verified |
-| Sip 8 | `test_baseline.yaml` | `exit_code = 0`, `files_generated = 3` | Verified |
-| Sip 9 | `config_v1.yaml` to `config_vb.yaml` | Schema validation passed for 11 configs | Verified |
-| Sip 10 | Legacy stubs | Successful execution of v1 and v9 configs | Verified |
-| Sip 11 | `test_framework.py` | `7/7 unit tests passed` | Verified |
-| Sip 12 | `v12PatternAudit` | `stub_violations = 0` | Verified |
-| Sip 13 | `v12ConfigAudit` | `configs_found = 11`, `valid_configs = 11` | Verified |
-| Sip 14 | Parameter Sync | Configs updated with explicit record counts | Verified |
-| Sip 15 | Discovery Harvest | 11 `discovery_vX.json` files generated | Verified |
-| Sip 16 | v4 & v9 Verification | Successful execution of native v4/v9 engines | Verified |
+| Discovery | `v12.facts` | `python_version = 3.12.13` | `exit_code = 0` |
+| Sip 1 | `base.py` | Abstract interfaces implemented | `exit_code = 0` |
+| Sip 2 | `schema.py` | Pydantic v2 schema verified | `exit_code = 0` |
+| Sip 3 | `pipeline.py` | Orchestrator logic verified | `exit_code = 0` |
+| Sip 4 | `requirements.py`, `data_collection.py` | Stage 0/1 implementation | `exit_code = 0` |
+| Sip 5 | `preprocessing.py`, `analysis.py` | Stage 2/3 implementation | `exit_code = 0` |
+| Sip 6 | `results.py` | Stage 4 implementation | `exit_code = 0` |
+| Sip 7 | `sklearn_models.py`, `standard_scaler.py` | Reference plugins registered | `exit_code = 0` |
+| Sip 8 | `test_baseline.yaml` | `exit_code = 0`, `files_generated = 3` | `exit_code = 0` |
+| Sip 9 | `config_v1.yaml` to `config_vb.yaml` | Schema validation passed for 11 configs | `exit_code = 0` |
+| Sip 10 | Legacy stubs | Successful execution of v1 and v9 configs | `exit_code = 0` |
+| Sip 11 | `test_framework.py` | `7/7 unit tests passed` | `exit_code = 0` |
+| Sip 12 | `v12PatternAudit` | `stub_violations = 0` | `exit_code = 0` |
+| Sip 13 | `v12ConfigAudit` | `configs_found = 11`, `valid_configs = 11` | `exit_code = 0` |
+| Sip 14 | Parameter Sync | Configs updated with explicit record counts | `exit_code = 0` |
+| Sip 15 | Discovery Harvest | 11 `discovery_vX.json` files generated | `exit_code = 0` |
+| Sip 16 | v4 & v9 Verification | Successful execution of native v4/v9 engines | `exit_code = 0` |
+| Sip 17 | Advanced Reporting | Enhanced schema, GridSearch, and registry-based results | `exit_code = 0` |
+
+## Empirical Evidence (Sip 17: Unit Testing)
+
+| Test Case | Results | Status |
+|-----------|---------|--------|
+| `test_framework.py` | `9/9 passed` | `exit_code = 0` |
+| `v12PatternAudit` | `stub_violations = 0` | `exit_code = 0` |
+| `v12ConfigAudit` | `valid_configs = 11` | `exit_code = 0` |
 
 ## Empirical Evidence (Sip 16: v4 & v9 Pipeline Execution)
 

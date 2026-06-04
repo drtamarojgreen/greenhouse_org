@@ -25,7 +25,7 @@ class LegacySimulatorModel(BaseModel):
         }
         
     def fit(self, X, y):
-        pass
+        return None
 
     def predict(self, X):
         return []

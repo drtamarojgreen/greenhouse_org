@@ -66,4 +66,4 @@ class HistoricalEnrichmentTransformer(BaseTransformer):
         return enriched_results
 
     def fit(self, X: Any) -> None:
-        pass
+        logger.info("Implementation deferred")

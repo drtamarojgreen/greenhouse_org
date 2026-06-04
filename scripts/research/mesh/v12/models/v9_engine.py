@@ -77,7 +77,7 @@ class NativeV9Engine(BaseModel):
                     result = pool.submit(asyncio.run, self._run_async(seed_term)).result()
                 return result
         except RuntimeError:
-            pass
+            logger.warning("Runtime error in asyncio loop")
         return asyncio.run(self._run_async(seed_term))
 
     async def _run_async(self, seed_term: str) -> Dict[str, Any]:
@@ -271,6 +271,7 @@ class NativeV9Engine(BaseModel):
             intervals.append((year, interval_end))
         return intervals
 
-    def fit(self, X, y): pass
+    def fit(self, X, y):
+        return None
     def predict(self, X): return []
     def predict_proba(self, X): return []

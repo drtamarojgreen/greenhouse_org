@@ -22,6 +22,8 @@ class ValidationConfig(BaseModel):
 
 class AnalysisConfig(BaseModel):
     model: ModelConfig
+    target_column: str = "target"
+    hyperparameter_tuning: Optional[Dict[str, Any]] = None
     validation: Optional[ValidationConfig] = None
     metrics: List[str] = Field(default_factory=list)
 

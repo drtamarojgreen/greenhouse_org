@@ -36,7 +36,8 @@ class IdentityModel(BaseModel):
     """Passes data through unchanged."""
     def run(self, data: Any) -> Any:
         return data
-    def fit(self, X: Any, y: Any) -> None: pass
+    def fit(self, X: Any, y: Any) -> None:
+        return None
     def predict(self, X: Any) -> Any: return X
     def predict_proba(self, X: Any) -> Any: return X
 
