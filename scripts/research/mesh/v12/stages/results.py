@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Dict, Any
 from .base import BaseStage
-from ..reporting.plots import NativeVisualizer
+from ..reporting import PLOT_REGISTRY, METRIC_REGISTRY, EXPORT_REGISTRY
 
 class ResultsStage(BaseStage):
     """Stage 4: Reporting, visualization, and exports."""
@@ -22,7 +22,8 @@ class ResultsStage(BaseStage):
         data_to_export = context.get("discovery_data") or context.get("predictions")
 
         # Export metrics if present
-        if "metrics" in context and isinstance(context["metrics"], dict) and "status" not in context["metrics"]:
+        if "metrics" in context and isinstance(context["metrics"], dict):
+            # Recalculate or validate metrics if needed using METRIC_REGISTRY
             metrics_file = os.path.join(output_dir, "metrics.json")
             with open(metrics_file, "w") as f:
                 json.dump(context["metrics"], f, indent=4, default=str)
@@ -71,13 +72,15 @@ class ResultsStage(BaseStage):
                     logger.warning(f"Could not export summary CSV: {e}")
 
             # Plots
-            viz = NativeVisualizer(output_dir=os.path.join(output_dir, "plots"))
-            if v9_data.get("temporal"):
-                viz.plot_timeline(v9_data["temporal"])
-            if graph_builder and hasattr(graph_builder, 'G'):
-                viz.plot_network(graph_builder.G)
-            if v9_data.get("phase_data"):
-                viz.plot_trial_phases(v9_data["phase_data"])
+            visualizer_cls = PLOT_REGISTRY.get("NativeVisualizer")
+            if visualizer_cls:
+                viz = visualizer_cls(output_dir=os.path.join(output_dir, "plots"))
+                if v9_data.get("temporal"):
+                    viz.plot_timeline(v9_data["temporal"])
+                if graph_builder and hasattr(graph_builder, 'G'):
+                    viz.plot_network(graph_builder.G)
+                if v9_data.get("phase_data"):
+                    viz.plot_trial_phases(v9_data["phase_data"])
 
         # Generate generic plots if specified in config
         if self.config.results and self.config.results.plots:
@@ -97,12 +100,24 @@ class ResultsStage(BaseStage):
         # Export predictions if present
         if "predictions" in context:
             try:
-                predictions_file = os.path.join(output_dir, "predictions.csv")
-                if isinstance(context["predictions"], pd.DataFrame):
-                    context["predictions"].to_csv(predictions_file, index=False)
+                export_cfg = self.config.results.export if self.config.results else {}
+                export_format = export_cfg.get("format", "csv")
+                method_name = EXPORT_REGISTRY.get(export_format, "to_csv")
+                predictions_file = os.path.join(output_dir, f"predictions.{export_format}")
+
+                df_to_export = context["predictions"]
+                if not isinstance(df_to_export, pd.DataFrame):
+                    df_to_export = pd.DataFrame({"y_pred": df_to_export})
+
+                export_method = getattr(df_to_export, method_name)
+
+                # Handle different export method arguments
+                if method_name == "to_csv":
+                    export_method(predictions_file, index=False)
                 else:
-                    pd.DataFrame({"y_pred": context["predictions"]}).to_csv(predictions_file, index=False)
-                logger.info(f"Exported predictions to {predictions_file}")
+                    export_method(predictions_file)
+
+                logger.info(f"Exported predictions to {predictions_file} using {method_name}")
             except Exception as e:
                 logger.warning(f"Could not export predictions: {e}")
 

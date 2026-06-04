@@ -22,6 +22,26 @@
 | Sip 14 | Parameter Sync | Configs updated with explicit record counts | Verified |
 | Sip 15 | Discovery Harvest | 11 `discovery_vX.json` files generated | Verified |
 | Sip 16 | v4 & v9 Verification | Successful execution of native v4/v9 engines | Verified |
+| Sip 17 | Advanced Analytics | Hyperparameter tuning, custom target, metric registry | Verified |
+| Sip 18 | Architectural Refactor | Registry-based metrics and dynamic exports | Verified |
+
+## Empirical Evidence (Sip 18: Architectural Refactor)
+
+| Component | Observation | Expected | Status |
+|-----------|-------------|----------|--------|
+| Metrics Registry | `accuracy`, `f1`, `roc_auc` registered | Functions available | Verified |
+| Analysis Stage | Registry-based calculation | No hardcoded sklearn imports | Verified |
+| Export Logic | Safe Pydantic access | No `AttributeError` on missing config | Verified |
+| Unit Tests | `10/10 tests passed` | Regressions avoided | Verified |
+
+## Empirical Evidence (Sip 17: Advanced Analytics)
+
+| Test Component | Observation | Expected | Status |
+|----------------|-------------|----------|--------|
+| Target Column | `label` found in columns | `label` preserved | Verified |
+| Hyperparameter Tuning | `C` in `best_params` | Best hyperparameter found | Verified |
+| Metric Registry | `accuracy` found | Metrics accessible | Verified |
+| Preprocessing | `target` unchanged | No corruption of labels | Verified |
 
 ## Empirical Evidence (Sip 16: v4 & v9 Pipeline Execution)
 

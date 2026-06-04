@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Any
 from .base import BaseStage
 from ..models import MODEL_REGISTRY
+from ..reporting import METRIC_REGISTRY
 
 class AnalysisStage(BaseStage):
     """Stage 3: Model training and evaluation."""
@@ -31,21 +32,42 @@ class AnalysisStage(BaseStage):
             context["metrics"] = {"completed": True}
         else:
             try:
-                X = df.drop(columns=["target"])
-                y = df["target"]
-                from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+                target_col = self.config.analysis.target_column
+                X = df.drop(columns=[target_col])
+                y = df[target_col]
+
+                # Hyperparameter tuning
+                if self.config.analysis.hyperparameter_tuning:
+                    from sklearn.model_selection import GridSearchCV
+                    logger.info(f"Starting hyperparameter tuning for {model_name}...")
+                    param_grid = self.config.analysis.hyperparameter_tuning
+
+                    # Handle sklearn wrappers
+                    if hasattr(model, 'model') and not hasattr(model, 'run'):
+                        grid_search = GridSearchCV(model.model, param_grid, cv=3)
+                        grid_search.fit(X, y)
+                        model.model = grid_search.best_estimator_
+                        logger.info(f"Best params: {grid_search.best_params_}")
+                        context["best_params"] = grid_search.best_params_
+
                 model.fit(X, y)
                 y_pred = model.predict(X)
                 context["predictions"] = y_pred
                 context["trained_model"] = model
 
-                metrics = {"accuracy": accuracy_score(y, y_pred)}
-                try:
-                    metrics["f1"] = f1_score(y, y_pred)
-                    if hasattr(model, "predict_proba"):
-                        metrics["roc_auc"] = roc_auc_score(y, model.predict_proba(X)[:, 1])
-                except:
-                    pass
+                # Calculate metrics using registry
+                metrics = {}
+                for metric_name in self.config.analysis.metrics:
+                    if metric_name in METRIC_REGISTRY:
+                        metric_func = METRIC_REGISTRY[metric_name]
+                        try:
+                            if metric_name == "roc_auc" and hasattr(model, "predict_proba"):
+                                metrics[metric_name] = metric_func(y, model.predict_proba(X)[:, 1])
+                            else:
+                                metrics[metric_name] = metric_func(y, y_pred)
+                        except Exception as e:
+                            logger.warning(f"Could not calculate metric {metric_name}: {e}")
+
                 context["metrics"] = metrics
             except Exception as e:
                 logger.error(f"Analysis failed: {e}")
