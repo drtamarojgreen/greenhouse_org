@@ -21,6 +21,14 @@
 | Sip 13 | `v12ConfigAudit` | `configs_found = 11`, `valid_configs = 11` | Verified |
 | Sip 14 | Parameter Sync | Configs updated with explicit record counts | Verified |
 | Sip 15 | Discovery Harvest | 11 `discovery_vX.json` files generated | Verified |
+| Sip 16 | v4 & v9 Verification | Successful execution of native v4/v9 engines | Verified |
+
+## Empirical Evidence (Sip 16: v4 & v9 Pipeline Execution)
+
+| Configuration | Status | Evidence |
+|---------------|--------|----------|
+| config_v4.yaml | Verified | `results_mesh_v4_hierarchy.json` generated |
+| config_v9.yaml | Verified | `discovery_mesh_v9_unified.json`, `graph_v9.json` generated |
 
 ## Empirical Evidence (Sip 15: Final Pipeline Execution)
 

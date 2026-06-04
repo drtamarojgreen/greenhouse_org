@@ -17,7 +17,27 @@ class DataCollectionStage(BaseStage):
         
         if loader_type == "SeedLoader":
             context["raw_data"] = params.get("seed_term", "Mental Health")
-            
+
+        elif loader_type == "SyntheticLoader":
+            import numpy as np
+            n = params.get("num_samples", 100)
+            df = pd.DataFrame({
+                "feature1": np.random.randn(n),
+                "feature2": np.random.randn(n),
+                "target": np.random.randint(0, 2, n)
+            })
+            context["raw_data"] = df
+
+        elif loader_type == "MeshTreeLoader":
+            context["raw_data"] = params.get("seed_term", "Mental Health")
+
+        elif loader_type == "UnifiedMeSHLoader":
+            # Return seed term for V9 pipeline
+            context["raw_data"] = {
+                "seed_term": params.get("seed_term", "Depression"),
+                "options": params
+            }
+
         elif loader_type == "NativeDiscoveryLoader":
             seed_term = params.get("seed_term", "Mental Health")
             min_count = params.get("min_count", 1000)

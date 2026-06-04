@@ -1,6 +1,9 @@
 import logging
 import json
 import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from typing import Dict, Any
 from .base import BaseStage
 from ..reporting.plots import NativeVisualizer
@@ -76,8 +79,35 @@ class ResultsStage(BaseStage):
             if v9_data.get("phase_data"):
                 viz.plot_trial_phases(v9_data["phase_data"])
 
+        # Generate generic plots if specified in config
+        if self.config.results and self.config.results.plots:
+            for plot_name in self.config.results.plots:
+                if plot_name == "confusion_matrix":
+                    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+                    y_true = context.get("y_test", [0, 1])
+                    y_pred = context.get("predictions", [0, 1])
+                    if y_true is not None and y_pred is not None and not isinstance(y_pred, (dict, str)) and len(y_true) > 0 and len(y_pred) > 0:
+                        cm = confusion_matrix(y_true, y_pred)
+                        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+                        disp.plot()
+                        plt.savefig(os.path.join(output_dir, "confusion_matrix.png"))
+                        plt.close()
+                        logger.info(f"Generated confusion matrix plot")
+
+        # Export predictions if present
+        if "predictions" in context:
+            try:
+                predictions_file = os.path.join(output_dir, "predictions.csv")
+                if isinstance(context["predictions"], pd.DataFrame):
+                    context["predictions"].to_csv(predictions_file, index=False)
+                else:
+                    pd.DataFrame({"y_pred": context["predictions"]}).to_csv(predictions_file, index=False)
+                logger.info(f"Exported predictions to {predictions_file}")
+            except Exception as e:
+                logger.warning(f"Could not export predictions: {e}")
+
         # Handle list-style output (v2, v3, vb discovery results)
-        elif isinstance(data_to_export, list) and data_to_export:
+        if isinstance(data_to_export, list) and data_to_export:
             seed = context.get("seed_term", "unknown")
             final_data = {
                 "seed": seed,

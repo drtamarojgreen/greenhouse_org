@@ -5,26 +5,31 @@ output_dir: "scripts/research/mesh/v12/output/v9"
 data_collection:
   loader: "UnifiedMeSHLoader"
   loader_params:
+    seed_term: "Depression"
     exclude_generic: true
-    total_max_terms: 400
+    total_max_terms: 20
 
 preprocessing:
-  pipeline:
-    - transformer: "StandardScaler"
-      params: {}
-    - transformer: "MissingIndicator"
-      params: {}
+  pipeline: []
 
 analysis:
   model:
-    class: "RandomForest"
-    params: { "n_estimators": 100 }
-  validation:
-    strategy: "StratifiedKFold"
-    params: { "n_splits": 5 }
-  metrics: ["accuracy", "roc_auc"]
+    class: "NativeV9Engine"
+    params:
+      discovery:
+        max_levels: 2
+        level_thresholds: {1: 15000, 2: 5000}
+        total_max_terms: 20
+      temporal:
+        enabled: true
+        start_year: 2020
+        end_year: 2024
+      clinical_trials:
+        enabled: true
+        max_pages: 1
+  metrics: ["completed"]
 
 results:
   plots: ["confusion_matrix", "feature_importance"]
   export:
-    format: "pdf"
+    format: "json"

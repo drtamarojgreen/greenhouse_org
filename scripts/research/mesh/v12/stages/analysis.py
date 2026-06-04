@@ -33,10 +33,20 @@ class AnalysisStage(BaseStage):
             try:
                 X = df.drop(columns=["target"])
                 y = df["target"]
+                from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
                 model.fit(X, y)
-                context["predictions"] = model.predict(X)
+                y_pred = model.predict(X)
+                context["predictions"] = y_pred
                 context["trained_model"] = model
-                context["metrics"] = {"accuracy": 0.99}
+
+                metrics = {"accuracy": accuracy_score(y, y_pred)}
+                try:
+                    metrics["f1"] = f1_score(y, y_pred)
+                    if hasattr(model, "predict_proba"):
+                        metrics["roc_auc"] = roc_auc_score(y, model.predict_proba(X)[:, 1])
+                except:
+                    pass
+                context["metrics"] = metrics
             except Exception as e:
                 logger.error(f"Analysis failed: {e}")
                 
