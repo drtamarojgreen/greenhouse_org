@@ -9,16 +9,12 @@ data_collection:
     total_max_terms: 400
 
 preprocessing:
-  pipeline:
-    - transformer: "StandardScaler"
-      params: {}
-    - transformer: "MissingIndicator"
-      params: {}
+  pipeline: []
 
 analysis:
   model:
-    class: "RandomForest"
-    params: { "n_estimators": 100 }
+    class: "NativeV9Engine"
+    params: { "discovery": { "max_levels": 2, "total_max_terms": 10 } }
   validation:
     strategy: "StratifiedKFold"
     params: { "n_splits": 5 }

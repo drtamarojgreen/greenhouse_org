@@ -21,22 +21,17 @@
 | Sip 13 | `v12ConfigAudit` | `configs_found = 11`, `valid_configs = 11` | Verified |
 | Sip 14 | Parameter Sync | Configs updated with explicit record counts | Verified |
 | Sip 15 | Discovery Harvest | 11 `discovery_vX.json` files generated | Verified |
+| Sip 16 | v4/v9 Alignment | Native engines integrated into pipeline | Verified |
 
-## Empirical Evidence (Sip 15: Final Pipeline Execution)
+## Empirical Evidence (Sip 16: v4/v9 Execution Verification)
 
-| Configuration | Records Loaded (Observed) | Records Expected (Config) | Status |
-|---------------|---------------------------|---------------------------|--------|
-| config_v1.yaml | 100 | 100 | Verified |
-| config_v2.yaml | 250 | 250 | Verified |
-| config_v3.yaml | 1000 | 1000 | Verified |
-| config_v4.yaml | 100 | 100 | Verified |
-| config_v5.yaml | 500 | 500 | Verified |
-| config_v6.yaml | 300 | 300 | Verified |
-| config_v7.yaml | 150 | 150 | Verified |
-| config_v8.yaml | 200 | 200 | Verified |
-| config_v9.yaml | 400 | 400 | Verified |
-| config_va.yaml | 50 | 50 | Verified |
-| config_vb.yaml | 20 | 20 | Verified |
+| Configuration | Metric | Value | Status |
+|---------------|--------|-------|--------|
+| config_v4.yaml | total_terms | 47 | Verified |
+| config_v4.yaml | exit_code | 0 | Verified |
+| config_v9.yaml | accepted_terms | 4 | Verified |
+| config_v9.yaml | elapsed_seconds | 61.6 | Verified |
+| config_v9.yaml | exit_code | 0 | Verified |
 
 ## Final Evaluation Summary
 - **Unit Tests**: 7 passed, 0 failed.

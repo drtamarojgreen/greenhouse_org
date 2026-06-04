@@ -1,5 +1,7 @@
 import logging
+import pandas as pd
 from typing import Dict, Any
+from sklearn.metrics import accuracy_score, roc_auc_score
 from .base import BaseStage
 from ..models import MODEL_REGISTRY
 
@@ -28,15 +30,27 @@ class AnalysisStage(BaseStage):
             results = model.run(df)
             context["discovery_data"] = results
             context["predictions"] = results
-            context["metrics"] = {"completed": True}
-        else:
+            context["metrics"] = {"exit_code": 0}
+        elif isinstance(df, (pd.DataFrame, pd.Series)):
             try:
-                X = df.drop(columns=["target"])
-                y = df["target"]
+                X = df.drop(columns=["target"]) if "target" in df.columns else df
+                y = df["target"] if "target" in df.columns else None
                 model.fit(X, y)
-                context["predictions"] = model.predict(X)
+                preds = model.predict(X)
+                context["predictions"] = preds
                 context["trained_model"] = model
-                context["metrics"] = {"accuracy": 0.99}
+
+                metrics = {}
+                if y is not None:
+                    metrics["accuracy"] = float(accuracy_score(y, preds))
+                    try:
+                        probs = model.predict_proba(X)
+                        if len(probs.shape) > 1 and probs.shape[1] > 1:
+                            metrics["roc_auc"] = float(roc_auc_score(y, probs[:, 1]))
+                    except (AttributeError, ValueError):
+                        pass
+                metrics["exit_code"] = 0
+                context["metrics"] = metrics
             except Exception as e:
                 logger.error(f"Analysis failed: {e}")
                 

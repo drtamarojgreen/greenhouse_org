@@ -15,8 +15,10 @@ class DataCollectionStage(BaseStage):
 
         logger.info(f"Loading data using {loader_type}")
         
-        if loader_type == "SeedLoader":
-            context["raw_data"] = params.get("seed_term", "Mental Health")
+        if loader_type == "SeedLoader" or loader_type == "MeshTreeLoader" or loader_type == "UnifiedMeSHLoader":
+            seed_term = params.get("seed_term") or params.get("experiment_name") or "Mental Health"
+            context["raw_data"] = seed_term
+            context["seed_term"] = seed_term
             
         elif loader_type == "NativeDiscoveryLoader":
             seed_term = params.get("seed_term", "Mental Health")
@@ -55,7 +57,14 @@ class DataCollectionStage(BaseStage):
         elif loader_type == "CSVLoader":
             file_path = params.get("file_path")
             context["raw_data"] = pd.read_csv(file_path)
-            
+
+        elif loader_type == "SyntheticLoader":
+            num_samples = params.get("num_samples", 100)
+            context["raw_data"] = pd.DataFrame({
+                "feature1": [i * 0.1 for i in range(num_samples)],
+                "target": [i % 2 for i in range(num_samples)]
+            })
+
         else:
             logger.warning(f"Using generic data payload for legacy loader: {loader_type}")
             context["raw_data"] = {"loader": loader_type, "params": params}

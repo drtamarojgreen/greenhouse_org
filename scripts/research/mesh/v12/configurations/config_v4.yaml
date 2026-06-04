@@ -12,8 +12,8 @@ preprocessing:
 
 analysis:
   model:
-    class: "HierarchicalClustering"
-    params: { "n_clusters": 10 }
+    class: "NativeHierarchicalEngine"
+    params: { "max_levels": 3, "total_max_terms": 20 }
   validation:
     strategy: "DendrogramCut"
     params: {}
