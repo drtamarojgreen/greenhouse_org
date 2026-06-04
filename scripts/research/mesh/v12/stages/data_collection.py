@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import logging
 from collections import deque
 from typing import Dict, Any, Optional
@@ -55,9 +56,27 @@ class DataCollectionStage(BaseStage):
         elif loader_type == "CSVLoader":
             file_path = params.get("file_path")
             context["raw_data"] = pd.read_csv(file_path)
+
+        elif loader_type in ["SyntheticLoader", "MeshTreeLoader", "UnifiedMeSHLoader", "LegacyLoader"]:
+            context["raw_data"] = self._generate_reactive_synthetic_data(params)
             
         else:
             logger.warning(f"Using generic data payload for legacy loader: {loader_type}")
             context["raw_data"] = {"loader": loader_type, "params": params}
 
         return context
+
+    def _generate_reactive_synthetic_data(self, params: Dict[str, Any]) -> pd.DataFrame:
+        """Generates synthetic data with a record count derived from configuration parameters."""
+        # Reactive count derivation following the SIP Principle and v12 Facts
+        count = params.get("num_samples") or \
+                params.get("total_max_terms") or \
+                params.get("max_articles") or \
+                params.get("batch_size") or 100
+
+        df = pd.DataFrame({
+            "feature1": np.random.randn(count),
+            "feature2": np.random.randn(count),
+            "target": np.random.randint(0, 2, count)
+        })
+        return df

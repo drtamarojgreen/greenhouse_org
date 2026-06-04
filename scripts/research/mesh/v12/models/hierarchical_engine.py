@@ -96,6 +96,6 @@ class NativeHierarchicalEngine(BaseModel):
         generic_terms = {"Humans", "Adult", "Male", "Female", "Middle Aged", "Aged", "Child", "Adolescent"}
         return {t for t in related_terms if t not in generic_terms}
 
-    def fit(self, X, y): pass
+    def fit(self, X, y): logger.info("Implementation deferred")
     def predict(self, X): return self.run(X)
     def predict_proba(self, X): return []

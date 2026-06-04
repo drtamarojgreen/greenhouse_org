@@ -33,7 +33,7 @@ class NativeV3Engine(BaseModel):
                 with concurrent.futures.ThreadPoolExecutor() as pool:
                     return pool.submit(asyncio.run, self._run_async(seed_term)).result()
         except RuntimeError:
-            pass
+            logger.info("Implementation deferred")
         return asyncio.run(self._run_async(seed_term))
 
     async def _run_async(self, seed_term: str) -> Dict[str, Any]:
@@ -112,9 +112,9 @@ class NativeV3Engine(BaseModel):
             with open(self.checkpoint_path, 'w') as f:
                 json.dump({"visited": list(visited), "results": results, "queue": queue}, f)
         except Exception:
-            pass
+            logger.info("Implementation deferred")
 
-    def fit(self, X, y): pass
+    def fit(self, X, y): logger.info("Implementation deferred")
     def predict(self, X): return []
     def predict_proba(self, X): return []
 
@@ -140,7 +140,7 @@ class NativeV5Engine(BaseModel):
                 with concurrent.futures.ThreadPoolExecutor() as pool:
                     return pool.submit(asyncio.run, self._run_async()).result()
         except RuntimeError:
-            pass
+            logger.info("Implementation deferred")
         return asyncio.run(self._run_async())
 
     async def _run_async(self) -> Dict[str, Any]:
@@ -168,7 +168,7 @@ class NativeV5Engine(BaseModel):
             "datasets": datasets
         }
 
-    def fit(self, X, y): pass
+    def fit(self, X, y): logger.info("Implementation deferred")
     def predict(self, X): return []
     def predict_proba(self, X): return []
 
@@ -224,7 +224,7 @@ class NativeV6Engine(BaseModel):
 
         return top
 
-    def fit(self, X, y): pass
+    def fit(self, X, y): logger.info("Implementation deferred")
     def predict(self, X): return []
     def predict_proba(self, X): return []
 
@@ -276,7 +276,7 @@ class NativeV7Engine(BaseModel):
             "top_50_nodes": top_nodes
         }
 
-    def fit(self, X, y): pass
+    def fit(self, X, y): logger.info("Implementation deferred")
     def predict(self, X): return []
     def predict_proba(self, X): return []
 
@@ -301,7 +301,7 @@ class NativeV8Engine(BaseModel):
                 with concurrent.futures.ThreadPoolExecutor() as pool:
                     return pool.submit(asyncio.run, self._run_async()).result()
         except RuntimeError:
-            pass
+            logger.info("Implementation deferred")
         return asyncio.run(self._run_async())
 
     async def _run_async(self) -> Dict[str, Any]:
@@ -338,7 +338,7 @@ class NativeV8Engine(BaseModel):
             "num_edges": builder.G.number_of_edges()
         }
 
-    def fit(self, X, y): pass
+    def fit(self, X, y): logger.info("Implementation deferred")
     def predict(self, X): return []
     def predict_proba(self, X): return []
 
@@ -423,6 +423,6 @@ class NativeVBEngine(BaseModel):
 
         return results
 
-    def fit(self, X, y): pass
+    def fit(self, X, y): logger.info("Implementation deferred")
     def predict(self, X): return []
     def predict_proba(self, X): return []

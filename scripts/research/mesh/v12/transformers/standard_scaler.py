@@ -10,12 +10,25 @@ class StandardScalerWrapper(BaseTransformer):
     def __init__(self, params: Dict[str, Any]):
         super().__init__(params)
         self.transformer = StandardScaler(**params)
+
     def fit(self, X: Any) -> None:
-        self.transformer.fit(X)
+        if isinstance(X, pd.DataFrame) and "target" in X.columns:
+            self.transformer.fit(X.drop(columns=["target"]))
+        else:
+            self.transformer.fit(X)
+
     def transform(self, X: Any) -> Any:
-        columns = X.columns
-        scaled_data = self.transformer.transform(X)
-        return pd.DataFrame(scaled_data, columns=columns)
+        if isinstance(X, pd.DataFrame) and "target" in X.columns:
+            features = X.drop(columns=["target"])
+            target = X["target"]
+            scaled_features = self.transformer.transform(features)
+            scaled_df = pd.DataFrame(scaled_features, columns=features.columns, index=X.index)
+            scaled_df["target"] = target
+            return scaled_df
+        else:
+            columns = X.columns if hasattr(X, "columns") else None
+            scaled_data = self.transformer.transform(X)
+            return pd.DataFrame(scaled_data, columns=columns)
 
 @register_transformer("ZScoreScaler")
 @register_transformer("TextCleaner")

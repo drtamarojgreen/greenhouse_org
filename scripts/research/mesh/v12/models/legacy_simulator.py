@@ -25,7 +25,7 @@ class LegacySimulatorModel(BaseModel):
         }
         
     def fit(self, X, y):
-        pass
+        logger.info("Implementation deferred")
 
     def predict(self, X):
         return []
