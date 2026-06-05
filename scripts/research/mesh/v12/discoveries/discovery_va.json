@@ -1,0 +1,18 @@
+{
+    "experiment": "mesh_va_dashboard",
+    "metrics": {},
+    "sample_predictions": [
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+    ],
+    "feature_count": 2,
+    "record_count": 50
+}

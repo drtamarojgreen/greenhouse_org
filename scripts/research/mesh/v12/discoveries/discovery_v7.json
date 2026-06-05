@@ -1,0 +1,21 @@
+{
+    "experiment": "mesh_v7_network_analytics",
+    "metrics": {
+        "graph_density": 0.07379656473539886,
+        "wcc_count": 0.5538542844013208
+    },
+    "sample_predictions": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1
+    ],
+    "feature_count": 2,
+    "record_count": 150
+}

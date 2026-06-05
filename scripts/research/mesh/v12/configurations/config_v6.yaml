@@ -1,0 +1,25 @@
+experiment_name: "mesh_v6_integration"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v6"
+
+data_collection:
+  loader: "MultiSourceLoader"
+  loader_params:
+    csv_path: "scripts/research/mesh/v12/output/v9/graph_mesh_v9_unified.csv"
+    top_nodes_limit: 20
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "NativeV6Engine"
+    params:
+      csv_path: "scripts/research/mesh/v12/output/v9/graph_mesh_v9_unified.csv"
+      top_nodes_limit: 20
+  metrics: ["completed"]
+
+results:
+  plots: ["NativeVisualizer"]
+  export:
+    format: "json"

@@ -1,0 +1,22 @@
+experiment_name: "v3_replication"
+seed: 42
+output_dir: "./results/v3"
+
+data_collection:
+  loader: "LegacyLoader"
+  loader_params:
+    version: "v3"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "LegacySimulatorModel"
+    params:
+      version: "v3"
+
+results:
+  plots: []
+  export:
+    format: "json"

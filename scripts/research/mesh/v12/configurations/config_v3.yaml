@@ -1,0 +1,25 @@
+experiment_name: "mesh_v3_nlp"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v3"
+
+data_collection:
+  loader: "PubMedAbstractLoader"
+  loader_params:
+    seed_term: "Mental Health"
+    max_articles: 100
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "NativeV3Engine"
+    params:
+      min_count: 50
+      max_terms: 10
+  metrics: ["completed"]
+
+results:
+  plots: ["NativeVisualizer"]
+  export:
+    format: "json"

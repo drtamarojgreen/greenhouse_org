@@ -1,0 +1,22 @@
+experiment_name: "v9_replication"
+seed: 42
+output_dir: "./results/v9"
+
+data_collection:
+  loader: "LegacyLoader"
+  loader_params:
+    version: "v9"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "LegacySimulatorModel"
+    params:
+      version: "v9"
+
+results:
+  plots: []
+  export:
+    format: "json"

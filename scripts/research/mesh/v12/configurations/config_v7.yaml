@@ -1,0 +1,23 @@
+experiment_name: "mesh_v7_network"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v7"
+
+data_collection:
+  loader: "GraphCSVLoader"
+  loader_params:
+    csv_path: "scripts/research/mesh/v12/output/v9/graph_mesh_v9_unified.csv"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "NativeV7Engine"
+    params:
+      csv_path: "scripts/research/mesh/v12/output/v9/graph_mesh_v9_unified.csv"
+  metrics: ["completed"]
+
+results:
+  plots: ["NativeVisualizer"]
+  export:
+    format: "json"

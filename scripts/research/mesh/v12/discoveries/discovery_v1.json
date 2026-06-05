@@ -1,0 +1,20 @@
+{
+    "experiment": "mesh_v1_baseline",
+    "metrics": {
+        "count": 0.9548652806631941
+    },
+    "sample_predictions": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+    ],
+    "feature_count": 2,
+    "record_count": 100
+}

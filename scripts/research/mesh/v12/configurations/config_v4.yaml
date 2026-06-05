@@ -1,0 +1,25 @@
+experiment_name: "mesh_v4_hierarchy"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v4"
+
+data_collection:
+  loader: "MeshTreeLoader"
+  loader_params:
+    seed_term: "Mental Health"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "NativeHierarchicalEngine"
+    params:
+      max_levels: 2
+      level_thresholds: {1: 20000, 2: 10000}
+      total_max_terms: 20
+  metrics: ["completed"]
+
+results:
+  plots: ["dendrogram"]
+  export:
+    format: "json"

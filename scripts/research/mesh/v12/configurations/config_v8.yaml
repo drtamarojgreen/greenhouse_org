@@ -1,0 +1,23 @@
+experiment_name: "mesh_v8_knowledge"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v8"
+
+data_collection:
+  loader: "PharmaKnowledgeGraphLoader"
+  loader_params:
+    disorder: "Attention Deficit Hyperactivity Disorder"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "NativeV8Engine"
+    params:
+      disorder: "Attention Deficit Hyperactivity Disorder"
+  metrics: ["completed"]
+
+results:
+  plots: ["NativeVisualizer"]
+  export:
+    format: "json"

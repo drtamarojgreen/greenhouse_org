@@ -1,0 +1,28 @@
+experiment_name: "mesh_v5_temporal"
+seed: 42
+output_dir: "scripts/research/mesh/v12/output/v5"
+
+data_collection:
+  loader: "LongitudinalCSVLoader"
+  loader_params:
+    conditions: ["Depression", "Anxiety"]
+    start_year: 2020
+    end_year: 2024
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "NativeV5Engine"
+    params:
+      start_year: 2020
+      end_year: 2024
+      interval_years: 1
+      conditions: ["Depression", "Anxiety"]
+  metrics: ["completed"]
+
+results:
+  plots: ["NativeVisualizer"]
+  export:
+    format: "json"

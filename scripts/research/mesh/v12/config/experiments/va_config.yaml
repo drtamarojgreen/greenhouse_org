@@ -1,0 +1,22 @@
+experiment_name: "va_replication"
+seed: 42
+output_dir: "./results/va"
+
+data_collection:
+  loader: "LegacyLoader"
+  loader_params:
+    version: "va"
+
+preprocessing:
+  pipeline: []
+
+analysis:
+  model:
+    class: "LegacySimulatorModel"
+    params:
+      version: "va"
+
+results:
+  plots: []
+  export:
+    format: "json"

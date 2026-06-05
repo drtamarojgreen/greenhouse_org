@@ -1,0 +1,21 @@
+{
+    "experiment": "mesh_v9_unified",
+    "metrics": {
+        "accuracy": 0.5625,
+        "roc_auc": 0.5588235294117647
+    },
+    "sample_predictions": [
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1
+    ],
+    "feature_count": 2,
+    "record_count": 400
+}
