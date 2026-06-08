@@ -1,0 +1,13 @@
+# MeSH v11 configuration
+pipeline:
+  disorder: "Depression"
+  # List of intervention types; if empty, will be fetched from ClinicalTrials.gov
+  interventions:
+      - "Cognitive Behavioral Therapy"
+output:
+  json_path: "scripts/research/mesh/v11/output/results.json"
+  csv_path: "scripts/research/mesh/v11/output/results.csv"
+cache:
+  db_path: "scripts/research/mesh/v11/cache.db"
+reactome:
+  graphql_endpoint: "https://reactome.org/GraphQL"
