@@ -75,43 +75,57 @@ function setupGreenhouseMocks() {
         DiurnalClock: class { constructor() { this.timeInHours = 8; this.tick = dummy; this.update = dummy; } }
     };
 
-    // Define GreenhouseUtils with a sticky loadScript property
-    Object.defineProperty(global, 'GreenhouseUtils', {
-        get: () => global._greenhouseUtils,
-        set: (v) => {
-            if (v && typeof v === 'object') {
-                // Ensure loadScript is always our mock
+    // Define GreenhouseUtils with a sticky properties
+    const protectUtils = (v) => {
+        if (v && typeof v === 'object') {
+            // Ensure loadScript is always our mock
+            try {
                 Object.defineProperty(v, 'loadScript', {
                     get: () => dummyAsync,
                     set: () => {},
                     configurable: true
                 });
-                // Ensure other core utils are also available if the real GreenhouseUtils overwrites it
-                const props = ['waitForElement', 'displayError', 'displaySuccess', 'displayInfo', 'observeAndReinitializeApplication', 'startSentinel', 'renderModelsTOC', 'isMobileUser'];
-                props.forEach(p => {
-                    if (v[p] === undefined) v[p] = utilsMock[p];
-                });
-            }
-            global._greenhouseUtils = v;
-        },
+            } catch (e) {}
+
+            // Ensure other core utils are also available if the real GreenhouseUtils overwrites it
+            const props = [
+                'waitForElement', 'displayError', 'displaySuccess', 'displayInfo',
+                'observeAndReinitializeApplication', 'startSentinel', 'renderModelsTOC',
+                'isMobileUser', 'SimulationEngine', 'DiurnalClock', 't', 'createElementSafely',
+                'fetchModelDescriptions', 'initializeApp', 'reinitialize', 'setState', 'getState'
+            ];
+            props.forEach(p => {
+                if (v[p] === undefined) v[p] = utilsMock[p];
+            });
+        }
+        return v;
+    };
+
+    Object.defineProperty(global, 'GreenhouseUtils', {
+        get: () => global._greenhouseUtils || utilsMock,
+        set: (v) => { global._greenhouseUtils = protectUtils(v); },
         configurable: true
     });
 
-    global.GreenhouseUtils = utilsMock;
+    Object.defineProperty(global, 'GreenhouseModelsUtil', {
+        get: () => global._greenhouseModelsUtil || global.GreenhouseUtils,
+        set: (v) => { global._greenhouseModelsUtil = protectUtils(v); },
+        configurable: true
+    });
 
-    // Ensure window refers to the same GreenhouseUtils if it's not already the same as global
+    // Sync window
     if (win !== global) {
-        try {
-            Object.defineProperty(win, 'GreenhouseUtils', {
-                get: () => global._greenhouseUtils,
-                set: (v) => { global.GreenhouseUtils = v; },
-                configurable: true
-            });
-        } catch (e) {}
+        Object.defineProperty(win, 'GreenhouseUtils', {
+            get: () => global.GreenhouseUtils,
+            set: (v) => { global.GreenhouseUtils = v; },
+            configurable: true
+        });
+        Object.defineProperty(win, 'GreenhouseModelsUtil', {
+            get: () => global.GreenhouseModelsUtil,
+            set: (v) => { global.GreenhouseModelsUtil = v; },
+            configurable: true
+        });
     }
-
-    global.GreenhouseModelsUtil = global.GreenhouseUtils;
-    win.GreenhouseModelsUtil = global.GreenhouseUtils;
 
     const dmMock = {
         register: (name, value, meta) => {
@@ -220,6 +234,7 @@ function setupGreenhouseMocks() {
     const configMockFactory = (overrides = {}) => {
         const mock = {
             get: function(path) {
+                if (!path) return undefined;
                 const keys = path.split('.');
                 let val = this;
                 for (const k of keys) {
@@ -231,20 +246,56 @@ function setupGreenhouseMocks() {
             set: dummy,
             ...overrides
         };
+
+        // Ensure .get is always a function even after overrides
+        if (typeof mock.get !== 'function') {
+            const originalGet = mock.get;
+            mock.get = function(path) {
+                if (typeof originalGet === 'function') return originalGet.call(this, path);
+                return undefined;
+            };
+        }
         return mock;
     };
 
-    protectGlobal('GreenhouseGeneticConfig', configMockFactory({
+    const protectConfig = (name, defaults = {}) => {
+        const mock = configMockFactory(defaults);
+        Object.defineProperty(global, name, {
+            get: () => global['_' + name] || mock,
+            set: (v) => {
+                if (v && typeof v === 'object') {
+                    if (typeof v.get !== 'function') {
+                        v.get = mock.get.bind(v);
+                    }
+                }
+                global['_' + name] = v;
+            },
+            configurable: true
+        });
+        // Sync window
+        if (win !== global) {
+            Object.defineProperty(win, name, {
+                get: () => global[name],
+                set: (v) => { global[name] = v; },
+                configurable: true
+            });
+        }
+    };
+
+    protectConfig('GreenhouseGeneticConfig', {
         camera: { initial: { x: 0, y: 0, z: -300 }, controls: { inertia: true, autoRotate: true } },
         materials: { dna: { baseColors: [] } },
         ui: { background: {} }
-    }));
-    protectGlobal('GreenhouseNeuroConfig', configMockFactory({
+    });
+    protectConfig('GreenhouseNeuroConfig', {
         camera: { initial: { x: 0, y: 0, z: -300 } },
         pip: { enabled: true }
-    }));
-    protectGlobal('GreenhouseStressConfig', configMockFactory());
-    protectGlobal('GreenhouseEmotionConfig', configMockFactory());
+    });
+    protectConfig('GreenhouseStressConfig', {});
+    protectConfig('GreenhouseEmotionConfig', {});
+    protectConfig('GreenhouseInflammationConfig', {
+        factors: []
+    });
 
     global.GreenhouseADHDData = global.GreenhouseADHDData || {};
     protectGlobal('GreenhouseBioStatus', { sync: dummy, stress: { load: 0 }, inflammation: { tone: 0 } });

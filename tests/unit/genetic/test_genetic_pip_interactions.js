@@ -22,7 +22,7 @@
             ];
 
             if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.init(canvas, ui3d.cameras);
+                window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig, ui3d.cameras);
             }
         });
 
