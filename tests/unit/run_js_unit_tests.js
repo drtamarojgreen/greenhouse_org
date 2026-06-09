@@ -259,7 +259,13 @@ async function runTests() {
         }
     }
     const results = await global.TestFramework.run();
-    global.__originalConsole.log(`Summary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
+
+    global.__originalConsole.log("\n--- Per-Module Test Summary ---");
+    (results.suites || []).forEach(suite => {
+        global.__originalConsole.log(`${suite.name.padEnd(40)} | Passed: ${suite.passed.toString().padStart(3)} | Failed: ${suite.failed.toString().padStart(3)}`);
+    });
+
+    global.__originalConsole.log(`\nSummary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
     if (results.failed > 0) {
         // Output detailed failures
         (results.suites || []).forEach(suite => {
