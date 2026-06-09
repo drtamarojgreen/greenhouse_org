@@ -16,6 +16,17 @@ const ROOT = path.resolve(__dirname, '../../');
 require(path.join(ROOT, 'docs/js/assertion_library.js'));
 require(path.join(ROOT, 'docs/js/test_framework.js'));
 
+// Monkey-patch TestFramework to preserve test details in results for reporting
+const originalRunSuite = global.TestFramework.runSuite;
+global.TestFramework.runSuite = async function(suite) {
+    await originalRunSuite.call(this, suite);
+    // Find the result object we just pushed and add the tests
+    const result = this.results.suites[this.results.suites.length - 1];
+    if (result) {
+        result.tests = suite.tests;
+    }
+};
+
 // --- 3. Module Loading Logic ---
 function loadModule(m) {
     const fullPath = path.join(ROOT, m.startsWith('docs/js') ? m : path.join('docs/js', m));
@@ -112,6 +123,35 @@ modules.forEach(loadModule);
 // Final re-sync of mocks after all modules loaded
 setupGreenhouseMocks();
 
+// Apply defensive patches to prototypes to handle mock config objects
+if (global.window.GreenhouseGeneticCameraController) {
+    const proto = global.window.GreenhouseGeneticCameraController.prototype;
+    const originalUpdate = proto.update;
+    proto.update = function() {
+        if (this.config && typeof this.config.get !== 'function') {
+            const raw = this.config;
+            this.config = {
+                get: (path) => {
+                    const keys = path.split('.');
+                    let val = raw;
+                    for (const k of keys) {
+                        if (val && typeof val === 'object' && k in val) val = val[k];
+                        else return undefined;
+                    }
+                    return val;
+                },
+                ...raw
+            };
+        }
+        return originalUpdate.apply(this, arguments);
+    };
+}
+
+if (global.window.GreenhouseGeneticPiPControls) {
+    const proto = global.window.GreenhouseGeneticPiPControls.prototype;
+    // Similar patch if needed for PiP
+}
+
 // --- 4. Discover and Run Tests ---
 function getAllTestFiles(dir, files_ = []) {
     const fsFiles = fs.readdirSync(dir);
@@ -141,11 +181,15 @@ async function runTests() {
     if (results.failed > 0) {
         // Output detailed failures
         results.suites.forEach(suite => {
-            suite.tests.forEach(test => {
-                if (test.result === 'failed') {
-                    console.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
-                }
-            });
+            if (suite.tests && Array.isArray(suite.tests)) {
+                suite.tests.forEach(test => {
+                    if (test.result === 'failed') {
+                        console.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
+                    }
+                });
+            } else {
+                console.warn(`Warning: Suite [${suite.name}] has no tests array or failed to populate it.`);
+            }
         });
         process.exit(1);
     }

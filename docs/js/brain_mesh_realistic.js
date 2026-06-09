@@ -53,12 +53,12 @@
             // Parameters for realistic brain shape
             // Increased density for anatomical fidelity
             const baseRadius = 200;
-            const latBands = 100;
-            const lonBands = 100;
+            const latBands = 120;
+            const lonBands = 120;
 
             // Generate layers: Internal structures first, then Cortex
             const layers = [
-                { name: 'Internal', radius: 0.45 * baseRadius, latBands: 50, lonBands: 50 },
+                { name: 'Internal', radius: 0.45 * baseRadius, latBands: 60, lonBands: 60 },
                 { name: 'Cortex', radius: baseRadius, latBands: latBands, lonBands: lonBands }
             ];
 
@@ -319,14 +319,15 @@
             x *= 1.15; y *= 1.25; z *= 1.4;
 
             // 1. Longitudinal fissure (Deep indent between hemispheres)
-            const fissureEffect = Math.exp(-Math.abs(x) * 10) * 0.35;
-            if (y > -0.6) {
+            // Sharpened and deepened for v12 SDD compliance
+            const fissureEffect = Math.exp(-Math.abs(x) * 12) * 0.45;
+            if (y > -0.65) {
                 y *= (1 - fissureEffect);
             }
 
             // 2. Lateral Sulcus (Sylvian Fissure) - Indent on sides
             if (Math.abs(y) < 0.4 && z > -0.3 && z < 0.6) {
-                const sulcusEffect = Math.exp(-Math.abs(y + 0.05) * 5) * 0.25;
+                const sulcusEffect = Math.exp(-Math.abs(y + 0.05) * 6) * 0.3;
                 if (Math.abs(x) > 0.45) {
                     x *= (1 - sulcusEffect);
                 }
@@ -401,9 +402,10 @@
             }
 
             // Fractal Perlin-like displacement for gyri/sulci
-            displacement += Math.sin(nx * 5 * freqMult + nz * 4 * freqMult) * Math.cos(ny * 4 * freqMult) * 0.15 * ampMult;
-            displacement += Math.sin(nx * 10 * freqMult + nz * 8 * freqMult) * Math.cos(ny * 9 * freqMult) * 0.08 * ampMult;
-            displacement += Math.sin(nx * 20 * freqMult + nz * 16 * freqMult) * Math.cos(ny * 18 * freqMult) * 0.04 * ampMult;
+            // Increased amplitude and frequency for higher definition
+            displacement += Math.sin(nx * 6 * freqMult + nz * 5 * freqMult) * Math.cos(ny * 5 * freqMult) * 0.18 * ampMult;
+            displacement += Math.sin(nx * 12 * freqMult + nz * 10 * freqMult) * Math.cos(ny * 11 * freqMult) * 0.10 * ampMult;
+            displacement += Math.sin(nx * 24 * freqMult + nz * 20 * freqMult) * Math.cos(ny * 22 * freqMult) * 0.05 * ampMult;
 
             const len = Math.sqrt(nx**2 + ny**2 + nz**2);
             if (len > 0) {

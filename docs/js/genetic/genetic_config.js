@@ -62,12 +62,12 @@
             },
             ambient: {
                 enabled: true,
-                intensity: 0.4,
+                intensity: 0.5,
                 color: { r: 255, g: 255, b: 255 }
             },
             directional: {
                 enabled: true,
-                intensity: 0.8,
+                intensity: 1.0,
                 direction: { x: 0.5, y: -0.5, z: 1 },
                 color: { r: 255, g: 255, b: 255 }
             },
@@ -123,8 +123,8 @@
                 sssIntensity: 0.2
             },
             brain: {
-                baseColor: { r: 120, g: 120, b: 140 },
-                alpha: 0.15,
+                baseColor: { r: 245, g: 230, b: 200 },
+                alpha: 0.25,
                 metallic: 0.2,
                 roughness: 0.6,
                 subsurfaceScattering: true,
