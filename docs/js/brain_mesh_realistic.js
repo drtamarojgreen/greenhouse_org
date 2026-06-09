@@ -315,55 +315,70 @@
          * Apply anatomical deformations to create realistic brain shape
          */
         applyAnatomicalDeformations(x, y, z) {
-            // Proportional scaling for human brain (longer Z, wider X than sphere)
-            x *= 1.15; y *= 1.25; z *= 1.4;
+            // Refined human brain proportions: Approx L:W:H = 1.0:0.85:0.75
+            // Normalizing to Z (Length) as 1.4, X (Width) as 1.2, Y (Height) as 1.05
+            x *= 1.2; y *= 1.05; z *= 1.4;
 
-            // 1. Longitudinal fissure (Deep indent between hemispheres)
-            // Sharpened and deepened for v12 SDD compliance
-            const fissureEffect = Math.exp(-Math.abs(x) * 12) * 0.45;
-            if (y > -0.65) {
-                y *= (1 - fissureEffect);
+            // 1. Longitudinal fissure (Deep separation between hemispheres)
+            // Indents the top and bottom midline significantly
+            const fissureSharpness = 15;
+            const fissureDepth = 0.5;
+            const fissureEffect = Math.exp(-Math.abs(x) * fissureSharpness) * fissureDepth;
+
+            // Fissure indents from top (y > 0) and bottom (y < 0)
+            if (Math.abs(y) > 0.1) {
+                const yFactor = Math.abs(y) / 1.05;
+                y *= (1 - fissureEffect * yFactor);
             }
 
-            // 2. Lateral Sulcus (Sylvian Fissure) - Indent on sides
-            if (Math.abs(y) < 0.4 && z > -0.3 && z < 0.6) {
-                const sulcusEffect = Math.exp(-Math.abs(y + 0.05) * 6) * 0.3;
-                if (Math.abs(x) > 0.45) {
+            // 2. Lateral Sulcus (Sylvian Fissure) - Deep side indents
+            if (Math.abs(y) < 0.35 && z > -0.2 && z < 0.5) {
+                const sulcusEffect = Math.exp(-Math.abs(y + 0.1) * 8) * 0.35;
+                if (Math.abs(x) > 0.4) {
                     x *= (1 - sulcusEffect);
                 }
             }
 
-            // 3. Frontal Lobe (Broad bulge at front)
-            if (z > 0.35) {
-                const frontalShift = (z - 0.35) * 0.55;
-                z *= (1 + frontalShift);
-                x *= (1 + frontalShift * 0.25);
-                y *= (1 + frontalShift * 0.15);
+            // 3. Frontal Lobe (Blunt, broad anterior region)
+            if (z > 0.3) {
+                const frontalTaper = Math.pow(z - 0.3, 0.7) * 0.4;
+                z += frontalTaper;
+                x *= (1 + frontalTaper * 0.3); // Broaden
+                y *= (1 + frontalTaper * 0.1); // Slightly taller
             }
 
-            // 4. Temporal Lobes (Hang down and bulge sideways)
-            if (Math.abs(x) > 0.55 && z > -0.4 && z < 0.6 && y < 0.3) {
-                const tempBulge = (Math.abs(x) - 0.55) * 0.75;
-                x *= (1 + tempBulge);
-                y -= tempBulge * 0.5; // Hanging down
+            // 4. Temporal Lobes (Bulging anterior-lateral 'hangs')
+            if (Math.abs(x) > 0.5 && z > -0.3 && z < 0.4) {
+                const tWeight = (Math.abs(x) - 0.5) * (z + 0.3) * 1.5;
+                if (tWeight > 0 && y < 0.1) {
+                    x *= (1 + tWeight * 0.4);
+                    y -= tWeight * 0.3; // Distinct downward 'hang'
+                }
             }
 
-            // 5. Occipital Lobe (Tapered back)
-            if (z < -0.45) {
-                const occipitalTaper = (-z - 0.45) * 0.45;
-                x *= (1 - occipitalTaper);
-                y *= (1 - occipitalTaper * 0.4);
-                z *= (1 + occipitalTaper * 0.15);
+            // 5. Occipital Lobe (Distinct posterior taper)
+            if (z < -0.4) {
+                const occipitalEffect = (-z - 0.4) * 0.5;
+                x *= (1 - occipitalEffect * 0.6);
+                y *= (1 - occipitalEffect * 0.3);
+                z -= occipitalEffect * 0.2;
             }
 
-            // 6. Cerebellum (Separate bulbous structure at lower back)
-            if (y < -0.3 && z < -0.4) {
-                const distToCerebCenter = Math.sqrt(x*x + (y+0.6)**2 + (z+0.7)**2);
-                if (distToCerebCenter < 0.6) {
-                    const cerebBulge = (0.6 - distToCerebCenter) * 0.7;
-                    x *= (1 + cerebBulge);
-                    y *= (1 + cerebBulge);
-                    z *= (1 + cerebBulge);
+            // 6. Cerebellum (Tucked underneath the occipital lobe)
+            if (y < -0.2 && z < -0.35) {
+                const cX = x, cY = y + 0.5, cZ = z + 0.75;
+                const distToCereb = Math.sqrt(cX*cX + cY*cY + cZ*cZ);
+                if (distToCereb < 0.5) {
+                    const cBulge = (0.5 - distToCereb) * 0.8;
+                    x *= (1 + cBulge * 1.2);
+                    y *= (1 + cBulge * 0.8);
+                    z *= (1 + cBulge * 0.5);
+                }
+
+                // Horizontal separation indent between cerebrum and cerebellum
+                if (y > -0.45 && y < -0.25) {
+                    const sepEffect = Math.exp(-Math.pow(y + 0.35, 2) * 100) * 0.2;
+                    z *= (1 - sepEffect);
                 }
             }
 
@@ -401,11 +416,22 @@
                     freqMult = 1.6; ampMult = 0.9; break;
             }
 
-            // Fractal Perlin-like displacement for gyri/sulci
-            // Increased amplitude and frequency for higher definition
-            displacement += Math.sin(nx * 6 * freqMult + nz * 5 * freqMult) * Math.cos(ny * 5 * freqMult) * 0.18 * ampMult;
-            displacement += Math.sin(nx * 12 * freqMult + nz * 10 * freqMult) * Math.cos(ny * 11 * freqMult) * 0.10 * ampMult;
-            displacement += Math.sin(nx * 24 * freqMult + nz * 20 * freqMult) * Math.cos(ny * 22 * freqMult) * 0.05 * ampMult;
+            // Multi-octave organic folding algorithm
+            // Uses varied rotations and harmonics to break up grid patterns
+            const baseFreq = 8 * freqMult;
+
+            const noise = (fx, fy, fz, freq, amp, angle) => {
+                const s = Math.sin(angle), c = Math.cos(angle);
+                const rx = fx * c - fz * s;
+                const rz = fx * s + fz * c;
+                const v = Math.sin(rx * freq) * Math.cos(fy * freq * 1.1) * Math.sin(rz * freq * 0.9);
+                // Create rounded ridges (gyri) and slightly sharper valleys (sulci)
+                return (v > 0) ? Math.pow(v, 0.7) * amp : -Math.pow(Math.abs(v), 1.2) * amp;
+            };
+
+            displacement += noise(nx, ny, nz, baseFreq, 0.09 * ampMult, 0.0);
+            displacement += noise(nx, ny, nz, baseFreq * 1.8, 0.05 * ampMult, 0.8);
+            displacement += noise(nx, ny, nz, baseFreq * 3.5, 0.02 * ampMult, 1.5);
 
             const len = Math.sqrt(nx**2 + ny**2 + nz**2);
             if (len > 0) {
