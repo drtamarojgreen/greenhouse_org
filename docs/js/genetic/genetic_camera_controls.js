@@ -42,14 +42,15 @@
          * Handle Mouse Down
          */
         handleMouseDown(e) {
+            const hasConfigGet = this.config && typeof this.config.get === 'function';
             if (e.button === 2 || e.shiftKey) {
                 // Right click or Shift+Click for Pan
-                if (this.config.get('camera.controls.enablePan')) {
+                if (hasConfigGet && this.config.get('camera.controls.enablePan')) {
                     this.isPanning = true;
                 }
             } else if (e.button === 0) {
                 // Left click for Rotate
-                if (this.config.get('camera.controls.enableRotate')) {
+                if (hasConfigGet && this.config.get('camera.controls.enableRotate')) {
                     this.isDragging = true;
                 }
             }
@@ -233,7 +234,8 @@
          * Handle Wheel
          */
         handleWheel(e) {
-            if (this.config.get('camera.controls.enableZoom')) {
+            const hasConfigGet = this.config && typeof this.config.get === 'function';
+            if (hasConfigGet && this.config.get('camera.controls.enableZoom')) {
                 const zoomSpeed = this.config.get('camera.controls.zoomSpeed') || 0.1;
                 // Dynamic speed based on depth
                 const dynamicSpeed = Math.abs(this.camera.z) * 0.001 + 5;
@@ -247,13 +249,14 @@
          * Rotate camera
          */
         rotate(dx, dy) {
-            const rotateSpeed = this.config.get('camera.controls.rotateSpeed') || 0.005;
+            const hasConfigGet = this.config && typeof this.config.get === 'function';
+            const rotateSpeed = hasConfigGet ? (this.config.get('camera.controls.rotateSpeed') || 0.005) : 0.005;
 
             this.camera.rotationY += dx * rotateSpeed;
             this.camera.rotationX += dy * rotateSpeed;
 
             // Store velocity for inertia
-            if (this.config.get('camera.controls.inertia')) {
+            if (hasConfigGet && this.config.get('camera.controls.inertia')) {
                 this.velocityX = dx * rotateSpeed;
                 this.velocityY = dy * rotateSpeed;
             }
@@ -266,7 +269,8 @@
          * Pan camera
          */
         pan(dx, dy) {
-            const panSpeed = this.config.get('camera.controls.panSpeed') || 0.002;
+            const hasConfigGet = this.config && typeof this.config.get === 'function';
+            const panSpeed = hasConfigGet ? (this.config.get('camera.controls.panSpeed') || 0.002) : 0.002;
             const panScale = Math.abs(this.camera.z) * panSpeed;
 
             this.camera.x += dx * panScale;
@@ -280,8 +284,9 @@
             this.camera.z -= delta;
 
             // Clamp zoom
-            const minZoom = this.config.get('camera.controls.minZoom') || -50;
-            const maxZoom = this.config.get('camera.controls.maxZoom') || -3000;
+            const hasConfigGet = this.config && typeof this.config.get === 'function';
+            const minZoom = hasConfigGet ? (this.config.get('camera.controls.minZoom') || -50) : -50;
+            const maxZoom = hasConfigGet ? (this.config.get('camera.controls.maxZoom') || -3000) : -3000;
 
             this.camera.z = Math.max(maxZoom, Math.min(minZoom, this.camera.z));
         }
@@ -290,7 +295,8 @@
          * Reset camera to initial position
          */
         resetCamera() {
-            const initial = this.config.get('camera.initial');
+            const hasConfigGet = this.config && typeof this.config.get === 'function';
+            const initial = hasConfigGet ? this.config.get('camera.initial') : null;
             if (initial) {
                 this.camera.x = initial.x;
                 this.camera.y = initial.y;
@@ -366,8 +372,10 @@
                 return;
             }
 
+            const hasConfigGet = this.config && typeof this.config.get === 'function';
+
             // Apply inertia
-            if (this.isListening && this.config.get('camera.controls.inertia') && !this.isDragging) {
+            if (this.isListening && hasConfigGet && this.config.get('camera.controls.inertia') && !this.isDragging) {
                 const damping = this.config.get('camera.controls.inertiaDamping') || 0.95;
 
                 this.camera.rotationY += this.velocityX;
@@ -381,7 +389,7 @@
             }
 
             // Auto-rotate
-            if (this.isListening && this.autoRotate && this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
+            if (this.isListening && this.autoRotate && hasConfigGet && this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
                 const speed = this.config.get('camera.controls.autoRotateSpeed') || 0.0002;
                 const oldRotY = this.camera.rotationY;
                 this.camera.rotationY += speed;
@@ -406,7 +414,7 @@
                 if (!this._autoRotateDebugLogged) {
                     console.log('[Camera Debug] Auto-rotate NOT running:', {
                         autoRotate: this.autoRotate,
-                        configAutoRotate: this.config.get('camera.controls.autoRotate'),
+                        configAutoRotate: hasConfigGet ? this.config.get('camera.controls.autoRotate') : 'no-config',
                         isDragging: this.isDragging,
                         isPanning: this.isPanning,
                         hasConfig: !!this.config

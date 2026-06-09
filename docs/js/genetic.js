@@ -197,7 +197,9 @@
     }
 
     // --- Global API and Execution ---
-    main();
+    if (!window.__GREENHOUSE_TEST_ENVIRONMENT__) {
+        main();
+    }
 
     window.GreenhouseGenetic = {
         reinitialize: () => {

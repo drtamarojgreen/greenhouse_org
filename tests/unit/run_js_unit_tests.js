@@ -4,6 +4,19 @@ const { setupMockEnvironment, MockElement } = require('./browser_mocks');
 const { setupGreenhouseMocks } = require('./greenhouse_mocks');
 
 // --- 1. Initialize Mock Environments ---
+global.__GREENHOUSE_TEST_ENVIRONMENT__ = true;
+global.__originalConsole = {
+    log: console.log,
+    error: console.error,
+    info: console.info,
+    warn: console.warn
+};
+
+// Mask console
+console.log = () => {};
+console.info = () => {};
+console.warn = () => {};
+
 setupMockEnvironment();
 setupGreenhouseMocks();
 
@@ -127,23 +140,23 @@ function getAllTestFiles(dir, files_ = []) {
 }
 
 async function runTests() {
-    console.log("--- Starting Consolidated JavaScript Unit Tests ---");
+    global.__originalConsole.log("--- Starting Consolidated JavaScript Unit Tests ---");
     const testFiles = getAllTestFiles(__dirname);
     for (const file of testFiles) {
         try {
             eval(fs.readFileSync(file, 'utf8'));
         } catch (e) {
-            console.error(`Error in ${path.relative(__dirname, file)}:`, e.message);
+            global.__originalConsole.error(`Error in ${path.relative(__dirname, file)}:`, e.message);
         }
     }
     const results = await global.TestFramework.run();
-    console.log(`Summary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
+    global.__originalConsole.log(`Summary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
     if (results.failed > 0) {
         // Output detailed failures
-        results.suites.forEach(suite => {
-            suite.tests.forEach(test => {
+        (results.suites || []).forEach(suite => {
+            (suite.tests || []).forEach(test => {
                 if (test.result === 'failed') {
-                    console.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
+                    global.__originalConsole.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
                 }
             });
         });

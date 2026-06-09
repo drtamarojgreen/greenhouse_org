@@ -101,7 +101,7 @@
         }
     }
 
-    main();
+    if (!window.__GREENHOUSE_TEST_ENVIRONMENT__) { main(); }
 
     window.GreenhouseNeuro = {
         reinitialize: () => {

@@ -112,6 +112,6 @@
     }
 
     // --- Main Execution Logic ---
-    main();
+    if (!window.__GREENHOUSE_TEST_ENVIRONMENT__) { main(); }
 
 })();
