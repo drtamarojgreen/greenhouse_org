@@ -152,8 +152,6 @@
      */
     async run() {
       const startTime = Date.now();
-      const root = typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : globalThis);
-      const logger = root.__originalConsole || console;
 
       // Run global beforeAll hooks
       for (const hook of this.beforeAllHooks) {
@@ -162,7 +160,6 @@
 
       // Run each suite
       for (const suite of this.suites) {
-        logger.log(`Running suite: ${suite.name}`);
         await this.runSuite(suite);
       }
 
@@ -206,7 +203,6 @@
 
       this.results.suites.push({
         name: suite.name,
-        tests: suite.tests,
         ...suite.results
       });
     }
@@ -216,8 +212,6 @@
      */
     async runTest(test, suite) {
       const startTime = Date.now();
-      const root = typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : globalThis);
-      const logger = root.__originalConsole || console;
 
       try {
         // Run beforeEach hooks
@@ -233,7 +227,6 @@
         test.duration = Date.now() - startTime;
         this.results.passed++;
         suite.results.passed++;
-        logger.log(`  ✓ ${test.name}`);
 
       } catch (error) {
         // Test failed
@@ -242,7 +235,6 @@
         test.duration = Date.now() - startTime;
         this.results.failed++;
         suite.results.failed++;
-        logger.log(`  ✗ ${test.name}`);
       } finally {
         // Run afterEach hooks
         for (const hook of [...this.afterEachHooks, ...suite.afterEach]) {

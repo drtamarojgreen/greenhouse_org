@@ -635,5 +635,5 @@
             console.error('Serotonin Simulation App: Initialization failed', error);
         }
     }
-    if (!window.__GREENHOUSE_TEST_ENVIRONMENT__) { main(); }
+    main();
 })();

@@ -124,6 +124,16 @@ class MockElement {
     }
     querySelector(s) {
         if (!s) return null;
+
+        // Special handling to suppress auto-init during module loading
+        if (global.__is_loading_modules__ && s === '#container') {
+            // Return a "silent" element that doesn't trigger full app lifecycle on append
+            const silent = new MockElement('div');
+            silent.setAttribute('id', 'container');
+            silent.appendChild = (c) => c; // No-op append
+            return silent;
+        }
+
         if (s.startsWith('#')) {
             const id = s.slice(1);
             if (this.id === id) return this;
