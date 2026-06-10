@@ -297,6 +297,7 @@
             // Draw Stats / Labels
             if (window.GreenhouseGeneticStats) {
                 window.GreenhouseGeneticStats.drawOverlayInfo(ctx, w, activeGene);
+                this.drawLabels(ctx, this.neurons3D); // Explicitly call drawLabels to restore anatomical region labels
             }
 
             // --- Apply Advanced Post-Processing ---

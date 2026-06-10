@@ -68,11 +68,11 @@
             // Draw Faces
             facesToDraw.forEach(f => {
                 const material = {
-                    baseColor: { r: 180, g: 190, b: 200 }, // Slightly brighter base
-                    roughness: 0.4,
-                    metalness: 0.05,
+                    baseColor: { r: 255, g: 225, b: 220 }, // Anatomical flesh tone
+                    roughness: 0.7, // Increased roughness to reduce "plastic" look
+                    metalness: 0.02,
                     sss: true,
-                    alpha: 0.25
+                    alpha: 0.18 // Reduced alpha to prevent "white blob" saturation
                 };
 
                 const v0 = brainShell.vertices[f.indices[0]];
