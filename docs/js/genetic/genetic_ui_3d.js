@@ -214,13 +214,21 @@
             // The user requested "Brain in the center".
             // We use the main camera controller for this.
 
-            // Draw Brain as Main Background
+            // --- Multi-pass Anatomical Rendering ---
+            // Pass 1: Back faces of the brain shell
             this.drawTargetView(ctx, 0, 0, w, h, activeGene,
-                this.activeGeneIndex, this.brainShell, null, { camera: this.camera, activeGene: activeGene }); // Pass main camera
+                this.activeGeneIndex, this.brainShell, null, { camera: this.camera, activeGene: activeGene, mode: 'back' });
 
-            //this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
+            // Pass 2: Internal components (Neurons, Connections, Cues)
+            const neurons = this.neurons3D.filter(n => n.type === 'neuron');
+            neurons.forEach(n => this.drawNeuron(ctx, n));
+
             this.drawConnections(ctx);
             this.drawSynapticCues(ctx);
+
+            // Pass 3: Front faces of the brain shell (semi-transparent overlay)
+            this.drawTargetView(ctx, 0, 0, w, h, activeGene,
+                this.activeGeneIndex, this.brainShell, null, { camera: this.camera, activeGene: activeGene, mode: 'front' });
 
             // Helper to draw PiP Frame & Label
             const drawPiPFrame = (ctx, x, y, w, h, title) => {

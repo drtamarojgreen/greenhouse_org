@@ -177,13 +177,29 @@
             neurons.push({ x: 0, y: 0, z: 0, id: 0, type: 'soma', region: 'brainstem' });
 
             for (let i = 1; i < neuronCount; i++) {
+                const region = regionKeys[i % regionKeys.length];
+                let rx = (this.nextRand() - 0.5) * this.bounds.x;
+                let ry = (this.nextRand() - 0.5) * this.bounds.y;
+                let rz = (this.nextRand() - 0.5) * this.bounds.z;
+
+                // Precision Alignment: Constrain coordinates based on assigned anatomical region
+                // Normalized to bounds (assuming center is 0,0,0)
+                switch(region) {
+                    case 'pfc': rz = 100 + this.nextRand() * 100; ry = -50 + this.nextRand() * 100; break;
+                    case 'occipitalLobe': rz = -100 - this.nextRand() * 100; ry = -50 + this.nextRand() * 100; break;
+                    case 'parietalLobe': ry = 100 + this.nextRand() * 100; rz = -50 + this.nextRand() * 100; break;
+                    case 'temporalLobe': rx = (this.nextRand() > 0.5 ? 120 : -120) + (this.nextRand() - 0.5) * 60; rz = -50 + this.nextRand() * 100; break;
+                    case 'cerebellum': ry = -80 - this.nextRand() * 60; rz = -100 - this.nextRand() * 50; break;
+                    case 'brainstem': rx = (this.nextRand() - 0.5) * 40; ry = -120 - this.nextRand() * 80; rz = (this.nextRand() - 0.5) * 40; break;
+                }
+
                 neurons.push({
-                    x: (this.nextRand() - 0.5) * this.bounds.x + (this.nextRand() - 0.5) * prenatalNoise,
-                    y: (this.nextRand() - 0.5) * this.bounds.y + (this.nextRand() - 0.5) * prenatalNoise,
-                    z: (this.nextRand() - 0.5) * this.bounds.z + (this.nextRand() - 0.5) * prenatalNoise,
+                    x: rx + (this.nextRand() - 0.5) * prenatalNoise,
+                    y: ry + (this.nextRand() - 0.5) * prenatalNoise,
+                    z: rz + (this.nextRand() - 0.5) * prenatalNoise,
                     id: i,
                     type: 'dendrite',
-                    region: regionKeys[i % regionKeys.length]
+                    region: region
                 });
             }
 

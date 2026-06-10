@@ -78,12 +78,13 @@
                     totalB += baseColor.b * lightColor.b * light.intensity;
                 } else if (light.type === 'directional') {
                     // Diffuse (Lambert)
-                    const NdotL = Math.max(0, normal.x * light.direction.x + normal.y * light.direction.y + normal.z * light.direction.z);
+                    const L = { x: -light.direction.x, y: -light.direction.y, z: -light.direction.z };
+                    const NdotL = Math.max(0, normal.x * L.x + normal.y * L.y + normal.z * L.z);
 
                     // Specular (Blinn-Phong approximation for PBR)
-                    const halfX = light.direction.x + viewDir.x;
-                    const halfY = light.direction.y + viewDir.y;
-                    const halfZ = light.direction.z + viewDir.z;
+                    const halfX = L.x + viewDir.x;
+                    const halfY = L.y + viewDir.y;
+                    const halfZ = L.z + viewDir.z;
                     const halfLen = Math.sqrt(halfX * halfX + halfY * halfY + halfZ * halfZ);
                     const halfDir = { x: halfX / halfLen, y: halfY / halfLen, z: halfZ / halfLen };
 
@@ -104,7 +105,7 @@
 
                     // Subsurface Scattering Approximation
                     if (this.config.get('materials.brain.subsurfaceScattering')) {
-                        const sss = Math.pow(Math.max(0, -(normal.x * light.direction.x + normal.y * light.direction.y + normal.z * light.direction.z)), 2.0);
+                        const sss = Math.pow(Math.max(0, -(normal.x * L.x + normal.y * L.y + normal.z * L.z)), 2.0);
                         const sssIntensity = this.config.get('materials.brain.sssIntensity') || 0.3;
                         totalR += baseColor.r * 0.5 * sss * sssIntensity;
                         totalG += baseColor.g * 0.2 * sss * sssIntensity;

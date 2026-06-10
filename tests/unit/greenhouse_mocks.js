@@ -220,6 +220,7 @@ function setupGreenhouseMocks() {
     const configMockFactory = (overrides = {}) => {
         const mock = {
             get: function(path) {
+                if (!path || typeof path !== 'string') return undefined;
                 const keys = path.split('.');
                 let val = this;
                 for (const k of keys) {
@@ -234,15 +235,50 @@ function setupGreenhouseMocks() {
         return mock;
     };
 
-    protectGlobal('GreenhouseGeneticConfig', configMockFactory({
-        camera: { initial: { x: 0, y: 0, z: -300 }, controls: { inertia: true, autoRotate: true } },
-        materials: { dna: { baseColors: [] } },
+    const ensureGetMethod = (obj) => {
+        if (obj && typeof obj === 'object' && !obj.get) {
+            obj.get = function(path) {
+                if (!path || typeof path !== 'string') return undefined;
+                const keys = path.split('.');
+                let val = this;
+                for (const k of keys) {
+                    if (val && typeof val === 'object' && k in val) val = val[k];
+                    else return undefined;
+                }
+                return val;
+            };
+        }
+        return obj;
+    };
+
+    const protectConfig = (name, defaultValue) => {
+        let current = configMockFactory(defaultValue);
+        Object.defineProperty(global, name, {
+            get: () => current,
+            set: (v) => { current = ensureGetMethod(v || configMockFactory(defaultValue)); },
+            configurable: true
+        });
+        if (win !== global) {
+            try {
+                Object.defineProperty(win, name, {
+                    get: () => current,
+                    set: (v) => { current = ensureGetMethod(v || configMockFactory(defaultValue)); },
+                    configurable: true
+                });
+            } catch (e) {}
+        }
+    };
+
+    protectConfig('GreenhouseGeneticConfig', {
+        camera: { initial: { x: 0, y: 0, z: -300 }, controls: { inertia: true, autoRotate: true, enablePan: true, enableRotate: true, enableZoom: true } },
+        materials: { dna: { baseColors: [] }, brain: { baseColor: {r:180, g:190, b:200} } },
         ui: { background: {} }
-    }));
-    protectGlobal('GreenhouseNeuroConfig', configMockFactory({
+    });
+    protectConfig('GreenhouseNeuroConfig', {
         camera: { initial: { x: 0, y: 0, z: -300 } },
-        pip: { enabled: true }
-    }));
+        pip: { enabled: true },
+        materials: { brain: { baseColor: {r:180, g:190, b:200} } }
+    });
     protectGlobal('GreenhouseStressConfig', configMockFactory());
     protectGlobal('GreenhouseEmotionConfig', configMockFactory());
 

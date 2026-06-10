@@ -455,6 +455,18 @@
                 }
             });
 
+            // Re-sync region vertices for the realistic generator which might have pre-filled regions
+            if (window.GreenhouseBrainMeshRealistic) {
+                for (const [name, data] of Object.entries(brainShell.regions || {})) {
+                    data.vertices = []; // Clear and re-fill to ensure sync
+                }
+                brainShell.vertices.forEach((v, i) => {
+                    if (v.region && brainShell.regions[v.region]) {
+                        brainShell.regions[v.region].vertices.push(i);
+                    }
+                });
+            }
+
             const edgeMap = new Map();
             brainShell.faces.forEach((face, idx) => {
                 const indices = face.indices || face;

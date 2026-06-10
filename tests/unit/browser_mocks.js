@@ -233,7 +233,10 @@ function setupMockEnvironment() {
     global.location = {
         href: 'http://localhost/', search: '', hash: '', pathname: '/', origin: 'http://localhost'
     };
-    global.requestAnimationFrame = (c) => setTimeout(c, 16);
+    global.requestAnimationFrame = (c) => {
+        if (global.__is_loading_modules__) return 0;
+        return setTimeout(c, 16);
+    };
     global.cancelAnimationFrame = (id) => clearTimeout(id);
     global.getComputedStyle = () => ({
         getPropertyValue: () => '0px', display: 'block', includes: (v) => false

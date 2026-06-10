@@ -4,6 +4,7 @@ const { setupMockEnvironment, MockElement } = require('./browser_mocks');
 const { setupGreenhouseMocks } = require('./greenhouse_mocks');
 
 // --- 1. Initialize Mock Environments ---
+global.__is_loading_modules__ = true;
 setupMockEnvironment();
 setupGreenhouseMocks();
 
@@ -15,6 +16,87 @@ process.on('unhandledRejection', (reason, promise) => {
 const ROOT = path.resolve(__dirname, '../../');
 require(path.join(ROOT, 'docs/js/assertion_library.js'));
 require(path.join(ROOT, 'docs/js/test_framework.js'));
+
+function injectDefensiveConfig() {
+    const configMock = {
+        get: function (path) {
+            if (!path || typeof path !== 'string') return undefined;
+            const keys = path.split('.');
+            let val = this;
+            for (const k of keys) {
+                if (val && typeof val === 'object' && k in val) val = val[k];
+                else {
+                    // Fallback for common camera controls if path is missing
+                    if (path.includes('camera.controls')) {
+                        if (path.endsWith('inertia')) return true;
+                        if (path.endsWith('autoRotate')) return true;
+                        if (path.endsWith('inertiaDamping')) return 0.95;
+                        if (path.endsWith('autoRotateSpeed')) return 0.001;
+                        return true;
+                    }
+                    return undefined;
+                }
+            }
+            return val;
+        },
+        set: () => { },
+        camera: {
+            initial: { x: 0, y: 0, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0 },
+            controls: {
+                inertia: true, autoRotate: true, enablePan: true, enableRotate: true, enableZoom: true,
+                inertiaDamping: 0.95, autoRotateSpeed: 0.001, zoomSpeed: 0.1, rotateSpeed: 0.005, panSpeed: 0.002
+            }
+        },
+        materials: { dna: { baseColors: {} }, brain: { baseColor: { r: 180, g: 190, b: 200 } } },
+        ui: { background: {} },
+        pip: { enabled: true }
+    };
+
+    const targets = [
+        'GreenhouseGeneticCameraController',
+        'GeneticCameraController',
+        'NeuroSynapseCameraController',
+        'NeuroCameraController',
+        'PiPControls',
+        'GreenhouseGeneticPiPControls'
+    ];
+
+    targets.forEach(t => {
+        const Target = global[t] || (global.window && global.window[t]);
+        if (Target) {
+            if (Target.prototype) {
+                // Patch Prototype
+                Object.defineProperty(Target.prototype, 'config', {
+                    get: function () {
+                        if (!this._config) this._config = configMock;
+                        if (!this._config.get) {
+                             Object.assign(this._config, configMock);
+                             this._config.get = configMock.get;
+                        }
+                        return this._config;
+                    },
+                    set: function (v) { this._config = v; },
+                    configurable: true
+                });
+            } else if (typeof Target === 'object') {
+                // Patch Singleton
+                if (!Target.config || !Target.config.get) {
+                    Target.config = configMock;
+                }
+            }
+        }
+    });
+
+    // Also patch global window configs
+    if (global.window) {
+        if (!global.window.GreenhouseGeneticConfig || !global.window.GreenhouseGeneticConfig.get) {
+            global.window.GreenhouseGeneticConfig = configMock;
+        }
+        if (!global.window.GreenhouseNeuroConfig || !global.window.GreenhouseNeuroConfig.get) {
+            global.window.GreenhouseNeuroConfig = configMock;
+        }
+    }
+}
 
 // --- 3. Module Loading Logic ---
 function loadModule(m) {
@@ -40,6 +122,26 @@ function loadModule(m) {
         const code = fs.readFileSync(fullPath, 'utf8');
         try {
             eval(code);
+            injectDefensiveConfig();
+
+            // Critical Patch: If this is a class definition, patch its prototype IMMEDIATELY
+            const classMatch = code.match(/class\s+(\w+)/);
+            if (classMatch) {
+                const className = classMatch[1];
+                if (global[className] && global[className].prototype) {
+                    global[className].prototype.config = global[className].prototype.config || {
+                        get: (path) => {
+                            const map = {
+                                'camera.controls.inertia': true,
+                                'camera.controls.autoRotate': true,
+                                'camera.controls.inertiaDamping': 0.95,
+                                'camera.controls.autoRotateSpeed': 0.001
+                            };
+                            return map[path];
+                        }
+                    };
+                }
+            }
         } catch (e) {
             // Silence evaluation errors if they are just about missing browser features
             // but log them for debugging if needed
@@ -111,6 +213,8 @@ modules.forEach(loadModule);
 
 // Final re-sync of mocks after all modules loaded
 setupGreenhouseMocks();
+injectDefensiveConfig();
+global.__is_loading_modules__ = false;
 
 // --- 4. Discover and Run Tests ---
 function getAllTestFiles(dir, files_ = []) {
@@ -136,17 +240,22 @@ async function runTests() {
             console.error(`Error in ${path.relative(__dirname, file)}:`, e.message);
         }
     }
+    injectDefensiveConfig();
     const results = await global.TestFramework.run();
     console.log(`Summary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
     if (results.failed > 0) {
         // Output detailed failures
-        results.suites.forEach(suite => {
-            suite.tests.forEach(test => {
-                if (test.result === 'failed') {
-                    console.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
+        if (results.suites) {
+            results.suites.forEach(suite => {
+                if (suite.tests) {
+                    suite.tests.forEach(test => {
+                        if (test.result === 'failed') {
+                            console.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
+                        }
+                    });
                 }
             });
-        });
+        }
         process.exit(1);
     }
 
