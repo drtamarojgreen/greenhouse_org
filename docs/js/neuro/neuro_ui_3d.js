@@ -207,6 +207,24 @@
                 }
             }
 
+            // Draw Internal Brain Anatomy (Main Viewport Only if applicable)
+            if (this.brainShell && !this.selectedConnection) {
+                 // Pass 1: Back Shell
+                 window.GreenhouseNeuroBrain?.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w, h, null, 'back');
+
+                 // Pass 2: Internal Components
+                 this.neurons.forEach(n => {
+                    const p = window.GreenhouseModels3DMath?.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                    if (p && p.scale > 0) {
+                        ctx.fillStyle = n.baseColor;
+                        ctx.beginPath(); ctx.arc(p.x, p.y, n.radius * p.scale, 0, Math.PI * 2); ctx.fill();
+                    }
+                 });
+
+                 // Pass 3: Front Shell
+                 window.GreenhouseNeuroBrain?.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w, h, null, 'front');
+            }
+
             const pipW = 300, pipH = 250, padding = 20;
             const pipX = w - pipW - padding, pipY = h - pipH - padding;
             this.drawNetworkView(ctx, pipX, pipY, pipW, pipH);
@@ -233,7 +251,7 @@
             ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
 
             if (this.brainShell) {
-                window.GreenhouseNeuroBrain?.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w, h, null);
+                window.GreenhouseNeuroBrain?.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w, h, null, 'back');
             }
 
             this.neurons.forEach(n => {
@@ -243,6 +261,10 @@
                     ctx.beginPath(); ctx.arc(p.x, p.y, n.radius * p.scale, 0, Math.PI * 2); ctx.fill();
                 }
             });
+
+            if (this.brainShell) {
+                window.GreenhouseNeuroBrain?.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w, h, null, 'front');
+            }
 
             ctx.restore();
             this.projection.width = origW; this.projection.height = origH;

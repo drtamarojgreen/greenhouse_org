@@ -11,7 +11,7 @@
         _frameBuffer: null,
         _prevFrameBuffer: null,
 
-        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null) {
+        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null, mode = 'both') {
             const targetRegion = activeGene ? activeGene.region : null;
             if (!brainShell) return;
 
@@ -33,6 +33,15 @@
             for (let i = 0; i < brainShell.faces.length; i++) {
                 const face = brainShell.faces[i];
                 const indices = face.indices || face;
+
+                const v1 = brainShell.vertices[indices[0]];
+                const v2 = brainShell.vertices[indices[1]];
+                const v3 = brainShell.vertices[indices[2]];
+                if (!v1 || !v2 || !v3) continue;
+
+                // Only draw the Cortex layer to maintain anatomical clarity
+                if (v1.layer === 'Internal') continue;
+
                 const p1 = projectedVertices[indices[0]];
                 const p2 = projectedVertices[indices[1]];
                 const p3 = projectedVertices[indices[2]];
@@ -40,15 +49,15 @@
                 if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
                     const cross = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
-                    if (cross < 0) {
-                        const v1 = brainShell.vertices[indices[0]];
-                        const v2 = brainShell.vertices[indices[1]];
-                        const v3 = brainShell.vertices[indices[2]];
-                        if (!v1 || !v2 || !v3) continue;
-                        const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
-                        const depth = (p1.depth + p2.depth + p3.depth) / 3;
-                        facesToDraw.push({ indices, p1, p2, p3, depth, normal, region: face.region || v1.region });
-                    }
+
+                    const isBackFace = cross >= 0;
+
+                    if (mode === 'back' && !isBackFace) continue;
+                    if (mode === 'front' && isBackFace) continue;
+
+                    const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
+                    const depth = (p1.depth + p2.depth + p3.depth) / 3;
+                    facesToDraw.push({ indices, p1, p2, p3, depth, normal, region: face.region || v1.region, isBackFace });
                 }
             }
 
@@ -57,12 +66,21 @@
 
             // Draw Faces
             facesToDraw.forEach(f => {
+                let regionColor = { r: 180, g: 190, b: 200 };
+                if (brainShell.regions && brainShell.regions[f.region]) {
+                    const colStr = brainShell.regions[f.region].color;
+                    const match = colStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                    if (match) {
+                        regionColor = { r: parseInt(match[1]), g: parseInt(match[2]), b: parseInt(match[3]) };
+                    }
+                }
+
                 const material = {
-                    baseColor: { r: 180, g: 190, b: 200 },
+                    baseColor: regionColor,
                     roughness: 0.4,
                     metalness: 0.05,
                     sss: true,
-                    alpha: 0.25
+                    alpha: 0.45 // Increased opacity for structural weight
                 };
 
                 const v0 = brainShell.vertices[f.indices[0]];
@@ -78,7 +96,8 @@
 
                 // Ambient Occlusion: Proxy sulcal depth using curvature
                 // v.curvature is 0..1, higher values = more "fold"
-                const ao = Math.max(0.1, 1.0 - (v0.curvature || 0) * 2.5);
+                // Sharpened for deeper, recognizable sulci
+                const ao = Math.max(0.05, 1.0 - (v0.curvature || 0) * 4.5);
 
                 const color = GreenhouseNeuroLighting.calculateLighting(f.normal, center, camera, material);
 

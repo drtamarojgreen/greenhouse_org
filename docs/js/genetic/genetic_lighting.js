@@ -73,10 +73,11 @@
                     totalG += baseColor.g * lightColor.g * light.intensity;
                     totalB += baseColor.b * lightColor.b * light.intensity;
                 } else if (light.type === 'directional') {
-                    const NdotL = Math.max(0, normal.x * light.direction.x + normal.y * light.direction.y + normal.z * light.direction.z);
-                    const halfX = light.direction.x + viewDir.x;
-                    const halfY = light.direction.y + viewDir.y;
-                    const halfZ = light.direction.z + viewDir.z;
+                    const L = { x: -light.direction.x, y: -light.direction.y, z: -light.direction.z };
+                    const NdotL = Math.max(0, normal.x * L.x + normal.y * L.y + normal.z * L.z);
+                    const halfX = L.x + viewDir.x;
+                    const halfY = L.y + viewDir.y;
+                    const halfZ = L.z + viewDir.z;
                     const halfLen = Math.sqrt(halfX * halfX + halfY * halfY + halfZ * halfZ);
                     const halfDir = { x: halfX / halfLen, y: halfY / halfLen, z: halfZ / halfLen };
 
