@@ -16,16 +16,16 @@
                 faces: [],
                 regions: {
                     // Unified Registry supporting all model keys
-                    pfc: { name: 'Prefrontal Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    frontal: { name: 'Frontal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    motorCortex: { name: 'Motor Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    somatosensoryCortex: { name: 'Somatosensory Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    parietalLobe: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    parietal: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    temporalLobe: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    temporal: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    occipitalLobe: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    occipital: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    pfc: { name: 'Prefrontal Cortex', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    frontal: { name: 'Frontal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    motorCortex: { name: 'Motor Cortex', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    somatosensoryCortex: { name: 'Somatosensory Cortex', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    parietalLobe: { name: 'Parietal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    parietal: { name: 'Parietal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    temporalLobe: { name: 'Temporal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    temporal: { name: 'Temporal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    occipitalLobe: { name: 'Occipital Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    occipital: { name: 'Occipital Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
                     cerebellum: { name: 'Cerebellum', color: 'rgba(255, 182, 193, 0.2)', vertices: [] },
                     brainstem: { name: 'Brainstem', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
                     amygdala: { name: 'Amygdala', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
@@ -43,9 +43,9 @@
                     lateralVentricle: { name: 'Lateral Ventricle', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
                     pituitaryGland: { name: 'Pituitary Gland', color: 'rgba(30, 144, 255, 0.2)', vertices: [] },
                     mammillaryBody: { name: 'Mammillary Body', color: 'rgba(255, 255, 255, 0.2)', vertices: [] },
-                    dlPFC: { name: 'Dorsolateral PFC', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    vmPFC: { name: 'Ventromedial PFC', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    ofc: { name: 'Orbitofrontal Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    dlPFC: { name: 'Dorsolateral PFC', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    vmPFC: { name: 'Ventromedial PFC', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    ofc: { name: 'Orbitofrontal Cortex', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
                     acc: { name: 'Anterior Cingulate', color: 'rgba(165, 42, 42, 0.2)', vertices: [] }
                 }
             };
@@ -320,9 +320,9 @@
             x *= 1.2; y *= 1.05; z *= 1.4;
 
             // 1. Longitudinal fissure (Deep separation between hemispheres)
-            // Indents the top and bottom midline significantly
-            const fissureSharpness = 15;
-            const fissureDepth = 0.5;
+            // Softened the indentation to avoid a "cloven" or "mechanical" split
+            const fissureSharpness = 12;
+            const fissureDepth = 0.45;
             const fissureEffect = Math.exp(-Math.abs(x) * fissureSharpness) * fissureDepth;
 
             // Fissure indents from top (y > 0) and bottom (y < 0)
@@ -416,22 +416,30 @@
                     freqMult = 1.6; ampMult = 0.9; break;
             }
 
-            // Multi-octave organic folding algorithm
-            // Uses varied rotations and harmonics to break up grid patterns
-            const baseFreq = 8 * freqMult;
+            // Labyrinthine Folding Algorithm (Domain Warping)
+            // Uses recursive coordinate perturbation to create winding, biological gyri
+            const baseFreq = 7 * freqMult;
 
             const noise = (fx, fy, fz, freq, amp, angle) => {
                 const s = Math.sin(angle), c = Math.cos(angle);
-                const rx = fx * c - fz * s;
-                const rz = fx * s + fz * c;
-                const v = Math.sin(rx * freq) * Math.cos(fy * freq * 1.1) * Math.sin(rz * freq * 0.9);
-                // Create rounded ridges (gyri) and slightly sharper valleys (sulci)
-                return (v > 0) ? Math.pow(v, 0.7) * amp : -Math.pow(Math.abs(v), 1.2) * amp;
+
+                // Domain Warping: Perturb input coordinates to break grid regularity
+                const pfx = fx + Math.sin(fy * 4 + angle) * 0.15;
+                const pfy = fy + Math.cos(fz * 4 + angle * 1.2) * 0.15;
+                const pfz = fz + Math.sin(fx * 4 + angle * 0.8) * 0.15;
+
+                const rx = pfx * c - pfz * s;
+                const rz = pfx * s + pfz * c;
+                const v = Math.sin(rx * freq) * Math.cos(pfy * freq * 1.1) * Math.sin(rz * freq * 0.9);
+
+                // Create rounded ridges (gyri) and organic valleys (sulci)
+                // Non-linear scaling ensures they don't look like mechanical "fins"
+                return (v > 0) ? Math.pow(v, 0.6) * amp : -Math.pow(Math.abs(v), 1.1) * amp;
             };
 
-            displacement += noise(nx, ny, nz, baseFreq, 0.09 * ampMult, 0.0);
-            displacement += noise(nx, ny, nz, baseFreq * 1.8, 0.05 * ampMult, 0.8);
-            displacement += noise(nx, ny, nz, baseFreq * 3.5, 0.02 * ampMult, 1.5);
+            displacement += noise(nx, ny, nz, baseFreq, 0.11 * ampMult, 0.4);
+            displacement += noise(nx, ny, nz, baseFreq * 1.7, 0.06 * ampMult, 1.2);
+            displacement += noise(nx, ny, nz, baseFreq * 3.1, 0.03 * ampMult, 2.5);
 
             const len = Math.sqrt(nx**2 + ny**2 + nz**2);
             if (len > 0) {

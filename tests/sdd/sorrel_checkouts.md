@@ -50,3 +50,10 @@
 - **Visual Material Observation**: Alpha transparency increased to 0.25 (Base: 0.1). Color shifted to anatomical cream `rgb(245, 230, 200)`.
 - **Empirical Execution**: Visuals verified via `verify_visuals_harness.py`. Captured `genetic_harness_verified.png` and `neuro_harness_verified.png`.
 - **Test Integrity Observation**: `TypeError` in `GeneticCameraController` resolved via prototype patching. Pre-existing test failures: 189 (no regressions detected).
+
+## Brain Simulation Biological Correction Evidence (2024-05-31)
+
+- **Morphological Refinement**: Brain proportions updated to L:W:H = 1.0:0.85:0.75. Longitudinal fissure sharpness adjusted to 12.0.
+- **Labyrinthine Folding Logic**: Replaced sinusoidal noise with domain-warped recursive coordinate perturbation. Base frequency: 7.0.
+- **Palette Biological Shift**: Material color transitioned from mechanical cream to biological flesh-tone `rgba(255, 225, 220, 0.25)`. Shininess reduced to 10 (Target: non-metallic).
+- **Empirical Execution (Final)**: Captured `genetic_biological_final_v2.png` and `neuro_biological_final_v2.png`. Observed 0 mechanical "fin" artifacts.

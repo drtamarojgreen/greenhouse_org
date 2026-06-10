@@ -75,7 +75,7 @@
             specular: {
                 enabled: true,
                 intensity: 0.5,
-                shininess: 30,
+                shininess: 10,
                 color: { r: 255, g: 255, b: 255 }
             },
             shadows: {
@@ -88,7 +88,7 @@
         // Material Configuration
         materials: {
             brain: {
-                baseColor: { r: 245, g: 230, b: 200 },
+                baseColor: { r: 255, g: 225, b: 220 },
                 alpha: 0.25,
                 metallic: 0.2,
                 roughness: 0.6,
@@ -187,17 +187,17 @@
         regions: {
             pfc: {
                 name: 'Prefrontal Cortex',
-                color: 'rgba(224, 224, 224, 0.6)', // Lightest (Frontal/Executive)
+                color: 'rgba(255, 235, 230, 0.6)', // Lightest (Frontal/Executive)
                 position: { x: 0, y: -100, z: 150 }
             },
             parietalLobe: {
                 name: 'Parietal Lobe',
-                color: 'rgba(200, 200, 200, 0.5)', // Neutral Mid
+                color: 'rgba(250, 225, 220, 0.5)', // Neutral Mid
                 position: { x: 0, y: -50, z: 0 }
             },
             occipitalLobe: {
                 name: 'Occipital Lobe',
-                color: 'rgba(140, 140, 140, 0.6)', // Darker (Posterior/Sensory)
+                color: 'rgba(225, 195, 190, 0.6)', // Darker (Posterior/Sensory)
                 position: { x: 0, y: 0, z: -150 }
             },
             temporalLobe: {
