@@ -297,6 +297,17 @@
             // Draw Stats / Labels
             if (window.GreenhouseGeneticStats) {
                 window.GreenhouseGeneticStats.drawOverlayInfo(ctx, w, activeGene);
+
+                // Project brain neurons for label placement
+                const projectedBrainNeurons = this.neurons3D
+                    .filter(n => n.type === 'neuron')
+                    .map(n => {
+                        const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                        return { ...n, ...p };
+                    })
+                    .filter(p => p.scale > 0);
+
+                window.GreenhouseGeneticStats.drawLabels(ctx, projectedBrainNeurons);
             }
 
             // --- Apply Advanced Post-Processing ---

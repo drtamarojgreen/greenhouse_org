@@ -16,16 +16,16 @@
                 faces: [],
                 regions: {
                     // Unified Registry supporting all model keys
-                    pfc: { name: 'Prefrontal Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    frontal: { name: 'Frontal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    motorCortex: { name: 'Motor Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    somatosensoryCortex: { name: 'Somatosensory Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    parietalLobe: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    parietal: { name: 'Parietal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    temporalLobe: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    temporal: { name: 'Temporal Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    occipitalLobe: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    occipital: { name: 'Occipital Lobe', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    pfc: { name: 'Prefrontal Cortex', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    frontal: { name: 'Frontal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    motorCortex: { name: 'Motor Cortex', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    somatosensoryCortex: { name: 'Somatosensory Cortex', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    parietalLobe: { name: 'Parietal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    parietal: { name: 'Parietal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    temporalLobe: { name: 'Temporal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    temporal: { name: 'Temporal Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    occipitalLobe: { name: 'Occipital Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    occipital: { name: 'Occipital Lobe', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
                     cerebellum: { name: 'Cerebellum', color: 'rgba(255, 182, 193, 0.2)', vertices: [] },
                     brainstem: { name: 'Brainstem', color: 'rgba(135, 206, 250, 0.2)', vertices: [] },
                     amygdala: { name: 'Amygdala', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
@@ -43,9 +43,9 @@
                     lateralVentricle: { name: 'Lateral Ventricle', color: 'rgba(165, 42, 42, 0.2)', vertices: [] },
                     pituitaryGland: { name: 'Pituitary Gland', color: 'rgba(30, 144, 255, 0.2)', vertices: [] },
                     mammillaryBody: { name: 'Mammillary Body', color: 'rgba(255, 255, 255, 0.2)', vertices: [] },
-                    dlPFC: { name: 'Dorsolateral PFC', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    vmPFC: { name: 'Ventromedial PFC', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
-                    ofc: { name: 'Orbitofrontal Cortex', color: 'rgba(245, 230, 200, 0.2)', vertices: [] },
+                    dlPFC: { name: 'Dorsolateral PFC', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    vmPFC: { name: 'Ventromedial PFC', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
+                    ofc: { name: 'Orbitofrontal Cortex', color: 'rgba(255, 225, 220, 0.25)', vertices: [] },
                     acc: { name: 'Anterior Cingulate', color: 'rgba(165, 42, 42, 0.2)', vertices: [] }
                 }
             };
@@ -53,12 +53,12 @@
             // Parameters for realistic brain shape
             // Increased density for anatomical fidelity
             const baseRadius = 200;
-            const latBands = 100;
-            const lonBands = 100;
+            const latBands = 120;
+            const lonBands = 120;
 
             // Generate layers: Internal structures first, then Cortex
             const layers = [
-                { name: 'Internal', radius: 0.45 * baseRadius, latBands: 50, lonBands: 50 },
+                { name: 'Internal', radius: 0.45 * baseRadius, latBands: 60, lonBands: 60 },
                 { name: 'Cortex', radius: baseRadius, latBands: latBands, lonBands: lonBands }
             ];
 
@@ -315,54 +315,70 @@
          * Apply anatomical deformations to create realistic brain shape
          */
         applyAnatomicalDeformations(x, y, z) {
-            // Proportional scaling for human brain (longer Z, wider X than sphere)
-            x *= 1.15; y *= 1.25; z *= 1.4;
+            // Refined human brain proportions: Approx L:W:H = 1.0:0.85:0.75
+            // Normalizing to Z (Length) as 1.45, X (Width) as 1.22, Y (Height) as 1.08
+            x *= 1.22; y *= 1.08; z *= 1.45;
 
-            // 1. Longitudinal fissure (Deep indent between hemispheres)
-            const fissureEffect = Math.exp(-Math.abs(x) * 10) * 0.35;
-            if (y > -0.6) {
-                y *= (1 - fissureEffect);
+            // 1. Longitudinal fissure (Deep separation between hemispheres)
+            // Increased sharpness (12 -> 16) but reduced depth (0.45 -> 0.38) for organic feel
+            const fissureSharpness = 16;
+            const fissureDepth = 0.38;
+            const fissureEffect = Math.exp(-Math.abs(x) * fissureSharpness) * fissureDepth;
+
+            // Fissure indents from top (y > 0) and bottom (y < 0)
+            if (Math.abs(y) > 0.08) {
+                const yFactor = Math.abs(y) / 1.08;
+                y *= (1 - fissureEffect * yFactor);
             }
 
-            // 2. Lateral Sulcus (Sylvian Fissure) - Indent on sides
-            if (Math.abs(y) < 0.4 && z > -0.3 && z < 0.6) {
-                const sulcusEffect = Math.exp(-Math.abs(y + 0.05) * 5) * 0.25;
-                if (Math.abs(x) > 0.45) {
+            // 2. Lateral Sulcus (Sylvian Fissure) - Deep side indents
+            if (Math.abs(y) < 0.3 && z > -0.15 && z < 0.45) {
+                const sulcusEffect = Math.exp(-Math.abs(y + 0.08) * 10) * 0.32;
+                if (Math.abs(x) > 0.38) {
                     x *= (1 - sulcusEffect);
                 }
             }
 
-            // 3. Frontal Lobe (Broad bulge at front)
-            if (z > 0.35) {
-                const frontalShift = (z - 0.35) * 0.55;
-                z *= (1 + frontalShift);
-                x *= (1 + frontalShift * 0.25);
-                y *= (1 + frontalShift * 0.15);
+            // 3. Frontal Lobe (Blunt, broad anterior region)
+            if (z > 0.25) {
+                const frontalTaper = Math.pow(z - 0.25, 0.75) * 0.35;
+                z += frontalTaper;
+                x *= (1 + frontalTaper * 0.25); // Broaden
+                y *= (1 + frontalTaper * 0.08); // Slightly taller
             }
 
-            // 4. Temporal Lobes (Hang down and bulge sideways)
-            if (Math.abs(x) > 0.55 && z > -0.4 && z < 0.6 && y < 0.3) {
-                const tempBulge = (Math.abs(x) - 0.55) * 0.75;
-                x *= (1 + tempBulge);
-                y -= tempBulge * 0.5; // Hanging down
+            // 4. Temporal Lobes (Bulging anterior-lateral 'hangs')
+            if (Math.abs(x) > 0.45 && z > -0.25 && z < 0.4) {
+                const tWeight = (Math.abs(x) - 0.45) * (z + 0.25) * 1.6;
+                if (tWeight > 0 && y < 0.05) {
+                    x *= (1 + tWeight * 0.35);
+                    y -= tWeight * 0.28; // Distinct downward 'hang'
+                }
             }
 
-            // 5. Occipital Lobe (Tapered back)
-            if (z < -0.45) {
-                const occipitalTaper = (-z - 0.45) * 0.45;
-                x *= (1 - occipitalTaper);
-                y *= (1 - occipitalTaper * 0.4);
-                z *= (1 + occipitalTaper * 0.15);
+            // 5. Occipital Lobe (Distinct posterior taper)
+            if (z < -0.35) {
+                const occipitalEffect = (-z - 0.35) * 0.55;
+                x *= (1 - occipitalEffect * 0.65);
+                y *= (1 - occipitalEffect * 0.35);
+                z -= occipitalEffect * 0.25;
             }
 
-            // 6. Cerebellum (Separate bulbous structure at lower back)
-            if (y < -0.3 && z < -0.4) {
-                const distToCerebCenter = Math.sqrt(x*x + (y+0.6)**2 + (z+0.7)**2);
-                if (distToCerebCenter < 0.6) {
-                    const cerebBulge = (0.6 - distToCerebCenter) * 0.7;
-                    x *= (1 + cerebBulge);
-                    y *= (1 + cerebBulge);
-                    z *= (1 + cerebBulge);
+            // 6. Cerebellum (Tucked underneath the occipital lobe)
+            if (y < -0.25 && z < -0.3) {
+                const cX = x, cY = y + 0.55, cZ = z + 0.8;
+                const distToCereb = Math.sqrt(cX*cX + cY*cY + cZ*cZ);
+                if (distToCereb < 0.45) {
+                    const cBulge = (0.45 - distToCereb) * 0.85;
+                    x *= (1 + cBulge * 1.25);
+                    y *= (1 + cBulge * 0.85);
+                    z *= (1 + cBulge * 0.55);
+                }
+
+                // Horizontal separation indent between cerebrum and cerebellum
+                if (y > -0.5 && y < -0.3) {
+                    const sepEffect = Math.exp(-Math.pow(y + 0.4, 2) * 80) * 0.18;
+                    z *= (1 - sepEffect);
                 }
             }
 
@@ -400,10 +416,32 @@
                     freqMult = 1.6; ampMult = 0.9; break;
             }
 
-            // Fractal Perlin-like displacement for gyri/sulci
-            displacement += Math.sin(nx * 5 * freqMult + nz * 4 * freqMult) * Math.cos(ny * 4 * freqMult) * 0.15 * ampMult;
-            displacement += Math.sin(nx * 10 * freqMult + nz * 8 * freqMult) * Math.cos(ny * 9 * freqMult) * 0.08 * ampMult;
-            displacement += Math.sin(nx * 20 * freqMult + nz * 16 * freqMult) * Math.cos(ny * 18 * freqMult) * 0.04 * ampMult;
+            // Labyrinthine Folding Algorithm (Domain Warping)
+            // Uses recursive coordinate perturbation to create winding, biological gyri
+            // Frequency reduced from 7.0 to 4.5 for smoother morphology
+            const baseFreq = 4.5 * freqMult;
+
+            const noise = (fx, fy, fz, freq, amp, angle) => {
+                const s = Math.sin(angle), c = Math.cos(angle);
+
+                // Domain Warping: Perturb input coordinates to break grid regularity
+                const pfx = fx + Math.sin(fy * 4 + angle) * 0.12;
+                const pfy = fy + Math.cos(fz * 4 + angle * 1.2) * 0.12;
+                const pfz = fz + Math.sin(fx * 4 + angle * 0.8) * 0.12;
+
+                const rx = pfx * c - pfz * s;
+                const rz = pfx * s + pfz * c;
+                const v = Math.sin(rx * freq) * Math.cos(pfy * freq * 1.1) * Math.sin(rz * freq * 0.9);
+
+                // Create rounded ridges (gyri) and organic valleys (sulci)
+                // Smoothed exponents: 0.6 -> 0.8 for ridges
+                return (v > 0) ? Math.pow(v, 0.8) * amp : -Math.pow(Math.abs(v), 1.0) * amp;
+            };
+
+            // Amplitude scaled down for higher octaves to reduce roughness
+            displacement += noise(nx, ny, nz, baseFreq, 0.08 * ampMult, 0.4);
+            displacement += noise(nx, ny, nz, baseFreq * 1.5, 0.04 * ampMult, 1.2);
+            displacement += noise(nx, ny, nz, baseFreq * 2.5, 0.02 * ampMult, 2.5);
 
             const len = Math.sqrt(nx**2 + ny**2 + nz**2);
             if (len > 0) {

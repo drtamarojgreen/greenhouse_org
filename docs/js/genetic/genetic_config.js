@@ -62,19 +62,19 @@
             },
             ambient: {
                 enabled: true,
-                intensity: 0.4,
+                intensity: 0.5,
                 color: { r: 255, g: 255, b: 255 }
             },
             directional: {
                 enabled: true,
-                intensity: 0.8,
+                intensity: 1.0,
                 direction: { x: 0.5, y: -0.5, z: 1 },
                 color: { r: 255, g: 255, b: 255 }
             },
             specular: {
                 enabled: true,
                 intensity: 0.6,
-                shininess: 40,
+                shininess: 10,
                 color: { r: 255, g: 255, b: 255 }
             },
             shadows: {
@@ -123,8 +123,8 @@
                 sssIntensity: 0.2
             },
             brain: {
-                baseColor: { r: 120, g: 120, b: 140 },
-                alpha: 0.15,
+                baseColor: { r: 255, g: 225, b: 220 },
+                alpha: 0.25,
                 metallic: 0.2,
                 roughness: 0.6,
                 subsurfaceScattering: true,
@@ -236,17 +236,17 @@
         regions: {
             pfc: {
                 name: 'Prefrontal Cortex',
-                color: 'rgba(224, 224, 224, 0.6)', // Lightest (Frontal)
+                color: 'rgba(255, 235, 230, 0.6)', // Lightest (Frontal)
                 position: { x: 0, y: -100, z: 150 }
             },
             amygdala: {
                 name: 'Amygdala',
-                color: 'rgba(180, 180, 180, 0.7)', // Mid-Tone Deep
+                color: 'rgba(245, 215, 210, 0.7)', // Mid-Tone Deep
                 position: { x: 50, y: 0, z: 0 }
             },
             hippocampus: {
                 name: 'Hippocampus',
-                color: 'rgba(180, 180, 180, 0.7)', // Mid-Tone Deep
+                color: 'rgba(245, 215, 210, 0.7)', // Mid-Tone Deep
                 position: { x: -50, y: 0, z: 0 }
             },
             temporalLobe: {
@@ -256,12 +256,12 @@
             },
             parietalLobe: {
                 name: 'Parietal Lobe',
-                color: 'rgba(200, 200, 200, 0.5)', // Neutral Mid
+                color: 'rgba(250, 225, 220, 0.5)', // Neutral Mid
                 position: { x: 0, y: -50, z: 0 }
             },
             occipitalLobe: {
                 name: 'Occipital Lobe',
-                color: 'rgba(140, 140, 140, 0.6)', // Darker (Sensory)
+                color: 'rgba(225, 195, 190, 0.6)', // Darker (Sensory)
                 position: { x: 0, y: 0, z: -150 }
             },
             cerebellum: {

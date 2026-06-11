@@ -82,12 +82,13 @@
         drawLabels(ctx, projectedNeurons) {
             const canvasWidth = ctx.canvas.width;
 
-            if (projectedNeurons.length === 0) return;
+            if (!projectedNeurons || projectedNeurons.length === 0) return;
 
             // Label Brain Regions
             const regions = {};
             projectedNeurons.forEach(p => {
-                if (p.type === 'neuron' && p.region) {
+                // Support both filtered (type === 'neuron') and raw data with region info
+                if (p.region) {
                     if (!regions[p.region]) regions[p.region] = { x: 0, y: 0, count: 0 };
                     regions[p.region].x += p.x;
                     regions[p.region].y += p.y;
