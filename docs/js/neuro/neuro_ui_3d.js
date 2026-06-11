@@ -220,6 +220,18 @@
             if (window.GreenhouseNeuroApp && window.GreenhouseNeuroApp.drawUI) {
                 window.GreenhouseNeuroApp.drawUI(ctx, w, h);
             }
+
+            // Draw Region Labels
+            if (window.GreenhouseNeuroStats) {
+                const projectedBrainNeurons = this.neurons
+                    .map(n => {
+                        const p = window.GreenhouseModels3DMath?.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                        return { ...n, ...p };
+                    })
+                    .filter(p => p.scale > 0);
+
+                window.GreenhouseNeuroStats.drawLabels(ctx, projectedBrainNeurons);
+            }
         },
 
         drawNetworkView(ctx, x, y, w, h) {
