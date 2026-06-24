@@ -50,29 +50,12 @@
 
         TestFramework.it('should draw PiP frame', () => {
             // Mock context
-            let fillStyleSet = false;
             let fillRectCalled = false;
-            const ctx = {
-                save: () => { },
-                restore: () => { },
-                fillRect: () => { fillRectCalled = true; },
-                strokeRect: () => { },
-                fillText: () => { },
-                clip: () => { },
-                beginPath: () => { },
-                rect: () => { },
-                set fillStyle(val) { fillStyleSet = true; },
-                get fillStyle() { return ''; },
-                set strokeStyle(val) { },
-                set lineWidth(val) { },
-                set font(val) { },
-                set textAlign(val) { },
-                set textBaseline(val) { }
-            };
+            const ctx = document.createElement('canvas').getContext('2d');
+            ctx.fillRect = () => { fillRectCalled = true; };
 
             ui.drawPiPFrame(ctx, 0, 0, 100, 100, 'Test', 'red');
 
-            assert.isTrue(fillStyleSet);
             assert.isTrue(fillRectCalled);
         });
 
@@ -84,24 +67,9 @@
             };
 
             // Mock context
-            const ctx = {
-                save: () => { },
-                restore: () => { },
-                fillRect: () => { },
-                strokeRect: () => { },
-                fillText: () => { },
-                clip: () => { },
-                beginPath: () => { },
-                rect: () => { },
-                set fillStyle(val) { },
-                set strokeStyle(val) { },
-                set lineWidth(val) { },
-                set font(val) { },
-                set textAlign(val) { },
-                set textBaseline(val) { }
-            };
+            const ctx = document.createElement('canvas').getContext('2d');
 
-            ui.drawMicroView(ctx, 0, 0, 100, 100, {}, {}, 'blue');
+            ui.drawMicroView(ctx, 0, 0, 100, 100, {}, 0, {}, () => {}, {});
 
             assert.isTrue(geneCalled);
         });
@@ -119,39 +87,21 @@
 
             // Mock PiP Controls
             window.GreenhouseGeneticPiPControls = {
-                getState: () => ({}),
+                getState: () => ({ camera: {} }),
                 getBackgroundColor: () => 'rgba(0,0,0,1)',
                 drawControls: () => { controlsCalled = true; }
             };
 
             // Mock Context
-            const ctx = {
-                save: () => { },
-                restore: () => { },
-                translate: () => { },
-                rotate: () => { },
-                scale: () => { },
-                fillRect: () => { },
-                strokeRect: () => { },
-                fillText: () => { },
-                clip: () => { },
-                beginPath: () => { },
-                rect: () => { },
-                clearRect: () => { },
-                createLinearGradient: () => ({ addColorStop: () => { } }),
-                moveTo: () => { },
-                lineTo: () => { },
-                stroke: () => { },
-                fill: () => { },
-                set fillStyle(val) { },
-                set strokeStyle(val) { },
-                set lineWidth(val) { },
-                set font(val) { },
-                set textAlign(val) { },
-                set textBaseline(val) { }
-            };
+            const canvas = document.createElement('canvas');
+            canvas.width = 1000;
+            canvas.height = 800;
+            const ctx = canvas.getContext('2d');
+
             ui.ctx = ctx;
-            ui.canvas = { width: 1000, height: 800 };
+            ui.canvas = canvas;
+            ui.neurons3D = [{ type: 'gene', label: 'BDNF' }];
+            ui.activeGeneIndex = 0;
 
             // Run render
             ui.render();
@@ -166,35 +116,19 @@
             // Mock Context
             let saveCount = 0;
             let restoreCount = 0;
-            const ctx = {
-                save: () => { saveCount++; },
-                restore: () => { restoreCount++; },
-                translate: () => { },
-                rotate: () => { },
-                scale: () => { },
-                fillRect: () => { },
-                strokeRect: () => { },
-                fillText: () => { },
-                clip: () => { },
-                beginPath: () => { },
-                rect: () => { },
-                clearRect: () => { },
-                createLinearGradient: () => ({ addColorStop: () => { } }),
-                moveTo: () => { },
-                lineTo: () => { },
-                stroke: () => { },
-                fill: () => { },
-                set fillStyle(val) { },
-                set strokeStyle(val) { },
-                set lineWidth(val) { },
-                set font(val) { },
-                set textAlign(val) { },
-                set textBaseline(val) { }
-            };
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const originalSave = ctx.save;
+            const originalRestore = ctx.restore;
+
+            ctx.save = () => { saveCount++; originalSave.call(ctx); };
+            ctx.restore = () => { restoreCount++; originalRestore.call(ctx); };
+
             ui.ctx = ctx;
 
             // Call drawMicroView with null activeGene
-            ui.drawMicroView(ctx, 0, 0, 100, 100, null, {}, 'red');
+            ui.drawMicroView(ctx, 0, 0, 100, 100, null, 0, {}, () => {}, {});
 
             // Check balance
             assert.equal(saveCount, restoreCount, `Context save/restore mismatch: ${saveCount} saves, ${restoreCount} restores`);

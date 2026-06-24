@@ -71,6 +71,7 @@
         });
 
         TestFramework.it('should verify Risk Monitoring activation', () => {
+            if (!engine.state.history) engine.state.history = {};
             engine.state.factors.stress_system_risk_monitor = 1;
             engine.state.metrics.allostaticLoad = 0.95;
 

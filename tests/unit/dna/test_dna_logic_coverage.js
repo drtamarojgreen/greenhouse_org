@@ -2,18 +2,37 @@
     const { assert } = window;
     const TestFramework = window.TestFramework;
 
-    TestFramework.describe('DNA Mutation Logic (Unit)', () => {
-
+    TestFramework.describe('DNA Logic Coverage (Unit)', () => {
         const G = window.GreenhouseDNARepair;
+
+        TestFramework.it('should generate DNA strand with correct length', () => {
+            G.generateDNA();
+            assert.equal(G.state.basePairs.length, G.config.helixLength);
+        });
+
+        TestFramework.it('should start simulation and set simulating flag', () => {
+            G.startSimulation('mmr');
+            assert.equal(G.state.repairMode, 'mmr');
+            assert.isTrue(G.state.simulating);
+        });
+
+        TestFramework.it('should consume ATP and update counter', () => {
+            const initialATP = G.state.atpConsumed;
+            G.consumeATP(10);
+            assert.equal(G.state.atpConsumed, initialATP + 10);
+        });
+
+        TestFramework.it('should spawn particles correctly', () => {
+            const initialParticles = G.state.particles.length;
+            G.spawnParticles(0, 0, 0, 5, '#fff');
+            assert.equal(G.state.particles.length, initialParticles + 5);
+        });
 
         TestFramework.describe('Damage Induction', () => {
             TestFramework.beforeEach(() => {
-                G.state.radiationLevel = 50;
                 G.state.basePairs = [
                     { id: 0, base1: 'C', base2: 'G', isDamaged: false },
-                    { id: 1, base1: 'C', base2: 'G', isDamaged: false },
-                    { id: 2, base1: 'C', base2: 'G', isDamaged: false },
-                    { id: 3, base1: 'C', base2: 'G', isDamaged: false }
+                    { id: 1, base1: 'C', base2: 'G', isDamaged: false }
                 ];
             });
 
@@ -53,6 +72,5 @@
                 });
             });
         });
-
     });
 })();

@@ -14,23 +14,27 @@ function setupGreenhouseMocks() {
         if (!global[name]) {
             global[name] = mock;
         } else {
-            // Augment existing
+            // Augment existing only if property is missing
             for (const key in mock) {
-                try {
-                    global[name][key] = mock[key];
-                } catch (e) {
-                    // Might be read-only
+                if (global[name][key] === undefined) {
+                    try {
+                        global[name][key] = mock[key];
+                    } catch (e) {
+                        // Might be read-only
+                    }
                 }
             }
         }
 
         // Try to make it sticky on window
         try {
-            Object.defineProperty(win, name, {
-                value: global[name],
-                writable: true,
-                configurable: true
-            });
+            if (!Object.getOwnPropertyDescriptor(win, name)) {
+                Object.defineProperty(win, name, {
+                    value: global[name],
+                    writable: true,
+                    configurable: true
+                });
+            }
         } catch (e) {}
     };
 
@@ -65,14 +69,30 @@ function setupGreenhouseMocks() {
         validateConfiguration: () => true,
         waitForElement: () => Promise.resolve(global.document.createElement('div')),
         SimulationEngine: class {
-            constructor() {
-                this.state = { time: 0, factors: {}, metrics: {}, flags: {}, history: {} };
-                this.start = dummy; this.stop = dummy; this.update = dummy;
+            constructor(options = {}) {
+                this.state = {
+                    time: 0,
+                    factors: options.initialFactors || {},
+                    metrics: options.initialMetrics || {},
+                    flags: {},
+                    history: {}
+                };
+                this.updateFn = options.updateFn || dummy;
+                this.start = dummy; this.stop = dummy;
             }
+            update(dt) { this.updateFn(this.state, dt); }
             static clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
             static smooth(c, t, f) { return c + (t - c) * f; }
         },
-        DiurnalClock: class { constructor() { this.timeInHours = 8; this.tick = dummy; this.update = dummy; } }
+        DiurnalClock: class {
+            constructor() { this.timeInHours = 8; this.tick = dummy; this.update = dummy; }
+            getPhase() { return 'day'; }
+            getTimeString() { return '08:00'; }
+            getCortisolFactor() { return 1.0; }
+            getMelatoninFactor() { return 0.1; }
+            getResilienceRecoveryMultiplier() { return 1.0; }
+            getPhase() { return 'day'; }
+        }
     };
 
     // Define GreenhouseUtils with a sticky properties
@@ -128,23 +148,103 @@ function setupGreenhouseMocks() {
     }
 
     const dmMock = {
-        register: (name, value, meta) => {
+        register: (name, value, meta = {}) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.register !== dmMock.register) {
+                return global.window.GreenhouseDependencyManager.register(name, value, meta);
+            }
             global.GreenhouseDependencyManager._deps = global.GreenhouseDependencyManager._deps || {};
+            global.GreenhouseDependencyManager._meta = global.GreenhouseDependencyManager._meta || {};
             global.GreenhouseDependencyManager._deps[name] = value;
+            global.GreenhouseDependencyManager._meta[name] = {
+                ...meta,
+                registeredAt: Date.now(),
+                version: meta.version || '1.0.0'
+            };
             if (global.GreenhouseDependencyManager._waiters && global.GreenhouseDependencyManager._waiters[name]) {
                 global.GreenhouseDependencyManager._waiters[name].forEach(w => w.resolve(value));
                 delete global.GreenhouseDependencyManager._waiters[name];
             }
         },
-        get: (name) => (global.GreenhouseDependencyManager._deps || {})[name],
-        isAvailable: (name) => !!(global.GreenhouseDependencyManager._deps || {})[name],
-        waitFor: (name, timeout = 15000) => {
-            if (global.GreenhouseDependencyManager.isAvailable(name)) return Promise.resolve(global.GreenhouseDependencyManager.get(name));
-            return Promise.resolve({}); // Immediate resolve for tests to avoid timeouts
+        get: (name) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.get !== dmMock.get) {
+                return global.window.GreenhouseDependencyManager.get(name);
+            }
+            return (global.GreenhouseDependencyManager._deps || {})[name];
         },
-        waitForMultiple: () => Promise.resolve({}),
-        clear: dummy,
-        getStatus: () => ({ available: [], statistics: { totalRegistered: 0 } }),
+        getMetadata: (name) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.getMetadata !== dmMock.getMetadata) {
+                return global.window.GreenhouseDependencyManager.getMetadata(name);
+            }
+            return (global.GreenhouseDependencyManager._meta || {})[name];
+        },
+        isAvailable: (name) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.isAvailable !== dmMock.isAvailable) {
+                return global.window.GreenhouseDependencyManager.isAvailable(name);
+            }
+            return !!(global.GreenhouseDependencyManager._deps || {})[name];
+        },
+        waitFor: (name, timeout = 15000) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.waitFor !== dmMock.waitFor) {
+                return global.window.GreenhouseDependencyManager.waitFor(name, timeout);
+            }
+            if (dmMock.isAvailable(name)) return Promise.resolve(dmMock.get(name));
+
+            dmMock._waiters[name] = dmMock._waiters[name] || [];
+            let resolve, reject;
+            const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+            const waiter = { promise, resolve, reject };
+            dmMock._waiters[name].push(waiter);
+
+            setTimeout(() => {
+                if (dmMock._waiters[name] && dmMock._waiters[name].includes(waiter)) {
+                    reject(new Error(`Dependency '${name}' not available within ${timeout}ms`));
+                    dmMock._waiters[name] = dmMock._waiters[name].filter(w => w !== waiter);
+                }
+            }, timeout);
+
+            return promise;
+        },
+        waitForMultiple: async (names, timeout = 15000) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.waitForMultiple !== dmMock.waitForMultiple) {
+                return global.window.GreenhouseDependencyManager.waitForMultiple(names, timeout);
+            }
+            const results = {};
+            await Promise.all(names.map(async n => {
+                results[n] = await dmMock.waitFor(n, timeout);
+            }));
+            return results;
+        },
+        unregister: (name) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.unregister !== dmMock.unregister) {
+                return global.window.GreenhouseDependencyManager.unregister(name);
+            }
+            const removed = !!(global.GreenhouseDependencyManager._deps || {})[name];
+            if (global.GreenhouseDependencyManager._deps) delete global.GreenhouseDependencyManager._deps[name];
+            if (global.GreenhouseDependencyManager._waiters && global.GreenhouseDependencyManager._waiters[name]) {
+                global.GreenhouseDependencyManager._waiters[name].forEach(w => w.reject(new Error(`Dependency '${name}' was unregistered`)));
+                delete global.GreenhouseDependencyManager._waiters[name];
+            }
+            return removed;
+        },
+        clear: () => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.clear !== dmMock.clear) {
+                return global.window.GreenhouseDependencyManager.clear();
+            }
+            if (global.GreenhouseDependencyManager._waiters) {
+                Object.keys(global.GreenhouseDependencyManager._waiters).forEach(name => {
+                    global.GreenhouseDependencyManager._waiters[name].forEach(w => w.reject(new Error(`Dependency '${name}' was cleared`)));
+                });
+            }
+            global.GreenhouseDependencyManager._deps = {};
+            global.GreenhouseDependencyManager._waiters = {};
+        },
+        getStatus: () => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.getStatus !== dmMock.getStatus) {
+                return global.window.GreenhouseDependencyManager.getStatus();
+            }
+            const available = Object.keys(global.GreenhouseDependencyManager._deps || {});
+            return { available, statistics: { totalRegistered: available.length } };
+        },
         config: { get: () => 15000, set: dummy },
         _deps: {},
         _waiters: {}

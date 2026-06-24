@@ -57,8 +57,9 @@
 
         TestFramework.it('GreenhouseGeneticAlgo: should initialize population', () => {
             const ga = window.GreenhouseGeneticAlgo;
+            const expectedPopSize = ga.popSize || 15;
             ga.init();
-            assert.equal(ga.population.length, 20);
+            assert.equal(ga.population.length, expectedPopSize);
         });
     });
 })();

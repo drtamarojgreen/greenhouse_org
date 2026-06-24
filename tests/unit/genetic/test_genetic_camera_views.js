@@ -17,10 +17,10 @@
             const target = { x: 100, y: 50, z: -500 };
             let callbackCalled = false;
 
-            // Mock performance.now
-            const originalNow = performance.now;
+            // Mock Date.now since flyTo uses it
+            const originalDateNow = Date.now;
             let currentTime = 1000;
-            performance.now = () => currentTime;
+            Date.now = () => currentTime;
 
             controller.flyTo(target, 1000, () => { callbackCalled = true; });
 
@@ -41,7 +41,7 @@
             assert.isFalse(controller.isTransitioning);
             assert.isTrue(callbackCalled);
 
-            performance.now = originalNow;
+            Date.now = originalDateNow;
         });
     });
 })();

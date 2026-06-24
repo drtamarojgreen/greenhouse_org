@@ -7,7 +7,7 @@
         const DM = window.GreenhouseDependencyManager;
 
         TestFramework.beforeEach(() => {
-            DM.clear();
+            if (DM.clear) DM.clear();
         });
 
         TestFramework.it('should register and retrieve a dependency', () => {
