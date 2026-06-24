@@ -4,6 +4,7 @@
  */
 
 declare interface Window {
+    // Utilities & Managers
     GreenhouseUtils: any;
     GreenhouseDependencyManager: any;
     GreenhouseBioStatus: any;
@@ -11,10 +12,43 @@ declare interface Window {
     GreenhouseModels3DMath: any;
     GreenhouseTranslations: any;
     GreenhouseModelsUX: any;
+    GreenhouseProfiler: any;
+
+    // Testing Infrastructure
+    assert: any;
+    AssertionError: any;
+    TestFramework: any;
+    TestFrameworkClass: any;
+
+    // State & Attributes
     renderingComplete: boolean;
     _greenhouseModelsAttributes: any;
     _greenhouseScriptAttributes: any;
+
+    // Models - Genetic
+    GreenhouseGeneticCameraController: any;
+    GreenhouseGeneticPiPControls: any;
+
+    // Models - Neuro
+    GreenhouseNeuroConfig: any;
+    NeuroGA: any;
+    GreenhouseNeuroApp: any;
+    GreenhouseNeuroUI3D: any;
+    GreenhouseNeuroControls: any;
+    GreenhouseADHDData: any;
+    NeuroSynapseCameraController: any;
+    GreenhouseNeuroStats: any;
+    GreenhouseNeuroBrain: any;
+    GreenhouseNeuroGeometry: any;
+    GreenhouseNeuroSynapse: any;
+
+    // Infrastructure
+    GreenhousePostProcessor: any;
 }
+
+declare var assert: any;
+declare var AssertionError: any;
+declare var TestFramework: any;
 
 declare namespace Greenhouse {
     interface Point2D {
@@ -58,4 +92,13 @@ declare namespace Greenhouse {
         };
         seed: number;
     }
+}
+
+// Extend Performance for Memory Info
+interface Performance {
+    memory?: {
+        usedJSHeapSize: number;
+        totalJSHeapSize?: number;
+        jsHeapSizeLimit?: number;
+    };
 }

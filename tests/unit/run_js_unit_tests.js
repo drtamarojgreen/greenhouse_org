@@ -3,66 +3,48 @@ const path = require('path');
 const { setupMockEnvironment, MockElement } = require('./browser_mocks');
 const { setupGreenhouseMocks } = require('./greenhouse_mocks');
 
-// --- 1. Initialize Mock Environments ---
 setupMockEnvironment();
 setupGreenhouseMocks();
 
-process.on('unhandledRejection', (reason, promise) => {
-    // console.log('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+process.on('unhandledRejection', (reason, promise) => {});
 
-// --- 2. Load Infrastructure ---
 const ROOT = path.resolve(__dirname, '../../');
 require(path.join(ROOT, 'docs/js/assertion_library.js'));
 require(path.join(ROOT, 'docs/js/test_framework.js'));
 
-// Monkey-patch TestFramework to preserve test details in results for reporting
 const originalRunSuite = global.TestFramework.runSuite;
 global.TestFramework.runSuite = async function(suite) {
     await originalRunSuite.call(this, suite);
-    // Find the result object we just pushed and add the tests
     const result = this.results.suites[this.results.suites.length - 1];
     if (result) {
         result.tests = suite.tests;
     }
 };
 
-// --- 3. Module Loading Logic ---
 function loadModule(m) {
     const fullPath = path.join(ROOT, m.startsWith('docs/js') ? m : path.join('docs/js', m));
     if (fs.existsSync(fullPath)) {
-        // Ensure Greenhouse core mocks are stable BEFORE loading any module
         setupGreenhouseMocks();
-
-        // Prepare environment for loader execution
         const script = new MockElement('script');
         script.setAttribute('data-base-url', '/');
         script.setAttribute('data-target-selector-left', '#container');
         script.setAttribute('data-genetic-selectors', JSON.stringify({ genetic: '#container' }));
         global.document.currentScript = script;
-
-        // Populate window attributes which GreenhouseUtils.js uses
         global.window._greenhouseScriptAttributes = {
             'base-url': '/',
             'target-selector-left': '#container',
             'data-genetic-selectors': JSON.stringify({ genetic: '#container' })
         };
-
-        const code = fs.readFileSync(fullPath, 'utf8');
+        let code = fs.readFileSync(fullPath, 'utf8');
+        // Strip exports for Node.js eval
+        code = code.replace(/^export /gm, '');
         try {
             eval(code);
-        } catch (e) {
-            // Silence evaluation errors if they are just about missing browser features
-            // but log them for debugging if needed
-            // console.error(`Error evaluating ${m}:`, e.message);
-        }
-
-        // RE-MOCK loadScript immediately after GreenhouseUtils.js might have overwritten it
+        } catch (e) {}
         forceMockLoadScript();
     }
 }
 
-// Ensure loadScript is always a no-op mock that resolves immediately
 function forceMockLoadScript() {
     const mock = () => Promise.resolve();
     const targets = [
@@ -71,7 +53,6 @@ function forceMockLoadScript() {
         global.GreenhouseModelsUtil,
         global.window.GreenhouseModelsUtil
     ];
-
     targets.forEach(obj => {
         if (obj) {
             try {
@@ -119,40 +100,8 @@ const modules = [
 ];
 
 modules.forEach(loadModule);
-
-// Final re-sync of mocks after all modules loaded
 setupGreenhouseMocks();
 
-// Apply defensive patches to prototypes to handle mock config objects
-if (global.window.GreenhouseGeneticCameraController) {
-    const proto = global.window.GreenhouseGeneticCameraController.prototype;
-    const originalUpdate = proto.update;
-    proto.update = function() {
-        if (this.config && typeof this.config.get !== 'function') {
-            const raw = this.config;
-            this.config = {
-                get: (path) => {
-                    const keys = path.split('.');
-                    let val = raw;
-                    for (const k of keys) {
-                        if (val && typeof val === 'object' && k in val) val = val[k];
-                        else return undefined;
-                    }
-                    return val;
-                },
-                ...raw
-            };
-        }
-        return originalUpdate.apply(this, arguments);
-    };
-}
-
-if (global.window.GreenhouseGeneticPiPControls) {
-    const proto = global.window.GreenhouseGeneticPiPControls.prototype;
-    // Similar patch if needed for PiP
-}
-
-// --- 4. Discover and Run Tests ---
 function getAllTestFiles(dir, files_ = []) {
     const fsFiles = fs.readdirSync(dir);
     for (const i in fsFiles) {
@@ -171,7 +120,9 @@ async function runTests() {
     const testFiles = getAllTestFiles(__dirname);
     for (const file of testFiles) {
         try {
-            eval(fs.readFileSync(file, 'utf8'));
+            let testCode = fs.readFileSync(file, 'utf8');
+            testCode = testCode.replace(/^export /gm, '');
+            eval(testCode);
         } catch (e) {
             console.error(`Error in ${path.relative(__dirname, file)}:`, e.message);
         }
@@ -179,7 +130,6 @@ async function runTests() {
     const results = await global.TestFramework.run();
     console.log(`Summary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
     if (results.failed > 0) {
-        // Output detailed failures
         results.suites.forEach(suite => {
             if (suite.tests && Array.isArray(suite.tests)) {
                 suite.tests.forEach(test => {
@@ -187,14 +137,10 @@ async function runTests() {
                         console.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
                     }
                 });
-            } else {
-                console.warn(`Warning: Suite [${suite.name}] has no tests array or failed to populate it.`);
             }
         });
         process.exit(1);
     }
-
-    // Force exit to kill background animation loops
     process.exit(0);
 }
 

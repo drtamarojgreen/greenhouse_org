@@ -9,7 +9,7 @@
  * @class GreenhouseComponent
  * Base class for all visual components in the system.
  */
-class GreenhouseComponent {
+export class GreenhouseComponent {
     name: string;
     layer: number;
     active: boolean = true;
@@ -45,7 +45,7 @@ class GreenhouseComponent {
  * @class GreenhouseSystem
  * Central rendering engine.
  */
-class GreenhouseSystem {
+export class GreenhouseSystem {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     components: GreenhouseComponent[] = [];
@@ -105,7 +105,7 @@ class GreenhouseSystem {
  * @class GreenhouseAssetManager
  * Manages assets and sprite atlases.
  */
-class GreenhouseAssetManager {
+export class GreenhouseAssetManager {
     assets: Map<string, HTMLImageElement> = new Map();
     loading: boolean = false;
 
@@ -132,7 +132,7 @@ class GreenhouseAssetManager {
  * @class SimulationEngine
  * Lightweight shared simulation engine for Greenhouse models.
  */
-class SimulationEngine {
+export class SimulationEngine {
     state: Greenhouse.SimulationState;
     updateFn: (state: Greenhouse.SimulationState, dt: number) => void;
     tickRate: number;
@@ -192,7 +192,7 @@ class SimulationEngine {
  * @class DiurnalClock
  * Simulates 24-hour biological cycle.
  */
-class DiurnalClock {
+export class DiurnalClock {
     timeInHours: number = 8.0;
     dayCount: number = 0;
 

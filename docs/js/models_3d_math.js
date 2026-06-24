@@ -1,5 +1,12 @@
-"use strict";
+/**
+ * @file models_3d_math.ts
+ * @description 3D Mathematics Foundation for Models Canvas.
+ */
+/// <reference path="types/globals.d.ts" />
 const GreenhouseModels3DMath = {
+    /**
+     * Projects a 3D point to 2D screen coordinates using perspective projection
+     */
     project3DTo2D(x, y, z, camera, projection) {
         const dx = x - camera.x;
         const dy = y - camera.y;
@@ -25,6 +32,9 @@ const GreenhouseModels3DMath = {
             scale: scale
         };
     },
+    /**
+     * Rotates a 3D point around the origin
+     */
     rotatePoint3D(point, angleX, angleY, angleZ) {
         let { x, y, z } = point;
         if (angleX !== 0) {
@@ -53,6 +63,9 @@ const GreenhouseModels3DMath = {
         }
         return { x, y, z };
     },
+    /**
+     * Creates a 3D transformation matrix (simplified)
+     */
     transformMatrix3D(translation, rotation, scale) {
         return {
             translation: translation || { x: 0, y: 0, z: 0 },
@@ -60,12 +73,18 @@ const GreenhouseModels3DMath = {
             scale: scale || { x: 1, y: 1, z: 1 }
         };
     },
+    /**
+     * Calculates the depth/distance from camera to a 3D point
+     */
     calculateDepth(point3D, camera) {
         const dx = point3D.x - camera.x;
         const dy = point3D.y - camera.y;
         const dz = point3D.z - camera.z;
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     },
+    /**
+     * Sorts an array of 3D objects by depth (painter's algorithm)
+     */
     sortByDepth(objects, camera) {
         return objects.slice().sort((a, b) => {
             const depthA = this.calculateDepth(a.position || a, camera);
@@ -73,12 +92,18 @@ const GreenhouseModels3DMath = {
             return depthB - depthA;
         });
     },
+    /**
+     * Creates an isometric projection
+     */
     projectIsometric(x, y, z, settings) {
         const scale = settings.scale || 1;
         const screenX = (x - z) * Math.cos(Math.PI / 6) * scale + settings.offsetX;
         const screenY = (x + z) * Math.sin(Math.PI / 6) * scale - y * scale + settings.offsetY;
         return { x: screenX, y: screenY };
     },
+    /**
+     * Interpolates between two 3D points
+     */
     lerp3D(start, end, t) {
         return {
             x: start.x + (end.x - start.x) * t,
@@ -86,6 +111,9 @@ const GreenhouseModels3DMath = {
             z: start.z + (end.z - start.z) * t
         };
     },
+    /**
+     * Calculates normal vector for a triangle
+     */
     calculateNormal(p1, p2, p3) {
         const v1 = {
             x: p2.x - p1.x,
@@ -110,6 +138,9 @@ const GreenhouseModels3DMath = {
         }
         return normal;
     },
+    /**
+     * Applies depth-based alpha blending
+     */
     applyDepthFog(baseAlpha, depth, fogStart = 0.7, fogEnd = 1.0) {
         if (isNaN(depth))
             return 0;
@@ -120,19 +151,31 @@ const GreenhouseModels3DMath = {
         const fogFactor = (depth - fogStart) / (fogEnd - fogStart);
         return baseAlpha * (1 - fogFactor);
     },
+    /**
+     * Checks if a point is within the view frustum
+     */
     isInFrustum(point, camera, projection) {
         const dz = point.z - camera.z;
         return dz > projection.near && dz < projection.far;
     },
+    /**
+     * Converts degrees to radians
+     */
     degToRad(degrees) {
         return degrees * (Math.PI / 180);
     },
+    /**
+     * Converts radians to degrees
+     */
     radToDeg(radians) {
         return radians * (180 / Math.PI);
     },
     calculateFaceNormal(p1, p2, p3) {
         return this.calculateNormal(p1, p2, p3);
     },
+    /**
+     * Calculates simple diffuse lighting.
+     */
     calculateDiffuse(normal, lightDirection, ambientLight = 0.1) {
         const dotProduct = normal.x * lightDirection.x + normal.y * lightDirection.y + normal.z * lightDirection.z;
         const diffuse = Math.max(0, -dotProduct);

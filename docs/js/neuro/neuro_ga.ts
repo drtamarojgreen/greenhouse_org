@@ -4,7 +4,18 @@
 (function () {
     'use strict';
     class NeuroGA {
-        constructor(config = {}) {
+        [key: string]: any;
+        adhdConfig: any;
+        population: any[];
+        bestGenome: any;
+        generation: number;
+        isRunning: boolean;
+        populationSize: number;
+        mutationRate: number;
+        crossoverRate: number;
+        elitismRate: number;
+        bounds: any;
+        constructor(config: any = {}) {
             this.populationSize = 20;
             this.mutationRate = 0.05;
             this.population = [];
@@ -68,7 +79,7 @@
                 parentId: genome.parentId
             };
         }
-        init(config = {}) {
+        init(config: any = {}) {
             if (config.populationSize)
                 this.populationSize = config.populationSize;
             if (config.bounds)

@@ -1,4 +1,7 @@
-"use strict";
+/**
+ * @file models_util.ts
+ * @description Lightweight shared simulation engine and utilities for Greenhouse models.
+ */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,6 +11,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+/// <reference path="types/globals.d.ts" />
+/**
+ * @class GreenhouseComponent
+ * Base class for all visual components in the system.
+ */
 class GreenhouseComponent {
     constructor(name, layer = 10) {
         this.active = true;
@@ -15,13 +23,27 @@ class GreenhouseComponent {
         this.name = name;
         this.layer = layer;
     }
+    /**
+     * Called once when the component is added to the system.
+     */
     init(system) {
         this.system = system;
         this.initialized = true;
     }
+    /**
+     * Called every frame to update state.
+     * @param deltaTime - Time since last frame in ms.
+     */
     update(deltaTime) { }
+    /**
+     * Called every frame to draw to the canvas.
+     */
     draw(ctx, width, height) { }
 }
+/**
+ * @class GreenhouseSystem
+ * Central rendering engine.
+ */
 class GreenhouseSystem {
     constructor(canvas, config = {}) {
         this.components = [];
@@ -34,6 +56,9 @@ class GreenhouseSystem {
         this.quality = config.quality || 1.0;
         this.errorHandler = config.errorHandler || ((e) => console.error("Rendering Error:", e));
     }
+    /**
+     * Adds a component to the system.
+     */
     addComponent(component) {
         this.components.push(component);
         this.components.sort((a, b) => a.layer - b.layer);
@@ -41,6 +66,9 @@ class GreenhouseSystem {
             component.init(this);
         }
     }
+    /**
+     * Renders a single frame.
+     */
     renderFrame(timestamp = performance.now()) {
         try {
             const deltaTime = timestamp - this.lastFrameTime;
@@ -61,6 +89,10 @@ class GreenhouseSystem {
         }
     }
 }
+/**
+ * @class GreenhouseAssetManager
+ * Manages assets and sprite atlases.
+ */
 class GreenhouseAssetManager {
     constructor() {
         this.assets = new Map();
@@ -85,6 +117,10 @@ class GreenhouseAssetManager {
         return this.assets.get(key);
     }
 }
+/**
+ * @class SimulationEngine
+ * Lightweight shared simulation engine for Greenhouse models.
+ */
 class SimulationEngine {
     constructor(config = {}) {
         this.lastTick = null;
@@ -105,6 +141,9 @@ class SimulationEngine {
         this.updateFn = config.updateFn || ((state, dt) => { });
         this.tickRate = config.tickRate || 1000 / 60;
     }
+    /**
+     * Core update loop with fixed-step updates.
+     */
     update(timestamp = performance.now()) {
         if (this.lastTick === null)
             this.lastTick = timestamp;
@@ -131,6 +170,10 @@ class SimulationEngine {
         return current + (target - current) * factor;
     }
 }
+/**
+ * @class DiurnalClock
+ * Simulates 24-hour biological cycle.
+ */
 class DiurnalClock {
     constructor() {
         this.timeInHours = 8.0;
