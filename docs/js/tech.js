@@ -53,6 +53,10 @@
                 this.createDashboardContainer(); // This now sets up the interval and performs initial render
                 this.startPersistenceCheck();
 
+                // Load TypeScript test script
+                const baseUrl = window.GreenhouseUtils.appState.baseUrl || window.GreenhouseUtils.config.githubPagesBaseUrl || 'https://drtamarojgreen.github.io/greenhouse_org/';
+                await GreenhouseUtils.loadScript('ts_test.js', baseUrl);
+
                 console.log('TechApp: Initialization complete.');
                 GreenhouseUtils.displaySuccess('Tech Test Dashboard Loaded Successfully.');
             } catch (error) {
