@@ -1,12 +1,11 @@
+"use strict";
 /**
  * @file emotion_theories.js
  * @description Advanced Theories on Emotional Regulation and Resilience.
  * Part of the 100 enhancements project, mapping theories to mental health wellness and resilience factors.
  */
-
 (function () {
     'use strict';
-
     const advancedTheories = [
         { id: 76, name: 'emotion_enh_76_name', description: 'emotion_enh_76_desc', regions: ['prefrontalCortex', 'amygdala'], wellnessFocus: 'emotion_enh_76_wellness', conditionMapping: 'emotion_enh_76_cond' },
         { id: 77, name: 'emotion_enh_77_name', description: 'emotion_enh_77_desc', regions: ['brainstem', 'hypothalamus', 'prefrontalCortex'], wellnessFocus: 'emotion_enh_77_wellness', conditionMapping: 'emotion_enh_77_cond' },
@@ -34,7 +33,6 @@
         { id: 99, name: 'emotion_enh_99_name', description: 'emotion_enh_99_desc', regions: ['prefrontalCortex', 'amygdala'], wellnessFocus: 'emotion_enh_99_wellness', conditionMapping: 'emotion_enh_99_cond' },
         { id: 100, name: 'emotion_enh_100_name', description: 'emotion_enh_100_desc', regions: ['prefrontalCortex', 'amygdala'], wellnessFocus: 'emotion_enh_100_wellness', conditionMapping: 'emotion_enh_100_cond' }
     ];
-
     if (window.GreenhouseEmotionConfig) {
         window.GreenhouseEmotionConfig.advancedTheories = advancedTheories;
     }

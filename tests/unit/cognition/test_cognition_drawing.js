@@ -1,7 +1,7 @@
-(function() {
+"use strict";
+(function () {
     const { assert } = window;
     const TestFramework = window.TestFramework;
-
     TestFramework.describe('Cognition Drawing (Unit)', () => {
         TestFramework.it('should draw a simple cognition diagram', () => {
             const ctx = document.createElement('canvas').getContext('2d');

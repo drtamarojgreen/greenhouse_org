@@ -1,13 +1,12 @@
+"use strict";
 /**
  * @file dopamine_ux.js
  * @description UX, Accessibility, and Welcome workflow for Dopamine Simulation.
  */
-
 (function () {
     'use strict';
     const G = window.GreenhouseDopamine || {};
     window.GreenhouseDopamine = G;
-
     G.uxState = {
         fps: 0,
         lastTime: performance.now(),
@@ -19,16 +18,13 @@
         isPaused: false,
         reducedMotion: false
     };
-
     G.initUX = function () {
         this.setupKeyboardShortcuts();
         // Welcome screen removed per user request
     };
-
     G.checkWelcome = function () {
         // Function retained for shortcut 'H' but auto-show disabled
     };
-
     G.showWelcomeModal = function () {
         let modal = document.getElementById('dopamine-welcome-modal');
         if (!modal) {
@@ -46,7 +42,6 @@
             modal.style.zIndex = '2000';
             document.body.appendChild(modal);
         }
-
         modal.innerHTML = `
             <div style="background: #1a202c; border: 2px solid #A0AEC0; border-radius: 15px; padding: 30px; max-width: 600px; color: #fff; box-shadow: 0 0 30px rgba(79, 209, 197, 0.3); font-family: sans-serif;">
                 <h2 style="color: #A0AEC0; margin-top: 0; text-align: center;">Welcome to the Dopamine Signaling Complex</h2>
@@ -71,17 +66,14 @@
                 </div>
             </div>
         `;
-
         document.getElementById('close-welcome').onclick = () => {
             modal.style.display = 'none';
             G.uxState.history.viewedTutorial = true;
             localStorage.setItem('dopamine_sim_history', JSON.stringify(G.uxState.history));
             G.state.signalingActive = true;
         };
-
         modal.style.display = 'flex';
     };
-
     G.setupKeyboardShortcuts = function () {
         window.addEventListener('keydown', (e) => {
             switch (e.key.toLowerCase()) {
@@ -95,12 +87,12 @@
                     this.showWelcomeModal();
                     break;
                 case 's':
-                    if (G.showScientificDashboard) G.showScientificDashboard();
+                    if (G.showScientificDashboard)
+                        G.showScientificDashboard();
                     break;
             }
         });
     };
-
     G.updateUX = function () {
         const now = performance.now();
         G.uxState.frames++;
@@ -110,29 +102,28 @@
             G.uxState.frames = 0;
         }
         this.handleContextualCursor();
-
         // Update UI metrics in the right panel
         if (G.uxState.showPerf && G.rightPanel && G.updateMetric) {
             G.updateMetric(G.rightPanel, 'Performance', 'FPS', G.uxState.fps);
         }
     };
-
     G.handleContextualCursor = function () {
-        if (!G.canvas) return;
+        if (!G.canvas)
+            return;
         const hoverTarget = G.hoverTarget;
         if (hoverTarget) {
             G.canvas.style.cursor = 'help';
-        } else if (G.isDragging) {
+        }
+        else if (G.isDragging) {
             G.canvas.style.cursor = 'grabbing';
-        } else {
+        }
+        else {
             G.canvas.style.cursor = 'crosshair';
         }
     };
-
     G.renderUX = function (ctx) {
         const w = G.width;
         const h = G.height;
-
         if (G.uxState.isPaused) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.fillRect(0, 0, w, h);
@@ -144,17 +135,17 @@
             ctx.fillText('Press P to Resume', w / 2, h / 2 + 40);
         }
     };
-
     G.resetToDefault = function () {
         console.log("Resetting simulation...");
         G.state.timer = 0;
         G.state.mode = 'D1R Signaling';
         G.state.signalingActive = true;
-
-        if (G.resetMolecular) G.resetMolecular();
-        if (G.resetSynapse) G.resetSynapse();
-        if (G.resetElectrophysiology) G.resetElectrophysiology();
-
+        if (G.resetMolecular)
+            G.resetMolecular();
+        if (G.resetSynapse)
+            G.resetSynapse();
+        if (G.resetElectrophysiology)
+            G.resetElectrophysiology();
         // Clear history viewed flag if they want to see tutorial again on reset?
         // No, keep it, but provide 'H' shortcut.
     };

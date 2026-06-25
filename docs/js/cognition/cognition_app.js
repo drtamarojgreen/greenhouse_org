@@ -1,13 +1,11 @@
+"use strict";
 /**
  * @file cognition_app.js
  * @description Main application logic for the Cognition Simulation Model.
  */
-
 (function () {
     'use strict';
-
     const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-
     const GreenhouseCognitionApp = {
         canvas: null,
         ctx: null,
@@ -26,33 +24,27 @@
         options: { glassBrain: false },
         targetCamera: null,
         isAnimatingCamera: false,
-
         init(selector, selArg = null) {
             // Standardize selector argument handling if re-invoked by GreenhouseUtils
-            if (typeof selector !== 'string' && selArg) selector = selArg;
-
+            if (typeof selector !== 'string' && selArg)
+                selector = selArg;
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
-
             console.log('CognitionApp: Initializing with selector:', selector);
             const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) {
                 console.error('CognitionApp: Target container not found:', selector);
                 return;
             }
-
             this.config = window.GreenhouseCognitionConfig || {};
-
             container.innerHTML = '';
             container.style.position = 'relative';
             container.style.backgroundColor = '#051005'; // Slightly green tint for cognition
             container.style.minHeight = '600px';
             container.style.display = 'flex';
             container.style.flexDirection = 'column';
-
             // Accessibility: Set role and aria-label
             container.setAttribute('role', 'application');
             container.setAttribute('aria-label', t('cog_simulation'));
-
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth || 800;
             this.canvas.height = 500;
@@ -61,13 +53,10 @@
             this.canvas.setAttribute('aria-label', t('cog_model_title'));
             container.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
-
             this.projection.width = this.canvas.width;
             this.projection.height = this.canvas.height;
-
             if (window.GreenhouseBrainMeshRealistic) {
                 this.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
-
                 // Assign regions to vertices for highlighting
                 if (this.brainMesh.regions) {
                     for (const [regionId, regionData] of Object.entries(this.brainMesh.regions)) {
@@ -80,59 +69,59 @@
                         }
                     }
                 }
-
                 if (window.GreenhouseCognitionBrain) {
                     this.centroids = window.GreenhouseCognitionBrain.calculateCentroids(this.brainMesh);
                 }
             }
-
             // Initialize Sub-modules
-            if (window.GreenhouseCognitionAnalytics) window.GreenhouseCognitionAnalytics.init(this);
-            if (window.GreenhouseCognitionTheories) window.GreenhouseCognitionTheories.init(this);
-            if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.init(this);
-            if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.init(this);
-            if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.init(this);
-            if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.init(this);
-            if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.init(this);
-
+            if (window.GreenhouseCognitionAnalytics)
+                window.GreenhouseCognitionAnalytics.init(this);
+            if (window.GreenhouseCognitionTheories)
+                window.GreenhouseCognitionTheories.init(this);
+            if (window.GreenhouseCognitionDevelopment)
+                window.GreenhouseCognitionDevelopment.init(this);
+            if (window.GreenhouseCognitionInterventions)
+                window.GreenhouseCognitionInterventions.init(this);
+            if (window.GreenhouseCognitionMedications)
+                window.GreenhouseCognitionMedications.init(this);
+            if (window.GreenhouseCognitionResearch)
+                window.GreenhouseCognitionResearch.init(this);
+            if (window.GreenhouseCognitionEducational)
+                window.GreenhouseCognitionEducational.init(this);
             this.initBackground();
             this.createEnhancementUI(container);
             if (!isMobile) {
                 this.createInfoPanel(container);
             }
             this.setupInteraction();
-
             // Handle Language Change
             window.addEventListener('greenhouseLanguageChanged', () => {
                 this.refreshUIText();
             });
-
             this.isRunning = true;
             this.startLoop();
-
             if (window.GreenhouseUtils) {
                 window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
             }
         },
-
         refreshUIText() {
             const lBtn = document.getElementById('cognition-lang-toggle');
-            if (lBtn) lBtn.textContent = t('btn_language');
-
+            if (lBtn)
+                lBtn.textContent = t('btn_language');
             this.updateInfoPanel();
-
             // Refresh search placeholder
             const searchInput = document.getElementById('enhancement-search');
-            if (searchInput) searchInput.placeholder = t('cog_search_placeholder');
-
+            if (searchInput)
+                searchInput.placeholder = t('cog_search_placeholder');
             // Refresh UI Row
             const row = document.querySelector('#cognition-ui-row');
             if (row) {
                 const glassBtn = row.querySelector('.cog-glass-btn');
-                if (glassBtn) glassBtn.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? t('cog_ui_on') : t('cog_ui_off')}`;
+                if (glassBtn)
+                    glassBtn.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? t('cog_ui_on') : t('cog_ui_off')}`;
                 const resetBtn = row.querySelector('.cog-reset-btn');
-                if (resetBtn) resetBtn.textContent = t('cog_reset_view');
-
+                if (resetBtn)
+                    resetBtn.textContent = t('cog_reset_view');
                 // Refresh categories
                 const catSelect = row.querySelector('select');
                 if (catSelect) {
@@ -149,13 +138,14 @@
                         { id: 'Educational', key: 'cog_cat_educational' }
                     ];
                     Array.from(catSelect.options).forEach((opt, i) => {
-                        if (categories[i]) opt.textContent = t(categories[i].key);
+                        if (categories[i])
+                            opt.textContent = t(categories[i].key);
                     });
                 }
             }
-            if (this.renderEnhancementList) this.renderEnhancementList();
+            if (this.renderEnhancementList)
+                this.renderEnhancementList();
         },
-
         createEnhancementUI(container) {
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
@@ -165,7 +155,6 @@
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                 padding: 10px;
             `;
-
             const controlsRow = document.createElement('div');
             controlsRow.id = 'cognition-ui-row';
             controlsRow.style.cssText = `
@@ -175,7 +164,6 @@
                 align-items: center;
                 flex-wrap: wrap;
             `;
-
             const categories = [
                 { id: 'All', key: 'cog_cat_all' },
                 { id: 'Analytical', key: 'cog_cat_analytical' },
@@ -199,7 +187,6 @@
                 opt.textContent = t(cat.key);
                 categorySelect.appendChild(opt);
             });
-
             const searchInput = document.createElement('input');
             searchInput.id = 'enhancement-search';
             searchInput.placeholder = t('cog_search_placeholder');
@@ -207,7 +194,6 @@
             searchInput.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px; flex-grow: 1;
             `;
-
             const glassToggle = document.createElement('button');
             glassToggle.className = 'cog-glass-btn';
             glassToggle.textContent = `${t('cog_glass_brain')}: ${t('cog_ui_off')}`;
@@ -219,7 +205,6 @@
                 glassToggle.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? t('cog_ui_on') : t('cog_ui_off')}`;
                 glassToggle.style.borderColor = this.options.glassBrain ? '#A0AEC0' : '#4a5568';
             };
-
             const resetCamera = document.createElement('button');
             resetCamera.className = 'cog-reset-btn';
             resetCamera.textContent = t('cog_reset_view');
@@ -230,12 +215,10 @@
                 this.targetCamera = { rotationX: 0.2, rotationY: 0, z: -600 };
                 this.isAnimatingCamera = true;
             };
-
             controlsRow.appendChild(categorySelect);
             controlsRow.appendChild(searchInput);
             controlsRow.appendChild(glassToggle);
             controlsRow.appendChild(resetCamera);
-
             const langBtn = document.createElement('button');
             langBtn.id = 'cognition-lang-toggle';
             langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
@@ -245,12 +228,11 @@
                 width: auto !important; max-width: fit-content;
             `;
             langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+                if (window.GreenhouseModelsUtil)
+                    window.GreenhouseModelsUtil.toggleLanguage();
             };
             controlsRow.appendChild(langBtn);
-
             uiContainer.appendChild(controlsRow);
-
             const listContainer = document.createElement('div');
             listContainer.id = 'enhancement-list';
             listContainer.setAttribute('role', 'listbox');
@@ -262,7 +244,6 @@
                 scrollbar-width: thin;
                 scrollbar-color: #A0AEC0 #1a202c;
             `;
-
             const renderList = () => {
                 this.renderEnhancementList = renderList;
                 listContainer.innerHTML = '';
@@ -275,7 +256,6 @@
                     const matchSearch = translatedName.includes(search);
                     return matchCat && matchSearch;
                 });
-
                 enhancements.forEach(enh => {
                     const btn = document.createElement('button');
                     btn.className = 'enhancement-item';
@@ -287,7 +267,8 @@
                         padding: 6px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap;
                         font-size: 12px; transition: all 0.2s;
                     `;
-                    if (this.activeEnhancement === enh) btn.style.borderColor = '#A0AEC0';
+                    if (this.activeEnhancement === enh)
+                        btn.style.borderColor = '#A0AEC0';
                     btn.onmouseover = () => { btn.style.background = '#2d3748'; };
                     btn.onmouseout = () => { btn.style.background = '#1a202c'; };
                     btn.onclick = () => {
@@ -301,15 +282,12 @@
                     listContainer.appendChild(btn);
                 });
             };
-
             categorySelect.onchange = renderList;
             searchInput.oninput = renderList;
             renderList();
-
             uiContainer.appendChild(listContainer);
             container.prepend(uiContainer);
         },
-
         createInfoPanel(container) {
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
@@ -323,10 +301,10 @@
             this.infoPanel.innerHTML = `<h3>${t('cog_simulation')}</h3><p>${t('cog_select_desc')}</p>`;
             container.appendChild(this.infoPanel);
         },
-
         updateInfoPanel() {
             const enh = this.activeEnhancement;
-            if (!enh) return;
+            if (!enh)
+                return;
             const region = this.config.regions[this.activeRegion] || {};
             this.infoPanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -339,12 +317,10 @@
                 </div>
             `;
         },
-
         setupInteraction() {
             let lastX = 0, lastY = 0;
             let isDragging = false;
             let hasDragged = false;
-
             this.canvas.addEventListener('mousedown', (e) => {
                 isDragging = true;
                 hasDragged = false;
@@ -352,22 +328,19 @@
                 lastX = e.clientX;
                 lastY = e.clientY;
             });
-
             window.addEventListener('mousemove', (e) => {
                 if (isDragging) {
                     const dx = e.clientX - lastX;
                     const dy = e.clientY - lastY;
-                    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) hasDragged = true;
-
+                    if (Math.abs(dx) > 2 || Math.abs(dy) > 2)
+                        hasDragged = true;
                     this.camera.rotationY += dx * 0.01;
                     this.camera.rotationX += dy * 0.01;
                     this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
-
                     lastX = e.clientX;
                     lastY = e.clientY;
                 }
             });
-
             window.addEventListener('mouseup', (e) => {
                 if (isDragging && !hasDragged) {
                     const rect = this.canvas.getBoundingClientRect();
@@ -377,7 +350,6 @@
                 }
                 isDragging = false;
             });
-
             this.canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const delta = e.deltaY;
@@ -386,13 +358,9 @@
                 this.camera.z = Math.min(-200, Math.max(-2000, this.camera.z));
             }, { passive: false });
         },
-
         onBrainClick(x, y) {
             if (window.GreenhouseCognitionBrain) {
-                const pickedRegion = window.GreenhouseCognitionBrain.pickRegion(
-                    x, y, this.brainMesh, this.camera, this.projection
-                );
-
+                const pickedRegion = window.GreenhouseCognitionBrain.pickRegion(x, y, this.brainMesh, this.camera, this.projection);
                 if (pickedRegion) {
                     this.activeRegion = pickedRegion;
                     const relatedEnhancement = this.config.enhancements.find(e => e.region === pickedRegion && (this.activeCategory === 'All' || e.category === this.activeCategory));
@@ -400,57 +368,57 @@
                         this.activeEnhancement = relatedEnhancement;
                         this.updateInfoPanel();
                         this.syncSidebarSelection();
-                    } else {
+                    }
+                    else {
                         this.updateInfoPanelWithRegionOnly(pickedRegion);
                     }
                 }
             }
         },
-
         syncSidebarSelection() {
             const listContainer = document.getElementById('enhancement-list');
-            if (!listContainer) return;
-
+            if (!listContainer)
+                return;
             Array.from(listContainer.children).forEach(btn => {
-                if (btn.textContent === t(this.activeEnhancement?.name)) {
+                var _a;
+                if (btn.textContent === t((_a = this.activeEnhancement) === null || _a === void 0 ? void 0 : _a.name)) {
                     btn.style.borderColor = '#A0AEC0';
                     btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                } else {
+                }
+                else {
                     btn.style.borderColor = '#4a5568';
                 }
             });
         },
-
         updateInfoPanelWithRegionOnly(regionId) {
             const region = this.config.regions[regionId];
-            if (!region) return;
+            if (!region)
+                return;
             this.infoPanel.innerHTML = `
                 <h3 style="color: ${region.color || '#A0AEC0'}; margin-top: 0;">${t(region.name)}</h3>
                 <p>${t(region.description)}</p>
                 <p style="font-size: 11px; color: #888;">${t('cog_ui_no_enhancement')}</p>
             `;
         },
-
         startLoop() {
             const animate = () => {
-                if (!this.isRunning) return;
+                if (!this.isRunning)
+                    return;
                 this.update();
                 this.render();
                 requestAnimationFrame(animate);
             };
             animate();
         },
-
         zoomToRegion(regionId) {
             const centroid = this.centroids[regionId];
-            if (!centroid) return;
+            if (!centroid)
+                return;
             const targetRotY = -Math.atan2(centroid.x, -centroid.z);
             const targetRotX = Math.atan2(centroid.y, Math.sqrt(centroid.x * centroid.x + centroid.z * centroid.z)) * 0.5;
-
             this.targetCamera = { rotationX: targetRotX, rotationY: targetRotY, z: -450 };
             this.isAnimatingCamera = true;
         },
-
         initBackground() {
             this.backgroundParticles = [];
             for (let i = 0; i < 150; i++) {
@@ -464,39 +432,50 @@
                 });
             }
         },
-
         update() {
             this.backgroundParticles.forEach(p => {
-                p.x += p.vx; p.y += p.vy;
-                if (p.x < 0) p.x = this.canvas.width; if (p.x > this.canvas.width) p.x = 0;
-                if (p.y < 0) p.y = this.canvas.height; if (p.y > this.canvas.height) p.y = 0;
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0)
+                    p.x = this.canvas.width;
+                if (p.x > this.canvas.width)
+                    p.x = 0;
+                if (p.y < 0)
+                    p.y = this.canvas.height;
+                if (p.y > this.canvas.height)
+                    p.y = 0;
             });
-
             if (this.isAnimatingCamera && this.targetCamera) {
                 const lerp = 0.05;
                 this.camera.rotationX += (this.targetCamera.rotationX - this.camera.rotationX) * lerp;
                 let diffY = this.targetCamera.rotationY - this.camera.rotationY;
-                while (diffY > Math.PI) diffY -= Math.PI * 2; while (diffY < -Math.PI) diffY += Math.PI * 2;
+                while (diffY > Math.PI)
+                    diffY -= Math.PI * 2;
+                while (diffY < -Math.PI)
+                    diffY += Math.PI * 2;
                 this.camera.rotationY += diffY * lerp;
                 this.camera.z += (this.targetCamera.z - this.camera.z) * lerp;
-                if (Math.abs(diffY) < 0.01 && Math.abs(this.camera.z - this.targetCamera.z) < 1) this.isAnimatingCamera = false;
+                if (Math.abs(diffY) < 0.01 && Math.abs(this.camera.z - this.targetCamera.z) < 1)
+                    this.isAnimatingCamera = false;
             }
-
             for (let i = this.pulses.length - 1; i >= 0; i--) {
                 const p = this.pulses[i];
                 p.progress += p.speed;
-                if (p.progress >= 1) { this.pulses.splice(i, 1); continue; }
+                if (p.progress >= 1) {
+                    this.pulses.splice(i, 1);
+                    continue;
+                }
                 p.x = p.from.x + (p.to.x - p.from.x) * p.progress;
                 p.y = p.from.y + (p.to.y - p.from.y) * p.progress;
                 p.z = p.from.z + (p.to.z - p.from.z) * p.progress;
             }
-
-            if (Math.random() < 0.05) this.generateContextualPulses();
+            if (Math.random() < 0.05)
+                this.generateContextualPulses();
         },
-
         generateContextualPulses() {
             const enh = this.activeEnhancement;
-            if (!enh) return;
+            if (!enh)
+                return;
             const paths = {
                 2: [['prefrontalCortex', 'parietalLobe'], ['parietalLobe', 'occipitalLobe']],
                 8: [['prefrontalCortex', 'parietalLobe']],
@@ -519,66 +498,71 @@
                 });
             }
         },
-
         render() {
-            if (!this.ctx || !this.brainMesh) return;
+            if (!this.ctx || !this.brainMesh)
+                return;
             const ctx = this.ctx;
             const w = this.canvas.width;
             const h = this.canvas.height;
             const utils = window.GreenhouseCognitionDrawingUtils;
-
             ctx.clearRect(0, 0, w, h);
-
             this.backgroundParticles.forEach(p => {
                 const brightness = (this.activeEnhancement && this.activeEnhancement.category === 'Theory') ? 1.5 : 1.0;
                 ctx.fillStyle = `rgba(57, 255, 20, ${p.alpha * brightness})`;
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
             });
-
             const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
-            grad.addColorStop(0, '#0a200a'); grad.addColorStop(1, '#051005');
-            ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
-
+            grad.addColorStop(0, '#0a200a');
+            grad.addColorStop(1, '#051005');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
             if (window.GreenhouseCognitionBrain && window.GreenhouseModels3DMath) {
-                window.GreenhouseCognitionBrain.drawBrainShell(
-                    ctx, this.brainMesh, this.camera, this.projection, w, h,
-                    this.activeRegion ? { region: this.activeRegion } : null,
-                    this.options
-                );
-                if (this.pulses.length > 0) window.GreenhouseCognitionBrain.drawPulses(ctx, this.pulses, this.camera, this.projection);
-
+                window.GreenhouseCognitionBrain.drawBrainShell(ctx, this.brainMesh, this.camera, this.projection, w, h, this.activeRegion ? { region: this.activeRegion } : null, this.options);
+                if (this.pulses.length > 0)
+                    window.GreenhouseCognitionBrain.drawPulses(ctx, this.pulses, this.camera, this.projection);
                 const enh = this.activeEnhancement;
                 if (enh) {
-                    if (enh.id === 12) window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['prefrontalCortex', 'parietalLobe', 'temporalLobe'], this.camera, this.projection, '80, 100, 255');
-                    else if (enh.id === 11) window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['amygdala', 'temporalLobe', 'prefrontalCortex'], this.camera, this.projection, '255, 100, 50');
+                    if (enh.id === 12)
+                        window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['prefrontalCortex', 'parietalLobe', 'temporalLobe'], this.camera, this.projection, '80, 100, 255');
+                    else if (enh.id === 11)
+                        window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['amygdala', 'temporalLobe', 'prefrontalCortex'], this.camera, this.projection, '255, 100, 50');
                 }
                 window.GreenhouseCognitionBrain.drawLabels(ctx, this.centroids, this.config, this.camera, this.projection);
             }
-
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'left';
             ctx.fillText(`${t('cog_model_title').toUpperCase()}: ${t('cerebral_cortex').toUpperCase()}`, 20, 30);
-
             if (this.activeEnhancement) {
                 if (this.activeEnhancement.render) {
                     this.activeEnhancement.render(ctx, this);
-                } else {
-                    // Fallback to sub-modules
-                    if (window.GreenhouseCognitionAnalytics) window.GreenhouseCognitionAnalytics.render(ctx);
-                    if (window.GreenhouseCognitionTheories) window.GreenhouseCognitionTheories.render(ctx);
-                    if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.render(ctx);
-                    if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.render(ctx);
-                    if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.render(ctx);
-                    if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.render(ctx);
-                    if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.render(ctx);
                 }
-            } else if (this.activeCategory !== 'All' && this.config.categories[this.activeCategory]) {
+                else {
+                    // Fallback to sub-modules
+                    if (window.GreenhouseCognitionAnalytics)
+                        window.GreenhouseCognitionAnalytics.render(ctx);
+                    if (window.GreenhouseCognitionTheories)
+                        window.GreenhouseCognitionTheories.render(ctx);
+                    if (window.GreenhouseCognitionDevelopment)
+                        window.GreenhouseCognitionDevelopment.render(ctx);
+                    if (window.GreenhouseCognitionInterventions)
+                        window.GreenhouseCognitionInterventions.render(ctx);
+                    if (window.GreenhouseCognitionMedications)
+                        window.GreenhouseCognitionMedications.render(ctx);
+                    if (window.GreenhouseCognitionResearch)
+                        window.GreenhouseCognitionResearch.render(ctx);
+                    if (window.GreenhouseCognitionEducational)
+                        window.GreenhouseCognitionEducational.render(ctx);
+                }
+            }
+            else if (this.activeCategory !== 'All' && this.config.categories[this.activeCategory]) {
                 const cat = this.config.categories[this.activeCategory];
-                if (utils) utils.renderCategoryInfo(ctx, this.activeCategory, cat.description, w, h);
+                if (utils)
+                    utils.renderCategoryInfo(ctx, this.activeCategory, cat.description, w, h);
             }
         }
     };
-
     window.GreenhouseCognitionApp = GreenhouseCognitionApp;
 })();

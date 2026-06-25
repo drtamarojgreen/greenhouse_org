@@ -1,21 +1,18 @@
-(function() {
+"use strict";
+(function () {
     const { assert } = window;
     const TestFramework = window.TestFramework;
-
     TestFramework.describe('GreenhouseNeuroApp', () => {
         let app;
-
         TestFramework.beforeEach(() => {
             app = window.GreenhouseNeuroApp;
             app.stopSimulation();
             app.init(document.createElement('div'));
         });
-
         TestFramework.it('should initialize with default state', () => {
             assert.equal(app.state.activeTab, 'sim');
             assert.equal(app.state.dosage, 1.0);
         });
-
         TestFramework.it('should switch tabs', () => {
             // Simulate mouse down on tab
             const tab = app.ui.tabs[1]; // ADHD tab
@@ -26,7 +23,6 @@
             });
             assert.equal(app.state.activeTab, 'adhd');
         });
-
         TestFramework.it('should filter scenarios via search', () => {
             app.state.activeTab = 'adhd';
             app.setupUIComponents();
@@ -35,7 +31,6 @@
             assert.equal(filtered.length, 1);
             assert.equal(filtered[0].scenarioId, 'inattentive');
         });
-
         TestFramework.it('should update dosage slider', () => {
             app.state.activeTab = 'sim';
             app.setupUIComponents();
@@ -46,7 +41,6 @@
             });
             assert.isTrue(app.state.dosage !== 1.0);
         });
-
         TestFramework.it('should toggle simulation state', () => {
             assert.isTrue(app.isRunning);
             app.stopSimulation();
@@ -54,38 +48,30 @@
             app.startSimulation();
             assert.isTrue(app.isRunning);
         });
-
         TestFramework.it('should handle mode switching', () => {
             app.switchMode(1); // Synaptic
             assert.equal(app.state.viewMode, 1);
         });
-
         TestFramework.it('should switch ADHD categories', () => {
             app.state.activeTab = 'adhd';
             app.setupUIComponents();
-
             // Find symptoms category button
             const btn = app.ui.categoryButtons.find(b => b.val === 'symptoms');
             app.handleMouseDown({ clientX: btn.x + 5, clientY: btn.y + 5 });
-
             assert.equal(app.state.adhdCategory, 'symptoms');
         });
-
         TestFramework.it('should handle wheel scrolling', () => {
             app.state.activeTab = 'adhd';
             app.state.adhdCategory = 'symptoms';
             app.setupUIComponents(); // Ensure checkboxes are created
-
             // Mock a lot of items for scrolling
             app.ui.checkboxes = Array(20).fill(0).map((_, i) => ({ x: 55, y: 0, w: 200, h: 20, enhancementId: i, label: 'TEST' }));
-
             app.handleWheel({
                 clientX: 100,
                 clientY: 300,
                 deltaY: 100,
                 preventDefault: () => { }
             });
-
             assert.equal(app.state.scrollOffset, 100);
         });
     });

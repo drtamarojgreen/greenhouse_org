@@ -1,17 +1,14 @@
+"use strict";
 // docs/js/synapse_3d.js
-
 (function () {
     'use strict';
-
     const G = window.GreenhouseSynapseApp || {};
     window.GreenhouseSynapseApp = G;
-
     G.Visuals3D = {
         applyDepth(ctx, w, h) {
             ctx.save();
             ctx.setTransform(1, 0.02, 0, 1, 0, 0);
         },
-
         drawShadows(ctx, particles) {
             // Pairing fix: Do not call save() here, relying on applyDepth save
             ctx.shadowBlur = 10;
@@ -19,7 +16,6 @@
             ctx.shadowOffsetX = 5;
             ctx.shadowOffsetY = 5;
         },
-
         drawVesicleShadows(ctx, vesicles, w, h, frame) {
             ctx.save();
             ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
@@ -32,7 +28,6 @@
             });
             ctx.restore();
         },
-
         drawDynamicLighting(ctx, receptors, w, h) {
             ctx.save();
             receptors.forEach(r => {
@@ -51,7 +46,6 @@
             });
             ctx.restore();
         },
-
         drawIonHeatMap(ctx, ions, w, h) {
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
@@ -67,32 +61,31 @@
                     ctx.arc(ion.x, ion.y, 15, 0, Math.PI * 2);
                     ctx.fill();
                     // Structural Ion Identification
-                    ctx.save(); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
+                    ctx.save();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 10px Arial';
+                    ctx.textAlign = 'center';
                     ctx.fillText(ion.color === '#E0E0E0' ? '+' : '-', ion.x, ion.y + 4);
                     ctx.restore();
                 }
             });
             ctx.restore();
         },
-
         drawElectrostaticPotential(ctx, w, h, frame) {
             ctx.save();
             ctx.globalAlpha = 0.05;
             ctx.fillStyle = '#A0AEC0';
             const offset = Math.sin(frame * 0.02) * 10;
             const surfaceY = G.getSurfaceY ? G.getSurfaceY(h) : h * 0.68;
-
             ctx.beginPath();
             ctx.rect(w * 0.35, h * 0.38 + offset, w * 0.3, 10);
             ctx.fill();
-
             ctx.fillStyle = '#E0E0E0';
             ctx.beginPath();
             ctx.rect(0, surfaceY - offset, w, 15);
             ctx.fill();
             ctx.restore();
         },
-
         drawBBB(ctx, w, h) {
             ctx.save();
             ctx.strokeStyle = 'rgba(160, 174, 192, 0.6)';
@@ -102,18 +95,16 @@
             ctx.moveTo(0, h * 0.05);
             ctx.lineTo(w, h * 0.05);
             ctx.stroke();
-
             ctx.fillStyle = 'rgba(160, 174, 192, 0.1)';
             ctx.fillRect(0, 0, w, h * 0.05);
-
             ctx.fillStyle = '#A0AEC0';
             ctx.font = 'bold 10px Arial';
             ctx.fillText('BLOOD-BRAIN BARRIER (BBB)', w * 0.5 - 70, h * 0.04);
             ctx.restore();
         },
-
         drawMeasurement(ctx, start, end) {
-            if (!start || !end) return;
+            if (!start || !end)
+                return;
             ctx.save();
             ctx.strokeStyle = '#A0AEC0';
             ctx.setLineDash([2, 2]);
@@ -122,16 +113,13 @@
             ctx.moveTo(start.x, start.y);
             ctx.lineTo(end.x, end.y);
             ctx.stroke();
-
-            const dist = Math.sqrt((end.x - start.x)**2 + (end.y - start.y)**2);
+            const dist = Math.sqrt(Math.pow((end.x - start.x), 2) + Math.pow((end.y - start.y), 2));
             const virtualNM = (dist * 0.2).toFixed(1);
-
             ctx.fillStyle = '#E0E0E0';
             ctx.font = 'bold 10px Arial';
             ctx.fillText(`${virtualNM} nm`, (start.x + end.x) / 2, (start.y + end.y) / 2 - 10);
             ctx.restore();
         },
-
         restoreDepth(ctx) {
             ctx.restore();
         }

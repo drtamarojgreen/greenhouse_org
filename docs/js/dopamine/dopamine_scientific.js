@@ -1,13 +1,12 @@
+"use strict";
 /**
  * @file dopamine_scientific.js
  * @description Scientific Dashboard and 100 Enhancements Tracker for Dopamine Simulation.
  */
-
 (function () {
     'use strict';
     const G = window.GreenhouseDopamine || {};
     window.GreenhouseDopamine = G;
-
     G.enhancements = [
         { id: 1, cat: "Molecular", desc: "D1-D2 Heteromerization", status: "Active" },
         { id: 2, cat: "Molecular", desc: "G-Protein Cycle", status: "Active" },
@@ -110,7 +109,6 @@
         { id: 99, cat: "Pharmacology", desc: "Dose-Response Curve Generation", status: "Active" },
         { id: 100, cat: "Pharmacology", desc: "Drug Combination Testing", status: "Active" }
     ];
-
     G.showScientificDashboard = function () {
         let modal = document.getElementById('scientific-dashboard-modal');
         if (!modal) {
@@ -132,7 +130,6 @@
             modal.style.fontFamily = 'Arial, sans-serif';
             document.body.appendChild(modal);
         }
-
         modal.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #A0AEC0; padding-bottom: 15px; margin-bottom: 20px;">
                 <h2 style="margin: 0; color: #A0AEC0; font-size: 24px; letter-spacing: 1px;">SCIENTIFIC ANALYSIS DASHBOARD</h2>
@@ -198,10 +195,9 @@
                 `).join('')}
             </div>
         `;
-
         modal.style.display = 'block';
-
-        if (G._sciChartInterval) clearInterval(G._sciChartInterval);
+        if (G._sciChartInterval)
+            clearInterval(G._sciChartInterval);
         G._sciChartInterval = setInterval(() => {
             const canvas = document.getElementById('scientific-time-series');
             const sCanvas = document.getElementById('scientific-spatial-map');
@@ -209,26 +205,30 @@
                 clearInterval(G._sciChartInterval);
                 return;
             }
-
             // Update Metric Text
-            if (G.electroState) document.getElementById('val-potential').innerText = `${G.electroState.membranePotential.toFixed(1)} mV`;
-            if (G.plasticityState) document.getElementById('val-weight').innerText = G.plasticityState.synapticStrength.toFixed(3);
-            if (G.synapseState) document.getElementById('val-metabolites').innerText = `${G.synapseState.metabolites.dopac.toFixed(2)} / ${G.synapseState.metabolites.hva.toFixed(2)}`;
-            if (G.molecularState) document.getElementById('val-darpp').innerText = `${(G.molecularState.darpp32.thr34 * 100).toFixed(1)}%`;
-            if (G.plasticityState) document.getElementById('val-fosb').innerText = G.plasticityState.deltaFosB.toFixed(5);
-            if (G.circuitState) document.getElementById('val-snc').innerText = `${(G.circuitState.feedback.sncActivity * 100).toFixed(0)}%`;
-            if (G.plasticityState) document.getElementById('val-spine').innerText = G.plasticityState.spineDensity.toFixed(3);
-
+            if (G.electroState)
+                document.getElementById('val-potential').innerText = `${G.electroState.membranePotential.toFixed(1)} mV`;
+            if (G.plasticityState)
+                document.getElementById('val-weight').innerText = G.plasticityState.synapticStrength.toFixed(3);
+            if (G.synapseState)
+                document.getElementById('val-metabolites').innerText = `${G.synapseState.metabolites.dopac.toFixed(2)} / ${G.synapseState.metabolites.hva.toFixed(2)}`;
+            if (G.molecularState)
+                document.getElementById('val-darpp').innerText = `${(G.molecularState.darpp32.thr34 * 100).toFixed(1)}%`;
+            if (G.plasticityState)
+                document.getElementById('val-fosb').innerText = G.plasticityState.deltaFosB.toFixed(5);
+            if (G.circuitState)
+                document.getElementById('val-snc').innerText = `${(G.circuitState.feedback.sncActivity * 100).toFixed(0)}%`;
+            if (G.plasticityState)
+                document.getElementById('val-spine').innerText = G.plasticityState.spineDensity.toFixed(3);
             const ctx = canvas.getContext('2d');
             const sCtx = sCanvas.getContext('2d');
             const data = G.analyticsState ? G.analyticsState.history : null;
-            if (!data) return;
-
+            if (!data)
+                return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawSeries(ctx, data.camp, '#FFFFFF', 'cAMP (pM)', 0);
             drawSeries(ctx, data.da, '#E0E0E0', 'DA Conc (nM)', 40);
             drawSeries(ctx, data.potential, '#D0D0D0', 'Membrane (mV)', 80, -90, 40);
-
             sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
             sCtx.fillStyle = '#000';
             sCtx.fillRect(0, 0, sCanvas.width, sCanvas.height);
@@ -249,9 +249,9 @@
             sCtx.strokeRect(0, 0, sCanvas.width, sCanvas.height);
         }, 100);
     };
-
     function drawSeries(ctx, series, color, label, yOffset, minVal = 0, maxVal = 50) {
-        if (!series || series.length < 2) return;
+        if (!series || series.length < 2)
+            return;
         const w = ctx.canvas.width;
         const h = 35;
         ctx.strokeStyle = color;
@@ -261,8 +261,10 @@
             const x = (i / 200) * w;
             const norm = (v - minVal) / (maxVal - minVal);
             const y = yOffset + h - (norm * h);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
+            if (i === 0)
+                ctx.moveTo(x, y);
+            else
+                ctx.lineTo(x, y);
         });
         ctx.stroke();
         ctx.fillStyle = color;

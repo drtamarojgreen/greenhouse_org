@@ -1,22 +1,19 @@
+"use strict";
 /**
  * @file cognition_theories.js
  * @description Modeling Theory mappings for the Cognition model.
  * Covers Enhancements 7-30.
  */
-
 (function () {
     'use strict';
-
     const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
     const utils = () => window.GreenhouseCognitionDrawingUtils;
-
     const GreenhouseCognitionTheories = {
         init(app) {
             this.app = app;
             this.setupMappings();
             console.log('CognitionTheories: Initialized');
         },
-
         setupMappings() {
             this.theoryMappings = {
                 7: (ctx, w, h) => utils().drawPulse(ctx, w * 0.35, h * 0.35, '#A0AEC0', t('cog_label_exec_control')),
@@ -101,7 +98,7 @@
                     const progress = (Date.now() * 0.005) % 1;
                     ctx.fillStyle = '#fff';
                     ctx.beginPath();
-                    ctx.arc(x1 + (x2-x1)*progress, y1 + (y2-y1)*progress, 4, 0, Math.PI*2);
+                    ctx.arc(x1 + (x2 - x1) * progress, y1 + (y2 - y1) * progress, 4, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.fillStyle = '#E0E0E0';
                     ctx.fillText(t('cog_label_olfactory_link'), x1 - 50, y1 + 30);
@@ -110,8 +107,10 @@
                     const x = w * 0.35, y = h * 0.5;
                     ctx.strokeStyle = '#D0D0D0';
                     ctx.beginPath();
-                    ctx.moveTo(x, y); ctx.lineTo(x + 30, y - 30);
-                    ctx.moveTo(x, y); ctx.lineTo(x + 30, y + 30);
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + 30, y - 30);
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + 30, y + 30);
                     ctx.stroke();
                     ctx.fillStyle = '#D0D0D0';
                     ctx.fillText(t('cog_label_valuation_ofc'), x - 60, y + 60);
@@ -121,8 +120,10 @@
                     ctx.strokeStyle = '#E0E0E0';
                     ctx.lineWidth = 4;
                     ctx.beginPath();
-                    ctx.moveTo(x - 15, y - 15); ctx.lineTo(x + 15, y + 15);
-                    ctx.moveTo(x + 15, y - 15); ctx.lineTo(x - 15, y + 15);
+                    ctx.moveTo(x - 15, y - 15);
+                    ctx.lineTo(x + 15, y + 15);
+                    ctx.moveTo(x + 15, y - 15);
+                    ctx.lineTo(x - 15, y + 15);
                     ctx.stroke();
                     ctx.fillStyle = '#E0E0E0';
                     ctx.fillText(t('cog_label_inhibitory_rifg'), x - 60, y + 40);
@@ -130,13 +131,16 @@
                 30: (ctx, w, h) => {
                     const x = w * 0.35, y = h * 0.35;
                     ctx.strokeStyle = '#D0D0D0';
-                    ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI, false); ctx.stroke();
-                    ctx.beginPath(); ctx.arc(x, y + 10, 15, Math.PI, 0, false); ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(x, y, 15, 0, Math.PI, false);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(x, y + 10, 15, Math.PI, 0, false);
+                    ctx.stroke();
                     ctx.fillStyle = '#D0D0D0';
                     ctx.fillText(t('cog_label_task_switching'), x + 25, y + 5);
                 }
             };
-
             this.accuracyMappings = {
                 126: (ctx, w, h) => {
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
@@ -180,7 +184,8 @@
                 131: (ctx, w, h) => {
                     ctx.strokeStyle = '#fff';
                     ctx.beginPath();
-                    ctx.moveTo(w / 2, 100); ctx.lineTo(w / 2, 250);
+                    ctx.moveTo(w / 2, 100);
+                    ctx.lineTo(w / 2, 250);
                     ctx.stroke();
                     ctx.fillStyle = '#4da6ff';
                     ctx.fillText('Baddeley Model', w * 0.15, 120);
@@ -191,7 +196,9 @@
                     ctx.fillStyle = '#fff';
                     ctx.fillText('LATEST FINDINGS (2024)', 50, 110);
                     ctx.beginPath();
-                    ctx.moveTo(50, 125); ctx.lineTo(w - 50, 125); ctx.stroke();
+                    ctx.moveTo(50, 125);
+                    ctx.lineTo(w - 50, 125);
+                    ctx.stroke();
                     ctx.fillStyle = '#A0AEC0';
                     ctx.fillText('Oct: New PFC sub-region mapped', 55, 145);
                     ctx.fillText('Sep: Thalamic gating refined', 55, 165);
@@ -230,7 +237,10 @@
                     ctx.fillText('REACTION TIME DATA (N=250)', 50, 110);
                     ctx.strokeStyle = '#fff';
                     ctx.beginPath();
-                    ctx.moveTo(50, 220); ctx.lineTo(300, 220); ctx.moveTo(50, 220); ctx.lineTo(50, 120);
+                    ctx.moveTo(50, 220);
+                    ctx.lineTo(300, 220);
+                    ctx.moveTo(50, 220);
+                    ctx.lineTo(50, 120);
                     ctx.stroke();
                     ctx.fillStyle = '#4da6ff';
                     for (let i = 0; i < 10; i++) {
@@ -240,26 +250,24 @@
                 }
             };
         },
-
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
-
+            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils)
+                return;
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
-
             if (activeEnhancement.category === 'Theory') {
                 utils().renderHeader(ctx, this.app, activeEnhancement);
                 if (this.theoryMappings[activeEnhancement.id]) {
                     this.theoryMappings[activeEnhancement.id](ctx, w, h);
                 }
             }
-
             if (activeEnhancement.category === 'Accuracy') {
                 utils().renderHeader(ctx, this.app, activeEnhancement);
                 if (this.accuracyMappings[activeEnhancement.id]) {
                     this.accuracyMappings[activeEnhancement.id](ctx, w, h);
-                } else {
+                }
+                else {
                     ctx.fillStyle = '#fff';
                     ctx.font = '11px Arial';
                     ctx.fillText(t(activeEnhancement.description), 40, 110);
@@ -271,6 +279,5 @@
             }
         }
     };
-
     window.GreenhouseCognitionTheories = GreenhouseCognitionTheories;
 })();

@@ -1,15 +1,13 @@
-(function() {
+"use strict";
+(function () {
     const { assert } = window;
     const TestFramework = window.TestFramework;
-
     TestFramework.describe('GreenhouseNeuroApp Robustness', () => {
         let app;
-
         TestFramework.beforeEach(() => {
             app = window.GreenhouseNeuroApp;
             app.stopSimulation();
         });
-
         TestFramework.it('should NOT crash if GreenhouseADHDData is missing', () => {
             const originalData = window.GreenhouseADHDData;
             window.GreenhouseADHDData = null;
@@ -17,7 +15,6 @@
             app.setupUIComponents();
             window.GreenhouseADHDData = originalData;
         });
-
         TestFramework.it('should NOT crash if GreenhouseADHDData has missing categories', () => {
             const originalData = window.GreenhouseADHDData;
             window.GreenhouseADHDData = { scenarios: {} };
@@ -25,7 +22,6 @@
             app.updateADHDCheckboxes();
             window.GreenhouseADHDData = originalData;
         });
-
         TestFramework.it('should correctly filter for "identified" and map to correct labelKey', () => {
             const originalData = window.GreenhouseADHDData;
             window.GreenhouseADHDData = {
@@ -39,7 +35,6 @@
             app.state.adhdCategory = 'symptoms';
             app.state.searchQuery = 'identified';
             app.updateADHDCheckboxes();
-
             if (app.ui.checkboxes.length > 0) {
                 assert.equal(app.ui.checkboxes[0].labelKey, 'adhd_enh_20_name');
             }

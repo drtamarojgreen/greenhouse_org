@@ -1,11 +1,9 @@
+"use strict";
 // docs/js/synapse_chemistry.js
-
 (function () {
     'use strict';
-
     const G = window.GreenhouseSynapseApp || {};
     window.GreenhouseSynapseApp = G;
-
     G.Chemistry = {
         neurotransmitters: {
             glutamate: {
@@ -103,7 +101,6 @@
                 molecularWeight: 'Approx. 10 kDa'
             }
         },
-
         receptors: {
             ionotropic_receptor: {
                 id: 'ionotropic_receptor',
@@ -174,7 +171,6 @@
                 termini: 'Extracellular N, Intracellular C'
             }
         },
-
         scenarios: {
             healthy: {
                 id: 'healthy',
@@ -225,7 +221,6 @@
                 modifiers: { receptorDensity: 0.5, releaseProb: 0.4, reuptakeRate: 0.1, cortisolActive: true }
             }
         },
-
         metaAnalysis: {
             glutamate: [
                 { source: 'Nature Neuroscience (2022)', findings: 'Glutamate clearance is 30% slower in astrocytes lacking GLT-1.' },
@@ -236,7 +231,6 @@
                 { source: 'Molecular Psychiatry (2024)', findings: '5-HT1A auto-receptor desensitization follows a 2-week lag period.' }
             ]
         },
-
         transporters: {
             EAAT: { name: 'Excitatory Amino Acid Transporter', targets: ['glutamate'] },
             GAT: { name: 'GABA Transporter', targets: ['gaba'] },
@@ -247,13 +241,11 @@
             VMAT2: { name: 'Vesicular Monoamine Transporter 2', targets: ['serotonin', 'dopamine', 'norepinephrine'] },
             ZnT: { name: 'Zinc Transporter', targets: ['zinc'] }
         },
-
         enzymes: {
             MAO: { name: 'Monoamine Oxidase', targets: ['serotonin', 'dopamine'], rate: 0.01 },
             COMT: { name: 'Catechol-O-methyltransferase', targets: ['dopamine'], rate: 0.008 },
             AChE: { name: 'Acetylcholinesterase', targets: ['acetylcholine'], rate: 0.1 }
         },
-
         drugs: {
             ssri: { name: 'SSRI', targetTransporter: 'SERT', effect: 'block_reuptake', safetyThreshold: 70 },
             serotonin_receptor_modulator: { name: '5-HT Receptor Modulator', targetReceptor: 'gpcr', effect: 'modulate', safetyThreshold: 75 },
@@ -263,11 +255,9 @@
             benzodiazepine: { name: 'Benzodiazepine', targetReceptor: 'ionotropic_receptor', effect: 'positive_allosteric_modulator', safetyThreshold: 50 },
             levodopa: { name: 'L-DOPA', type: 'prodrug', precursorOf: 'dopamine', conversionRate: 0.05 }
         },
-
         retrograde: {
             endocannabinoid: { name: '2-AG / Anandamide', color: '#A0AEC0', effect: 'inhibit_release' }
         },
-
         ions: {
             sodium: {
                 id: 'sodium',

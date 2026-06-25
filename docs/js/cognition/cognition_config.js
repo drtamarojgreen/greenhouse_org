@@ -1,12 +1,11 @@
+"use strict";
 /**
  * @file cognition_config.js
  * @description Configuration for the Cognition Simulation Model.
  * Focuses on the Cerebral Cortex and Executive Functions.
  */
-
 (function () {
     'use strict';
-
     const GreenhouseCognitionConfig = {
         camera: {
             initial: {
@@ -113,7 +112,6 @@
             { id: 4, category: 'Analytical', name: 'cog_enh_4_name', description: 'cog_enh_4_desc', region: 'parietalLobe' },
             { id: 5, category: 'Analytical', name: 'cog_enh_5_name', description: 'cog_enh_5_desc', region: 'temporalLobe' },
             { id: 6, category: 'Analytical', name: 'cog_enh_6_name', description: 'cog_enh_6_desc', region: 'pfc' },
-
             // Modeling Theory to Brain Regions
             { id: 7, category: 'Theory', name: 'cog_enh_7_name', description: 'cog_enh_7_desc', region: 'pfc' },
             { id: 8, category: 'Theory', name: 'cog_enh_8_name', description: 'cog_enh_8_desc', region: 'parietalLobe' },
@@ -139,7 +137,6 @@
             { id: 28, category: 'Theory', name: 'cog_enh_28_name', description: 'cog_enh_28_desc', region: 'pfc' },
             { id: 29, category: 'Theory', name: 'cog_enh_29_name', description: 'cog_enh_29_desc', region: 'pfc' },
             { id: 30, category: 'Theory', name: 'cog_enh_30_name', description: 'cog_enh_30_desc', region: 'pfc' },
-
             // Cognitive Development
             { id: 31, category: 'Development', name: 'cog_enh_31_name', description: 'cog_enh_31_desc', region: 'pfc' },
             { id: 32, category: 'Development', name: 'cog_enh_32_name', description: 'cog_enh_32_desc', region: 'pfc' },
@@ -166,7 +163,6 @@
             { id: 53, category: 'Development', name: 'cog_enh_53_name', description: 'cog_enh_53_desc', region: 'pfc' },
             { id: 54, category: 'Development', name: 'cog_enh_54_name', description: 'cog_enh_54_desc', region: 'temporalLobe' },
             { id: 55, category: 'Development', name: 'cog_enh_55_name', description: 'cog_enh_55_desc', region: 'pfc' },
-
             // Therapeutic Intervention
             { id: 56, category: 'Intervention', name: 'cog_enh_56_name', description: 'cog_enh_56_desc', region: 'pfc' },
             { id: 57, category: 'Intervention', name: 'cog_enh_57_name', description: 'cog_enh_57_desc', region: 'amygdala' },
@@ -193,7 +189,6 @@
             { id: 78, category: 'Intervention', name: 'cog_enh_78_name', description: 'cog_enh_78_desc', region: 'pfc' },
             { id: 79, category: 'Intervention', name: 'cog_enh_79_name', description: 'cog_enh_79_desc', region: 'hypothalamus' },
             { id: 80, category: 'Intervention', name: 'cog_enh_80_name', description: 'cog_enh_80_desc', region: 'thalamus' },
-
             // Medication Management
             { id: 81, category: 'Medication', name: 'cog_enh_81_name', description: 'cog_enh_81_desc', region: 'thalamus' },
             { id: 82, category: 'Medication', name: 'cog_enh_82_name', description: 'cog_enh_82_desc', region: 'thalamus' },
@@ -215,7 +210,6 @@
             { id: 98, category: 'Medication', name: 'cog_enh_98_name', description: 'cog_enh_98_desc', region: 'pfc' },
             { id: 99, category: 'Medication', name: 'cog_enh_99_name', description: 'cog_enh_99_desc', region: 'hypothalamus' },
             { id: 100, category: 'Medication', name: 'cog_enh_100_name', description: 'cog_enh_100_desc', region: 'pfc' },
-
             // Visualization Enhancements (Set B)
             { id: 101, category: 'Visualization', name: 'cog_enh_101_name', description: 'cog_enh_101_desc', region: 'pfc' },
             { id: 102, category: 'Visualization', name: 'cog_enh_102_name', description: 'cog_enh_102_desc', region: 'pfc' },
@@ -242,7 +236,6 @@
             { id: 123, category: 'Visualization', name: 'cog_enh_123_name', description: 'cog_enh_123_desc', region: 'temporalLobe' },
             { id: 124, category: 'Visualization', name: 'cog_enh_124_name', description: 'cog_enh_124_desc', region: 'occipitalLobe' },
             { id: 125, category: 'Visualization', name: 'cog_enh_125_name', description: 'cog_enh_125_desc', region: 'pfc' },
-
             // Scientific Accuracy Enhancements
             { id: 126, category: 'Accuracy', name: 'cog_enh_126_name', description: 'cog_enh_126_desc', region: 'pfc' },
             { id: 127, category: 'Accuracy', name: 'cog_enh_127_name', description: 'cog_enh_127_desc', region: 'pfc' },
@@ -269,7 +262,6 @@
             { id: 148, category: 'Accuracy', name: 'cog_enh_148_name', description: 'cog_enh_148_desc', region: 'pfc' },
             { id: 149, category: 'Accuracy', name: 'cog_enh_149_name', description: 'cog_enh_149_desc', region: 'pfc' },
             { id: 150, category: 'Accuracy', name: 'cog_enh_150_name', description: 'cog_enh_150_desc', region: 'pfc' },
-
             // Research-Oriented Features
             { id: 151, category: 'Research', name: 'cog_enh_151_name', description: 'cog_enh_151_desc', region: 'pfc' },
             { id: 152, category: 'Research', name: 'cog_enh_152_name', description: 'cog_enh_152_desc', region: 'parietalLobe' },
@@ -296,7 +288,6 @@
             { id: 173, category: 'Research', name: 'cog_enh_173_name', description: 'cog_enh_173_desc', region: 'pfc' },
             { id: 174, category: 'Research', name: 'cog_enh_174_name', description: 'cog_enh_174_desc', region: 'pfc' },
             { id: 175, category: 'Research', name: 'cog_enh_175_name', description: 'cog_enh_175_desc', region: 'pfc' },
-
             // Educational Features
             { id: 176, category: 'Educational', name: 'cog_enh_176_name', description: 'cog_enh_176_desc', region: 'pfc' },
             { id: 177, category: 'Educational', name: 'cog_enh_177_name', description: 'cog_enh_177_desc', region: 'pfc' },
@@ -325,6 +316,5 @@
             { id: 200, category: 'Educational', name: 'cog_enh_200_name', description: 'cog_enh_200_desc', region: 'pfc' }
         ]
     };
-
     window.GreenhouseCognitionConfig = GreenhouseCognitionConfig;
 })();

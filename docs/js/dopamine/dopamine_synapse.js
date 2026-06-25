@@ -1,14 +1,13 @@
+"use strict";
 /**
  * @file dopamine_synapse.js
  * @description Presynaptic and synaptic dynamics for Dopamine Simulation.
  * Covers Enhancements 21-45, 71-80, and 81-90.
  */
-
 (function () {
     'use strict';
     const G = window.GreenhouseDopamine || {};
     window.GreenhouseDopamine = G;
-
     G.synapseState = {
         vesicles: {
             rrp: [], // 26. Readily Releasable Pool
@@ -44,7 +43,6 @@
         extracellularObstacles: [], // 39. Visual obstacles
         cleftGradient: [] // 45. Synaptic Cleft Concentration Profile
     };
-
     // Initialize extracellular obstacles for tortuosity
     for (let i = 0; i < 20; i++) {
         G.synapseState.extracellularObstacles.push({
@@ -54,7 +52,6 @@
             radius: 5 + Math.random() * 10
         });
     }
-
     // Initialize vesicles
     for (let i = 0; i < 20; i++) {
         G.synapseState.vesicles.rrp.push({
@@ -78,7 +75,6 @@
             }
         });
     }
-
     // Initialize astrocyte processes
     for (let i = 0; i < 3; i++) {
         G.synapseState.astrocytes.push({
@@ -86,38 +82,35 @@
             radius: 40 + Math.random() * 20
         });
     }
-
     G.updateSynapse = function () {
         const state = G.state;
         const sState = G.synapseState;
-
         // 31. D2-Short Autoreceptor Feedback & 32. Ca2+ Channel Inhibition
         // If DA in cleft is high, activate autoreceptors (D2-Short)
         const cleftConcentration = sState.cleftDA.length;
         if (cleftConcentration > 50) {
             sState.autoreceptorFeedback = Math.max(0.2, sState.autoreceptorFeedback - 0.05);
             sState.caChannelInhibition = Math.max(0.3, sState.caChannelInhibition - 0.04);
-        } else {
+        }
+        else {
             sState.autoreceptorFeedback = Math.min(1.0, sState.autoreceptorFeedback + 0.02);
             sState.caChannelInhibition = Math.min(1.0, sState.caChannelInhibition + 0.01);
         }
-
         // 29. Phasic Release Patterns & 30. Tonic Release
         // Release is also gated by Ca2+ channel status
         let releaseChance = sState.releaseRate * sState.autoreceptorFeedback * sState.caChannelInhibition;
-        if (state.mode === 'Phasic Burst') releaseChance = 0.6 * sState.autoreceptorFeedback * sState.caChannelInhibition;
-
+        if (state.mode === 'Phasic Burst')
+            releaseChance = 0.6 * sState.autoreceptorFeedback * sState.caChannelInhibition;
         // 28. Synaptotagmin Calcium Sensing Trigger
         if (Math.random() < releaseChance && sState.vesicles.rrp.length > 0) {
             const vIndex = sState.vesicles.rrp.findIndex(v => v.snareState === 'Primed');
             if (vIndex !== -1) {
                 const v = sState.vesicles.rrp.splice(vIndex, 1)[0];
-
                 // 33. Kiss-and-Run Fusion Mode (occasional)
                 const isKissAndRun = Math.random() > 0.8;
                 const releaseFactor = isKissAndRun ? 0.4 : 1.0;
-                if (isKissAndRun) sState.kissAndRunCount = 20;
-
+                if (isKissAndRun)
+                    sState.kissAndRunCount = 20;
                 // Release DA molecules proportional to filling
                 const count = Math.floor(15 * v.filled * releaseFactor);
                 for (let i = 0; i < count; i++) {
@@ -130,7 +123,6 @@
                         life: 180 + Math.random() * 50
                     });
                 }
-
                 // 77. Glutamate Co-transmission
                 // Approximately 10% of vesicles co-release glutamate in specific projections
                 if (Math.random() > 0.9) {
@@ -145,7 +137,6 @@
                         });
                     }
                 }
-
                 // 34. Vesicle Endocytosis
                 setTimeout(() => {
                     sState.vesicles.reserve.push({
@@ -157,7 +148,6 @@
                 }, 800);
             }
         }
-
         // 25. Vesicle Filling (VMAT2) kinetics & 26. RRP replenishment
         // Experimental filling rate ~5-15 mins in vivo, scaled for simulation
         const kFill = 0.005;
@@ -168,12 +158,10 @@
                 v.filled += kFill * sState.vmat2.activity * (sState.vmat2.phGradient / 2.0);
             }
         });
-
         // 26. Reserve pool mobilization via Synapsin phosphorylation (by PKA/CaMKII)
         const pkaLevel = G.molecularState ? G.molecularState.pka.cat : 0;
         const camkiiLevel = G.molecularState ? G.molecularState.camkii.active : 0;
         sState.vesicles.synapsinPhospho = Math.min(1.0, 0.1 + pkaLevel * 0.1 + camkiiLevel * 0.2);
-
         if (sState.vesicles.rrp.length < 15 && sState.vesicles.reserve.length > 0) {
             // Replenishment rate increased by synapsin phosphorylation
             if (Math.random() < 0.05 * sState.vesicles.synapsinPhospho) {
@@ -192,110 +180,97 @@
                 }
             }
         }
-
         // 36. DAT-Mediated Reuptake, 37. DAT Phosphorylation, 38. Volume Transmission
         // 37. PKC-mediated DAT phosphorylation reduces its activity
         const pkcLevel = G.molecularState ? G.molecularState.plcPathway.pkc : 0;
         const datPhosphoInhibition = 1.0 - (pkcLevel * 0.4);
-
         // 44. Competitive Inhibition at DAT (by Serotonin/Norepinephrine)
         const competitiveInhibition = state.mode === 'Competitive' ? 0.5 : 1.0;
-
         // Scenario-based effects
         const cocaineEffect = state.scenarios.cocaine ? 0.1 : 1.0;
         const amphetamineEffect = state.scenarios.amphetamine ? -0.5 : 1.0;
         const adhdEffect = state.scenarios.adhd ? 1.5 : 1.0;
-
         // 36. Na+ and Cl- dependencies (Realistic stoichiometry: 2 Na+ : 1 Cl- : 1 DA)
         const naFactor = Math.pow(sState.dat.na / 140, sState.dat.stoichiometry.na);
         const clFactor = Math.pow(sState.dat.cl / 120, sState.dat.stoichiometry.cl);
-
         const datEfficiency = sState.dat.activity * naFactor * clFactor * datPhosphoInhibition * competitiveInhibition * cocaineEffect * adhdEffect;
-
         for (let i = sState.cleftDA.length - 1; i >= 0; i--) {
             const da = sState.cleftDA[i];
-
             // 38. Volume Transmission & 39. Tortuosity: slowed diffusion in extracellular space
             // 38. Dopamine Wave: high-concentration pulses moving through space (Enhancement 38)
             let diffusionScale = da.y < -150 ? 1.0 : (1.0 / sState.tortuosity);
-
             // Volumetric wave effect: push molecules outward from cleft center
             const waveIntensity = state.mode === 'Phasic Burst' ? 1.5 : 0.5;
-            const distFromCleft = Math.sqrt(da.x*da.x + da.z*da.z);
+            const distFromCleft = Math.sqrt(da.x * da.x + da.z * da.z);
             const wavePush = Math.max(0, (200 - distFromCleft) / 200) * waveIntensity;
-
-            da.x += (da.vx + (da.x / (distFromCleft+1)) * wavePush) * diffusionScale;
+            da.x += (da.vx + (da.x / (distFromCleft + 1)) * wavePush) * diffusionScale;
             da.y += da.vy * diffusionScale;
-            da.z += (da.vz + (da.z / (distFromCleft+1)) * wavePush) * diffusionScale;
+            da.z += (da.vz + (da.z / (distFromCleft + 1)) * wavePush) * diffusionScale;
             da.life--;
-
             // 38. Volume Transmission visual: fade out molecules as they move far from cleft
-            const distance = Math.sqrt(da.x*da.x + da.z*da.z);
-            if (distance > 200) da.life -= 2;
-
+            const distance = Math.sqrt(da.x * da.x + da.z * da.z);
+            if (distance > 200)
+                da.life -= 2;
             // 43. Astrocyte Reuptake & Active Clearing
             let astrocyteHit = false;
             sState.astrocytes.forEach(ast => {
                 const dx = da.x - ast.x;
                 const dy = da.y - ast.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-
+                const dist = Math.sqrt(dx * dx + dy * dy);
                 // 43. Active "suction" towards astrocyte process
                 if (dist < ast.radius * 2) {
                     da.vx += (ast.x - da.x) * 0.01;
                     da.vy += (ast.y - da.y) * 0.01;
                 }
-
-                if (dist < ast.radius) astrocyteHit = true;
+                if (dist < ast.radius)
+                    astrocyteHit = true;
             });
-
-        // 39. Collisions with extracellular obstacles (Tortuosity)
-        sState.extracellularObstacles.forEach(obs => {
-            const dx = da.x - obs.x;
-            const dy = da.y - obs.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < obs.radius) {
-                // Bounce effect
-                da.vx *= -0.5;
-                da.vy *= -0.5;
-                da.x += da.vx * 2;
-                da.y += da.vy * 2;
-            }
-        });
-
+            // 39. Collisions with extracellular obstacles (Tortuosity)
+            sState.extracellularObstacles.forEach(obs => {
+                const dx = da.x - obs.x;
+                const dy = da.y - obs.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < obs.radius) {
+                    // Bounce effect
+                    da.vx *= -0.5;
+                    da.vy *= -0.5;
+                    da.x += da.vx * 2;
+                    da.y += da.vy * 2;
+                }
+            });
             // Reuptake at the top (presynaptic DAT)
             if (da.y < -160 && Math.random() < 0.06 * datEfficiency) {
                 sState.cleftDA.splice(i, 1);
-            } else if (astrocyteHit && Math.random() < 0.1) {
+            }
+            else if (astrocyteHit && Math.random() < 0.1) {
                 sState.cleftDA.splice(i, 1);
-            } else if (da.life <= 0) {
+            }
+            else if (da.life <= 0) {
                 sState.cleftDA.splice(i, 1);
             }
         }
-
         // Update Glutamate molecules
         for (let i = sState.glutamate.length - 1; i >= 0; i--) {
             const glu = sState.glutamate[i];
-            glu.x += glu.vx; glu.y += glu.vy; glu.z += glu.vz;
+            glu.x += glu.vx;
+            glu.y += glu.vy;
+            glu.z += glu.vz;
             glu.life--;
-
             // 80. Astrocyte GLT-1 mediated glutamate reuptake
             sState.astrocytes.forEach(ast => {
-                const dist = Math.sqrt((glu.x - ast.x)**2 + (glu.y - ast.y)**2);
+                const dist = Math.sqrt(Math.pow((glu.x - ast.x), 2) + Math.pow((glu.y - ast.y), 2));
                 if (dist < ast.radius && Math.random() < 0.1 * sState.glt1Activity) {
                     glu.life = 0;
                 }
             });
-
-            if (glu.y > 0 || glu.life <= 0) sState.glutamate.splice(i, 1);
+            if (glu.y > 0 || glu.life <= 0)
+                sState.glutamate.splice(i, 1);
         }
-
         // 81. Parkinsonian DA Depletion
         if (sState.pathologicalState === 'Parkinsonian') {
             sState.releaseRate = 0.01;
             sState.dat.activity = 0.2;
         }
-
         // 21-23. Synthesis Pathway (TH -> DDC)
         const thEfficiency = sState.synthesis.thRate * (G.molecularState ? (1.0 + G.molecularState.darpp32.thr34 * 0.5) : 1.0);
         if (sState.synthesis.tyrosine > 0) {
@@ -319,7 +294,8 @@
             const f = sState.synthesis.fluxVisuals[i];
             f.life--;
             f.y += 0.5;
-            if (f.life <= 0) sState.synthesis.fluxVisuals.splice(i, 1);
+            if (f.life <= 0)
+                sState.synthesis.fluxVisuals.splice(i, 1);
         }
         // Refill vesicles from cytosolic DA pool
         sState.vesicles.reserve.forEach(v => {
@@ -329,7 +305,6 @@
                 sState.synthesis.dopamine -= fill;
             }
         });
-
         // 40-42. Detailed Degradation & Metabolites
         // MAO acts on intracellular DA and DOPAC
         // COMT acts on extracellular DA (to 3-MT) and DOPAC (to HVA)
@@ -337,31 +312,27 @@
             const daCount = sState.cleftDA.length;
             const comtDeg = daCount * sState.comtActivity * 0.001;
             sState.metabolites['3mt'] += comtDeg;
-
             const maoDeg = daCount * sState.maoActivity * 0.001;
             sState.metabolites.dopac += maoDeg;
-
             // 42. Visual Metabolites
             if (Math.random() > 0.98) {
                 const da = sState.cleftDA[Math.floor(Math.random() * sState.cleftDA.length)];
                 sState.metabolites.visual.push({ x: da.x, y: da.y, z: da.z, type: 'dopac', life: 120 });
             }
         }
-
         if (sState.metabolites.dopac > 0) {
             const hvaConv = sState.metabolites.dopac * sState.comtActivity * 0.01;
             sState.metabolites.dopac -= hvaConv;
             sState.metabolites.hva += hvaConv;
         }
-
         for (let i = sState.metabolites.visual.length - 1; i >= 0; i--) {
             const m = sState.metabolites.visual[i];
             m.life--;
-            m.x += (Math.random()-0.5);
-            m.y += (Math.random()-0.5);
-            if (m.life <= 0) sState.metabolites.visual.splice(i, 1);
+            m.x += (Math.random() - 0.5);
+            m.y += (Math.random() - 0.5);
+            if (m.life <= 0)
+                sState.metabolites.visual.splice(i, 1);
         }
-
         // Update UI metrics in the left panel
         if (G.leftPanel && G.updateMetric) {
             G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Vesicles (RRP)', sState.vesicles.rrp.length);
@@ -369,21 +340,19 @@
             G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'DAT Activity', `${(sState.dat.activity * 100).toFixed(0)}%`);
             G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Autoreceptor', `${(sState.autoreceptorFeedback * 100).toFixed(0)}%`);
             G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Physiological State', sState.pathologicalState);
-
             if (sState.kissAndRunCount > 0) {
                 G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Fusion Mode', 'Kiss-and-Run');
-            } else {
+            }
+            else {
                 G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Fusion Mode', 'Full Fusion');
             }
         }
     };
-
     G.renderSynapse = function (ctx, project) {
         const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
         const sState = G.synapseState;
-
         // 39. Render Extracellular Obstacles
         sState.extracellularObstacles.forEach(obs => {
             const p = project(obs.x, obs.y, obs.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -394,9 +363,7 @@
                 ctx.fill();
             }
         });
-
         const state = G.state;
-
         // 24. Render VMAT2 Proton Gradient (Visualized as glow inside terminal)
         const pTerminal = project(0, -225, 0, cam, { width: w, height: h, near: 10, far: 5000 });
         if (pTerminal.scale > 0) {
@@ -408,22 +375,19 @@
             ctx.arc(pTerminal.x, pTerminal.y, 150 * pTerminal.scale, 0, Math.PI * 2);
             ctx.fill();
         }
-
         // 35. Render Axon Terminal Geometry (3D-like bulb)
         const t = sState.terminalGeometry;
         ctx.strokeStyle = 'rgba(160, 174, 192, 0.4)';
         ctx.fillStyle = 'rgba(160, 174, 192, 0.05)';
-
         const pCenter = project(0, -225, 0, cam, { width: w, height: h, near: 10, far: 5000 });
         if (pCenter.scale > 0) {
             ctx.beginPath();
-            ctx.ellipse(pCenter.x, pCenter.y, (t.width/2) * pCenter.scale, (t.height/2) * pCenter.scale, 0, 0, Math.PI * 2);
+            ctx.ellipse(pCenter.x, pCenter.y, (t.width / 2) * pCenter.scale, (t.height / 2) * pCenter.scale, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.setLineDash([10, 5]);
             ctx.stroke();
             ctx.setLineDash([]);
         }
-
         // 22. Render Synthesis Flux
         sState.synthesis.fluxVisuals.forEach(f => {
             const p = project(f.x, f.y, 0, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -433,7 +397,6 @@
                 ctx.fillText(f.type.toUpperCase(), p.x, p.y);
             }
         });
-
         // 80. Render Astrocyte Processes (Tripartite Synapse)
         sState.astrocytes.forEach(ast => {
             const p = project(ast.x, ast.y, ast.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -450,7 +413,6 @@
                 ctx.globalAlpha = 1.0;
             }
         });
-
         // 42. Render Visual Metabolites
         sState.metabolites.visual.forEach(m => {
             const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -462,7 +424,6 @@
                 ctx.globalAlpha = 1.0;
             }
         });
-
         // Render Vesicles
         [...sState.vesicles.reserve, ...sState.vesicles.rrp].forEach(v => {
             const p = project(v.x, v.y, 0, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -474,7 +435,6 @@
                 ctx.arc(p.x, p.y, 7 * p.scale, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
-
                 // 27. Render SNARE Proteins (Monochromatic ticks around vesicle)
                 if (v.snareProteins) {
                     const radius = 9 * p.scale;
@@ -483,7 +443,7 @@
                         ctx.strokeStyle = '#E0E0E0';
                         ctx.beginPath();
                         ctx.moveTo(p.x + radius, p.y);
-                        ctx.lineTo(p.x + radius + 3*p.scale, p.y);
+                        ctx.lineTo(p.x + radius + 3 * p.scale, p.y);
                         ctx.stroke();
                     }
                     // SNAP-25 (Silver)
@@ -491,7 +451,7 @@
                         ctx.strokeStyle = '#D0D0D0';
                         ctx.beginPath();
                         ctx.moveTo(p.x, p.y + radius);
-                        ctx.lineTo(p.x, p.y + radius + 3*p.scale);
+                        ctx.lineTo(p.x, p.y + radius + 3 * p.scale);
                         ctx.stroke();
                     }
                     // Synaptobrevin (Neutral Gray)
@@ -499,13 +459,12 @@
                         ctx.strokeStyle = '#A0AEC0';
                         ctx.beginPath();
                         ctx.moveTo(p.x - radius, p.y);
-                        ctx.lineTo(p.x - radius - 3*p.scale, p.y);
+                        ctx.lineTo(p.x - radius - 3 * p.scale, p.y);
                         ctx.stroke();
                     }
                 }
             }
         });
-
         // 45. Render Synaptic Cleft Concentration Profile (Heatmap Gradient)
         if (sState.cleftDA.length > 5) {
             const gradientY = -160;
@@ -515,8 +474,8 @@
                 const grad = ctx.createRadialGradient(pG.x, pG.y, 0, pG.x, pG.y, 150 * pG.scale);
                 const intensity = Math.min(1.0, sState.cleftDA.length / 400);
                 grad.addColorStop(0, `rgba(255, 255, 255, ${intensity * 0.6})`); // Core (White)
-                grad.addColorStop(0.2, `rgba(160, 174, 192, ${intensity * 0.4})`);  // Mid (Silver)
-                grad.addColorStop(0.5, `rgba(80, 80, 80, ${intensity * 0.2})`);  // Outer (Dark Gray)
+                grad.addColorStop(0.2, `rgba(160, 174, 192, ${intensity * 0.4})`); // Mid (Silver)
+                grad.addColorStop(0.5, `rgba(80, 80, 80, ${intensity * 0.2})`); // Outer (Dark Gray)
                 grad.addColorStop(1, 'rgba(160, 174, 192, 0)');
                 ctx.fillStyle = grad;
                 ctx.beginPath();
@@ -524,7 +483,6 @@
                 ctx.fill();
             }
         }
-
         // Render DA molecules (Monochromatic)
         sState.cleftDA.forEach(da => {
             const p = project(da.x, da.y, da.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -537,7 +495,6 @@
                 ctx.globalAlpha = 1.0;
             }
         });
-
         // 77. Render Glutamate molecules
         sState.glutamate.forEach(glu => {
             const p = project(glu.x, glu.y, glu.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -550,7 +507,6 @@
                 ctx.globalAlpha = 1.0;
             }
         });
-
         // 33. Kiss-and-run Indicator
         if (sState.kissAndRunCount > 0) {
             sState.kissAndRunCount--;

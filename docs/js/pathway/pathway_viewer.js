@@ -1,49 +1,58 @@
+"use strict";
 // docs/js/pathway_viewer.js
 // Core viewer for the 3D pathway visualization, using the native 3D engine.
-
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 (function () {
     'use strict';
-
     // Internal helper for parsing Reactome and JSON-based pathways
     const ReactomeParser = {
-        async parse(source, isRaw = false) {
-            try {
-                let text;
-                if (isRaw) {
-                    text = source;
-                } else {
-                    const response = await fetch(source);
-                    if (!response.ok) {
-                        return { nodes: [], edges: [] };
+        parse(source_1) {
+            return __awaiter(this, arguments, void 0, function* (source, isRaw = false) {
+                try {
+                    let text;
+                    if (isRaw) {
+                        text = source;
                     }
-                    text = await response.text();
-                }
-
-                // Detect JSON format (Reactome default)
-                if (text.trim().startsWith('{')) {
-                    try {
-                        return this.parseJSON(JSON.parse(text));
-                    } catch (e) {
-                        console.error("Pathway App: Failed to parse Reactome JSON data", e);
-                        return { nodes: [], edges: [] };
+                    else {
+                        const response = yield fetch(source);
+                        if (!response.ok) {
+                            return { nodes: [], edges: [] };
+                        }
+                        text = yield response.text();
                     }
+                    // Detect JSON format (Reactome default)
+                    if (text.trim().startsWith('{')) {
+                        try {
+                            return this.parseJSON(JSON.parse(text));
+                        }
+                        catch (e) {
+                            console.error("Pathway App: Failed to parse Reactome JSON data", e);
+                            return { nodes: [], edges: [] };
+                        }
+                    }
+                    // Fallback for KGML legacy support
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, "application/xml");
+                    const nodes = this.extractEntries(xmlDoc);
+                    const edges = this.extractRelations(xmlDoc);
+                    return { nodes, edges };
                 }
-
-                // Fallback for KGML legacy support
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(text, "application/xml");
-                const nodes = this.extractEntries(xmlDoc);
-                const edges = this.extractRelations(xmlDoc);
-                return { nodes, edges };
-            } catch (error) {
-                return { nodes: [], edges: [] };
-            }
+                catch (error) {
+                    return { nodes: [], edges: [] };
+                }
+            });
         },
-
         parseJSON(data) {
             const rawNodes = data.nodes || data.physicalEntities || [];
             const rawEdges = data.edges || data.interactions || [];
-
             const nodes = rawNodes.map(n => ({
                 id: String(n.dbId || n.id || n.stId),
                 name: n.displayName || n.name || String(n.dbId),
@@ -53,16 +62,13 @@
                 y: n.y || (n.minY + (n.maxY - n.minY) / 2) || 400,
                 stId: n.stId
             }));
-
             const edges = rawEdges.map(e => ({
                 source: String(e.from || e.sourceId || (e.input && e.input[0])),
                 target: String(e.to || e.targetId || (e.output && e.output[0])),
                 type: e.renderableClass || 'reaction'
             })).filter(e => e.source && e.target);
-
             return { nodes, edges };
         },
-
         mapReactomeClass(rc) {
             const map = {
                 'Protein': 'gene',
@@ -74,7 +80,6 @@
             };
             return map[rc] || 'compound';
         },
-
         extractEntries(xmlDoc) {
             const nodes = [];
             const entries = xmlDoc.getElementsByTagName("entry");
@@ -94,7 +99,6 @@
             }
             return nodes;
         },
-
         extractRelations(xmlDoc) {
             const edges = [];
             const relations = xmlDoc.getElementsByTagName("relation");
@@ -108,13 +112,11 @@
             return edges;
         }
     };
-
     // Internal helper for generating organic mock data
     const PathwayDataGenerator = {
         generate(id, regions) {
             const nodes = [];
             const edges = [];
-
             // Map region names to common anatomical labels/neurotransmitters
             const regionLabels = {
                 'gut': ['Tryptophan', 'Gut Microbiota', 'Enteric Nerves'],
@@ -141,9 +143,7 @@
                 'cytosol': ['Kinase Cascade', 'ATP'],
                 'nucleus': ['Gene Expression', 'Epigenetics']
             };
-
             let globalNodeId = 1;
-
             regions.forEach((region, rIdx) => {
                 const labels = regionLabels[region] || [region.toUpperCase()];
                 labels.forEach((label, lIdx) => {
@@ -157,7 +157,6 @@
                         x: 100 + rIdx * 150 + lIdx * 30,
                         y: 100 + lIdx * 80
                     });
-
                     // Auto-connect to previous node in chain
                     if (nodes.length > 1) {
                         edges.push({
@@ -167,23 +166,22 @@
                     }
                 });
             });
-
             return { nodes, edges };
         },
-
         determineType(label) {
             const keywords = ['Gene', 'Kinase', 'Receptor', 'D1', 'D2'];
-            if (keywords.some(k => label.includes(k))) return 'gene';
-            if (label.includes('Metabolic') || label.includes('Clock')) return 'map';
+            if (keywords.some(k => label.includes(k)))
+                return 'gene';
+            if (label.includes('Metabolic') || label.includes('Clock'))
+                return 'map';
             return 'compound';
         }
     };
-
     // Internal helper for 2D to 3D layout
     const PathwayLayout = {
         generate3DLayout(data) {
-            if (!data || !data.nodes || data.nodes.length === 0) return [];
-
+            if (!data || !data.nodes || data.nodes.length === 0)
+                return [];
             // Anatomical Map (Coordinates in World Space) - Constrained to prevent off-screen movement
             const anatomicalMap = {
                 // Brain
@@ -213,10 +211,8 @@
                 'cytosol': { x: 0, y: 160, z: 150 },
                 'nucleus': { x: -20, y: 170, z: 150 }
             };
-
             return data.nodes.map((node, i) => {
                 const targetBase = anatomicalMap[node.region] || { x: 0, y: 0, z: 0 };
-
                 // Add jitter to prevent exact overlap if multiple nodes in same region - Constrained
                 const jitter = 15;
                 const pos = {
@@ -224,7 +220,6 @@
                     y: targetBase.y + (Math.cos(i * 2.1) * jitter),
                     z: targetBase.z + (Math.sin(i * 0.7) * jitter)
                 };
-
                 // Fallback for KEGG nodes without region assignment (legacy support)
                 if (!node.region) {
                     const scaleFactor = 30;
@@ -232,177 +227,162 @@
                     pos.y = -(node.y - 400) / scaleFactor;
                     pos.z = (node.type === 'gene') ? 0 : 100;
                 }
-
-                return { ...node, position3D: pos };
+                return Object.assign(Object.assign({}, node), { position3D: pos });
             });
         }
     };
-
-
     const GreenhousePathwayViewer = {
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
         pathwayData: null, pathwayEdges: null, brainShell: null, torsoShell: null, highlightedNodeId: null,
         availablePathways: [], currentPathwayId: null, baseUrl: '', initialized: false,
         rawXmlData: null, // Bridge storage
-
-        async init(containerSelector, baseUrl) {
-            if (this.isRunning) return;
-
-            let container;
-            let actualSelector = containerSelector;
-
-            // Handle Re-initialization from GreenhouseUtils
-            // GreenhouseUtils calls re-init with (containerElement, selectorString)
-            if (containerSelector && typeof containerSelector !== 'string') {
-                container = containerSelector;
-                actualSelector = baseUrl; // In re-init, 2nd arg is the selector string
-                baseUrl = this.baseUrl;   // Use previously stored baseUrl
-            } else {
-                container = document.querySelector(containerSelector);
-            }
-
-            if (!container) {
-                console.error("Pathway App: Target container not found.");
-                return;
-            }
-
-            // Polling logic: Wait for the XML to be completely loaded before initiating
-            console.log("Pathway App: Waiting for complete KGML data bridge...");
-
-            const checkCompletion = () => {
-                const text = container.textContent.trim();
-                return text.includes('<pathway') && text.includes('</pathway>');
-            };
-
-            if (checkCompletion()) {
-                console.log("Pathway App: Data bridge detected. Initiating...");
-                this.executeInitialization(container, actualSelector, baseUrl);
-            } else {
-                const pollInterval = setInterval(() => {
-                    if (checkCompletion()) {
-                        clearInterval(pollInterval);
-                        console.log("Pathway App: Data bridge completely loaded. Initiating...");
-                        this.executeInitialization(container, actualSelector, baseUrl);
-                    }
-                }, 100);
-
-                // Safety timeout: If no data after 15s, initiate with generator fallback
-                setTimeout(() => {
-                    if (!this.isRunning) {
-                        clearInterval(pollInterval);
-                        console.warn("Pathway App: Data bridge timeout. Initiating with standalone generator.");
-                        this.executeInitialization(container, actualSelector, baseUrl);
-                    }
-                }, 15000);
-            }
-        },
-
-        async executeInitialization(container, containerSelector, baseUrl) {
-            if (this.isRunning && this._lastContainer === container) return;
-            this.isRunning = true;
-            this._lastContainer = container;
-            this.baseUrl = baseUrl || '';
-
-            // 1. Resilience Pattern: wipe previous content
-            const bridgeData = container.textContent.trim();
-            container.innerHTML = '';
-
-            // 2. Capture and Clean the initial XML Data
-            if (bridgeData.includes('<pathway')) {
-                const start = bridgeData.indexOf('<pathway');
-                const end = bridgeData.lastIndexOf('</pathway>') + 10;
-                this.rawXmlData = bridgeData.substring(start, end);
-                console.log("Pathway App: Clean XML captured from bridge.");
-            }
-
-            // The targetSelector element is the data bridge for future updates.
-            this.setupDataBridgeObserver(container);
-
-            this.setupUI(container);
-            this.setupCanvas(container);
-
-            // Correct Camera settings for the 3D Engine
-            this.camera = {
-                x: 0,
-                y: 0,
-                z: -1000, // Pulled back to see torso
-                rotationX: 0,
-                rotationY: 0,
-                rotationZ: 0,
-                fov: 600
-            };
-
-            this.projection = {
-                width: this.canvas.width,
-                height: this.canvas.height,
-                near: 1,
-                far: 5000,
-                fov: 600
-            };
-
-            const fullConfig = {
-                camera: {
-                    initial: { ...this.camera },
-                    controls: {
-                        enablePan: true,
-                        enableZoom: true,
-                        enableRotate: true,
-                        autoRotate: true,
-                        autoRotateSpeed: 0.001, // Reduced for accessibility
-                        panSpeed: 0.002,
-                        zoomSpeed: 0.1,
-                        rotateSpeed: 0.005,
-                        inertia: true,
-                        inertiaDamping: 0.95,
-                        minZoom: -50,
-                        maxZoom: -1200 // Constrained to prevent model disappearing
-                    }
-                },
-                get(path) {
-                    const keys = path.split('.');
-                    let val = this;
-                    for (const key of keys) {
-                        if (val && typeof val === 'object' && key in val) val = val[key];
-                        else return undefined;
-                    }
-                    return val;
-                },
-                set(path, value) {
-                    const keys = path.split('.');
-                    let obj = this;
-                    for (let i = 0; i < keys.length - 1; i++) {
-                        const key = keys[i];
-                        if (!(key in obj)) obj[key] = {};
-                        obj = obj[key];
-                    }
-                    obj[keys[keys.length - 1]] = value;
+        init(containerSelector, baseUrl) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (this.isRunning)
+                    return;
+                let container;
+                let actualSelector = containerSelector;
+                // Handle Re-initialization from GreenhouseUtils
+                // GreenhouseUtils calls re-init with (containerElement, selectorString)
+                if (containerSelector && typeof containerSelector !== 'string') {
+                    container = containerSelector;
+                    actualSelector = baseUrl; // In re-init, 2nd arg is the selector string
+                    baseUrl = this.baseUrl; // Use previously stored baseUrl
                 }
-            };
-
-            if (window.GreenhousePathwayCameraControls) {
-                this.cameraControls = Object.create(window.GreenhousePathwayCameraControls);
-                this.cameraControls.init(this.canvas, this.camera, fullConfig);
-            }
-
-            this.initializeGeometry();
-
-            // Handle Language Change
-            window.addEventListener('greenhouseLanguageChanged', () => {
-                this.refreshUIText();
+                else {
+                    container = document.querySelector(containerSelector);
+                }
+                if (!container) {
+                    console.error("Pathway App: Target container not found.");
+                    return;
+                }
+                // Polling logic: Wait for the XML to be completely loaded before initiating
+                console.log("Pathway App: Waiting for complete KGML data bridge...");
+                const checkCompletion = () => {
+                    const text = container.textContent.trim();
+                    return text.includes('<pathway') && text.includes('</pathway>');
+                };
+                if (checkCompletion()) {
+                    console.log("Pathway App: Data bridge detected. Initiating...");
+                    this.executeInitialization(container, actualSelector, baseUrl);
+                }
+                else {
+                    const pollInterval = setInterval(() => {
+                        if (checkCompletion()) {
+                            clearInterval(pollInterval);
+                            console.log("Pathway App: Data bridge completely loaded. Initiating...");
+                            this.executeInitialization(container, actualSelector, baseUrl);
+                        }
+                    }, 100);
+                    // Safety timeout: If no data after 15s, initiate with generator fallback
+                    setTimeout(() => {
+                        if (!this.isRunning) {
+                            clearInterval(pollInterval);
+                            console.warn("Pathway App: Data bridge timeout. Initiating with standalone generator.");
+                            this.executeInitialization(container, actualSelector, baseUrl);
+                        }
+                    }, 15000);
+                }
             });
-
-            await this.loadPathwayMetadata();
-            this.initialized = true;
-
-            // 3. Resilience Pattern: Enable shared GreenhouseUtils recovery
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, containerSelector, this, 'init');
-                window.GreenhouseUtils.startSentinel(container, containerSelector, this, 'init');
-            }
-
-            this.startAnimation();
         },
-
+        executeInitialization(container, containerSelector, baseUrl) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (this.isRunning && this._lastContainer === container)
+                    return;
+                this.isRunning = true;
+                this._lastContainer = container;
+                this.baseUrl = baseUrl || '';
+                // 1. Resilience Pattern: wipe previous content
+                const bridgeData = container.textContent.trim();
+                container.innerHTML = '';
+                // 2. Capture and Clean the initial XML Data
+                if (bridgeData.includes('<pathway')) {
+                    const start = bridgeData.indexOf('<pathway');
+                    const end = bridgeData.lastIndexOf('</pathway>') + 10;
+                    this.rawXmlData = bridgeData.substring(start, end);
+                    console.log("Pathway App: Clean XML captured from bridge.");
+                }
+                // The targetSelector element is the data bridge for future updates.
+                this.setupDataBridgeObserver(container);
+                this.setupUI(container);
+                this.setupCanvas(container);
+                // Correct Camera settings for the 3D Engine
+                this.camera = {
+                    x: 0,
+                    y: 0,
+                    z: -1000, // Pulled back to see torso
+                    rotationX: 0,
+                    rotationY: 0,
+                    rotationZ: 0,
+                    fov: 600
+                };
+                this.projection = {
+                    width: this.canvas.width,
+                    height: this.canvas.height,
+                    near: 1,
+                    far: 5000,
+                    fov: 600
+                };
+                const fullConfig = {
+                    camera: {
+                        initial: Object.assign({}, this.camera),
+                        controls: {
+                            enablePan: true,
+                            enableZoom: true,
+                            enableRotate: true,
+                            autoRotate: true,
+                            autoRotateSpeed: 0.001, // Reduced for accessibility
+                            panSpeed: 0.002,
+                            zoomSpeed: 0.1,
+                            rotateSpeed: 0.005,
+                            inertia: true,
+                            inertiaDamping: 0.95,
+                            minZoom: -50,
+                            maxZoom: -1200 // Constrained to prevent model disappearing
+                        }
+                    },
+                    get(path) {
+                        const keys = path.split('.');
+                        let val = this;
+                        for (const key of keys) {
+                            if (val && typeof val === 'object' && key in val)
+                                val = val[key];
+                            else
+                                return undefined;
+                        }
+                        return val;
+                    },
+                    set(path, value) {
+                        const keys = path.split('.');
+                        let obj = this;
+                        for (let i = 0; i < keys.length - 1; i++) {
+                            const key = keys[i];
+                            if (!(key in obj))
+                                obj[key] = {};
+                            obj = obj[key];
+                        }
+                        obj[keys[keys.length - 1]] = value;
+                    }
+                };
+                if (window.GreenhousePathwayCameraControls) {
+                    this.cameraControls = Object.create(window.GreenhousePathwayCameraControls);
+                    this.cameraControls.init(this.canvas, this.camera, fullConfig);
+                }
+                this.initializeGeometry();
+                // Handle Language Change
+                window.addEventListener('greenhouseLanguageChanged', () => {
+                    this.refreshUIText();
+                });
+                yield this.loadPathwayMetadata();
+                this.initialized = true;
+                // 3. Resilience Pattern: Enable shared GreenhouseUtils recovery
+                if (window.GreenhouseUtils) {
+                    window.GreenhouseUtils.observeAndReinitializeApplication(container, containerSelector, this, 'init');
+                    window.GreenhouseUtils.startSentinel(container, containerSelector, this, 'init');
+                }
+                this.startAnimation();
+            });
+        },
         setupDataBridgeObserver(container) {
             this._bridgeObserver = new MutationObserver(() => {
                 const newData = container.textContent.trim();
@@ -417,34 +397,34 @@
             });
             this._bridgeObserver.observe(container, { childList: true, characterData: true, subtree: true });
         },
-
-        async loadPathwayMetadata() {
-            try {
-                const response = await fetch(this.baseUrl + 'endpoints/models_pathways.json');
-                const data = await response.json();
-                this.availablePathways = data.pathways;
-                this.populatePathwaySelector();
-
-                // Match bridge data to a pathway if possible
-                if (this.availablePathways.length > 0) {
-                    let startId = this.availablePathways[0].id;
-
-                    // If bridge has data, see if it mentions a specific pathway
-                    if (this.rawXmlData) {
-                        const match = this.availablePathways.find(p => this.rawXmlData.toLowerCase().includes(p.name.toLowerCase()));
-                        if (match) startId = match.id;
+        loadPathwayMetadata() {
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    const response = yield fetch(this.baseUrl + 'endpoints/models_pathways.json');
+                    const data = yield response.json();
+                    this.availablePathways = data.pathways;
+                    this.populatePathwaySelector();
+                    // Match bridge data to a pathway if possible
+                    if (this.availablePathways.length > 0) {
+                        let startId = this.availablePathways[0].id;
+                        // If bridge has data, see if it mentions a specific pathway
+                        if (this.rawXmlData) {
+                            const match = this.availablePathways.find(p => this.rawXmlData.toLowerCase().includes(p.name.toLowerCase()));
+                            if (match)
+                                startId = match.id;
+                        }
+                        yield this.switchPathway(startId);
                     }
-
-                    await this.switchPathway(startId);
                 }
-            } catch (err) {
-                console.error("Pathway App: Failed to load metadata.", err);
-            }
+                catch (err) {
+                    console.error("Pathway App: Failed to load metadata.", err);
+                }
+            });
         },
-
         populatePathwaySelector() {
             const selector = document.getElementById('master-pathway-selector');
-            if (!selector) return;
+            if (!selector)
+                return;
             selector.innerHTML = '';
             this.availablePathways.forEach(p => {
                 const option = document.createElement('option');
@@ -454,50 +434,47 @@
             });
             selector.onchange = (e) => this.switchPathway(e.target.value);
         },
-
-        async switchPathway(pathwayId) {
-            //console.log(`Pathway App: Switching to ${pathwayId}`);
-            this.currentPathwayId = pathwayId;
-            const pathway = this.availablePathways.find(p => p.id === pathwayId);
-            if (!pathway) return;
-
-            // Show loading status
-            const geneSelector = document.getElementById('pathway-selector');
-            if (geneSelector) geneSelector.innerHTML = '<option>Loading pathway data...</option>';
-
-            let success = false;
-
-            // Priority 1: Use bridged data from Velo if available
-            if (this.rawXmlData) {
-                const parsed = await ReactomeParser.parse(this.rawXmlData, true);
-                if (parsed.nodes.length > 0) {
-                    this.pathwayData = PathwayLayout.generate3DLayout(parsed);
-                    this.pathwayEdges = parsed.edges;
-                    success = true;
+        switchPathway(pathwayId) {
+            return __awaiter(this, void 0, void 0, function* () {
+                //console.log(`Pathway App: Switching to ${pathwayId}`);
+                this.currentPathwayId = pathwayId;
+                const pathway = this.availablePathways.find(p => p.id === pathwayId);
+                if (!pathway)
+                    return;
+                // Show loading status
+                const geneSelector = document.getElementById('pathway-selector');
+                if (geneSelector)
+                    geneSelector.innerHTML = '<option>Loading pathway data...</option>';
+                let success = false;
+                // Priority 1: Use bridged data from Velo if available
+                if (this.rawXmlData) {
+                    const parsed = yield ReactomeParser.parse(this.rawXmlData, true);
+                    if (parsed.nodes.length > 0) {
+                        this.pathwayData = PathwayLayout.generate3DLayout(parsed);
+                        this.pathwayEdges = parsed.edges;
+                        success = true;
+                    }
                 }
-            }
-
-            // Priority 2: Remote fetch
-            if (!success && pathway.source) {
-                success = await this.loadExternalPathway(pathway.source);
-            }
-
-            // Priority 3: Internal Generator
-            if (!success) {
-                const generated = PathwayDataGenerator.generate(pathwayId, pathway.regions);
-                this.pathwayData = PathwayLayout.generate3DLayout(generated);
-                this.pathwayEdges = generated.edges;
-            }
-
-            this.updateGeneSelector();
+                // Priority 2: Remote fetch
+                if (!success && pathway.source) {
+                    success = yield this.loadExternalPathway(pathway.source);
+                }
+                // Priority 3: Internal Generator
+                if (!success) {
+                    const generated = PathwayDataGenerator.generate(pathwayId, pathway.regions);
+                    this.pathwayData = PathwayLayout.generate3DLayout(generated);
+                    this.pathwayEdges = generated.edges;
+                }
+                this.updateGeneSelector();
+            });
         },
-
         setupUI(container) {
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             if (isMobile) {
                 const testControls = document.getElementById('test-controls');
-                if (testControls) testControls.style.display = 'none';
+                if (testControls)
+                    testControls.style.display = 'none';
             }
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
@@ -521,19 +498,19 @@
                 gap: 5px;
             `;
             container.style.position = 'relative';
-
             const header = document.createElement('div');
             header.style.cssText = `font-weight: bold; margin-bottom: ${isMobile ? '5px' : '10px'}; font-size: ${isMobile ? '16px' : '14px'}; color: #A0AEC0; text-transform: uppercase; letter-spacing: 1px;`;
             header.textContent = t('pathway_control');
-            if (!isMobile) uiContainer.appendChild(header);
-
+            if (!isMobile)
+                uiContainer.appendChild(header);
             const pathwayGroup = document.createElement('div');
             pathwayGroup.style.marginBottom = isMobile ? '5px' : '15px';
             const pLabel = document.createElement('label');
             pLabel.id = 'pathway-systemic-label';
             pLabel.textContent = t('systemic_pathway');
             pLabel.style.cssText = `display: block; font-size: ${isMobile ? '16px' : '12px'}; margin-bottom: 5px; color: #aaa;`;
-            if (!isMobile) pathwayGroup.appendChild(pLabel);
+            if (!isMobile)
+                pathwayGroup.appendChild(pLabel);
             const pSelect = document.createElement('select');
             pSelect.id = 'master-pathway-selector';
             pSelect.style.cssText = `
@@ -542,16 +519,14 @@
             `;
             pathwayGroup.appendChild(pSelect);
             uiContainer.appendChild(pathwayGroup);
-
             const selectGroup = document.createElement('div');
             selectGroup.style.marginBottom = isMobile ? '5px' : '10px';
-
             const label = document.createElement('label');
             label.id = 'pathway-component-label';
             label.textContent = t('component_gene');
             label.style.cssText = `display: block; font-size: ${isMobile ? '16px' : '12px'}; margin-bottom: 5px; color: #aaa;`;
-            if (!isMobile) selectGroup.appendChild(label);
-
+            if (!isMobile)
+                selectGroup.appendChild(label);
             const select = document.createElement('select');
             select.id = 'pathway-selector';
             select.style.cssText = `
@@ -567,11 +542,9 @@
             `;
             selectGroup.appendChild(select);
             uiContainer.appendChild(selectGroup);
-
             const btnGroup = document.createElement('div');
             btnGroup.style.display = 'flex';
             btnGroup.style.gap = '10px';
-
             const button = document.createElement('button');
             button.id = 'highlight-gene-btn';
             button.textContent = t('highlight_pathway');
@@ -590,7 +563,6 @@
                 this.highlightedNodeId = select.value;
             };
             btnGroup.appendChild(button);
-
             const langBtn = document.createElement('button');
             langBtn.id = 'pathway-lang-toggle';
             langBtn.textContent = t('btn_language');
@@ -612,10 +584,8 @@
             };
             btnGroup.appendChild(langBtn);
             uiContainer.appendChild(btnGroup);
-
             container.appendChild(uiContainer);
         },
-
         setupCanvas(container) {
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth;
@@ -624,56 +594,58 @@
             this.ctx = this.canvas.getContext('2d');
             container.appendChild(this.canvas);
         },
-
         initializeGeometry() {
             this.brainShell = { vertices: [], faces: [] };
             this.torsoShell = { vertices: [], faces: [] };
-
             if (window.GreenhousePathwayGeometry) {
                 window.GreenhousePathwayGeometry.initializeBrainShell(this.brainShell);
                 window.GreenhousePathwayGeometry.initializeTorsoShell(this.torsoShell);
             }
         },
-
-        async loadExternalPathway(url, isLive = false) {
-            try {
-                const fetchUrl = isLive ? url : (this.baseUrl + url);
-                const parsedData = await ReactomeParser.parse(fetchUrl);
-
-                if (parsedData.nodes.length > 0) {
-                    parsedData.nodes.forEach(node => {
-                        node.region = this.mapReactomeNodeToRegion(node, this.currentPathwayId);
-                    });
-                    this.pathwayData = PathwayLayout.generate3DLayout({ nodes: parsedData.nodes });
-                    this.pathwayEdges = parsedData.edges;
-                    return true;
+        loadExternalPathway(url_1) {
+            return __awaiter(this, arguments, void 0, function* (url, isLive = false) {
+                try {
+                    const fetchUrl = isLive ? url : (this.baseUrl + url);
+                    const parsedData = yield ReactomeParser.parse(fetchUrl);
+                    if (parsedData.nodes.length > 0) {
+                        parsedData.nodes.forEach(node => {
+                            node.region = this.mapReactomeNodeToRegion(node, this.currentPathwayId);
+                        });
+                        this.pathwayData = PathwayLayout.generate3DLayout({ nodes: parsedData.nodes });
+                        this.pathwayEdges = parsedData.edges;
+                        return true;
+                    }
                 }
-            } catch (err) {
-                console.error('Pathway App: External load error.', err);
-            }
-            return false;
+                catch (err) {
+                    console.error('Pathway App: External load error.', err);
+                }
+                return false;
+            });
         },
-
         mapReactomeNodeToRegion(node, pathwayId) {
             const name = (node.name || '').toLowerCase();
-
             if (pathwayId === 'tryptophan') {
-                if (name.includes('tryptophan')) return 'gut';
-                if (name.includes('kynurenine')) return 'blood_stream';
-                if (name.includes('ido') || name.includes('tdo')) return 'liver';
+                if (name.includes('tryptophan'))
+                    return 'gut';
+                if (name.includes('kynurenine'))
+                    return 'blood_stream';
+                if (name.includes('ido') || name.includes('tdo'))
+                    return 'liver';
             }
-
             if (pathwayId === 'circadian') {
-                if (name.includes('period') || name.includes('clock')) return 'scn';
-                if (name.includes('bmal') || name.includes('arntl')) return 'liver';
+                if (name.includes('period') || name.includes('clock'))
+                    return 'scn';
+                if (name.includes('bmal') || name.includes('arntl'))
+                    return 'liver';
             }
-
             if (pathwayId === 'hpa') {
-                if (name.includes('crh')) return 'hypothalamus';
-                if (name.includes('acth')) return 'pituitary';
-                if (name.includes('cortisol')) return 'adrenals';
+                if (name.includes('crh'))
+                    return 'hypothalamus';
+                if (name.includes('acth'))
+                    return 'pituitary';
+                if (name.includes('cortisol'))
+                    return 'adrenals';
             }
-
             const pathway = this.availablePathways.find(p => p.id === pathwayId);
             if (pathway && pathway.regions.length > 0) {
                 const charCode = name.charCodeAt(0) || 0;
@@ -681,25 +653,23 @@
             }
             return 'pfc';
         },
-
         refreshUIText() {
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const pLabel = document.getElementById('pathway-systemic-label');
-            if (pLabel) pLabel.textContent = t('systemic_pathway');
-
+            if (pLabel)
+                pLabel.textContent = t('systemic_pathway');
             const cLabel = document.getElementById('pathway-component-label');
-            if (cLabel) cLabel.textContent = t('component_gene');
-
+            if (cLabel)
+                cLabel.textContent = t('component_gene');
             const hBtn = document.getElementById('highlight-gene-btn');
-            if (hBtn) hBtn.textContent = t('highlight_pathway');
-
+            if (hBtn)
+                hBtn.textContent = t('highlight_pathway');
             const lBtn = document.getElementById('pathway-lang-toggle');
-            if (lBtn) lBtn.textContent = t('btn_language');
-
+            if (lBtn)
+                lBtn.textContent = t('btn_language');
             this.updateGeneSelector();
             this.populatePathwaySelector();
         },
-
         updateGeneSelector() {
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const selector = document.getElementById('pathway-selector');
@@ -715,81 +685,68 @@
                 selector.value = currentVal;
             }
         },
-
         startAnimation() {
             const animate = () => {
-                if (this.cameraControls) this.cameraControls.update();
+                if (this.cameraControls)
+                    this.cameraControls.update();
                 this.render();
                 requestAnimationFrame(animate);
             };
             animate();
         },
-
         render() {
             const ctx = this.ctx;
             const w = this.canvas.width;
             const h = this.canvas.height;
-
             ctx.clearRect(0, 0, w, h);
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 0, w, h);
-
-            if (!this.initialized) return;
-
+            if (!this.initialized)
+                return;
             // Draw Subtle Grid for spatial orientation
             this.drawReferenceGrid(ctx, w, h);
-
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const highlightedNode = this.pathwayData ? this.pathwayData.find(n => n.id === this.highlightedNodeId) : null;
             const activeRegion = highlightedNode ? highlightedNode.region : null;
-
             // Draw Connection Pillar (Spinal Cord base)
             this.drawCentralNervousSystemPillar(ctx, w, h);
-
             if (this.brainShell && window.GreenhousePathwayBrain) {
                 window.GreenhousePathwayBrain.drawBrain(ctx, this.brainShell, this.camera, this.projection, w, h, { activeRegion });
             }
-
             if (this.torsoShell && window.GreenhousePathwayBrain) {
                 window.GreenhousePathwayBrain.drawTorso(ctx, this.torsoShell, this.camera, this.projection, w, h, { activeRegion });
             }
-
             if (this.pathwayData) {
                 this.drawPathwayGraph();
                 this.drawLegend(ctx, w, h);
                 this.drawMinimap(ctx, w, h);
-            } else {
+            }
+            else {
                 ctx.fillStyle = '#555';
                 ctx.textAlign = 'center';
                 ctx.font = '14px Arial';
                 ctx.fillText("Loading pathway data...", w / 2, h / 2);
             }
-
             // Draw Interaction PiP if a node is selected
             if (highlightedNode && window.GreenhousePathwayBrain) {
                 const pipW = 300;
                 const pipH = 250;
                 const pipX = w - pipW - 20;
                 const pipY = h - pipH - 20;
-
                 ctx.save();
                 ctx.translate(pipX, pipY);
                 ctx.beginPath();
                 ctx.rect(0, 0, pipW, pipH);
                 ctx.clip(); // Ensure PiP content stays inside bounds
-
                 window.GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, t(highlightedNode.name), highlightedNode.link);
-
                 ctx.restore();
             }
         },
-
         drawCentralNervousSystemPillar(ctx, w, h) {
             // Draws a glowing vertical pillar to suggest anatomical connection
             const steps = 10;
             const p1 = GreenhouseModels3DMath.project3DTo2D(0, -180, 0, this.camera, this.projection);
             const p2 = GreenhouseModels3DMath.project3DTo2D(0, -380, 0, this.camera, this.projection);
-
             if (p1.scale > 0 && p2.scale > 0) {
                 const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
                 grad.addColorStop(0, 'rgba(0, 242, 255, 0.2)');
@@ -802,28 +759,27 @@
                 ctx.stroke();
             }
         },
-
         drawReferenceGrid(ctx, w, h) {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
             ctx.lineWidth = 1;
             const step = 50;
             ctx.beginPath();
             for (let x = 0; x <= w; x += step) {
-                ctx.moveTo(x, 0); ctx.lineTo(x, h);
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
             }
             for (let y = 0; y <= h; y += step) {
-                ctx.moveTo(0, y); ctx.lineTo(w, y);
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
             }
             ctx.stroke();
         },
-
         drawMinimap(ctx, w, h) {
-            if (!this.pathwayData || this.pathwayData.length === 0) return;
-
+            if (!this.pathwayData || this.pathwayData.length === 0)
+                return;
             const mmSize = 120;
             const mmX = w - mmSize - 20;
             const mmY = 80;
-
             ctx.save();
             ctx.fillStyle = 'rgba(25, 25, 25, 0.9)';
             ctx.strokeStyle = 'rgba(76, 161, 175, 0.6)';
@@ -832,7 +788,6 @@
             ctx.rect(mmX, mmY, mmSize, mmSize);
             ctx.fill();
             ctx.stroke();
-
             // Calculate Bounds
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
             this.pathwayData.forEach(n => {
@@ -841,13 +796,11 @@
                 minY = Math.min(minY, n.position3D.y);
                 maxY = Math.max(maxY, n.position3D.y);
             });
-
             const rangeX = (maxX - minX) || 100;
             const rangeY = (maxY - minY) || 100;
             const scale = (mmSize - 20) / Math.max(rangeX, rangeY);
             const offsetX = mmX + 10 - minX * scale;
             const offsetY = mmY + 10 - minY * scale;
-
             // Draw Edges in Minimap
             ctx.strokeStyle = 'rgba(76, 161, 175, 0.2)';
             ctx.lineWidth = 0.5;
@@ -861,7 +814,6 @@
                     ctx.stroke();
                 }
             });
-
             // Draw Nodes in Minimap
             this.pathwayData.forEach(n => {
                 ctx.fillStyle = (n.id === this.highlightedNodeId) ? '#FFFFFF' : '#A0AEC0';
@@ -869,39 +821,32 @@
                 ctx.arc(n.position3D.x * scale + offsetX, n.position3D.y * scale + offsetY, 1.5, 0, Math.PI * 2);
                 ctx.fill();
             });
-
             // Draw View Indicator (Center dot)
             ctx.fillStyle = '#fff';
             ctx.beginPath();
-            ctx.arc(mmX + mmSize/2, mmY + mmSize/2, 2, 0, Math.PI * 2);
+            ctx.arc(mmX + mmSize / 2, mmY + mmSize / 2, 2, 0, Math.PI * 2);
             ctx.fill();
-
             ctx.restore();
         },
-
         drawLegend(ctx, w, h) {
-            if (!this.pathwayData) return;
-
+            if (!this.pathwayData)
+                return;
             const types = [...new Set(this.pathwayData.map(n => n.type))];
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             const legendX = 20;
             const legendY = isMobile ? 120 : h - (types.length * 25) - 80;
-
             ctx.save();
             ctx.fillStyle = 'rgba(25, 25, 25, 0.9)';
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.lineWidth = 1;
-
             const padding = 12;
             const itemHeight = 22;
             const rectW = 160;
             const rectH = (types.length * itemHeight) + padding * 2;
-
             ctx.beginPath();
             ctx.rect(legendX, legendY, rectW, rectH);
             ctx.fill();
             ctx.stroke();
-
             const typeColors = {
                 'gene': '#D0D0D0',
                 'compound': '#A0AEC0',
@@ -910,14 +855,12 @@
                 'neurotransmitter': '#D0D0D0',
                 'cytokine': '#E0E0E0'
             };
-
             types.forEach((type, i) => {
                 const color = typeColors[type] || '#A0AEC0';
                 ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.arc(legendX + 20, legendY + padding + 10 + i * itemHeight, 5, 0, Math.PI * 2);
                 ctx.fill();
-
                 ctx.fillStyle = '#ddd';
                 ctx.font = 'bold 10px "Segoe UI", Roboto, Arial';
                 ctx.textAlign = 'left';
@@ -925,18 +868,12 @@
             });
             ctx.restore();
         },
-
         drawPathwayGraph() {
-            if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
-
+            if (!this.pathwayData || !window.GreenhouseModels3DMath)
+                return;
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const time = Date.now() * 0.001; // Animation clock
-
-            const projectedNodes = this.pathwayData.map(node => ({
-                ...node,
-                projected: GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection)
-            }));
-
+            const projectedNodes = this.pathwayData.map(node => (Object.assign(Object.assign({}, node), { projected: GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection) })));
             // Draw edges
             this.ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)';
             this.ctx.lineWidth = 1.5;
@@ -949,17 +886,14 @@
                     this.ctx.moveTo(source.projected.x, source.projected.y);
                     this.ctx.lineTo(target.projected.x, target.projected.y);
                     this.ctx.stroke();
-
                     // Animated Flow Particle
                     const flowPos = (time % 1);
                     const fx = source.projected.x + (target.projected.x - source.projected.x) * flowPos;
                     const fy = source.projected.y + (target.projected.y - source.projected.y) * flowPos;
-
                     this.ctx.fillStyle = 'rgba(224, 224, 224, 0.8)';
                     this.ctx.beginPath();
                     this.ctx.arc(fx, fy, 2.5 * source.projected.scale, 0, Math.PI * 2);
                     this.ctx.fill();
-
                     // Add a small glow to the particle
                     this.ctx.shadowBlur = 5;
                     this.ctx.shadowColor = 'rgba(224, 224, 224, 0.5)';
@@ -967,14 +901,12 @@
                     this.ctx.shadowBlur = 0;
                 }
             });
-
             // Draw nodes
             projectedNodes.forEach(node => {
                 if (node.projected.scale > 0) {
                     let radius = 4 * node.projected.scale;
                     let color = '#A0AEC0';
                     let glow = 'rgba(160, 174, 192, 0.4)';
-
                     switch (node.type) {
                         case 'gene':
                             color = '#D0D0D0';
@@ -990,65 +922,58 @@
                             glow = 'rgba(224, 224, 224, 0.4)';
                             break;
                     }
-
                     const isHighlighted = node.id === this.highlightedNodeId;
                     const semanticZoomThreshold = 0.5;
                     const showLabel = isHighlighted || node.projected.scale > semanticZoomThreshold;
-
                     if (isHighlighted) {
                         color = '#FFFFFF'; // Highlighted Monochromatic
                         glow = 'rgba(255, 255, 255, 0.8)';
                         radius *= 2.5;
                     }
-
                     if (showLabel) {
                         // Draw background box for label
                         const label = t(node.name).toUpperCase();
                         this.ctx.font = isHighlighted ? 'bold 11px "Courier New", Courier, monospace' : 'bold 9px Arial';
                         const textWidth = this.ctx.measureText(label).width;
-
                         this.ctx.fillStyle = isHighlighted ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.4)';
                         this.ctx.fillRect(node.projected.x - textWidth / 2 - 4, node.projected.y - radius - 18, textWidth + 8, 14);
-
                         if (isHighlighted) {
                             this.ctx.strokeStyle = '#FFFFFF';
                             this.ctx.strokeRect(node.projected.x - textWidth / 2 - 4, node.projected.y - radius - 18, textWidth + 8, 14);
                             this.ctx.fillStyle = '#FFFFFF';
-                        } else {
+                        }
+                        else {
                             this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
                         }
-
                         this.ctx.textAlign = 'center';
                         this.ctx.fillText(label, node.projected.x, node.projected.y - radius - 7);
                     }
-
                     // Shadow / Glow
                     this.ctx.shadowBlur = 10;
                     this.ctx.shadowColor = glow;
-
                     this.ctx.beginPath();
                     if (node.type === 'gene') { // Triangle
                         this.ctx.moveTo(node.projected.x, node.projected.y - radius * 1.5);
                         this.ctx.lineTo(node.projected.x + radius * 1.3, node.projected.y + radius);
                         this.ctx.lineTo(node.projected.x - radius * 1.3, node.projected.y + radius);
                         this.ctx.closePath();
-                    } else if (node.type === 'map') { // Hexagon
+                    }
+                    else if (node.type === 'map') { // Hexagon
                         for (let i = 0; i < 6; i++) {
                             const a = i * Math.PI / 3;
                             this.ctx.lineTo(node.projected.x + Math.cos(a) * radius * 1.2, node.projected.y + Math.sin(a) * radius * 1.2);
                         }
                         this.ctx.closePath();
-                    } else { // Circle for compounds
+                    }
+                    else { // Circle for compounds
                         this.ctx.arc(node.projected.x, node.projected.y, radius, 0, Math.PI * 2);
                     }
                     this.ctx.fillStyle = color;
                     this.ctx.fill();
-
                     this.ctx.shadowBlur = 0; // Reset
                 }
             });
         }
     };
-
     window.GreenhousePathwayViewer = GreenhousePathwayViewer;
 })();

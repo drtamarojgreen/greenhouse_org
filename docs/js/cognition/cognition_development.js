@@ -1,22 +1,19 @@
+"use strict";
 /**
  * @file cognition_development.js
  * @description Cognitive Development features for the Cognition model.
  * Covers Enhancements 31-55.
  */
-
 (function () {
     'use strict';
-
     const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
     const utils = () => window.GreenhouseCognitionDrawingUtils;
-
     const GreenhouseCognitionDevelopment = {
         init(app) {
             this.app = app;
             this.setupMappings();
             console.log('CognitionDevelopment: Initialized');
         },
-
         setupMappings() {
             this.mappings = {
                 31: (ctx, w, h) => utils().drawSynapticGrowth(ctx, w * 0.4, h * 0.4, '#E0E0E0', t('cog_label_synaptic_bloom')),
@@ -91,7 +88,6 @@
                     ctx.fillStyle = '#4da6ff';
                     ctx.fillText(t('cog_label_child_plasticity'), x - 150, y - 50);
                     this.drawBranching(ctx, x - 100, y, '#4da6ff', '');
-
                     ctx.fillStyle = '#D0D0D0';
                     ctx.fillText(t('cog_label_adult_efficiency'), x + 50, y - 50);
                     ctx.strokeStyle = '#D0D0D0';
@@ -118,7 +114,8 @@
                     ctx.setLineDash([5, 5]);
                     ctx.strokeStyle = '#fff';
                     ctx.beginPath();
-                    ctx.moveTo(x, y - 100); ctx.lineTo(x, y + 100);
+                    ctx.moveTo(x, y - 100);
+                    ctx.lineTo(x, y + 100);
                     ctx.stroke();
                     ctx.setLineDash([]);
                     ctx.fillStyle = '#4da6ff';
@@ -131,7 +128,8 @@
                     const x = w * 0.5, y = h * 0.6, color = '#E0E0E0';
                     ctx.strokeStyle = color;
                     ctx.beginPath();
-                    ctx.moveTo(x - 50, y); ctx.lineTo(x + 50, y);
+                    ctx.moveTo(x - 50, y);
+                    ctx.lineTo(x + 50, y);
                     ctx.stroke();
                     ctx.fillStyle = color;
                     const time = Date.now() * 0.01;
@@ -153,7 +151,8 @@
                     ctx.strokeStyle = color;
                     ctx.lineWidth = thickness;
                     ctx.beginPath();
-                    ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
                     ctx.stroke();
                     ctx.lineWidth = 1;
                     ctx.fillStyle = color;
@@ -203,7 +202,8 @@
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 2;
                     ctx.beginPath();
-                    ctx.moveTo(sx, sy + sh); ctx.lineTo(sx + sw, sy);
+                    ctx.moveTo(sx, sy + sh);
+                    ctx.lineTo(sx + sw, sy);
                     ctx.stroke();
                     ctx.fillStyle = color;
                     ctx.fillText(label, sx, sy - 20);
@@ -211,26 +211,23 @@
                 55: (ctx, w, h) => utils().drawNetwork(ctx, this.app.canvas, '#FFFFFF', t('cog_label_social_circuit'))
             };
         },
-
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
-
+            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils)
+                return;
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
-
             utils().renderHeader(ctx, this.app, activeEnhancement);
-
             if (this.mappings[activeEnhancement.id]) {
                 this.mappings[activeEnhancement.id](ctx, w, h);
             }
         },
-
         drawBranching(ctx, x, y, color, label) {
             ctx.save();
             ctx.strokeStyle = color;
             const drawTree = (x1, y1, angle, depth) => {
-                if (depth === 0) return;
+                if (depth === 0)
+                    return;
                 const x2 = x1 + Math.cos(angle) * depth * 5;
                 const y2 = y1 + Math.sin(angle) * depth * 5;
                 ctx.beginPath();
@@ -248,6 +245,5 @@
             ctx.restore();
         }
     };
-
     window.GreenhouseCognitionDevelopment = GreenhouseCognitionDevelopment;
 })();

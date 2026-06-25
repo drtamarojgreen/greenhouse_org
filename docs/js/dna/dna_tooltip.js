@@ -1,12 +1,11 @@
+"use strict";
 (function () {
     'use strict';
-
     const GreenhouseDNATooltip = {
         tooltipElement: null,
-
         initialize() {
-            if (this.tooltipElement) return;
-
+            if (this.tooltipElement)
+                return;
             // Create Tooltip DOM Element
             this.tooltipElement = document.createElement('div');
             this.tooltipElement.id = 'dna-tooltip';
@@ -23,19 +22,16 @@
             this.tooltipElement.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
             this.tooltipElement.style.maxWidth = '250px';
             this.tooltipElement.style.transition = 'opacity 0.2s';
-
             document.body.appendChild(this.tooltipElement);
-
             window.addEventListener('greenhouseLanguageChanged', () => {
                 this.hide();
             });
         },
-
         // Show Tooltip at specific screen coordinates
         show(x, y, key) {
-            if (!this.tooltipElement) this.initialize();
+            if (!this.tooltipElement)
+                this.initialize();
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-
             const keyMap = {
                 'A': 'dna_base_a',
                 'T': 'dna_base_t',
@@ -49,13 +45,11 @@
                 'Polymerase': 'dna_polymerase',
                 'Okazaki': 'dna_okazaki'
             };
-
             const baseKey = keyMap[key] || key;
             const title = t(baseKey + '_title');
             const desc = t(baseKey + '_desc');
-
-            if (title === baseKey + '_title') return;
-
+            if (title === baseKey + '_title')
+                return;
             const wikipediaBase = 'https://en.wikipedia.org/wiki/';
             const links = {
                 'dna_base_a': 'Adenine',
@@ -70,30 +64,24 @@
                 'dna_polymerase': 'DNA_polymerase',
                 'dna_okazaki': 'Okazaki_fragments'
             };
-
             const linkText = t('dna_wiki_link');
             const link = links[baseKey] ? `<div style="margin-top: 8px; border-top: 1px solid #4a5568; padding-top: 5px;">
                 <a href="${wikipediaBase}${links[baseKey]}" target="_blank" style="color: #63b3ed; text-decoration: none; font-size: 0.8em;">${linkText}</a>
             </div>` : '';
-
             this.tooltipElement.innerHTML = `
                 <div style="font-weight: bold; color: #a3bffa; margin-bottom: 4px;">${title}</div>
                 <div style="font-size: 0.9em; line-height: 1.4;">${desc}</div>
                 ${link}
             `;
-
             this.tooltipElement.style.display = 'block';
             this.tooltipElement.style.left = (x + 15) + 'px';
             this.tooltipElement.style.top = (y + 15) + 'px';
         },
-
         hide() {
             if (this.tooltipElement) {
                 this.tooltipElement.style.display = 'none';
             }
         }
     };
-
     window.GreenhouseDNATooltip = GreenhouseDNATooltip;
-
 })();

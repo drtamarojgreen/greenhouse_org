@@ -1,34 +1,33 @@
+"use strict";
 /**
  * @file dopamine_pharmacology.js
  * @description Pharmacology and drug discovery for Dopamine Simulation.
  * Covers Enhancements 91-100.
  */
-
 (function () {
     'use strict';
     const G = window.GreenhouseDopamine || {};
     window.GreenhouseDopamine = G;
-
     G.selectDrug = function (drugName) {
         const pState = G.pharmacologyState;
         const mState = G.molecularState;
-        if (!pState || !mState) return;
-
+        if (!pState || !mState)
+            return;
         const lib = mState.drugLibrary;
         const drug = [...lib.d1Agonists, ...lib.d1Antagonists, ...lib.d2Agonists, ...lib.d2Antagonists, ...lib.pams]
             .find(d => d.name === drugName);
-
         if (drug) {
             pState.selectedDrug = drug;
             console.log(`Applied drug: ${drugName} (Ki: ${drug.ki}, Efficacy: ${drug.efficacy})`);
-
             // Trigger specific effects
-            if (drugName === 'Cocaine') pState.datBlockade = 0.95;
-            if (drugName === 'Haloperidol') pState.antipsychoticType = 'Slow-off';
-            if (drugName === 'Clozapine') pState.antipsychoticType = 'Fast-off';
+            if (drugName === 'Cocaine')
+                pState.datBlockade = 0.95;
+            if (drugName === 'Haloperidol')
+                pState.antipsychoticType = 'Slow-off';
+            if (drugName === 'Clozapine')
+                pState.antipsychoticType = 'Fast-off';
         }
     };
-
     G.pharmacologyState = {
         activeDrugs: [],
         selectedDrug: null,
@@ -41,53 +40,51 @@
         doseResponse: { concentration: 0, effect: 0, history: [] },
         drugCombination: { active: false, compounds: [] }
     };
-
     G.updatePharmacology = function () {
         const state = G.state;
         const pState = G.pharmacologyState;
         const sState = G.synapseState;
         const mState = G.molecularState;
-
         // Reset effects base
         pState.datBlockade = 0;
-
         // Apply selected drug efficacy
         if (pState.selectedDrug) {
             const d = pState.selectedDrug;
             const occupancy = (1.0 / (1.0 + d.ki / (sState ? sState.cleftDA.length + 1 : 1)));
             pState.drugOccupancy = occupancy;
-
             if (d.efficacy > 0) {
                 if (d.name.startsWith('SKF') || d.name.startsWith('Fenoldopam')) {
-                    if (mState) mState.ac5.activity += d.efficacy * occupancy * 0.5;
-                } else if (d.name === 'Quinpirole' || d.name === 'Pramipexole') {
-                    if (mState) mState.ac5.activity = Math.max(0, mState.ac5.activity - d.efficacy * occupancy * 0.3);
+                    if (mState)
+                        mState.ac5.activity += d.efficacy * occupancy * 0.5;
+                }
+                else if (d.name === 'Quinpirole' || d.name === 'Pramipexole') {
+                    if (mState)
+                        mState.ac5.activity = Math.max(0, mState.ac5.activity - d.efficacy * occupancy * 0.3);
                 }
             }
         }
         pState.maoiActive = false;
-
         // 95. MAO Inhibitors (Selegiline)
         if (state.mode === 'MAOI' || state.scenarios.maoi) {
             pState.maoiActive = true;
-            if (sState) sState.maoActivity = 0.05;
+            if (sState)
+                sState.maoActivity = 0.05;
         }
-
         // 96. Antipsychotic Binding Kinetics
         if (state.mode === 'Antipsychotic (Fast-off)') {
             pState.antipsychoticType = 'Fast-off';
             pState.antipsychoticOffRate = 0.5;
-        } else if (state.mode === 'Antipsychotic (Slow-off)') {
+        }
+        else if (state.mode === 'Antipsychotic (Slow-off)') {
             pState.antipsychoticType = 'Slow-off';
             pState.antipsychoticOffRate = 0.05;
         }
-
         // 93. Cocaine Simulation
         if (state.mode === 'Cocaine' || state.scenarios.cocaine) {
             pState.datBlockade = 0.95;
-            if (sState) sState.dat.activity = 0.05;
+            if (sState)
+                sState.dat.activity = 0.05;
         }
-
         // 94. Amphetamine Mechanism
         if (state.mode === 'Amphetamine' || state.scenarios.amphetamine) {
             pState.datBlockade = 1.0;
@@ -95,7 +92,7 @@
                 sState.dat.activity = -0.5; // Reversal of DAT (efflux)
                 // Competitive inhibition and reversal
                 if (state.timer % 10 === 0) {
-                     sState.cleftDA.push({
+                    sState.cleftDA.push({
                         x: (Math.random() - 0.5) * 50,
                         y: -170,
                         z: (Math.random() - 0.5) * 50,
@@ -107,7 +104,6 @@
                 }
             }
         }
-
         // 99. Dose-Response Curve Generation
         if (state.signalingActive) {
             pState.doseResponse.concentration = Math.min(1.0, pState.doseResponse.concentration + 0.005);
@@ -118,63 +114,66 @@
                     e: pState.doseResponse.effect
                 });
             }
-        } else {
+        }
+        else {
             pState.doseResponse.concentration = 0;
         }
-
         // 100. Drug Combination Testing
         if (state.mode === 'Drug Combo') {
             pState.drugCombination.active = true;
             // Modeled as simultaneous DAT blockade and D2 agonism
             pState.datBlockade = 0.5;
-            if (sState) sState.dat.activity = 0.5;
+            if (sState)
+                sState.dat.activity = 0.5;
             // D2 effect in clinical state or molecular state
-        } else {
+        }
+        else {
             pState.drugCombination.active = false;
         }
-
         // 97. Partial Agonism (Aripiprazole)
         // Partial agonists act as agonists in low DA, but antagonists in high DA
         if (state.mode === 'Antipsychotic (Partial)' || (pState.selectedDrug && pState.selectedDrug.name === 'Aripiprazole')) {
             const daLevel = sState ? sState.cleftDA.length : 0;
             if (daLevel < 20) {
                 // Acts as agonist
-                if (G.clinicalState) G.clinicalState.d2Supersensitivity = 1.2;
-            } else {
+                if (G.clinicalState)
+                    G.clinicalState.d2Supersensitivity = 1.2;
+            }
+            else {
                 // Acts as antagonist
-                if (G.clinicalState) G.clinicalState.d2Supersensitivity = 0.8;
+                if (G.clinicalState)
+                    G.clinicalState.d2Supersensitivity = 0.8;
             }
         }
-
         // 96. Antipsychotic Binding Kinetics
         if (pState.antipsychoticType !== 'None') {
             const offRate = pState.antipsychoticOffRate;
             // Occupancy increases with concentration, decreases with off-rate
             pState.drugOccupancy = Math.min(1.0, pState.drugOccupancy + 0.05 - offRate * 0.1);
-        } else {
+        }
+        else {
             pState.drugOccupancy *= 0.9;
         }
-
         // Update UI metrics in the right panel
         if (G.rightPanel && G.updateMetric) {
             if (state.mode === 'Amphetamine' || state.scenarios.amphetamine) {
                 G.updateMetric(G.rightPanel, 'Pharmacology', 'DAT Mode', 'Efflux (Reversal)');
-            } else if (state.mode === 'Cocaine' || state.scenarios.cocaine) {
+            }
+            else if (state.mode === 'Cocaine' || state.scenarios.cocaine) {
                 G.updateMetric(G.rightPanel, 'Pharmacology', 'DAT Mode', 'High-affinity Blockade');
-            } else {
+            }
+            else {
                 G.updateMetric(G.rightPanel, 'Pharmacology', 'DAT Mode', 'Normal');
             }
             G.updateMetric(G.rightPanel, 'Pharmacology', 'Receptor Occupancy', `${(pState.drugOccupancy * 100).toFixed(1)}%`);
         }
     };
-
     G.renderPharmacology = function (ctx, project) {
         const state = G.state;
         const cam = state.camera;
         const w = G.width;
         const h = G.height;
         const pState = G.pharmacologyState;
-
         if (pState.drugOccupancy > 0.1) {
             // 96. Visual indicators of bound drug (small dots on receptors)
             G.state.receptors.forEach(r => {
@@ -183,13 +182,12 @@
                     if (p.scale > 0) {
                         ctx.fillStyle = '#A0AEC0';
                         ctx.beginPath();
-                        ctx.arc(p.x + 10*p.scale, p.y - 10*p.scale, 3*p.scale, 0, Math.PI*2);
+                        ctx.arc(p.x + 10 * p.scale, p.y - 10 * p.scale, 3 * p.scale, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 }
             });
         }
-
         // 99. Render Dose-Response Curve
         if (pState.doseResponse.history.length > 2) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
@@ -202,15 +200,16 @@
             ctx.moveTo(w - 150, h - 50);
             ctx.lineTo(w - 150, h - 150); // Y-axis
             ctx.stroke();
-
             ctx.strokeStyle = '#E0E0E0';
             ctx.lineWidth = 2;
             ctx.beginPath();
             pState.doseResponse.history.forEach((pt, i) => {
                 const x = (w - 150) + pt.c * 100;
                 const y = (h - 50) - pt.e * 100;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+                if (i === 0)
+                    ctx.moveTo(x, y);
+                else
+                    ctx.lineTo(x, y);
             });
             ctx.stroke();
             ctx.fillStyle = '#fff';

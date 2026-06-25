@@ -1,33 +1,38 @@
-(function() {
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+(function () {
     const { assert } = window;
     const TestFramework = window.TestFramework;
-
     TestFramework.describe('Tech Page Canvas Mobile Detection', () => {
-
-        TestFramework.it('should draw "Mobile Browser Detected" on canvas when isMobileUser is true', async () => {
+        TestFramework.it('should draw "Mobile Browser Detected" on canvas when isMobileUser is true', () => __awaiter(this, void 0, void 0, function* () {
             // Setup Mobile Environment
             const originalInnerWidth = window.innerWidth;
             const originalMaxTouchPoints = navigator.maxTouchPoints;
             const originalUserAgent = navigator.userAgent;
-
             // We can't easily mock navigator properties directly if they are read-only
             // but GreenhouseUtils.isMobileUser() is what matters.
             const originalIsMobile = window.GreenhouseUtils.isMobileUser;
             window.GreenhouseUtils.isMobileUser = () => true;
-
             let messageDetected = false;
-
             // Instrument document.createElement to catch the canvas
             const originalCreateElement = document.createElement;
-            document.createElement = function(tag) {
+            document.createElement = function (tag) {
                 const el = originalCreateElement.call(document, tag);
                 if (tag === 'canvas') {
                     const originalGetContext = el.getContext;
-                    el.getContext = function(type) {
+                    el.getContext = function (type) {
                         const ctx = originalGetContext.call(el, type);
                         if (ctx) {
                             const originalFillText = ctx.fillText;
-                            ctx.fillText = function(text, x, y) {
+                            ctx.fillText = function (text, x, y) {
                                 if (text === 'Mobile Browser Detected') {
                                     messageDetected = true;
                                 }
@@ -39,36 +44,30 @@
                 }
                 return el;
             };
-
             // Execute TechApp logic if available
             if (window.TechApp && window.TechApp.init) {
                 const container = document.createElement('div');
-                await window.TechApp.init(container);
+                yield window.TechApp.init(container);
             }
-
             assert.isTrue(messageDetected, 'Canvas should have drawn "Mobile Browser Detected"');
-
             // Cleanup
             document.createElement = originalCreateElement;
             window.GreenhouseUtils.isMobileUser = originalIsMobile;
-        });
-
-        TestFramework.it('should NOT draw mobile message when isMobileUser is false', async () => {
+        }));
+        TestFramework.it('should NOT draw mobile message when isMobileUser is false', () => __awaiter(this, void 0, void 0, function* () {
             const originalIsMobile = window.GreenhouseUtils.isMobileUser;
             window.GreenhouseUtils.isMobileUser = () => false;
-
             let messageDetected = false;
-
             const originalCreateElement = document.createElement;
-            document.createElement = function(tag) {
+            document.createElement = function (tag) {
                 const el = originalCreateElement.call(document, tag);
                 if (tag === 'canvas') {
                     const originalGetContext = el.getContext;
-                    el.getContext = function(type) {
+                    el.getContext = function (type) {
                         const ctx = originalGetContext.call(el, type);
                         if (ctx) {
                             const originalFillText = ctx.fillText;
-                            ctx.fillText = function(text, x, y) {
+                            ctx.fillText = function (text, x, y) {
                                 if (text === 'Mobile Browser Detected') {
                                     messageDetected = true;
                                 }
@@ -80,16 +79,13 @@
                 }
                 return el;
             };
-
             if (window.TechApp && window.TechApp.init) {
                 const container = document.createElement('div');
-                await window.TechApp.init(container);
+                yield window.TechApp.init(container);
             }
-
             assert.isFalse(messageDetected, 'Canvas should NOT have drawn mobile message on desktop');
-
             document.createElement = originalCreateElement;
             window.GreenhouseUtils.isMobileUser = originalIsMobile;
-        });
+        }));
     });
 })();

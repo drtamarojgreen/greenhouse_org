@@ -552,20 +552,20 @@ $w.onReady(function () {
 });
 
 // Expose public API for debugging (if needed in Velo's dev console)
-export function getState() {
+function getState() {
     return { ...appState };
 }
 
-export function getConfig() {
+function getConfig() {
     return { ...config };
 }
 
-export function reinitialize() {
+function reinitialize() {
     appState.isInitialized = false;
     appState.isLoading = false;
     return initApp();
 }
 
-export function showVeloNotification(message, type, duration) {
+function showVeloNotification(message, type, duration) {
     showNotification(message, type, duration);
 }

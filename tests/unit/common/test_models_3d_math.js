@@ -1,7 +1,7 @@
-(function() {
+"use strict";
+(function () {
     const { assert } = window;
     const TestFramework = window.TestFramework;
-
     TestFramework.describe('GreenhouseModels3DMath (Unit)', () => {
         TestFramework.it('should project 3D to 2D correctly', () => {
             const camera = { x: 0, y: 0, z: -500, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 };

@@ -1,7 +1,7 @@
-(function() {
+"use strict";
+(function () {
     const { assert } = window;
     const TestFramework = window.TestFramework;
-
     TestFramework.describe('Genetic Page Loader', () => {
         TestFramework.it('should define window.GreenhouseGenetic with reinitialize', () => {
             assert.isDefined(window.GreenhouseGenetic);
