@@ -24,7 +24,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     TestFramework.describe('GreenhouseDependencyManager (Unit)', () => {
         const DM = window.GreenhouseDependencyManager;
         TestFramework.beforeEach(() => {
-            DM.clear();
+            if (DM.clear) DM.clear();
         });
         TestFramework.it('should register and retrieve a dependency', () => {
             const myDep = { key: 'value' };

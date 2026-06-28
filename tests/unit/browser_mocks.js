@@ -45,12 +45,21 @@ class MockElement {
         this.attributes = {};
         this.dataset = {};
         this.children = [];
-        this.style = {};
+        this.style = { display: 'block', visibility: 'visible', opacity: '1' };
+        this._classList = new Set();
         this.classList = {
-            add: () => {},
-            remove: () => {},
-            contains: () => false,
-            toggle: (c) => false
+            add: (c) => this._classList.add(c),
+            remove: (c) => this._classList.delete(c),
+            contains: (c) => this._classList.has(c),
+            toggle: (c) => {
+                if (this._classList.has(c)) {
+                    this._classList.delete(c);
+                    return false;
+                } else {
+                    this._classList.add(c);
+                    return true;
+                }
+            }
         };
         this._innerHTML = '';
         this.value = '';
@@ -62,10 +71,11 @@ class MockElement {
     get innerHTML() { return this._innerHTML; }
     set innerHTML(v) {
         this._innerHTML = v;
-        if (typeof v === 'string' && v.includes('id=')) {
-            const matches = v.match(/id=["']([^"']+)["']/g);
-            if (matches) {
-                matches.forEach(m => {
+        if (typeof v === 'string') {
+            // Support IDs
+            const idMatches = v.match(/id=["']([^"']+)["']/g);
+            if (idMatches) {
+                idMatches.forEach(m => {
                     const id = m.match(/id=["']([^"']+)["']/)[1];
                     if (!this.querySelector('#' + id)) {
                         const child = new MockElement('div');
@@ -94,6 +104,13 @@ class MockElement {
         }
         return c;
     }
+    prepend(c) {
+        if (c) {
+            c.parentElement = this;
+            this.children.unshift(c);
+        }
+        return c;
+    }
     removeChild(c) {
         const idx = this.children.indexOf(c);
         if (idx > -1) {
@@ -112,6 +129,13 @@ class MockElement {
     addEventListener(e, c) { addEventListener(this, e, c); }
     removeEventListener(e, c) { removeEventListener(this, e, c); }
     dispatchEvent(e) { return dispatchEvent(this, e); }
+    contains(other) {
+        if (this === other) return true;
+        for (let child of this.children) {
+            if (child.contains(other)) return true;
+        }
+        return false;
+    }
     remove() { if (this.parentElement) this.parentElement.removeChild(this); }
     getElementsByTagName(n) {
         let results = [];
@@ -122,8 +146,29 @@ class MockElement {
         }
         return results;
     }
+    insertAdjacentHTML(position, text) {
+        if (text.includes('id=')) {
+            const matches = text.match(/id=["']([^"']+)["']/g);
+            if (matches) {
+                matches.forEach(m => {
+                    const id = m.match(/id=["']([^"']+)["']/)[1];
+                    if (!this.querySelector('#' + id)) {
+                        const child = new MockElement('div');
+                        child.setAttribute('id', id);
+                        this.appendChild(child);
+                    }
+                });
+            }
+        }
+    }
     querySelector(s) {
         if (!s) return null;
+        if (global.__is_loading_modules__ && (s === '#container' || s === '#dopamine-app-container' || s === '#stress-app-container')) {
+            const silent = new MockElement('div');
+            silent.setAttribute('id', s.slice(1));
+            silent.appendChild = (c) => c;
+            return silent;
+        }
         if (s.startsWith('#')) {
             const id = s.slice(1);
             if (this.id === id) return this;
@@ -132,7 +177,6 @@ class MockElement {
                 if (found) return found;
             }
         }
-        // Basic selector support for classes
         if (s.startsWith('.')) {
             const className = s.slice(1);
             if (this.className.split(' ').includes(className)) return this;
@@ -141,7 +185,6 @@ class MockElement {
                 if (found) return found;
             }
         }
-        // Fallback for everything else
         for (let child of this.children) {
             if (child.tagName.toLowerCase() === s.toLowerCase()) return child;
             if (child.id === s.replace('#', '')) return child;
@@ -153,17 +196,21 @@ class MockElement {
     querySelectorAll(s) { return []; }
     getContext() {
         const d = () => {};
-        return {
+        const ctx = {
             fillRect: d, beginPath: d, moveTo: d, lineTo: d, stroke: d, fill: d, arc: d, fillText: d,
             measureText: () => ({ width: 10 }), save: d, restore: d, translate: d, rotate: d, scale: d,
             drawImage: d, setLineDash: d, createLinearGradient: () => ({ addColorStop: d }),
             createRadialGradient: () => ({ addColorStop: d }), quadraticCurveTo: d, bezierCurveTo: d,
             clip: d, roundRect: d, clearRect: d, closePath: d, strokeRect: d, rect: d, ellipse: d,
             createPattern: () => ({}),
+            setTransform: d, getTransform: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }),
             set shadowBlur(v) {}, set shadowColor(v) {}, set globalAlpha(v) {},
             set globalCompositeOperation(v) {}, set strokeStyle(v) {}, set fillStyle(v) {},
-            set lineWidth(v) {}, set lineCap(v) {}, set font(v) {}, set textAlign(v) {}, set filter(v) {}
+            set lineWidth(v) {}, set lineCap(v) {}, set font(v) {}, set textAlign(v) {}, set textBaseline(v) {}, set filter(v) {},
+            get fillStyle() { return '#000'; }, get strokeStyle() { return '#000'; }
         };
+        ctx.canvas = this;
+        return ctx;
     }
     getBoundingClientRect() { return { top: 0, left: 0, width: 800, height: 600 }; }
     get offsetWidth() { return 800; }
@@ -174,9 +221,25 @@ class MockElement {
 
 function setupMockEnvironment() {
     global.window = global;
+    global.Node = class MockNode {};
     global.HTMLElement = class MockHTMLElement extends MockElement {};
+    global.Path2D = class MockPath2D {
+        moveTo() {}
+        lineTo() {}
+        arc() {}
+        closePath() {}
+        quadraticCurveTo() {}
+        bezierCurveTo() {}
+        rect() {}
+    };
     global.self = global;
-    global.performance = { now: () => Date.now() };
+    global.performance = {
+        now: () => Date.now(),
+        memory: {
+            usedJSHeapSize: 100 * 1048576,
+            jsHeapSizeLimit: 2000 * 1048576
+        }
+    };
 
     const win = global;
     win.addEventListener = (e, c) => addEventListener(win, e, c);
@@ -185,6 +248,7 @@ function setupMockEnvironment() {
 
     global.document = {
         createElement: (t) => new MockElement(t),
+        createTextNode: (t) => ({ textContent: t }),
         getElementById: (id) => {
             const el = new MockElement('div');
             el.setAttribute('id', id);
@@ -195,7 +259,9 @@ function setupMockEnvironment() {
                 const el = new MockElement('script');
                 el.setAttribute('data-base-url', '/');
                 el.setAttribute('data-target-selector-left', '#container');
+                el.setAttribute('data-target-selector', '#container');
                 el.setAttribute('data-genetic-selectors', JSON.stringify({ genetic: '#container' }));
+                el.setAttribute('data-scheduler-selectors', JSON.stringify({ dashboardLeft: '#container', dashboardRight: '#container' }));
                 return el;
             }
             const el = new MockElement('div');
@@ -207,7 +273,9 @@ function setupMockEnvironment() {
                 const el = new MockElement('script');
                 el.setAttribute('data-base-url', '/');
                 el.setAttribute('data-target-selector-left', '#container');
+                el.setAttribute('data-target-selector', '#container');
                 el.setAttribute('data-genetic-selectors', JSON.stringify({ genetic: '#container' }));
+                el.setAttribute('data-scheduler-selectors', JSON.stringify({ dashboardLeft: '#container', dashboardRight: '#container' }));
                 return [el];
             }
             return [];
@@ -220,12 +288,6 @@ function setupMockEnvironment() {
         currentScript: null
     };
 
-    const scriptEl = new MockElement('script');
-    scriptEl.setAttribute('data-base-url', '/');
-    scriptEl.setAttribute('data-target-selector-left', '#container');
-    scriptEl.setAttribute('data-genetic-selectors', JSON.stringify({ genetic: '#container' }));
-    global.document.currentScript = scriptEl;
-
     global.navigator = {
         userAgent: 'node.js', platform: 'linux', maxTouchPoints: 0,
         language: 'en-US', languages: ['en-US', 'en']
@@ -235,9 +297,9 @@ function setupMockEnvironment() {
     };
     global.requestAnimationFrame = (c) => setTimeout(c, 16);
     global.cancelAnimationFrame = (id) => clearTimeout(id);
-    global.getComputedStyle = () => ({
+    global.getComputedStyle = (el) => el.style || {
         getPropertyValue: () => '0px', display: 'block', includes: (v) => false
-    });
+    };
     global.CustomEvent = class {
         constructor(t, o = {}) {
             this.type = t; this.detail = o.detail || null;

@@ -14,23 +14,27 @@ function setupGreenhouseMocks() {
         if (!global[name]) {
             global[name] = mock;
         } else {
-            // Augment existing
+            // Augment existing only if property is missing
             for (const key in mock) {
-                try {
-                    global[name][key] = mock[key];
-                } catch (e) {
-                    // Might be read-only
+                if (global[name][key] === undefined) {
+                    try {
+                        global[name][key] = mock[key];
+                    } catch (e) {
+                        // Might be read-only
+                    }
                 }
             }
         }
 
         // Try to make it sticky on window
         try {
-            Object.defineProperty(win, name, {
-                value: global[name],
-                writable: true,
-                configurable: true
-            });
+            if (!Object.getOwnPropertyDescriptor(win, name)) {
+                Object.defineProperty(win, name, {
+                    value: global[name],
+                    writable: true,
+                    configurable: true
+                });
+            }
         } catch (e) {}
     };
 
@@ -65,72 +69,182 @@ function setupGreenhouseMocks() {
         validateConfiguration: () => true,
         waitForElement: () => Promise.resolve(global.document.createElement('div')),
         SimulationEngine: class {
-            constructor() {
-                this.state = { time: 0, factors: {}, metrics: {}, flags: {}, history: {} };
-                this.start = dummy; this.stop = dummy; this.update = dummy;
+            constructor(options = {}) {
+                this.state = {
+                    time: 0,
+                    factors: options.initialFactors || {},
+                    metrics: options.initialMetrics || {},
+                    flags: {},
+                    history: {}
+                };
+                this.updateFn = options.updateFn || dummy;
+                this.start = dummy; this.stop = dummy;
             }
+            update(dt) { this.updateFn(this.state, dt); }
             static clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
             static smooth(c, t, f) { return c + (t - c) * f; }
         },
-        DiurnalClock: class { constructor() { this.timeInHours = 8; this.tick = dummy; this.update = dummy; } }
+        DiurnalClock: class {
+            constructor() { this.timeInHours = 8; this.tick = dummy; this.update = dummy; }
+            getPhase() { return 'day'; }
+            getTimeString() { return '08:00'; }
+            getCortisolFactor() { return 1.0; }
+            getMelatoninFactor() { return 0.1; }
+            getResilienceRecoveryMultiplier() { return 1.0; }
+            getPhase() { return 'day'; }
+        }
     };
 
-    // Define GreenhouseUtils with a sticky loadScript property
-    Object.defineProperty(global, 'GreenhouseUtils', {
-        get: () => global._greenhouseUtils,
-        set: (v) => {
-            if (v && typeof v === 'object') {
-                // Ensure loadScript is always our mock
+    // Define GreenhouseUtils with a sticky properties
+    const protectUtils = (v) => {
+        if (v && typeof v === 'object') {
+            // Ensure loadScript is always our mock
+            try {
                 Object.defineProperty(v, 'loadScript', {
                     get: () => dummyAsync,
                     set: () => {},
                     configurable: true
                 });
-                // Ensure other core utils are also available if the real GreenhouseUtils overwrites it
-                const props = ['waitForElement', 'displayError', 'displaySuccess', 'displayInfo', 'observeAndReinitializeApplication', 'startSentinel', 'renderModelsTOC', 'isMobileUser'];
-                props.forEach(p => {
-                    if (v[p] === undefined) v[p] = utilsMock[p];
-                });
-            }
-            global._greenhouseUtils = v;
-        },
+            } catch (e) {}
+
+            // Ensure other core utils are also available if the real GreenhouseUtils overwrites it
+            const props = [
+                'waitForElement', 'displayError', 'displaySuccess', 'displayInfo',
+                'observeAndReinitializeApplication', 'startSentinel', 'renderModelsTOC',
+                'isMobileUser', 'SimulationEngine', 'DiurnalClock', 't', 'createElementSafely',
+                'fetchModelDescriptions', 'initializeApp', 'reinitialize', 'setState', 'getState'
+            ];
+            props.forEach(p => {
+                if (v[p] === undefined) v[p] = utilsMock[p];
+            });
+        }
+        return v;
+    };
+
+    Object.defineProperty(global, 'GreenhouseUtils', {
+        get: () => global._greenhouseUtils || utilsMock,
+        set: (v) => { global._greenhouseUtils = protectUtils(v); },
         configurable: true
     });
 
-    global.GreenhouseUtils = utilsMock;
+    Object.defineProperty(global, 'GreenhouseModelsUtil', {
+        get: () => global._greenhouseModelsUtil || global.GreenhouseUtils,
+        set: (v) => { global._greenhouseModelsUtil = protectUtils(v); },
+        configurable: true
+    });
 
-    // Ensure window refers to the same GreenhouseUtils if it's not already the same as global
+    // Sync window
     if (win !== global) {
-        try {
-            Object.defineProperty(win, 'GreenhouseUtils', {
-                get: () => global._greenhouseUtils,
-                set: (v) => { global.GreenhouseUtils = v; },
-                configurable: true
-            });
-        } catch (e) {}
+        Object.defineProperty(win, 'GreenhouseUtils', {
+            get: () => global.GreenhouseUtils,
+            set: (v) => { global.GreenhouseUtils = v; },
+            configurable: true
+        });
+        Object.defineProperty(win, 'GreenhouseModelsUtil', {
+            get: () => global.GreenhouseModelsUtil,
+            set: (v) => { global.GreenhouseModelsUtil = v; },
+            configurable: true
+        });
     }
 
-    global.GreenhouseModelsUtil = global.GreenhouseUtils;
-    win.GreenhouseModelsUtil = global.GreenhouseUtils;
-
     const dmMock = {
-        register: (name, value, meta) => {
+        register: (name, value, meta = {}) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.register !== dmMock.register) {
+                return global.window.GreenhouseDependencyManager.register(name, value, meta);
+            }
             global.GreenhouseDependencyManager._deps = global.GreenhouseDependencyManager._deps || {};
+            global.GreenhouseDependencyManager._meta = global.GreenhouseDependencyManager._meta || {};
             global.GreenhouseDependencyManager._deps[name] = value;
+            global.GreenhouseDependencyManager._meta[name] = {
+                ...meta,
+                registeredAt: Date.now(),
+                version: meta.version || '1.0.0'
+            };
             if (global.GreenhouseDependencyManager._waiters && global.GreenhouseDependencyManager._waiters[name]) {
                 global.GreenhouseDependencyManager._waiters[name].forEach(w => w.resolve(value));
                 delete global.GreenhouseDependencyManager._waiters[name];
             }
         },
-        get: (name) => (global.GreenhouseDependencyManager._deps || {})[name],
-        isAvailable: (name) => !!(global.GreenhouseDependencyManager._deps || {})[name],
-        waitFor: (name, timeout = 15000) => {
-            if (global.GreenhouseDependencyManager.isAvailable(name)) return Promise.resolve(global.GreenhouseDependencyManager.get(name));
-            return Promise.resolve({}); // Immediate resolve for tests to avoid timeouts
+        get: (name) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.get !== dmMock.get) {
+                return global.window.GreenhouseDependencyManager.get(name);
+            }
+            return (global.GreenhouseDependencyManager._deps || {})[name];
         },
-        waitForMultiple: () => Promise.resolve({}),
-        clear: dummy,
-        getStatus: () => ({ available: [], statistics: { totalRegistered: 0 } }),
+        getMetadata: (name) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.getMetadata !== dmMock.getMetadata) {
+                return global.window.GreenhouseDependencyManager.getMetadata(name);
+            }
+            return (global.GreenhouseDependencyManager._meta || {})[name];
+        },
+        isAvailable: (name) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.isAvailable !== dmMock.isAvailable) {
+                return global.window.GreenhouseDependencyManager.isAvailable(name);
+            }
+            return !!(global.GreenhouseDependencyManager._deps || {})[name];
+        },
+        waitFor: (name, timeout = 15000) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.waitFor !== dmMock.waitFor) {
+                return global.window.GreenhouseDependencyManager.waitFor(name, timeout);
+            }
+            if (dmMock.isAvailable(name)) return Promise.resolve(dmMock.get(name));
+
+            dmMock._waiters[name] = dmMock._waiters[name] || [];
+            let resolve, reject;
+            const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+            const waiter = { promise, resolve, reject };
+            dmMock._waiters[name].push(waiter);
+
+            setTimeout(() => {
+                if (dmMock._waiters[name] && dmMock._waiters[name].includes(waiter)) {
+                    reject(new Error(`Dependency '${name}' not available within ${timeout}ms`));
+                    dmMock._waiters[name] = dmMock._waiters[name].filter(w => w !== waiter);
+                }
+            }, timeout);
+
+            return promise;
+        },
+        waitForMultiple: async (names, timeout = 15000) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.waitForMultiple !== dmMock.waitForMultiple) {
+                return global.window.GreenhouseDependencyManager.waitForMultiple(names, timeout);
+            }
+            const results = {};
+            await Promise.all(names.map(async n => {
+                results[n] = await dmMock.waitFor(n, timeout);
+            }));
+            return results;
+        },
+        unregister: (name) => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.unregister !== dmMock.unregister) {
+                return global.window.GreenhouseDependencyManager.unregister(name);
+            }
+            const removed = !!(global.GreenhouseDependencyManager._deps || {})[name];
+            if (global.GreenhouseDependencyManager._deps) delete global.GreenhouseDependencyManager._deps[name];
+            if (global.GreenhouseDependencyManager._waiters && global.GreenhouseDependencyManager._waiters[name]) {
+                global.GreenhouseDependencyManager._waiters[name].forEach(w => w.reject(new Error(`Dependency '${name}' was unregistered`)));
+                delete global.GreenhouseDependencyManager._waiters[name];
+            }
+            return removed;
+        },
+        clear: () => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.clear !== dmMock.clear) {
+                return global.window.GreenhouseDependencyManager.clear();
+            }
+            if (global.GreenhouseDependencyManager._waiters) {
+                Object.keys(global.GreenhouseDependencyManager._waiters).forEach(name => {
+                    global.GreenhouseDependencyManager._waiters[name].forEach(w => w.reject(new Error(`Dependency '${name}' was cleared`)));
+                });
+            }
+            global.GreenhouseDependencyManager._deps = {};
+            global.GreenhouseDependencyManager._waiters = {};
+        },
+        getStatus: () => {
+            if (global.window && global.window.GreenhouseDependencyManager && global.window.GreenhouseDependencyManager.getStatus !== dmMock.getStatus) {
+                return global.window.GreenhouseDependencyManager.getStatus();
+            }
+            const available = Object.keys(global.GreenhouseDependencyManager._deps || {});
+            return { available, statistics: { totalRegistered: available.length } };
+        },
         config: { get: () => 15000, set: dummy },
         _deps: {},
         _waiters: {}
@@ -220,6 +334,7 @@ function setupGreenhouseMocks() {
     const configMockFactory = (overrides = {}) => {
         const mock = {
             get: function(path) {
+                if (!path) return undefined;
                 const keys = path.split('.');
                 let val = this;
                 for (const k of keys) {
@@ -231,20 +346,56 @@ function setupGreenhouseMocks() {
             set: dummy,
             ...overrides
         };
+
+        // Ensure .get is always a function even after overrides
+        if (typeof mock.get !== 'function') {
+            const originalGet = mock.get;
+            mock.get = function(path) {
+                if (typeof originalGet === 'function') return originalGet.call(this, path);
+                return undefined;
+            };
+        }
         return mock;
     };
 
-    protectGlobal('GreenhouseGeneticConfig', configMockFactory({
+    const protectConfig = (name, defaults = {}) => {
+        const mock = configMockFactory(defaults);
+        Object.defineProperty(global, name, {
+            get: () => global['_' + name] || mock,
+            set: (v) => {
+                if (v && typeof v === 'object') {
+                    if (typeof v.get !== 'function') {
+                        v.get = mock.get.bind(v);
+                    }
+                }
+                global['_' + name] = v;
+            },
+            configurable: true
+        });
+        // Sync window
+        if (win !== global) {
+            Object.defineProperty(win, name, {
+                get: () => global[name],
+                set: (v) => { global[name] = v; },
+                configurable: true
+            });
+        }
+    };
+
+    protectConfig('GreenhouseGeneticConfig', {
         camera: { initial: { x: 0, y: 0, z: -300 }, controls: { inertia: true, autoRotate: true } },
         materials: { dna: { baseColors: [] } },
         ui: { background: {} }
-    }));
-    protectGlobal('GreenhouseNeuroConfig', configMockFactory({
+    });
+    protectConfig('GreenhouseNeuroConfig', {
         camera: { initial: { x: 0, y: 0, z: -300 } },
         pip: { enabled: true }
-    }));
-    protectGlobal('GreenhouseStressConfig', configMockFactory());
-    protectGlobal('GreenhouseEmotionConfig', configMockFactory());
+    });
+    protectConfig('GreenhouseStressConfig', {});
+    protectConfig('GreenhouseEmotionConfig', {});
+    protectConfig('GreenhouseInflammationConfig', {
+        factors: []
+    });
 
     global.GreenhouseADHDData = global.GreenhouseADHDData || {};
     protectGlobal('GreenhouseBioStatus', { sync: dummy, stress: { load: 0 }, inflammation: { tone: 0 } });

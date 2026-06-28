@@ -19,7 +19,7 @@
                 { x: 0, y: 0, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 600 }
             ];
             if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.init(canvas, ui3d.cameras);
+                window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig, ui3d.cameras);
             }
         });
         TestFramework.it('should detect mouse over helix PiP', () => {

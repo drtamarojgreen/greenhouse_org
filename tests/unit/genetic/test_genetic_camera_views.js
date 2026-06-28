@@ -23,10 +23,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const controller = new window.GreenhouseGeneticCameraController(camera, window.GreenhouseGeneticConfig);
             const target = { x: 100, y: 50, z: -500 };
             let callbackCalled = false;
+<<<<<<< HEAD
             // Mock performance.now
             const originalNow = performance.now;
             let currentTime = 1000;
             performance.now = () => currentTime;
+=======
+
+            // Mock Date.now since flyTo uses it
+            const originalDateNow = Date.now;
+            let currentTime = 1000;
+            Date.now = () => currentTime;
+
+>>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
             controller.flyTo(target, 1000, () => { callbackCalled = true; });
             assert.isTrue(controller.isTransitioning);
             // Update halfway
@@ -42,7 +51,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             assert.equal(camera.z, -500);
             assert.isFalse(controller.isTransitioning);
             assert.isTrue(callbackCalled);
+<<<<<<< HEAD
             performance.now = originalNow;
         }));
+=======
+
+            Date.now = originalDateNow;
+        });
+>>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
     });
 })();
