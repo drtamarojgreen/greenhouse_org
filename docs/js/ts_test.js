@@ -1,11 +1,16 @@
 "use strict";
+/**
+ * @file ts_test.ts
+ * @description A simple TypeScript file to verify TS integration with the Greenhouse environment.
+ */
 const GreenhouseTSTest = {
     init: function () {
         console.log('TS Test: Initializing.');
         const msg = 'typescript successful';
         if (window.GreenhouseUtils && typeof window.GreenhouseUtils.displaySuccess === 'function') {
-            window.GreenhouseUtils.displaySuccess(msg, 30000);
+            window.GreenhouseUtils.displaySuccess(msg, 30000); // 30s duration for visibility
         }
+        // Always append a persistent element for robust verification
         const container = document.getElementById('tech-dashboard-section') || document.body;
         if (container) {
             const el = document.createElement('div');
@@ -22,6 +27,7 @@ const GreenhouseTSTest = {
             el.style.fontSize = '20px';
             el.style.zIndex = '10000';
             el.style.position = 'relative';
+            // Insert at the top of the container
             if (container.firstChild) {
                 container.insertBefore(el, container.firstChild);
             }

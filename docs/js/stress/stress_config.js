@@ -1,12 +1,11 @@
+"use strict";
 /**
  * @file stress_config.js
  * @description Enhanced Configuration for the Stress Dynamics Simulation.
  * Includes 100 scientifically & philosophically verified systemic factors.
  */
-
 (function () {
     'use strict';
-
     const GreenhouseStressConfig = {
         factors: [
             {
@@ -28,7 +27,6 @@
             {
                 id: 'showGraphView', label: 'Show Topic Graph', defaultValue: 0, type: 'hidden'
             },
-
             // I. ENVIRONMENTAL FACTORS (Stressors)
             { id: 'env_noise', label: 'stress_env_noise', category: 'env', type: 'checkbox', defaultValue: 1 },
             { id: 'env_air', label: 'stress_env_air', category: 'env', type: 'checkbox', defaultValue: 0 },
@@ -56,7 +54,6 @@
             { id: 'env_odor', label: 'stress_env_odor', category: 'env', type: 'checkbox', defaultValue: 0 },
             { id: 'env_walk', label: 'stress_env_walk', category: 'env', type: 'checkbox', defaultValue: 0 },
             { id: 'sleepDeprivation', label: 'stress_env_sleep', category: 'env', type: 'checkbox', defaultValue: 0 },
-
             // II. PSYCHOLOGICAL THEORIES (Buffers/Modulators)
             { id: 'psych_trans', label: 'stress_psych_trans', category: 'psych', type: 'checkbox', defaultValue: 1 },
             { id: 'psych_cor', label: 'stress_psych_cor', category: 'psych', type: 'checkbox', defaultValue: 0 },
@@ -83,7 +80,6 @@
             { id: 'psych_perse', label: 'stress_psych_perse', category: 'psych', type: 'checkbox', defaultValue: 0 },
             { id: 'psych_alo', label: 'stress_psych_alo', category: 'psych', type: 'checkbox', defaultValue: 1 },
             { id: 'psych_cbt', label: 'stress_psych_cbt', category: 'psych', type: 'checkbox', defaultValue: 1 },
-
             // III. PHILOSOPHICAL VIEWS (Perspective Shifts)
             { id: 'philo_stoic', label: 'stress_philo_stoic', category: 'philo', type: 'checkbox', defaultValue: 1 },
             { id: 'philo_meaning', label: 'stress_philo_meaning', category: 'philo', type: 'checkbox', defaultValue: 0 },
@@ -110,7 +106,6 @@
             { id: 'philo_trans', label: 'stress_philo_trans', category: 'philo', type: 'checkbox', defaultValue: 0 },
             { id: 'philo_self', label: 'stress_philo_self', category: 'philo', type: 'checkbox', defaultValue: 1 },
             { id: 'philo_asc', label: 'stress_philo_asc', category: 'philo', type: 'checkbox', defaultValue: 0 },
-
             // IV. EMERGING RESEARCH (Biological Modifiers)
             { id: 'res_epi', label: 'stress_res_epi', category: 'research', type: 'checkbox', defaultValue: 0 },
             { id: 'res_bio', label: 'stress_res_bio', category: 'research', type: 'checkbox', defaultValue: 1 },
@@ -137,13 +132,11 @@
             { id: 'res_pred', label: 'stress_res_pred', category: 'research', type: 'checkbox', defaultValue: 0 },
             { id: 'res_meta', label: 'stress_res_meta', category: 'research', type: 'checkbox', defaultValue: 0 },
             { id: 'res_quant', label: 'stress_res_quant', category: 'research', type: 'checkbox', defaultValue: 0 },
-
             // Legacy/Mandatory Factors
             { id: 'gutHealth', label: 'factor_gut_health', type: 'checkbox', defaultValue: 1 },
             { id: 'comtValMet', label: 'comtValMet', category: 'gen', type: 'checkbox', defaultValue: 0 },
             { id: 'serotoninTransporter', label: 'serotoninTransporter', category: 'gen', type: 'checkbox', defaultValue: 0 },
             { id: 'fkbp5Variant', label: 'fkbp5Variant', category: 'gen', type: 'checkbox', defaultValue: 0 },
-
             // V. BIOLOGICAL & PHYSIOLOGICAL MARKERS (Items 21-50)
             { id: 'bio_crh', label: 'stress_bio_crh', category: 'hpa', type: 'checkbox', defaultValue: 0 },
             { id: 'bio_acth', label: 'stress_bio_acth', category: 'hpa', type: 'checkbox', defaultValue: 0 },
@@ -175,7 +168,6 @@
             { id: 'bio_mtdna', label: 'stress_bio_mtdna', category: 'research', type: 'checkbox', defaultValue: 0 },
             { id: 'bio_ros', label: 'stress_bio_ros', category: 'research', type: 'checkbox', defaultValue: 0 },
             { id: 'bio_hrr', label: 'stress_bio_hrr', category: 'brainstem', type: 'checkbox', defaultValue: 0 },
-
             // VI. INTERVENTIONS & THERAPY (Items 73-85)
             { id: 'stress_interv_adherence', label: 'stress_interv_adherence', category: 'interv', type: 'checkbox', defaultValue: 1 },
             { id: 'stress_interv_persistence', label: 'stress_interv_persistence', category: 'interv', type: 'checkbox', defaultValue: 1 },
@@ -225,6 +217,5 @@
             }
         }
     };
-
     window.GreenhouseStressConfig = GreenhouseStressConfig;
 })();

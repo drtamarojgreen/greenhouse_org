@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES6",
+    "lib": ["ES6", "DOM"],
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": ".",
+    "rootDir": "."
+  },
+  "include": [
+    "docs/js/**/*.ts",
+    "tests/unit/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

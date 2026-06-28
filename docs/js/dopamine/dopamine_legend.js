@@ -1,17 +1,15 @@
+"use strict";
 /**
  * @file dopamine_legend.js
  * @description Legend for Dopamine Simulation with detailed visual mapping.
  */
-
 (function () {
     'use strict';
     const G = window.GreenhouseDopamine || {};
     window.GreenhouseDopamine = G;
-
     G.initLegend = function (container) {
         const legend = document.createElement('div');
         legend.className = 'dopamine-panel-section dopamine-legend-compact';
-
         legend.innerHTML = `
             <div class="dopamine-panel-header">Visual Mapping Guide</div>
 
@@ -44,14 +42,13 @@
                 <div class="dopamine-legend-item"><div class="dopamine-legend-swatch" style="border: 1px solid #FFFFFF;"></div> AP Back-propagation</div>
             </div>
         `;
-
         if (G.rightPanel) {
             G.rightPanel.appendChild(legend);
-        } else {
+        }
+        else {
             container.appendChild(legend);
         }
     };
-
     G.renderLegend = function (ctx) {
         // Static UI legend managed via DOM
     };

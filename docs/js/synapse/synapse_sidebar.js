@@ -1,36 +1,30 @@
+"use strict";
 // docs/js/synapse_sidebar.js
-
 (function () {
     'use strict';
-
     const G = window.GreenhouseSynapseApp || {};
     window.GreenhouseSynapseApp = G;
-
     G.Sidebar = {
         render(container, config, currentLanguage, callbacks) {
             const { onHover, onNTChange, onScenarioChange } = callbacks;
             const lang = currentLanguage || 'en';
             const chem = G.Chemistry;
-
             const categories = [
                 { id: 'preSynapticTerminal', label: config.translations.preSynapticTerminal[lang], color: '#707870' },
                 { id: 'postSynapticTerminal', label: config.translations.postSynapticTerminal[lang], color: '#2c3e50' },
                 { id: 'vesicle', label: config.translations.vesicle[lang], color: config.accentGold },
                 { id: 'neurotransmitter', label: config.translations.neurotransmitter[lang], color: config.accentCyan },
             ];
-
             const ntOptions = Object.values(chem.neurotransmitters).map(nt => `
                 <option value="${nt.id}" ${config.activeNT === nt.id ? 'selected' : ''}>
                     ${nt.name[lang]} (${nt.type})
                 </option>
             `).join('');
-
             const scenarioOptions = Object.values(chem.scenarios).map(s => `
                 <option value="${s.id}" ${config.activeScenario === s.id ? 'selected' : ''}>
                     ${s.name[lang]}
                 </option>
             `).join('');
-
             let html = `
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 30px;">
                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #A0AEC0; box-shadow: 0 0 15px #A0AEC0;"></div>
@@ -52,7 +46,6 @@
                 <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.5; margin-bottom: 20px;">Neural Anatomy</h3>
                 <div id="sidebar-list" role="list">
             `;
-
             categories.forEach(item => {
                 html += `
                 <div class="sidebar-item" role="listitem" tabindex="0" data-id="${item.id}" aria-label="${item.label}" style="display: flex; align-items: center; margin-bottom: 12px; padding: 10px 15px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); transition: all 0.3s ease; cursor: pointer;">
@@ -60,7 +53,6 @@
                     <span style="font-size: 14px; font-weight: 500; color: #ddd;">${item.label}</span>
                 </div>`;
             });
-
             html += `
                 </div>
                 <div style="margin-top: 30px; padding: 20px; background: rgba(160, 174, 192, 0.1); border-radius: 15px; border: 1px solid rgba(160, 174, 192, 0.2);">
@@ -71,38 +63,36 @@
                 </div>
             `;
             container.innerHTML = html;
-
             const ntSelector = container.querySelector('#nt-selector');
             ntSelector.addEventListener('change', (e) => {
-                if (onNTChange) onNTChange(e.target.value);
+                if (onNTChange)
+                    onNTChange(e.target.value);
             });
-
             const scenarioSelector = container.querySelector('#scenario-selector');
             scenarioSelector.addEventListener('change', (e) => {
-                if (onScenarioChange) onScenarioChange(e.target.value);
+                if (onScenarioChange)
+                    onScenarioChange(e.target.value);
             });
-
             const items = container.querySelectorAll('.sidebar-item');
             items.forEach(item => {
                 const id = item.getAttribute('data-id');
                 const dot = item.querySelector('.color-dot');
-
                 const handleEnter = () => {
                     item.style.background = 'rgba(160, 174, 192, 0.15)';
                     item.style.borderColor = 'rgba(160, 174, 192, 0.3)';
                     dot.style.transform = 'scale(1.4)';
                     dot.style.boxShadow = `0 0 20px ${dot.style.backgroundColor}`;
-                    if (onHover) onHover(id);
+                    if (onHover)
+                        onHover(id);
                 };
-
                 const handleLeave = () => {
                     item.style.background = 'rgba(255,255,255,0.02)';
                     item.style.borderColor = 'rgba(255,255,255,0.03)';
                     dot.style.transform = 'scale(1)';
                     dot.style.boxShadow = `0 0 10px ${dot.style.backgroundColor}cc`;
-                    if (onHover) onHover(null);
+                    if (onHover)
+                        onHover(null);
                 };
-
                 item.addEventListener('mouseenter', handleEnter);
                 item.addEventListener('mouseleave', handleLeave);
                 item.addEventListener('focus', handleEnter);
@@ -110,7 +100,8 @@
                 item.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        if (onHover) onHover(id);
+                        if (onHover)
+                            onHover(id);
                     }
                 });
             });

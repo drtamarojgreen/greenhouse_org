@@ -1,9 +1,8 @@
-(function() {
+"use strict";
+(function () {
     const { assert } = window;
     const TestFramework = window.TestFramework;
-
     TestFramework.describe('Mobile Model-Specific Behaviors', () => {
-
         TestFramework.describe('DNA Model Behaviors', () => {
             TestFramework.it('should map mode indices to repair mechanisms', () => {
                 if (window.GreenhouseMobile && window.GreenhouseMobile.modelRegistry.dna) {
@@ -13,7 +12,6 @@
                 }
             });
         });
-
         TestFramework.describe('Dopamine Model Behaviors', () => {
             TestFramework.it('should map mode indices to dopamine states', () => {
                 if (window.GreenhouseMobile && window.GreenhouseMobile.modelRegistry.dopamine) {

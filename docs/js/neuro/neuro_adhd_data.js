@@ -1,9 +1,8 @@
+"use strict";
 // docs/js/neuro_adhd_data.js
 // Metadata for 100 ADHD Enhancements (Symptoms, Treatments, Pathology, Etiology)
-
 (function () {
     'use strict';
-
     const ADHD_ENHANCEMENTS = {
         symptoms: [
             { id: 1, name: "Attentional Blink Simulation", category: "logic", description: "Visualize the failure to process a second stimulus in close succession." },
@@ -130,7 +129,6 @@
             { id: 112, name: "Acceptance and Commitment Therapy (ACT)", category: "logic", description: "Enhancing cognitive flexibility and path diversity." }
         ]
     };
-
     const SCENARIOS = {
         none: { id: 'none', name: "Standard Model", enhancements: [] },
         adhd_symptoms: { id: 'adhd_symptoms', name: "ADHD: Symptomatic State", enhancements: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25] },
@@ -144,14 +142,13 @@
         bipolar: { id: 'bipolar', name: "Bipolar Cycling", enhancements: [105, 110, 11, 24] },
         autism: { id: 'autism', name: "Autism Spectrum", enhancements: [106, 57, 18, 21] }
     };
-
     window.GreenhouseADHDData = {
         categories: ADHD_ENHANCEMENTS,
         scenarios: SCENARIOS,
-        getFlatList: function() {
+        getFlatList: function () {
             return [].concat(...Object.values(ADHD_ENHANCEMENTS));
         },
-        getEnhancementById: function(id) {
+        getEnhancementById: function (id) {
             // Check all categories for the enhancement
             for (const categoryKey in ADHD_ENHANCEMENTS) {
                 const category = ADHD_ENHANCEMENTS[categoryKey];

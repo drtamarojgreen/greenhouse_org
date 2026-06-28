@@ -1,13 +1,12 @@
+"use strict";
 // docs/js/emotion_config.js
 /**
  * @file emotion_config.js
  * @description Configuration for the Emotion Simulation Model.
  * Focuses on the Limbic System and its role in emotional processing.
  */
-
 (function () {
     'use strict';
-
     const GreenhouseEmotionConfig = {
         camera: {
             initial: {
@@ -165,6 +164,5 @@
             { id: 'p6', name: 'emotion_phil_epicureanism_name', description: 'emotion_phil_epicureanism_desc', regions: ['nucleusAccumbens', 'striatum'], wellnessFocus: 'emotion_phil_epicureanism_well', conditionMapping: 'emotion_phil_epicureanism_cond' }
         ]
     };
-
     window.GreenhouseEmotionConfig = GreenhouseEmotionConfig;
 })();

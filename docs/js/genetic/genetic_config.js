@@ -1,9 +1,8 @@
+"use strict";
 // docs/js/genetic_config.js
 // Modular Configuration System for Genetic Simulation
-
 (function () {
     'use strict';
-
     const GreenhouseGeneticConfig = {
         // Camera Configuration
         camera: {
@@ -31,7 +30,6 @@
                 maxZoom: -1200 // Tightened to prevent model from moving off-screen
             }
         },
-
         // Projection Configuration
         projection: {
             width: 800,
@@ -39,7 +37,6 @@
             near: 10,
             far: 2000
         },
-
         // Lighting Configuration
         lighting: {
             preset: 'clinical', // 'clinical', 'lab', 'presentation'
@@ -83,7 +80,6 @@
                 opacity: 0.5
             }
         },
-
         // Material Configuration
         materials: {
             dna: {
@@ -93,7 +89,7 @@
                     A: '#E0E0E0', // Adenine
                     T: '#E0E0E0', // Thymine
                     G: '#D0D0D0', // Guanine
-                    C: '#D0D0D0'  // Cytosine
+                    C: '#D0D0D0' // Cytosine
                 },
                 alpha: 0.9,
                 metallic: 0.3,
@@ -147,7 +143,6 @@
                 pulseIntensity: 0.5
             }
         },
-
         // Animation Configuration
         animation: {
             frameRate: 60,
@@ -159,7 +154,6 @@
             helixRotationSpeed: 0.001,
             proteinFoldingSpeed: 0.5
         },
-
         // Visual Effects Configuration
         effects: {
             ssao: {
@@ -200,7 +194,6 @@
                 color: { r: 100, g: 200, b: 255 }
             }
         },
-
         // Picture-in-Picture Configuration
         pip: {
             enabled: true,
@@ -215,7 +208,6 @@
             titleFont: '12px Arial',
             animationDuration: 300 // ms
         },
-
         // Helix Configuration
         helix: {
             radius: 50,
@@ -231,7 +223,6 @@
                 basePairs: '#E0E0E0'
             }
         },
-
         // Brain Regions Configuration - Anatomically correct monochromatic hierarchy
         regions: {
             pfc: {
@@ -275,7 +266,6 @@
                 position: { x: 0, y: 200, z: 0 }
             }
         },
-
         // UI Configuration
         ui: {
             showStats: true,
@@ -297,7 +287,6 @@
                 grid: { top: '#111', bottom: '#111', showGrid: true }
             }
         },
-
         // Performance Configuration
         performance: {
             maxGenes: 100,
@@ -309,7 +298,6 @@
             frustumCulling: true,
             occlusionCulling: false
         },
-
         // Genetic Algorithm Configuration
         ga: {
             populationSize: 50,
@@ -318,7 +306,6 @@
             elitismRate: 0.1,
             maxGenerations: 1000
         },
-
         /**
          * Get a configuration value by path
          * @param {string} path - Dot-separated path (e.g., 'camera.controls.panSpeed')
@@ -330,13 +317,13 @@
             for (const key of keys) {
                 if (value && typeof value === 'object' && key in value) {
                     value = value[key];
-                } else {
+                }
+                else {
                     return undefined;
                 }
             }
             return value;
         },
-
         /**
          * Set a configuration value by path
          * @param {string} path - Dot-separated path
@@ -354,7 +341,6 @@
             }
             obj[keys[keys.length - 1]] = value;
         },
-
         /**
          * Merge custom configuration with defaults
          * @param {Object} customConfig - Custom configuration object
@@ -363,30 +349,28 @@
         merge(customConfig) {
             return this._deepMerge(this, customConfig);
         },
-
         /**
          * Deep merge two objects
          * @private
          */
         _deepMerge(target, source) {
-            const result = { ...target };
+            const result = Object.assign({}, target);
             for (const key in source) {
                 if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
                     result[key] = this._deepMerge(result[key] || {}, source[key]);
-                } else {
+                }
+                else {
                     result[key] = source[key];
                 }
             }
             return result;
         },
-
         /**
          * Reset configuration to defaults
          */
         reset() {
             console.log('Configuration reset to defaults');
         },
-
         /**
          * Export configuration as JSON
          * @returns {string} JSON string
@@ -394,7 +378,6 @@
         export() {
             return JSON.stringify(this, null, 2);
         },
-
         /**
          * Import configuration from JSON
          * @param {string} json - JSON string
@@ -403,11 +386,11 @@
             try {
                 const config = JSON.parse(json);
                 Object.assign(this, config);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error('Failed to import configuration:', error);
             }
         }
     };
-
     window.GreenhouseGeneticConfig = GreenhouseGeneticConfig;
 })();

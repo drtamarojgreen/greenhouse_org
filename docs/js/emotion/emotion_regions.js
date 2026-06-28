@@ -1,12 +1,11 @@
+"use strict";
 /**
  * @file emotion_regions.js
  * @description Enhancements for Modeling Emotional Regulation in the Emotion Simulation.
  * Part of the 100 enhancements project, mapping regulation strategies to mental health wellness and neuroscience.
  */
-
 (function () {
     'use strict';
-
     const emotionalRegulationEnhancements = [
         { id: 1, name: 'emotion_enh_1_name', description: 'emotion_enh_1_desc', regions: ['prefrontalCortex', 'amygdala'], wellnessFocus: 'emotion_enh_1_wellness', conditionMapping: 'emotion_enh_1_cond' },
         { id: 2, name: 'emotion_enh_2_name', description: 'emotion_enh_2_desc', regions: ['hypothalamus'], wellnessFocus: 'emotion_enh_2_wellness', conditionMapping: 'emotion_enh_2_cond' },
@@ -34,7 +33,6 @@
         { id: 24, name: 'emotion_enh_24_name', description: 'emotion_enh_24_desc', regions: ['hypothalamus'], wellnessFocus: 'emotion_enh_24_wellness', conditionMapping: 'emotion_enh_24_cond' },
         { id: 25, name: 'emotion_enh_25_name', description: 'emotion_enh_25_desc', regions: ['hypothalamus', 'hippocampus'], wellnessFocus: 'emotion_enh_25_wellness', conditionMapping: 'emotion_enh_25_cond' }
     ];
-
     if (window.GreenhouseEmotionConfig) {
         window.GreenhouseEmotionConfig.regulations = emotionalRegulationEnhancements;
     }

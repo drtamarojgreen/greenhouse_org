@@ -1,15 +1,12 @@
+"use strict";
 // docs/js/synapse_controls.js
-
 (function () {
     'use strict';
-
     const G = window.GreenhouseSynapseApp || {};
     window.GreenhouseSynapseApp = G;
-
     G.Controls = {
         render(container, config, callbacks) {
             const { onToggleBurst, onUpdateSensitivity, onToggleDrug, onToggleHighContrast, onGenerateFigure, onUpdateParam } = callbacks;
-
             G.config.pharmacology = G.config.pharmacology || {
                 ssriActive: false,
                 antagonistActive: false,
@@ -38,7 +35,6 @@
                 rulerActive: false,
                 fluorescenceActive: false
             };
-
             let html = `
                 <div style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
                     <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #A0AEC0; margin-bottom: 15px; font-weight: 700;">Research Controls</h3>
@@ -95,55 +91,48 @@
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
-
             container.querySelector('#burst-btn').addEventListener('click', () => {
-                if (onToggleBurst) onToggleBurst();
+                if (onToggleBurst)
+                    onToggleBurst();
             });
-
             container.querySelector('#baseline-btn').addEventListener('click', () => {
-                if (G.Analytics) G.Analytics.setBaseline();
+                if (G.Analytics)
+                    G.Analytics.setBaseline();
             });
-
             container.querySelector('#az-range').addEventListener('input', (e) => {
                 G.config.kinetics.activeZoneDensity = parseFloat(e.target.value);
             });
-
             container.querySelector('#ruler-toggle').addEventListener('change', (e) => {
                 G.config.visuals.rulerActive = e.target.checked;
-                if (onUpdateParam) onUpdateParam('ruler', e.target.checked);
+                if (onUpdateParam)
+                    onUpdateParam('ruler', e.target.checked);
             });
-
             container.querySelector('#annotate-toggle').addEventListener('change', (e) => {
                 G.config.visuals.annotationMode = e.target.checked;
             });
-
             container.querySelector('#fluor-toggle').addEventListener('change', (e) => {
                 G.config.visuals.fluorescenceActive = e.target.checked;
             });
-
             container.querySelector('#offtarget-toggle').addEventListener('change', (e) => {
                 G.config.pharmacology.offTargetActive = e.target.checked;
             });
-
             container.querySelector('#levodopa-toggle').addEventListener('change', (e) => {
                 G.config.pharmacology.levodopaActive = e.target.checked;
             });
-
             container.querySelector('#literature-toggle').addEventListener('change', (e) => {
                 G.config.visuals.showLiterature = e.target.checked;
             });
-
             container.querySelector('#ssri-toggle').addEventListener('change', (e) => {
                 G.config.pharmacology.ssriActive = e.target.checked;
-                if (onToggleDrug) onToggleDrug('ssri', e.target.checked);
+                if (onToggleDrug)
+                    onToggleDrug('ssri', e.target.checked);
             });
-
             container.querySelector('#bbb-toggle').addEventListener('change', (e) => {
                 G.config.pharmacology.bbbActive = e.target.checked;
             });
-
             container.querySelector('#export-btn').addEventListener('click', () => {
-                if (onGenerateFigure) onGenerateFigure();
+                if (onGenerateFigure)
+                    onGenerateFigure();
             });
         }
     };

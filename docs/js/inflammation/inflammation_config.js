@@ -1,12 +1,11 @@
+"use strict";
 /**
  * @file inflammation_config.js
  * @description Configuration for the Neuroinflammation Simulation.
  * Reconfigured with binary factors (Checkboxes) for triggers and interventions.
  */
-
 (function () {
     'use strict';
-
     const GreenhouseInflammationConfig = {
         factors: [
             {
@@ -23,32 +22,28 @@
                     { value: 'protein_kinase', label: 'Signal Cascade (MAPK)' }
                 ], type: 'select'
             },
-
             // --- ENVIRONMENTAL (TRIGGERS) ---
             { id: 'pathogenActive', label: 'Pathogen Presence', type: 'checkbox', defaultValue: 0, impact: 0.4, category: 'env' },
             { id: 'chronicStress', label: 'Chronic Cortisol Exposure', type: 'checkbox', defaultValue: 1, impact: 0.25, category: 'env' },
             { id: 'poorSleep', label: 'Sleep Deprivation', type: 'checkbox', defaultValue: 0, impact: 0.2, category: 'env' },
             { id: 'pollutionExposure', label: 'Environmental Pollutants', type: 'checkbox', defaultValue: 0, impact: 0.2, category: 'env' },
-
             // --- PSYCHOLOGICAL / LIFESTYLE (PROTECTIVE) ---
             { id: 'cleanDiet', label: 'Polyphenol-Rich Diet', type: 'checkbox', defaultValue: 1, impact: -0.15, category: 'psych' },
             { id: 'exerciseRegular', label: 'Regular Aerobic Exercise', type: 'checkbox', defaultValue: 0, impact: -0.2, category: 'psych' },
             { id: 'meditationPractice', label: 'Vagus Nerve Stimulation', type: 'checkbox', defaultValue: 0, impact: -0.15, category: 'psych' },
-
             // --- PHILOSOPHICAL / COGNITIVE ---
             { id: 'cognitiveResilience', label: 'Cognitive Reframing', type: 'checkbox', defaultValue: 0, impact: -0.1, category: 'philo' },
             { id: 'socialSupport', label: 'Social Connectivity', type: 'checkbox', defaultValue: 1, impact: -0.15, category: 'philo' },
-
             // --- RESEARCH / PHARMA ---
             { id: 'leakyGut', label: 'Intestinal Permeability', type: 'checkbox', defaultValue: 0, impact: 0.15, category: 'research' },
             { id: 'showVolumeBounds', label: 'Micro Volume Bounds', type: 'checkbox', defaultValue: 0, category: 'research' },
             { id: 'showReceptors', label: 'Show Receptor Sites', type: 'checkbox', defaultValue: 0, category: 'research' },
             { id: 'showBridgeOverlay', label: 'Signaling Bridge Overlay', type: 'checkbox', defaultValue: 0, category: 'research' },
             { id: 'colorTheme', label: 'Color Theme', defaultValue: 'monochromatic', options: [
-                { value: 'default', label: 'DEFAULT' },
-                { value: 'monochromatic', label: 'MONOCHROMATIC' },
-                { value: 'deuteranopia', label: 'DEUTERANOPIA' }
-            ], type: 'select', category: 'research' },
+                    { value: 'default', label: 'DEFAULT' },
+                    { value: 'monochromatic', label: 'MONOCHROMATIC' },
+                    { value: 'deuteranopia', label: 'DEUTERANOPIA' }
+                ], type: 'select', category: 'research' },
             { id: 'showMoleculeLabels', label: 'Show Molecule Labels', type: 'checkbox', defaultValue: 1, category: 'research' },
             { id: 'showMechanismLabels', label: 'Show Mechanism Labels', type: 'checkbox', defaultValue: 0, category: 'research' },
             { id: 'showCompartmentLabels', label: 'Show Compartment Labels', type: 'checkbox', defaultValue: 0, category: 'research' },
@@ -56,13 +51,11 @@
             { id: 'nsaidsApp', label: 'COX Inhibition (NSAIDs)', type: 'checkbox', defaultValue: 0, impact: -0.25, category: 'research' },
             { id: 'steroidsApp', label: 'Glucocorticoids', type: 'checkbox', defaultValue: 0, impact: -0.5, category: 'research' },
             { id: 'tnfInhibitors', label: 'Anti-TNF Biologics', type: 'checkbox', defaultValue: 0, impact: -0.4, category: 'research' },
-
             // --- DEMOGRAPHICS & CLINICAL ---
             { id: 'agePreset', label: 'Developmental Age (Vulnerability)', type: 'checkbox', defaultValue: 0, impact: 0.1, category: 'clinical' },
             { id: 'sexSpecific', label: 'Sex-Specific Response', type: 'checkbox', defaultValue: 0, impact: 0.05, category: 'clinical' },
             { id: 'comorbidityDiabetes', label: 'Comorbidity: Diabetes', type: 'checkbox', defaultValue: 0, impact: 0.2, category: 'clinical' },
             { id: 'medicationEffect', label: 'Expected Medication Response', type: 'checkbox', defaultValue: 0, impact: -0.3, category: 'clinical' },
-
             // --- ADVANCED SIGNALING CONTROLS (Enhancements 4-40) ---
             { id: 'showSignalingNetwork', label: 'Ligand-Receptor Network', type: 'checkbox', defaultValue: 1, category: 'research' },
             { id: 'toggleIL6Mode', label: 'IL-6: Trans-Signaling Mode', type: 'checkbox', defaultValue: 0, category: 'research' },
@@ -76,7 +69,6 @@
             { id: 'stressBurden', label: 'Allostatic Load (Stress)', unit: '%' },
             { id: 'regionConfidence', label: 'Region Confidence Score', unit: '%' },
             { id: 'riskLevel', label: 'Risk Stratification', unit: 'lvl' },
-
             // Molecular Signaling Metrics (4-40)
             { id: 'tryptase', label: 'Tryptase (Mast Release)', unit: 'ng' },
             { id: 'chymase', label: 'Chymase (Protease)', unit: 'ng' },
@@ -116,6 +108,5 @@
             { id: 'BA24', label: 'ACC (BA24)', region: 'cingulate' }
         ]
     };
-
     window.GreenhouseInflammationConfig = GreenhouseInflammationConfig;
 })();

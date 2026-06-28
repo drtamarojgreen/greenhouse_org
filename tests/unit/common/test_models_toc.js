@@ -1,86 +1,79 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 (function () {
     'use strict';
     const { assert } = window;
     const TestFramework = window.TestFramework;
-
     const mockContainer = {
         classList: {
             add: (cls) => { mockContainer.className = (mockContainer.className || '') + ' ' + cls; }
         },
         innerHTML: '',
         appendChild: (child) => {
-            if (!mockContainer.children) mockContainer.children = [];
+            if (!mockContainer.children)
+                mockContainer.children = [];
             mockContainer.children.push(child);
         },
         querySelector: (sel) => {
-            if (sel === 'a') return { href: 'https://greenhousemd.org/genetic' };
+            if (sel === 'a')
+                return { href: 'https://greenhousemd.org/genetic' };
             return null;
         }
     };
-
     TestFramework.describe('Models Table of Contents (TOC)', () => {
-
         const originalQuerySelector = document.querySelector;
-
         TestFramework.beforeEach(() => {
             mockContainer.innerHTML = '';
             mockContainer.children = [];
             mockContainer.className = '';
-
             document.querySelector = (selector) => {
-                if (selector === '#models-toc-container') return mockContainer;
+                if (selector === '#models-toc-container')
+                    return mockContainer;
                 return originalQuerySelector.call(document, selector);
             };
         });
-
         TestFramework.afterEach(() => {
             document.querySelector = originalQuerySelector;
         });
-
         TestFramework.it('should initialize with a string selector', () => {
             window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
             assert.isTrue(window.GreenhouseModelsTOC.state.isInitialized);
             assert.contains(mockContainer.className, 'models-toc-container');
         });
-
         TestFramework.it('should initialize with an HTMLElement', () => {
             const customContainer = document.createElement('div');
             window.GreenhouseModelsTOC.init({ target: customContainer });
             assert.isTrue(window.GreenhouseModelsTOC.state.isInitialized);
             assert.contains(customContainer.className, 'models-toc-container');
         });
-
-        TestFramework.it('should fetch data and render intro and cards', async () => {
+        TestFramework.it('should fetch data and render intro and cards', () => __awaiter(this, void 0, void 0, function* () {
             window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
-
-            await new Promise(resolve => setTimeout(resolve, 100));
-
+            yield new Promise(resolve => setTimeout(resolve, 100));
             assert.greaterThan(mockContainer.children.length, 0);
-
             const intro = mockContainer.children.find(c => c.className && c.className.includes('models-toc-intro'));
             assert.isDefined(intro, 'Intro should be rendered');
-
             const grid = mockContainer.children.find(c => c.className && c.className.includes('models-toc-grid'));
             assert.isDefined(grid, 'Grid should be rendered');
-        });
-
-        TestFramework.it('should handle fetch errors gracefully', async () => {
+        }));
+        TestFramework.it('should handle fetch errors gracefully', () => __awaiter(this, void 0, void 0, function* () {
             const originalXmlPath = window.GreenhouseModelsTOC.config.xmlPath;
             window.GreenhouseModelsTOC.config.xmlPath = 'non_existent_error.xml';
-
             window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
-
-            await new Promise(resolve => setTimeout(resolve, 100));
-
+            yield new Promise(resolve => setTimeout(resolve, 100));
             assert.contains(mockContainer.innerHTML, window.GreenhouseModelsUtil.t('err_loading_models'));
-
             window.GreenhouseModelsTOC.config.xmlPath = originalXmlPath;
-        });
-
-        TestFramework.it('should generate correct live URLs with www subdomain and path', async () => {
+        }));
+        TestFramework.it('should generate correct live URLs with www subdomain and path', () => __awaiter(this, void 0, void 0, function* () {
             window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
-            await new Promise(resolve => setTimeout(resolve, 100));
-
+            yield new Promise(resolve => setTimeout(resolve, 100));
             const grid = mockContainer.children.find(c => c.className && c.className.includes('models-toc-grid'));
             if (grid && grid.children.length > 0) {
                 const card = grid.children[0];
@@ -95,7 +88,6 @@
                     assert.isTrue(urlObj.pathname.length > 1, 'URL should include the model path');
                 }
             }
-        });
-
+        }));
     });
 })();

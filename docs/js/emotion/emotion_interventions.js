@@ -1,12 +1,11 @@
+"use strict";
 /**
  * @file emotion_interventions.js
  * @description Therapeutic and Pharmacological enhancements for the Emotion Simulation.
  * Part of the 100 enhancements project, mapping interventions to mental health wellness and conditions.
  */
-
 (function () {
     'use strict';
-
     const therapeuticInterventions = [
         { id: 26, name: 'emotion_enh_26_name', description: 'emotion_enh_26_desc', regions: ['prefrontalCortex'], wellnessFocus: 'emotion_enh_26_wellness', conditionMapping: 'emotion_enh_26_cond' },
         { id: 27, name: 'emotion_enh_27_name', description: 'emotion_enh_27_desc', regions: ['prefrontalCortex', 'amygdala'], wellnessFocus: 'emotion_enh_27_wellness', conditionMapping: 'emotion_enh_27_cond' },
@@ -34,7 +33,6 @@
         { id: 49, name: 'emotion_enh_49_name', description: 'emotion_enh_49_desc', regions: ['prefrontalCortex'], wellnessFocus: 'emotion_enh_49_wellness', conditionMapping: 'emotion_enh_49_cond' },
         { id: 50, name: 'emotion_enh_50_name', description: 'emotion_enh_50_desc', regions: ['prefrontalCortex'], wellnessFocus: 'emotion_enh_50_wellness', conditionMapping: 'emotion_enh_50_cond' }
     ];
-
     const medicationTreatments = [
         { id: 51, name: 'emotion_enh_51_name', description: 'emotion_enh_51_desc', regions: ['amygdala', 'hippocampus'], wellnessFocus: 'emotion_enh_51_wellness', conditionMapping: 'emotion_enh_51_cond' },
         { id: 52, name: 'emotion_enh_52_name', description: 'emotion_enh_52_desc', regions: ['brainstem'], wellnessFocus: 'emotion_enh_52_wellness', conditionMapping: 'emotion_enh_52_cond' },
@@ -62,7 +60,6 @@
         { id: 74, name: 'emotion_enh_74_name', description: 'emotion_enh_74_desc', regions: ['thalamus'], wellnessFocus: 'emotion_enh_74_wellness', conditionMapping: 'emotion_enh_74_cond' },
         { id: 75, name: 'emotion_enh_75_name', description: 'emotion_enh_75_desc', regions: ['thalamus'], wellnessFocus: 'emotion_enh_75_wellness', conditionMapping: 'emotion_enh_75_cond' }
     ];
-
     if (window.GreenhouseEmotionConfig) {
         window.GreenhouseEmotionConfig.therapeuticInterventions = therapeuticInterventions;
         window.GreenhouseEmotionConfig.medicationTreatments = medicationTreatments;

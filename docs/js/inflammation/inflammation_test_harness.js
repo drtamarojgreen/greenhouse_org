@@ -1,12 +1,20 @@
+"use strict";
 /**
  * @file inflammation_test_harness.js
  * @description Automated test scenarios for the Neuroinflammation Simulation.
  * Replays known inflammation scenarios and verifies enhancement availability.
  */
-
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 (function () {
     'use strict';
-
     const GreenhouseInflammationTestHarness = {
         scenarios: [
             {
@@ -22,22 +30,20 @@
                 minVal: 0.8
             }
         ],
-
-        async runAll(app) {
-            console.log("--- STARTING INFLAMMATION TEST HARNESS ---");
-
-            for (const scenario of this.scenarios) {
-                console.log(`Executing Scenario: ${scenario.name}`);
-                this.applyScenario(app, scenario);
-                await new Promise(r => setTimeout(r, 5000)); // Wait for stabilization
-                this.verifyMetrics(app, scenario);
-            }
-
-            this.verifyEnhancementCoverage(app);
-            this.verifyGraphIntegrity(app);
-            console.log("--- TEST HARNESS COMPLETE ---");
+        runAll(app) {
+            return __awaiter(this, void 0, void 0, function* () {
+                console.log("--- STARTING INFLAMMATION TEST HARNESS ---");
+                for (const scenario of this.scenarios) {
+                    console.log(`Executing Scenario: ${scenario.name}`);
+                    this.applyScenario(app, scenario);
+                    yield new Promise(r => setTimeout(r, 5000)); // Wait for stabilization
+                    this.verifyMetrics(app, scenario);
+                }
+                this.verifyEnhancementCoverage(app);
+                this.verifyGraphIntegrity(app);
+                console.log("--- TEST HARNESS COMPLETE ---");
+            });
         },
-
         verifyGraphIntegrity(app) {
             console.log("Verifying Pathway Graph Integrity...");
             const ui3d = window.GreenhouseInflammationUI3D;
@@ -46,7 +52,6 @@
                 console.warn("[FAIL] Pathway graph not loaded.");
                 return;
             }
-
             let errors = 0;
             const compIds = graph.compartments.map(c => c.id);
             graph.reactions.forEach(r => {
@@ -59,7 +64,6 @@
                     errors++;
                 }
             });
-
             const molIds = graph.molecules.map(m => m.id);
             graph.reactions.forEach(r => {
                 if (!molIds.includes(r.substrate)) {
@@ -67,10 +71,8 @@
                     errors++;
                 }
             });
-
             console.log(errors === 0 ? "[PASS] Graph Integrity Verified." : `[FAIL] Graph Integrity has ${errors} errors.`);
         },
-
         applyScenario(app, scenario) {
             for (const [fid, val] of Object.entries(scenario.factors)) {
                 if (app.engine.state.factors.hasOwnProperty(fid)) {
@@ -78,16 +80,15 @@
                 }
             }
         },
-
         verifyMetrics(app, scenario) {
             const val = app.engine.state.metrics[scenario.expectedMetric];
             if (val >= scenario.minVal) {
                 console.log(`[PASS] ${scenario.name}: ${scenario.expectedMetric} = ${val.toFixed(2)} (>= ${scenario.minVal})`);
-            } else {
+            }
+            else {
                 console.warn(`[FAIL] ${scenario.name}: ${scenario.expectedMetric} = ${val.toFixed(2)} (< ${scenario.minVal})`);
             }
         },
-
         verifyEnhancementCoverage(app) {
             console.log("Checking Enhancement Module Coverage...");
             const modules = {
@@ -100,12 +101,10 @@
                 'Disease Presets': !!app.applyPreset,
                 'Keyboard Accessibility': !!app.handleKeyDown
             };
-
             for (const [name, exists] of Object.entries(modules)) {
                 console.log(`[${exists ? 'OK' : 'MISSING'}] ${name}`);
             }
         }
     };
-
     window.GreenhouseInflammationTestHarness = GreenhouseInflammationTestHarness;
 })();

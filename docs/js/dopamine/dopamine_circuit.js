@@ -1,14 +1,13 @@
+"use strict";
 /**
  * @file dopamine_circuit.js
  * @description Anatomical and circuit integration for Dopamine Simulation.
  * Covers Enhancements 71-80.
  */
-
 (function () {
     'use strict';
     const G = window.GreenhouseDopamine || {};
     window.GreenhouseDopamine = G;
-
     G.circuitState = {
         pathways: {
             direct: { color: '#E0E0E0', active: false, label: 'Direct Pathway (D1-MSN)' },
@@ -39,7 +38,6 @@
         },
         astrocytes: [] // 80. Tripartite Synapse
     };
-
     // Initialize MSN Populations
     for (let i = 0; i < 10; i++) {
         G.circuitState.msnPopulations.d1.push({
@@ -53,7 +51,6 @@
             z: (Math.random() - 0.5) * 100
         });
     }
-
     // Initialize Astrocytes
     for (let i = 0; i < 5; i++) {
         G.circuitState.astrocytes.push({
@@ -63,7 +60,6 @@
             radius: 50 + Math.random() * 50
         });
     }
-
     // Helper: Draw organic striosome patch
     function drawStriosome(ctx, cx, cy, radius) {
         ctx.beginPath();
@@ -77,14 +73,12 @@
             i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
         ctx.closePath();
-
         ctx.strokeStyle = "rgba(160, 174, 192, 0.6)";
         ctx.fillStyle = "rgba(160, 174, 192, 0.15)";
         ctx.lineWidth = 2;
         ctx.fill();
         ctx.stroke();
     }
-
     // Helper: Populate striosome with MSNs
     function populateStriosome(ctx, cx, cy, radius, count) {
         for (let i = 0; i < count; i++) {
@@ -92,14 +86,12 @@
             const r = Math.sqrt((i + 1) / count) * (radius * 0.7); // Fermat's spiral distribution
             const x = cx + Math.cos(angle) * r;
             const y = cy + Math.sin(angle) * r;
-
             ctx.fillStyle = "rgba(224, 224, 224, 0.8)";
             ctx.beginPath();
             ctx.arc(x, y, 2, 0, Math.PI * 2);
             ctx.fill();
         }
     }
-
     // Helper: Draw Matrix Lattice Field
     function drawMatrixLattice(ctx, w, h, spacing) {
         ctx.fillStyle = "rgba(160, 174, 192, 0.1)"; // Neutral Gray
@@ -111,7 +103,6 @@
             }
         }
     }
-
     // Helper: Draw Matrix Flow Vectors
     function drawMatrixFlow(ctx, w, h, time) {
         ctx.strokeStyle = "rgba(160, 174, 192, 0.08)";
@@ -121,7 +112,6 @@
                 const angle = Math.sin(x * 0.01 + time * 0.02) + Math.cos(y * 0.01 + time * 0.01);
                 const dx = Math.cos(angle) * 5;
                 const dy = Math.sin(angle) * 5;
-
                 ctx.beginPath();
                 ctx.moveTo(x, y);
                 ctx.lineTo(x + dx, y + dy);
@@ -129,24 +119,20 @@
             }
         }
     }
-
     // Initialize Realistic Brain Mesh
-    G.initRealisticBrain = function() {
+    G.initRealisticBrain = function () {
         if (window.GreenhouseBrainMeshRealistic) {
             G.circuitState.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
             console.log("Realistic Brain Mesh Generated.");
         }
     };
-
     G.updateCircuit = function () {
         const state = G.state;
         const cState = G.circuitState;
         const sState = G.synapseState;
-
         // 71. Direct vs. Indirect
         cState.pathways.direct.active = state.mode.includes('D1');
         cState.pathways.indirect.active = state.mode.includes('D2');
-
         // 72-73. Pathway specific kinetics
         if (state.mode.includes('SNc') || state.mode.includes('Dorsal') || state.mode === 'Parkinsonian') {
             // Nigrostriatal Pathway: High DAT density
@@ -156,8 +142,10 @@
             }
             // 72. Highlight SNc Projections
             cState.projections.snc.active = true;
-            if (cState.projections.vta) cState.projections.vta.active = false;
-        } else if (state.mode.includes('VTA') || state.mode.includes('Ventral') || state.mode === 'Schizophrenia') {
+            if (cState.projections.vta)
+                cState.projections.vta.active = false;
+        }
+        else if (state.mode.includes('VTA') || state.mode.includes('Ventral') || state.mode === 'Schizophrenia') {
             // Mesolimbic Pathway: Lower DAT, more volume transmission
             if (sState) {
                 sState.dat.activity = state.mode === 'Schizophrenia' ? 1.0 : 0.6;
@@ -165,9 +153,9 @@
             }
             // 73. Highlight VTA Projections
             cState.projections.vta.active = true;
-            if (cState.projections.snc) cState.projections.snc.active = false;
+            if (cState.projections.snc)
+                cState.projections.snc.active = false;
         }
-
         // 75. Cholinergic Interneuron "Pause" (specifically in Ventral Striatum / NAc)
         const isVentral = state.mode.includes('Ventral') || state.mode.includes('VTA');
         const pauseThreshold = isVentral ? 60 : 120; // Ventral is more sensitive to DA transients
@@ -177,37 +165,37 @@
         if (cState.interneurons.cholinergic.pauseTimer > 0) {
             cState.interneurons.cholinergic.pauseTimer--;
             cState.interneurons.cholinergic.firing = false;
-        } else {
+        }
+        else {
             cState.interneurons.cholinergic.firing = true;
         }
-
         // 78. Feedback Loops (Striato-nigral)
         // Activation of direct pathway inhibits SNc (disinhibition of movement)
         // Activation of indirect pathway excites SNc (via STN)
         if (state.signalingActive) {
             if (cState.pathways.direct.active) {
                 cState.feedback.sncActivity = Math.max(0.2, cState.feedback.sncActivity - 0.01 * cState.feedback.gain);
-            } else if (cState.pathways.indirect.active) {
+            }
+            else if (cState.pathways.indirect.active) {
                 cState.feedback.sncActivity = Math.min(2.0, cState.feedback.sncActivity + 0.005 * cState.feedback.gain);
             }
-        } else {
+        }
+        else {
             cState.feedback.sncActivity += (1.0 - cState.feedback.sncActivity) * 0.01;
         }
-
         // Apply feedback to synapse release rate
         if (G.synapseState) {
             G.synapseState.releaseRate = 0.1 * cState.feedback.sncActivity;
         }
-
         // 76. GABAergic Interneuron Modulation
         if (state.signalingActive) {
             cState.interneurons.gabaergic.pv.active = Math.min(1.0, cState.interneurons.gabaergic.pv.active + 0.01);
             cState.interneurons.gabaergic.som.active = Math.min(1.0, cState.interneurons.gabaergic.som.active + 0.005);
-        } else {
+        }
+        else {
             cState.interneurons.gabaergic.pv.active = Math.max(0.1, cState.interneurons.gabaergic.pv.active - 0.005);
             cState.interneurons.gabaergic.som.active = Math.max(0.1, cState.interneurons.gabaergic.som.active - 0.002);
         }
-
         // Update UI metrics in the right panel
         if (G.rightPanel && G.updateMetric) {
             G.updateMetric(G.rightPanel, 'Circuit Dynamics', 'Cholinergic Firing', cState.interneurons.cholinergic.firing ? 'ACTIVE' : 'PAUSE');
@@ -216,13 +204,11 @@
             G.updateMetric(G.rightPanel, 'Circuit Dynamics', 'SNc Feedback', `${(cState.feedback.sncActivity * 100).toFixed(1)}%`);
         }
     };
-
     G.renderCircuit = function (ctx, project) {
         const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
         const cState = G.circuitState;
-
         // 71. Render MSN Populations
         cState.msnPopulations.d1.forEach(msn => {
             const p = project(msn.x, msn.y, msn.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -246,7 +232,6 @@
                 ctx.globalAlpha = 1.0;
             }
         });
-
         // 76. Render GABAergic Interneurons
         Object.values(cState.interneurons.gabaergic).forEach(inter => {
             const p = project(inter.x, inter.y, inter.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -264,16 +249,13 @@
                 ctx.fillText(inter.label, p.x, p.y - 15 * p.scale);
             }
         });
-
         // 74. Striosome vs Matrix Visualization (Intracellular/Micro-compartment focus)
         // Optimized Layering: Matrix (Field) -> Striosomes (Islands)
-
         // Matrix Lattice & Flow Field
         ctx.save();
         drawMatrixLattice(ctx, w, h, 40);
         drawMatrixFlow(ctx, w, h, G.state.timer * 0.5);
         ctx.restore();
-
         // Organic Striosome Patches
         ctx.save();
         const patchCount = 5;
@@ -283,13 +265,10 @@
             const sx = w / 2 + Math.cos(angle) * dist;
             const sy = h / 2 + Math.sin(angle) * dist;
             const radius = 60 + Math.sin(G.state.timer * 0.01 + i) * 5;
-
             drawStriosome(ctx, sx, sy, radius);
             populateStriosome(ctx, sx, sy, radius, 12);
         }
         ctx.restore();
-
-
         // 80. Tripartite Synapse (Astrocytes - Stellate Appearance)
         cState.astrocytes.forEach(a => {
             const pos = project(a.x, a.y, a.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -304,7 +283,6 @@
                     ctx.lineTo(pos.x + Math.cos(angle) * len * pos.scale, pos.y + Math.sin(angle) * len * pos.scale);
                 }
                 ctx.stroke();
-
                 // Central soma
                 ctx.fillStyle = 'rgba(160, 174, 192, 0.05)';
                 ctx.beginPath();
@@ -312,7 +290,5 @@
                 ctx.fill();
             }
         });
-
     };
-
 })();
