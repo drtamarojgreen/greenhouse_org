@@ -2,11 +2,14 @@
  * @file neuro_camera_controls.ts
  * @description Enhanced Camera Controls with Pan, Zoom, and Rotate for Neuro simulation.
  */
+
 /// <reference path="../types/globals.d.ts" />
+
 export const GreenhouseNeuroCameraControls = {
-    camera: null,
-    canvas: null,
-    config: null,
+    camera: null as any as Greenhouse.Camera,
+    canvas: null as any as HTMLCanvasElement,
+    config: null as any,
+
     // State
     isDragging: false,
     isPanning: false,
@@ -14,100 +17,114 @@ export const GreenhouseNeuroCameraControls = {
     lastY: 0,
     velocityX: 0,
     velocityY: 0,
+
     // Touch support
-    touches: [],
+    touches: [] as Touch[],
     lastTouchDistance: 0,
+
     // Keyboard state
-    keys: {},
+    keys: {} as Record<string, boolean>,
+
     /**
      * Initialize camera controls
      * @param canvas - Canvas element
      * @param camera - Camera object to control
      * @param config - Configuration object
      */
-    init(canvas, camera, config) {
+    init(canvas: HTMLCanvasElement, camera: Greenhouse.Camera, config?: any) {
         this.canvas = canvas;
         this.camera = camera;
-        this.config = config || window.GreenhouseNeuroConfig;
+        this.config = config || (window as any).GreenhouseNeuroConfig;
+
         this.setupMouseControls();
         this.setupTouchControls();
         this.setupKeyboardControls();
         this.setupWheelControls();
+
         console.log('NeuroCamera: Controls initialized');
     },
+
     /**
      * Setup mouse controls for rotation and panning
      */
     setupMouseControls() {
-        if (!this.canvas)
-            return;
-        this.canvas.addEventListener('mousedown', (e) => {
+        if (!this.canvas) return;
+
+        this.canvas.addEventListener('mousedown', (e: MouseEvent) => {
             if (e.button === 2 || e.shiftKey) {
                 // Right click or Shift+Click for Pan
                 if (this.config.get('camera.controls.enablePan')) {
                     this.isPanning = true;
                     e.preventDefault();
                 }
-            }
-            else if (e.button === 0) {
+            } else if (e.button === 0) {
                 // Left click for Rotate
                 if (this.config.get('camera.controls.enableRotate')) {
                     this.isDragging = true;
                 }
             }
+
             this.lastX = e.clientX;
             this.lastY = e.clientY;
             this.stopAutoRotate();
             this.velocityX = 0;
             this.velocityY = 0;
         });
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-        window.addEventListener('mousemove', (e) => {
-            if (!this.isDragging && !this.isPanning)
-                return;
+
+        this.canvas.addEventListener('contextmenu', (e: Event) => e.preventDefault());
+
+        window.addEventListener('mousemove', (e: MouseEvent) => {
+            if (!this.isDragging && !this.isPanning) return;
+
             const dx = e.clientX - this.lastX;
             const dy = e.clientY - this.lastY;
+
             if (this.isPanning) {
                 this.pan(dx, dy);
-            }
-            else if (this.isDragging) {
+            } else if (this.isDragging) {
                 this.rotate(dx, dy);
             }
+
             this.lastX = e.clientX;
             this.lastY = e.clientY;
         });
+
         window.addEventListener('mouseup', () => {
             this.isDragging = false;
             this.isPanning = false;
         });
     },
+
     /**
      * Setup touch controls for mobile devices
      */
     setupTouchControls() {
-        if (!this.canvas)
-            return;
-        this.canvas.addEventListener('touchstart', (e) => {
+        if (!this.canvas) return;
+
+        this.canvas.addEventListener('touchstart', (e: TouchEvent) => {
             e.preventDefault();
             this.touches = Array.from(e.touches);
+
             if (this.touches.length === 1) {
                 // Single touch - rotate
                 this.isDragging = true;
                 this.lastX = this.touches[0].clientX;
                 this.lastY = this.touches[0].clientY;
-            }
-            else if (this.touches.length === 2) {
+            } else if (this.touches.length === 2) {
                 // Two finger - pan and zoom
                 this.isPanning = true;
                 const dx = this.touches[1].clientX - this.touches[0].clientX;
                 const dy = this.touches[1].clientY - this.touches[0].clientY;
                 this.lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
             }
+
             this.stopAutoRotate();
         }, { passive: false });
-        this.canvas.addEventListener('touchmove', (e) => {
+
+        this.canvas.addEventListener('touchmove', (e: TouchEvent) => {
             e.preventDefault();
             const newTouches = Array.from(e.touches);
+
             if (newTouches.length === 1 && this.isDragging) {
                 // Rotate
                 const dx = newTouches[0].clientX - this.lastX;
@@ -115,31 +132,37 @@ export const GreenhouseNeuroCameraControls = {
                 this.rotate(dx, dy);
                 this.lastX = newTouches[0].clientX;
                 this.lastY = newTouches[0].clientY;
-            }
-            else if (newTouches.length === 2) {
+            } else if (newTouches.length === 2) {
                 // Pinch zoom
                 const dx = newTouches[1].clientX - newTouches[0].clientX;
                 const dy = newTouches[1].clientY - newTouches[0].clientY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
+
                 if (this.lastTouchDistance > 0) {
                     const delta = distance - this.lastTouchDistance;
                     this.zoom(-delta * 2); // Negative because pinch out = zoom in
                 }
+
                 this.lastTouchDistance = distance;
+
                 // Pan with center point
                 const centerX = (newTouches[0].clientX + newTouches[1].clientX) / 2;
                 const centerY = (newTouches[0].clientY + newTouches[1].clientY) / 2;
+
                 if (this.touches.length === 2) {
                     const oldCenterX = (this.touches[0].clientX + this.touches[1].clientX) / 2;
                     const oldCenterY = (this.touches[0].clientY + this.touches[1].clientY) / 2;
                     this.pan(centerX - oldCenterX, centerY - oldCenterY);
                 }
             }
+
             this.touches = newTouches;
         }, { passive: false });
-        this.canvas.addEventListener('touchend', (e) => {
+
+        this.canvas.addEventListener('touchend', (e: TouchEvent) => {
             e.preventDefault();
             this.touches = Array.from(e.touches);
+
             if (this.touches.length === 0) {
                 this.isDragging = false;
                 this.isPanning = false;
@@ -147,72 +170,74 @@ export const GreenhouseNeuroCameraControls = {
             }
         }, { passive: false });
     },
+
     /**
      * Setup keyboard controls
      */
     setupKeyboardControls() {
-        window.addEventListener('keydown', (e) => {
+        window.addEventListener('keydown', (e: KeyboardEvent) => {
             this.keys[e.key] = true;
+
             // Arrow keys for rotation
             if (e.key === 'ArrowLeft') {
                 this.rotate(-5, 0);
                 this.stopAutoRotate();
-            }
-            else if (e.key === 'ArrowRight') {
+            } else if (e.key === 'ArrowRight') {
                 this.rotate(5, 0);
                 this.stopAutoRotate();
-            }
-            else if (e.key === 'ArrowUp') {
+            } else if (e.key === 'ArrowUp') {
                 this.rotate(0, -5);
                 this.stopAutoRotate();
-            }
-            else if (e.key === 'ArrowDown') {
+            } else if (e.key === 'ArrowDown') {
                 this.rotate(0, 5);
                 this.stopAutoRotate();
             }
+
             // WASD for panning
             const panAmount = 20;
             if (e.key === 'w' || e.key === 'W') {
                 this.pan(0, panAmount);
-            }
-            else if (e.key === 's' || e.key === 'S') {
+            } else if (e.key === 's' || e.key === 'S') {
                 this.pan(0, -panAmount);
-            }
-            else if (e.key === 'a' || e.key === 'A') {
+            } else if (e.key === 'a' || e.key === 'A') {
                 this.pan(panAmount, 0);
-            }
-            else if (e.key === 'd' || e.key === 'D') {
+            } else if (e.key === 'd' || e.key === 'D') {
                 this.pan(-panAmount, 0);
             }
+
             // Q/E for zoom
             if (e.key === 'q' || e.key === 'Q') {
                 this.zoom(50);
-            }
-            else if (e.key === 'e' || e.key === 'E') {
+            } else if (e.key === 'e' || e.key === 'E') {
                 this.zoom(-50);
             }
+
             // R to reset camera
             if (e.key === 'r' || e.key === 'R') {
                 this.resetCamera();
             }
+
             // Space to toggle auto-rotate
             if (e.key === ' ') {
                 this.toggleAutoRotate();
                 e.preventDefault();
             }
         });
-        window.addEventListener('keyup', (e) => {
+
+        window.addEventListener('keyup', (e: KeyboardEvent) => {
             this.keys[e.key] = false;
         });
     },
+
     /**
      * Setup mouse wheel controls for zooming
      */
     setupWheelControls() {
-        if (!this.canvas)
-            return;
-        this.canvas.addEventListener('wheel', (e) => {
+        if (!this.canvas) return;
+
+        this.canvas.addEventListener('wheel', (e: WheelEvent) => {
             e.preventDefault();
+
             if (this.config.get('camera.controls.enableZoom')) {
                 const zoomSpeed = this.config.get('camera.controls.zoomSpeed') || 0.1;
                 const dynamicSpeed = Math.abs(this.camera.z) * 0.001 + 5;
@@ -220,49 +245,57 @@ export const GreenhouseNeuroCameraControls = {
             }
         }, { passive: false });
     },
+
     /**
      * Rotate camera
      * @param dx - Delta X
      * @param dy - Delta Y
      */
-    rotate(dx, dy) {
+    rotate(dx: number, dy: number) {
         const rotateSpeed = this.config.get('camera.controls.rotateSpeed') || 0.005;
-        if (this.camera.rotationY !== undefined)
-            this.camera.rotationY += dx * rotateSpeed;
-        if (this.camera.rotationX !== undefined)
-            this.camera.rotationX += dy * rotateSpeed;
+
+        if (this.camera.rotationY !== undefined) this.camera.rotationY += dx * rotateSpeed;
+        if (this.camera.rotationX !== undefined) this.camera.rotationX += dy * rotateSpeed;
+
         // Store velocity for inertia
         if (this.config.get('camera.controls.inertia')) {
             this.velocityX = dx * rotateSpeed;
             this.velocityY = dy * rotateSpeed;
         }
+
         // Clamp X rotation to prevent flipping
         if (this.camera.rotationX !== undefined) {
             this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
         }
     },
+
     /**
      * Pan camera
      * @param dx - Delta X
      * @param dy - Delta Y
      */
-    pan(dx, dy) {
+    pan(dx: number, dy: number) {
         const panSpeed = this.config.get('camera.controls.panSpeed') || 0.002;
         const panScale = Math.abs(this.camera.z) * panSpeed;
+
         this.camera.x -= dx * panScale;
         this.camera.y -= dy * panScale;
     },
+
     /**
      * Zoom camera
      * @param delta - Zoom delta
      */
-    zoom(delta) {
+    zoom(delta: number) {
         this.camera.z += delta;
+
         // Clamp zoom
         const minZoom = this.config.get('camera.controls.minZoom') || -50;
         const maxZoom = this.config.get('camera.controls.maxZoom') || -2000;
+
         this.camera.z = Math.max(maxZoom, Math.min(minZoom, this.camera.z));
     },
+
     /**
      * Reset camera to initial position
      */
@@ -276,10 +309,13 @@ export const GreenhouseNeuroCameraControls = {
             this.camera.rotationY = initial.rotationY;
             this.camera.rotationZ = initial.rotationZ;
         }
+
         this.velocityX = 0;
         this.velocityY = 0;
+
         console.log('NeuroCamera: Reset to initial position');
     },
+
     /**
      * Update camera (apply inertia, auto-rotate)
      */
@@ -287,31 +323,32 @@ export const GreenhouseNeuroCameraControls = {
         // Apply inertia
         if (this.config.get('camera.controls.inertia') && !this.isDragging) {
             const damping = this.config.get('camera.controls.inertiaDamping') || 0.95;
-            if (this.camera.rotationY !== undefined)
-                this.camera.rotationY += this.velocityX;
-            if (this.camera.rotationX !== undefined)
-                this.camera.rotationX += this.velocityY;
+
+            if (this.camera.rotationY !== undefined) this.camera.rotationY += this.velocityX;
+            if (this.camera.rotationX !== undefined) this.camera.rotationX += this.velocityY;
+
             this.velocityX *= damping;
             this.velocityY *= damping;
+
             // Stop if very slow
-            if (Math.abs(this.velocityX) < 0.0001)
-                this.velocityX = 0;
-            if (Math.abs(this.velocityY) < 0.0001)
-                this.velocityY = 0;
+            if (Math.abs(this.velocityX) < 0.0001) this.velocityX = 0;
+            if (Math.abs(this.velocityY) < 0.0001) this.velocityY = 0;
         }
+
         // Auto-rotate
         if (this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
             const speed = this.config.get('camera.controls.autoRotateSpeed') || 0.0002;
-            if (this.camera.rotationY !== undefined)
-                this.camera.rotationY += speed;
+            if (this.camera.rotationY !== undefined) this.camera.rotationY += speed;
         }
     },
+
     /**
      * Stop auto-rotation
      */
     stopAutoRotate() {
         this.config.set('camera.controls.autoRotate', false);
     },
+
     /**
      * Toggle auto-rotation
      */
@@ -320,6 +357,7 @@ export const GreenhouseNeuroCameraControls = {
         this.config.set('camera.controls.autoRotate', !current);
         console.log('NeuroCamera: Auto-rotate', !current ? 'enabled' : 'disabled');
     },
+
     /**
      * Get camera info for debugging
      */
@@ -337,4 +375,5 @@ export const GreenhouseNeuroCameraControls = {
         };
     }
 };
-window.GreenhouseNeuroCameraControls = GreenhouseNeuroCameraControls;
+
+(window as any).GreenhouseNeuroCameraControls = GreenhouseNeuroCameraControls;

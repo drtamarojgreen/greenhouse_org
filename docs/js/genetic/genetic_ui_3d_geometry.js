@@ -10,7 +10,7 @@
             const radius = 60;
             const verticalSpread = 12;
             // Major/Minor Groove Offset
-            // Standard B-DNA has grooves. We simulate this by offsetting the second strand 
+            // Standard B-DNA has grooves. We simulate this by offsetting the second strand
             // not by 180 degrees (PI), but by roughly 140 degrees (2.44 rad).
             // Let's exaggerate it slightly for visual clarity: 2.2 rad (~126 deg)
             const strandOffset = strandIndex === 0 ? 0 : 2.2;

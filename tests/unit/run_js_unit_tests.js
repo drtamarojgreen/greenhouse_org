@@ -3,8 +3,6 @@ const path = require('path');
 const { setupMockEnvironment, MockElement } = require('./browser_mocks');
 const { setupGreenhouseMocks } = require('./greenhouse_mocks');
 
-<<<<<<< HEAD
-=======
 // --- 1. Initialize Mock Environments ---
 global.__GREENHOUSE_TEST_ENVIRONMENT__ = true;
 global.__originalConsole = {
@@ -24,7 +22,6 @@ console.log = () => {};
 console.info = () => {};
 console.warn = () => {};
 
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
 setupMockEnvironment();
 setupGreenhouseMocks();
 
@@ -34,21 +31,6 @@ const ROOT = path.resolve(__dirname, '../../');
 require(path.join(ROOT, 'docs/js/assertion_library.js'));
 require(path.join(ROOT, 'docs/js/test_framework.js'));
 
-<<<<<<< HEAD
-const originalRunSuite = global.TestFramework.runSuite;
-global.TestFramework.runSuite = async function(suite) {
-    await originalRunSuite.call(this, suite);
-    const result = this.results.suites[this.results.suites.length - 1];
-    if (result) {
-        result.tests = suite.tests;
-    }
-};
-
-function loadModule(m) {
-    const fullPath = path.join(ROOT, m.startsWith('docs/js') ? m : path.join('docs/js', m));
-    if (fs.existsSync(fullPath)) {
-        setupGreenhouseMocks();
-=======
 // Monkey-patch TestFramework for reporting and data preservation
 if (global.TestFramework) {
     const originalRunSuite = global.TestFramework.runSuite;
@@ -101,7 +83,6 @@ function loadModule(m) {
     const fullPath = path.join(ROOT, m.startsWith('docs/js') ? m : path.join('docs/js', m));
     if (fs.existsSync(fullPath)) {
         // Prepare environment for loader execution
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
         const script = new MockElement('script');
         script.setAttribute('data-base-url', '/');
         script.setAttribute('data-target-selector-left', '#container');
@@ -109,11 +90,8 @@ function loadModule(m) {
         script.setAttribute('data-genetic-selectors', JSON.stringify({ genetic: '#container' }));
         script.setAttribute('data-scheduler-selectors', JSON.stringify({ dashboardLeft: '#container', dashboardRight: '#container' }));
         global.document.currentScript = script;
-<<<<<<< HEAD
-=======
 
         // Populate window attributes so main() can finish and define exports
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
         global.window._greenhouseScriptAttributes = {
             'base-url': '/',
             'target-selector-left': '#container',
@@ -126,9 +104,6 @@ function loadModule(m) {
         try {
             global.__is_loading_modules__ = true;
             eval(code);
-<<<<<<< HEAD
-        } catch (e) {}
-=======
         } catch (e) {
             global.__originalConsole.error(`Error evaluating ${m}:`, e.message);
         } finally {
@@ -136,7 +111,6 @@ function loadModule(m) {
         }
 
         // RE-MOCK loadScript immediately after GreenhouseUtils.js might have overwritten it
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
         forceMockLoadScript();
 
         // Prevent auto-init animations and side-effects during load
@@ -179,8 +153,6 @@ function loadModule(m) {
     }
 }
 
-<<<<<<< HEAD
-=======
 function injectDefensiveConfig(targetConfig) {
     const configs = targetConfig ? [targetConfig] : [
         global.GreenhouseGeneticConfig,
@@ -310,7 +282,6 @@ function injectDefensiveConfig(targetConfig) {
 }
 
 // Ensure loadScript is always a no-op mock that resolves immediately
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
 function forceMockLoadScript() {
     const mock = () => Promise.resolve();
     const targets = [
@@ -416,16 +387,6 @@ async function runTests() {
 
     global.__originalConsole.log(`\nSummary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
     if (results.failed > 0) {
-<<<<<<< HEAD
-        results.suites.forEach(suite => {
-            if (suite.tests && Array.isArray(suite.tests)) {
-                suite.tests.forEach(test => {
-                    if (test.result === 'failed') {
-                        console.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
-                    }
-                });
-            }
-=======
         // Output detailed failures
         (results.suites || []).forEach(suite => {
             (suite.tests || []).forEach(test => {
@@ -433,7 +394,6 @@ async function runTests() {
                     global.__originalConsole.error(`FAIL: [${suite.name}] ${test.name} - ${test.error}`);
                 }
             });
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
         });
         process.exit(1);
     }

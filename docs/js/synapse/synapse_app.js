@@ -192,7 +192,7 @@
             this.tooltip = document.createElement('div');
             this.tooltip.id = 'synapse-tooltip';
             this.tooltip.style.cssText = `
-                position: absolute; display: none; padding: 12px 20px; background: rgba(5, 10, 5, 0.95); 
+                position: absolute; display: none; padding: 12px 20px; background: rgba(5, 10, 5, 0.95);
                 color: #fff; border-radius: 12px; border: 1px solid rgba(53,116,56,0.5); z-index: 100; pointer-events: none;
             `;
             canvasWrapper.appendChild(this.tooltip);

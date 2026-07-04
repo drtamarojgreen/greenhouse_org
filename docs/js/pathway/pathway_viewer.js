@@ -478,16 +478,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             }
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
-                position: absolute; 
+                position: absolute;
                 top: ${isMobile ? 'auto' : '20px'};
                 bottom: ${isMobile ? '20px' : 'auto'};
-                left: 20px; 
+                left: 20px;
                 right: ${isMobile ? '20px' : 'auto'};
-                z-index: 100; 
-                background: rgba(18, 18, 18, 0.85); 
+                z-index: 100;
+                background: rgba(18, 18, 18, 0.85);
                 padding: ${isMobile ? '10px' : '15px'};
-                border-radius: 12px; 
-                color: #e0e0e0; 
+                border-radius: 12px;
+                color: #e0e0e0;
                 font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 backdrop-filter: blur(10px);
@@ -530,11 +530,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const select = document.createElement('select');
             select.id = 'pathway-selector';
             select.style.cssText = `
-                width: 100%; 
-                background: #2a2a2a; 
-                color: white; 
-                border: 1px solid #444; 
-                padding: 8px; 
+                width: 100%;
+                background: #2a2a2a;
+                color: white;
+                border: 1px solid #444;
+                padding: 8px;
                 border-radius: 6px;
                 outline: none;
                 font-size: ${isMobile ? '16px' : '13px'};
@@ -551,11 +551,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             button.style.cssText = `
                 flex: 1;
                 background: linear-gradient(135deg, #A0AEC0, #2c3e50);
-                color: white; 
-                border: none; 
-                padding: 10px; 
-                border-radius: 6px; 
-                font-weight: bold; 
+                color: white;
+                border: none;
+                padding: 10px;
+                border-radius: 6px;
+                font-weight: bold;
                 cursor: pointer;
                 font-size: ${isMobile ? '16px' : '14px'};
             `;

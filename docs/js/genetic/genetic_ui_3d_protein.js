@@ -121,7 +121,7 @@
                     }
                 }
                 // Draw Atoms on top
-                // Sort by depth for correct occlusion? Already projected in order? 
+                // Sort by depth for correct occlusion? Already projected in order?
                 // No, projected is in chain order. Should sort by depth for balls.
                 const sortedAtoms = [...projected].map((p, i) => (Object.assign(Object.assign({}, p), { index: i }))).sort((a, b) => b.depth - a.depth);
                 sortedAtoms.forEach(p => {

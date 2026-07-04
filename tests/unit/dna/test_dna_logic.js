@@ -6,13 +6,15 @@
         const G = window.GreenhouseDNARepair;
         TestFramework.describe('Damage Induction', () => {
             TestFramework.beforeEach(() => {
-                G.state.radiationLevel = 50;
-                G.state.basePairs = [
-                    { id: 0, base1: 'C', base2: 'G', isDamaged: false },
-                    { id: 1, base1: 'C', base2: 'G', isDamaged: false },
-                    { id: 2, base1: 'C', base2: 'G', isDamaged: false },
-                    { id: 3, base1: 'C', base2: 'G', isDamaged: false }
-                ];
+                G.state = {
+                    radiationLevel: 50,
+                    basePairs: [
+                        { id: 0, base1: 'A', base2: 'T', isDamaged: false },
+                        { id: 1, base1: 'C', base2: 'G', isDamaged: false },
+                        { id: 2, base1: 'T', base2: 'A', isDamaged: false },
+                        { id: 3, base1: 'G', base2: 'C', isDamaged: false }
+                    ]
+                };
             });
             TestFramework.it('should apply UV damage with correct spectrum based on radiation', () => {
                 const pair = { isDamaged: false };

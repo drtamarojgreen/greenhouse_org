@@ -105,8 +105,8 @@
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             // Helix is roughly centered, but let's place Genotype label on the left side
             ctx.fillText(t("Genotype (DNA)"), canvasWidth * 0.25, 60);
-            // Brain Shell is drawn with offset 200. If canvas is 800 wide, center is 400. 
-            // Brain is likely around x=400+200=600? 
+            // Brain Shell is drawn with offset 200. If canvas is 800 wide, center is 400.
+            // Brain is likely around x=400+200=600?
             // Let's place Phenotype label on the right side, but to the left of the PiPs
             ctx.fillText(t("Phenotype (Brain)"), canvasWidth * 0.6, 60);
             ctx.textAlign = 'left';

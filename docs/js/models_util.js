@@ -16,7 +16,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
  * @class GreenhouseComponent
  * Base class for all visual components in the system.
  */
-class GreenhouseComponent {
+export class GreenhouseComponent {
     constructor(name, layer = 10) {
         this.active = true;
         this.initialized = false;
@@ -44,7 +44,7 @@ class GreenhouseComponent {
  * @class GreenhouseSystem
  * Central rendering engine.
  */
-class GreenhouseSystem {
+export class GreenhouseSystem {
     constructor(canvas, config = {}) {
         this.components = [];
         this.lastFrameTime = 0;
@@ -93,7 +93,7 @@ class GreenhouseSystem {
  * @class GreenhouseAssetManager
  * Manages assets and sprite atlases.
  */
-class GreenhouseAssetManager {
+export class GreenhouseAssetManager {
     constructor() {
         this.assets = new Map();
         this.loading = false;
@@ -121,7 +121,7 @@ class GreenhouseAssetManager {
  * @class SimulationEngine
  * Lightweight shared simulation engine for Greenhouse models.
  */
-class SimulationEngine {
+export class SimulationEngine {
     constructor(config = {}) {
         this.lastTick = null;
         this.accumulatedTime = 0;
@@ -174,7 +174,7 @@ class SimulationEngine {
  * @class DiurnalClock
  * Simulates 24-hour biological cycle.
  */
-class DiurnalClock {
+export class DiurnalClock {
     constructor() {
         this.timeInHours = 8.0;
         this.dayCount = 0;

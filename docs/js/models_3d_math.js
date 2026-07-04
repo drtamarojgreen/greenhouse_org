@@ -3,7 +3,7 @@
  * @description 3D Mathematics Foundation for Models Canvas.
  */
 /// <reference path="types/globals.d.ts" />
-const GreenhouseModels3DMath = {
+export const GreenhouseModels3DMath = {
     /**
      * Projects a 3D point to 2D screen coordinates using perspective projection
      */
