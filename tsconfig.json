@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES6",
     "module": "ES6",
-    "lib": ["ES6", "DOM"],
+    "lib": ["ES2020", "DOM"],
     "allowJs": true,
     "checkJs": false,
     "strict": false,
@@ -12,7 +12,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": ".",
-    "rootDir": "."
+    "rootDir": ".",
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "docs/js/**/*.ts",

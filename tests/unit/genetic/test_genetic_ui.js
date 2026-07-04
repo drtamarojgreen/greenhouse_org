@@ -42,8 +42,8 @@
         });
         TestFramework.it('should draw PiP frame', () => {
             // Mock context
+            let fillStyleSet = false;
             let fillRectCalled = false;
-<<<<<<< HEAD
             const ctx = {
                 save: () => { },
                 restore: () => { },
@@ -63,13 +63,6 @@
             };
             ui.drawPiPFrame(ctx, 0, 0, 100, 100, 'Test', 'red');
             assert.isTrue(fillStyleSet);
-=======
-            const ctx = document.createElement('canvas').getContext('2d');
-            ctx.fillRect = () => { fillRectCalled = true; };
-
-            ui.drawPiPFrame(ctx, 0, 0, 100, 100, 'Test', 'red');
-
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
             assert.isTrue(fillRectCalled);
         });
         TestFramework.it('should call sub-modules in draw methods', () => {
@@ -79,7 +72,6 @@
                 drawMicroView: () => { geneCalled = true; }
             };
             // Mock context
-<<<<<<< HEAD
             const ctx = {
                 save: () => { },
                 restore: () => { },
@@ -97,12 +89,6 @@
                 set textBaseline(val) { }
             };
             ui.drawMicroView(ctx, 0, 0, 100, 100, {}, {}, 'blue');
-=======
-            const ctx = document.createElement('canvas').getContext('2d');
-
-            ui.drawMicroView(ctx, 0, 0, 100, 100, {}, 0, {}, () => {}, {});
-
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
             assert.isTrue(geneCalled);
         });
         TestFramework.it('should render all views', () => {
@@ -116,25 +102,38 @@
             window.GreenhouseGeneticBrain = { drawTargetView: () => { targetCalled = true; } };
             // Mock PiP Controls
             window.GreenhouseGeneticPiPControls = {
-                getState: () => ({ camera: {} }),
+                getState: () => ({}),
                 getBackgroundColor: () => 'rgba(0,0,0,1)',
                 drawControls: () => { controlsCalled = true; }
             };
             // Mock Context
-            const canvas = document.createElement('canvas');
-            canvas.width = 1000;
-            canvas.height = 800;
-            const ctx = canvas.getContext('2d');
-
+            const ctx = {
+                save: () => { },
+                restore: () => { },
+                translate: () => { },
+                rotate: () => { },
+                scale: () => { },
+                fillRect: () => { },
+                strokeRect: () => { },
+                fillText: () => { },
+                clip: () => { },
+                beginPath: () => { },
+                rect: () => { },
+                clearRect: () => { },
+                createLinearGradient: () => ({ addColorStop: () => { } }),
+                moveTo: () => { },
+                lineTo: () => { },
+                stroke: () => { },
+                fill: () => { },
+                set fillStyle(val) { },
+                set strokeStyle(val) { },
+                set lineWidth(val) { },
+                set font(val) { },
+                set textAlign(val) { },
+                set textBaseline(val) { }
+            };
             ui.ctx = ctx;
-<<<<<<< HEAD
             ui.canvas = { width: 1000, height: 800 };
-=======
-            ui.canvas = canvas;
-            ui.neurons3D = [{ type: 'gene', label: 'BDNF' }];
-            ui.activeGeneIndex = 0;
-
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
             // Run render
             ui.render();
             assert.isTrue(geneCalled, 'Micro View should be drawn');
@@ -146,23 +145,34 @@
             // Mock Context
             let saveCount = 0;
             let restoreCount = 0;
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            const originalSave = ctx.save;
-            const originalRestore = ctx.restore;
-
-            ctx.save = () => { saveCount++; originalSave.call(ctx); };
-            ctx.restore = () => { restoreCount++; originalRestore.call(ctx); };
-
+            const ctx = {
+                save: () => { saveCount++; },
+                restore: () => { restoreCount++; },
+                translate: () => { },
+                rotate: () => { },
+                scale: () => { },
+                fillRect: () => { },
+                strokeRect: () => { },
+                fillText: () => { },
+                clip: () => { },
+                beginPath: () => { },
+                rect: () => { },
+                clearRect: () => { },
+                createLinearGradient: () => ({ addColorStop: () => { } }),
+                moveTo: () => { },
+                lineTo: () => { },
+                stroke: () => { },
+                fill: () => { },
+                set fillStyle(val) { },
+                set strokeStyle(val) { },
+                set lineWidth(val) { },
+                set font(val) { },
+                set textAlign(val) { },
+                set textBaseline(val) { }
+            };
             ui.ctx = ctx;
             // Call drawMicroView with null activeGene
-<<<<<<< HEAD
             ui.drawMicroView(ctx, 0, 0, 100, 100, null, {}, 'red');
-=======
-            ui.drawMicroView(ctx, 0, 0, 100, 100, null, 0, {}, () => {}, {});
-
->>>>>>> origin/fix-js-test-reporting-and-masking-8340965416753265766
             // Check balance
             assert.equal(saveCount, restoreCount, `Context save/restore mismatch: ${saveCount} saves, ${restoreCount} restores`);
         });

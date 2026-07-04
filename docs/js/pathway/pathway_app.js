@@ -10,7 +10,7 @@
         container: null,
         baseUrl: '',
         init(targetSelector, baseUrl = '', selector = null) {
-            // handle both (selector) and (container, selector) call styles if needed, 
+            // handle both (selector) and (container, selector) call styles if needed,
             // but here init takes targetSelector string mostly.
             // Let's standardize: init(container, selector) or just init(selector) if container logic is inside.
             // The current code takes targetSelector string.

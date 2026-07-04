@@ -2,22 +2,51 @@
  * @file neuro_lighting.ts
  * @description Enhanced PBR-lite Lighting System for Realistic 3D Rendering in Neuro simulation.
  */
+
 /// <reference path="../types/globals.d.ts" />
+
+interface ColorRGB {
+    r: number;
+    g: number;
+    b: number;
+}
+
+interface ColorRGBA extends ColorRGB {
+    a: number;
+}
+
+interface Light {
+    type: 'ambient' | 'directional';
+    intensity: number;
+    color: ColorRGB;
+    direction?: Greenhouse.Point3D;
+}
+
+interface Material {
+    baseColor?: ColorRGB;
+    metallic?: number;
+    roughness?: number;
+    alpha?: number;
+}
+
 export const GreenhouseNeuroLighting = {
-    config: null,
-    lights: [],
+    config: null as any,
+    lights: [] as Light[],
     exposure: 1.0,
-    init(config) {
-        this.config = config || window.GreenhouseNeuroConfig;
+
+    init(config?: any) {
+        this.config = config || (window as any).GreenhouseNeuroConfig;
         this.setupLights();
         console.log('NeuroLighting: PBR-lite System initialized');
     },
+
     setupLights() {
         this.lights = [];
-        if (!this.config)
-            return;
+        if (!this.config) return;
+
         const presetKey = this.config.get('lighting.preset') || 'clinical';
         const preset = this.config.get(`lighting.presets.${presetKey}`);
+
         if (preset) {
             // Ambient
             this.lights.push({
@@ -25,6 +54,7 @@ export const GreenhouseNeuroLighting = {
                 intensity: preset.ambient.intensity,
                 color: preset.ambient.color
             });
+
             // Directional
             const dir = preset.directional.direction;
             const len = Math.sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
@@ -35,8 +65,7 @@ export const GreenhouseNeuroLighting = {
                 direction: { x: dir.x / len, y: dir.y / len, z: dir.z / len }
             });
             this.exposure = preset.exposure || 1.0;
-        }
-        else {
+        } else {
             // Fallback to legacy
             this.lights.push({
                 type: 'ambient',
@@ -54,43 +83,53 @@ export const GreenhouseNeuroLighting = {
             this.exposure = 1.0;
         }
     },
-    calculateLighting(normal, position, camera, material) {
+
+    calculateLighting(normal: Greenhouse.Point3D, position: Greenhouse.Point3D, camera: Greenhouse.Camera, material: Material): ColorRGBA {
         let totalR = 0, totalG = 0, totalB = 0;
+
         const viewX = camera.x - position.x;
         const viewY = camera.y - position.y;
         const viewZ = camera.z - position.z;
         const viewLen = Math.sqrt(viewX * viewX + viewY * viewY + viewZ * viewZ);
         const viewDir = { x: viewX / viewLen, y: viewY / viewLen, z: viewZ / viewLen };
+
         const baseColor = this._toLinear(material.baseColor || { r: 255, g: 255, b: 255 });
         const metallic = material.metallic || 0;
         const roughness = material.roughness || 0.5;
+
         this.lights.forEach(light => {
             const lightColor = this._toLinear(light.color);
+
             if (light.type === 'ambient') {
                 totalR += baseColor.r * lightColor.r * light.intensity;
                 totalG += baseColor.g * lightColor.g * light.intensity;
                 totalB += baseColor.b * lightColor.b * light.intensity;
-            }
-            else if (light.type === 'directional' && light.direction) {
+            } else if (light.type === 'directional' && light.direction) {
                 // Diffuse (Lambert)
                 const NdotL = Math.max(0, normal.x * light.direction.x + normal.y * light.direction.y + normal.z * light.direction.z);
+
                 // Specular (Blinn-Phong approximation for PBR)
                 const halfX = light.direction.x + viewDir.x;
                 const halfY = light.direction.y + viewDir.y;
                 const halfZ = light.direction.z + viewDir.z;
                 const halfLen = Math.sqrt(halfX * halfX + halfY * halfY + halfZ * halfZ);
                 const halfDir = { x: halfX / halfLen, y: halfY / halfLen, z: halfZ / halfLen };
+
                 const NdotH = Math.max(0, normal.x * halfDir.x + normal.y * halfDir.y + normal.z * halfDir.z);
                 const specPower = Math.pow(NdotH, (1.0 - roughness) * 128);
                 const specular = specPower * (1.0 - roughness) * (0.04 + 0.96 * metallic);
+
                 // Fresnel (Schlick approximation)
                 const VdotH = Math.max(0, viewDir.x * halfDir.x + viewDir.y * halfDir.y + viewDir.z * halfDir.z);
                 const fresnel = 0.04 + 0.96 * Math.pow(1.0 - VdotH, 5);
+
                 const diffuseContrib = NdotL * (1.0 - fresnel) * (1.0 - metallic);
                 const specContrib = fresnel * specular;
+
                 totalR += (baseColor.r * diffuseContrib + specContrib) * lightColor.r * light.intensity;
                 totalG += (baseColor.g * diffuseContrib + specContrib) * lightColor.g * light.intensity;
                 totalB += (baseColor.b * diffuseContrib + specContrib) * lightColor.b * light.intensity;
+
                 // Subsurface Scattering Approximation
                 if (this.config.get('materials.brain.subsurfaceScattering')) {
                     const sss = Math.pow(Math.max(0, -(normal.x * light.direction.x + normal.y * light.direction.y + normal.z * light.direction.z)), 2.0);
@@ -101,11 +140,11 @@ export const GreenhouseNeuroLighting = {
                 }
             }
         });
+
         // Exposure & Gamma Correction
-        totalR *= this.exposure;
-        totalG *= this.exposure;
-        totalB *= this.exposure;
+        totalR *= this.exposure; totalG *= this.exposure; totalB *= this.exposure;
         const final = this._toSRGB({ r: totalR, g: totalG, b: totalB });
+
         return {
             r: Math.min(255, final.r * 255),
             g: Math.min(255, final.g * 255),
@@ -113,22 +152,26 @@ export const GreenhouseNeuroLighting = {
             a: material.alpha || 1
         };
     },
-    _toLinear(c) {
+
+    _toLinear(c: ColorRGB): ColorRGB {
         return {
             r: Math.pow(c.r / 255, 2.2),
             g: Math.pow(c.g / 255, 2.2),
             b: Math.pow(c.b / 255, 2.2)
         };
     },
-    _toSRGB(c) {
+
+    _toSRGB(c: ColorRGB): ColorRGB {
         return {
             r: Math.pow(c.r, 1 / 2.2),
             g: Math.pow(c.g, 1 / 2.2),
             b: Math.pow(c.b, 1 / 2.2)
         };
     },
-    toRGBA(color) {
+
+    toRGBA(color: ColorRGBA): string {
         return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${color.a})`;
     }
 };
-window.GreenhouseNeuroLighting = GreenhouseNeuroLighting;
+
+(window as any).GreenhouseNeuroLighting = GreenhouseNeuroLighting;

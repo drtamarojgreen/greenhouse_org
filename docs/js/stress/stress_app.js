@@ -303,7 +303,7 @@
                 const hit = this.hitTestCheckboxes(mx, my);
                 if (hit) {
                     // We need to pass the temporary computed x/y to the drawer if needed,
-                    // but the controls just need ID. 
+                    // but the controls just need ID.
                     // Let's pass a proxy object with ID
                     this.ui.hoveredElement = Object.assign(Object.assign({}, hit), { type: 'checkbox' });
                 }
