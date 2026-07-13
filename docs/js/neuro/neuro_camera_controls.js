@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_camera_controls.ts
  * @description Enhanced Camera Controls with Pan, Zoom, and Rotate for Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroCameraControls = {
+const GreenhouseNeuroCameraControls = {
     camera: null,
     canvas: null,
     config: null,
@@ -338,3 +340,5 @@ export const GreenhouseNeuroCameraControls = {
     }
 };
 window.GreenhouseNeuroCameraControls = GreenhouseNeuroCameraControls;
+
+})();

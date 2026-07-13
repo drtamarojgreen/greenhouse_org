@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_ui_3d_brain.ts
  * @description Enhanced 3D Brain Rendering Engine with Post-processing and advanced Shading for Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroBrain = {
+const GreenhouseNeuroBrain = {
     _vertexPool: [],
     _facePool: [],
     _precomputedBoundaries: null,
@@ -147,3 +149,5 @@ export const GreenhouseNeuroBrain = {
     }
 };
 window.GreenhouseNeuroBrain = GreenhouseNeuroBrain;
+
+})();

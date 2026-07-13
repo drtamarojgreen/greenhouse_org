@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_ui_3d_stats.ts
  * @description Stats and Event Logging UI for Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroStats = {
+const GreenhouseNeuroStats = {
     eventLog: [],
     logEvent(messageKey) {
         const util = window.GreenhouseModelsUtil;
@@ -114,3 +116,5 @@ export const GreenhouseNeuroStats = {
     }
 };
 window.GreenhouseNeuroStats = GreenhouseNeuroStats;
+
+})();

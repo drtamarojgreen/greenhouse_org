@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_ui_3d_neuron.ts
  * @description Anatomically correct 3D Neuron rendering for Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroNeuron = {
+const GreenhouseNeuroNeuron = {
     neuronMeshes: {},
     drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq = 0.005, isHovered = false) {
         var _a, _b, _c;
@@ -245,3 +247,5 @@ export const GreenhouseNeuroNeuron = {
     }
 };
 window.GreenhouseNeuroNeuron = GreenhouseNeuroNeuron;
+
+})();

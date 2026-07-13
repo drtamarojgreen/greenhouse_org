@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_ui_3d_geometry.ts
  * @description 3D Geometry generation utilities for Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroGeometry = {
+const GreenhouseNeuroGeometry = {
     // Cache for expensive geometries
     cache: new Map(),
     generateSphere(radius, segments) {
@@ -617,3 +619,5 @@ export const GreenhouseNeuroGeometry = {
     }
 };
 window.GreenhouseNeuroGeometry = GreenhouseNeuroGeometry;
+
+})();

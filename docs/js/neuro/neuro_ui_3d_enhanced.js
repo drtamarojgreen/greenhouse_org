@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_ui_3d_enhanced.ts
  * @description Enhanced 3D Visualization for Neuro GA with Modular Configuration for Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroUI3D = {
+const GreenhouseNeuroUI3D = {
     canvas: null,
     ctx: null,
     camera: null,
@@ -1203,3 +1205,5 @@ export const GreenhouseNeuroUI3D = {
     },
 };
 window.GreenhouseNeuroUI3D = GreenhouseNeuroUI3D;
+
+})();

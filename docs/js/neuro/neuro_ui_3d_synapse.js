@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_ui_3d_synapse.ts
  * @description Molecular Synapse Visualization for Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroSynapse = {
+const GreenhouseNeuroSynapse = {
     synapseCameraController: null,
     _vertexPool: [],
     _facePool: [],
@@ -691,3 +693,5 @@ export const GreenhouseNeuroSynapse = {
     }
 };
 window.GreenhouseNeuroSynapse = GreenhouseNeuroSynapse;
+
+})();

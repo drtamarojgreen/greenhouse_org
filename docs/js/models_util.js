@@ -1,3 +1,5 @@
+(function () {
+'use strict';
 /**
  * @file models_util.ts
  * @description Lightweight shared simulation engine and utilities for Greenhouse models.
@@ -16,7 +18,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
  * @class GreenhouseComponent
  * Base class for all visual components in the system.
  */
-export class GreenhouseComponent {
+class GreenhouseComponent {
     constructor(name, layer = 10) {
         this.active = true;
         this.initialized = false;
@@ -44,7 +46,7 @@ export class GreenhouseComponent {
  * @class GreenhouseSystem
  * Central rendering engine.
  */
-export class GreenhouseSystem {
+class GreenhouseSystem {
     constructor(canvas, config = {}) {
         this.components = [];
         this.lastFrameTime = 0;
@@ -93,7 +95,7 @@ export class GreenhouseSystem {
  * @class GreenhouseAssetManager
  * Manages assets and sprite atlases.
  */
-export class GreenhouseAssetManager {
+class GreenhouseAssetManager {
     constructor() {
         this.assets = new Map();
         this.loading = false;
@@ -121,7 +123,7 @@ export class GreenhouseAssetManager {
  * @class SimulationEngine
  * Lightweight shared simulation engine for Greenhouse models.
  */
-export class SimulationEngine {
+class SimulationEngine {
     constructor(config = {}) {
         this.lastTick = null;
         this.accumulatedTime = 0;
@@ -174,7 +176,7 @@ export class SimulationEngine {
  * @class DiurnalClock
  * Simulates 24-hour biological cycle.
  */
-export class DiurnalClock {
+class DiurnalClock {
     constructor() {
         this.timeInHours = 8.0;
         this.dayCount = 0;
@@ -447,3 +449,5 @@ window.GreenhouseBioStatus = {
         window.dispatchEvent(new CustomEvent('greenhouseBioUpdate', { detail: { model, stats } }));
     }
 };
+
+})();

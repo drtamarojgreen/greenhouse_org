@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_app.ts
  * @description Main Application Entry Point for Neuro Simulation in Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroApp = {
+const GreenhouseNeuroApp = {
     ga: null,
     ui3d: null,
     isRunning: false,
@@ -783,3 +785,5 @@ export const GreenhouseNeuroApp = {
     }
 };
 window.GreenhouseNeuroApp = GreenhouseNeuroApp;
+
+})();

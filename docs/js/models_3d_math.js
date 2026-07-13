@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file models_3d_math.ts
  * @description 3D Mathematics Foundation for Models Canvas.
  */
 /// <reference path="types/globals.d.ts" />
-export const GreenhouseModels3DMath = {
+const GreenhouseModels3DMath = {
     /**
      * Projects a 3D point to 2D screen coordinates using perspective projection
      */
@@ -183,3 +185,5 @@ export const GreenhouseModels3DMath = {
     }
 };
 window.GreenhouseModels3DMath = GreenhouseModels3DMath;
+
+})();

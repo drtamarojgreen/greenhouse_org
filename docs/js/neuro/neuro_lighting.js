@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_lighting.ts
  * @description Enhanced PBR-lite Lighting System for Realistic 3D Rendering in Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export const GreenhouseNeuroLighting = {
+const GreenhouseNeuroLighting = {
     config: null,
     lights: [],
     exposure: 1.0,
@@ -132,3 +134,5 @@ export const GreenhouseNeuroLighting = {
     }
 };
 window.GreenhouseNeuroLighting = GreenhouseNeuroLighting;
+
+})();

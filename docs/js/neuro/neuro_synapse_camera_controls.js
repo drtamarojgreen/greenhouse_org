@@ -1,9 +1,11 @@
+(function () {
+'use strict';
 /**
  * @file neuro_synapse_camera_controls.ts
  * @description Camera Controls for Synapse View (Zoom, Pan, Rotate) in Neuro simulation.
  */
 /// <reference path="../types/globals.d.ts" />
-export class NeuroSynapseCameraController {
+class NeuroSynapseCameraController {
     constructor(initialCamera, config) {
         this.isDragging = false;
         this.isPanning = false;
@@ -213,3 +215,5 @@ export class NeuroSynapseCameraController {
     }
 }
 window.NeuroSynapseCameraController = NeuroSynapseCameraController;
+
+})();
