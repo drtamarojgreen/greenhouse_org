@@ -1,0 +1,284 @@
+// [TypeScript Migration] Source migrated from serotonin_signaling.js — behavior preserved.
+/**
+ * @file serotonin_signaling.js
+ * @description Intracellular signaling and electrophysiology for the Serotonin simulation.
+ */
+
+(function () {
+    'use strict';
+
+    const G = window.GreenhouseSerotonin || {};
+    (window as any).GreenhouseSerotonin = G;
+
+    G.Signaling = {
+        cAMP: 0,
+        calcium: 0,
+        ip3: 0,
+        dag: 0,
+        pkc: 0,
+        rhoA: 0,
+        akt: 0,
+        creb: 0,
+        sahp: 0, // Slow Afterhyperpolarization
+        skBK: 0, // Calcium-activated Potassium Channels
+        pde: 1.0, // Phosphodiesterase activity
+        adaptation: 0,
+        inputResistance: 100, // MOhms
+        eiBalance: 1.0, // Excitatory/Inhibitory Balance
+        srcKinase: 0, // Src kinase recruitment
+        gabaControl: 1.0, // GABAergic interneuron control factor
+        synapticStrength: 1.0, // CREB-mediated (Category 3, #29)
+        membranePotential: -70, // mV
+        pulses: [],
+
+        updateSignaling() {
+            let totalGi = 0;
+            let totalGs = 0;
+            let totalGq = 0;
+            let totalIonotropic = 0;
+            let girkActivation = 0;
+            let ht2aActive = false;
+            let ht4Active = false;
+
+            // Intrinsic Motion: Local Rotation
+            this.localRot = (this.localRot || 0) + 0.03;
+
+            if (G.state.receptors) {
+                G.state.receptors.forEach(r => {
+                    const efficiency = r.couplingEfficiency || 1.0;
+                    if (r.state === 'Active') {
+                        if (r.coupling === 'Gi/o') {
+                            totalGi += efficiency;
+                            // Gβγ-mediated GIRK activation
+                            girkActivation += efficiency * 0.8;
+                        }
+                        if (r.coupling === 'Gs') {
+                            totalGs += efficiency;
+                            if (r.type === '5-HT4') ht4Active = true;
+                        }
+                        if (r.coupling === 'Gq/11') {
+                            totalGq += efficiency * (r.pathwayBias || 1.0);
+                            if (r.type === '5-HT2A') ht2aActive = true;
+                        }
+                        if (r.coupling === 'Ionotropic') totalIonotropic += efficiency;
+                    }
+                });
+            }
+
+            // cAMP dynamics (Category 3, #21: Gαi specificity)
+            // Model specific Gi inhibitory potency
+            const giPotency = (G.state.receptors && G.state.receptors.find(r => r.inhibitoryPotential)) ? 1.2 : 1.0;
+
+            // PDE regulation (Category 3, #30)
+            // 5-HT signaling can modulate PDE activity (e.g. via PKC or Calcium)
+            this.pde = 1.0 + (this.pkc * 0.05 + this.calcium * 0.02);
+
+            this.cAMP += (totalGs * 0.5) - (totalGi * 0.4 * giPotency) - (this.cAMP * 0.05 * this.pde);
+            this.cAMP = Math.max(0, this.cAMP);
+
+            // Calcium/PLC dynamics
+            this.ip3 += (totalGq * 0.3) - (this.ip3 * 0.1);
+            this.dag += (totalGq * 0.2) - (this.dag * 0.1);
+
+            // Protein Kinase C (PKC) Isoforms (Category 3, #25)
+            this.pkc += (this.dag * 0.5 + this.calcium * 0.1) - (this.pkc * 0.05);
+
+            // RhoA/ROCK Pathway (Category 3, #26)
+            this.rhoA += (totalGq * 0.4) - (this.rhoA * 0.05);
+
+            // AKT/mTOR Pathway (Category 3, #28)
+            this.akt += (this.cAMP * 0.2 + totalGs * 0.3) - (this.akt * 0.03);
+
+            // CREB Transcription factor (Category 3, #29)
+            this.creb += (this.cAMP * 0.1 + this.calcium * 0.1 + this.akt * 0.05) - (this.creb * 0.01);
+
+            // Synaptic Scaling / Long-term changes (Category 5, #48)
+            // Modulated by CREB activity
+            this.synapticStrength = 1.0 + (this.creb * 0.05);
+
+            // Src Kinase Recruitment (Category 3, #27)
+            // Recruited by Beta-arrestins (Category 3, #27)
+            let totalArrestin = 0;
+            if (G.state.receptors) {
+                G.state.receptors.forEach(r => {
+                    if (r.state === 'Active') {
+                        totalArrestin += (r.betaArrestinRecruitment || 1.0);
+                    }
+                });
+            }
+            this.srcKinase += (totalArrestin * 0.1) - (this.srcKinase * 0.05);
+
+            // sAHP Suppression (Category 6, #60)
+            // 5-HT often suppresses sAHP via Gi/o or cAMP, increasing excitability
+            this.sahp += (this.calcium * 0.1) - (totalGi * 0.2 + this.cAMP * 0.1) - (this.sahp * 0.05);
+            this.sahp = Math.max(0, this.sahp);
+
+            // Calcium-activated Potassium Channels (Category 6, #53)
+            // SK and BK channels open in response to Calcium, causing hyperpolarization
+            this.skBK += (this.calcium * 0.2) - (this.skBK * 0.1);
+            this.skBK = Math.max(0, this.skBK);
+
+            // Calcium Oscillations (Stochastic ER release)
+            const erReleaseThreshold = 0.5;
+            if (this.ip3 > erReleaseThreshold && Math.random() < this.ip3 * 0.05) {
+                this.calcium += 2.0; // Oscillatory spike
+                this.triggerPulse(0, 0, 0); // Internal visual pulse
+            }
+            this.calcium += (totalIonotropic * 0.5) - (this.calcium * 0.1);
+            this.calcium = Math.max(0, this.calcium);
+
+            // Co-transmission (Glutamate)
+            // If VGLUT3 is co-releasing glutamate, it adds to ionotropic effect
+            const glutamateEffect = (G.Transport && G.Transport.glutamateCoRelease) ? 2.0 : 0;
+
+            // Electrophysiology
+            // 5-HT1A (Gi/o) opens GIRK via Gβγ -> Hyperpolarization
+            // 5-HT2A (Gq) can close K+ channels -> Depolarization
+            // 5-HT3 (Ionotropic) -> Rapid Depolarization
+            const girkEffect = girkActivation * -2.5;
+            const hcnEffect = (this.cAMP * 0.5); // Ih current modulation
+            const ionotropicEffect = (totalIonotropic + glutamateEffect) * 5;
+
+            // NMDA/AMPA Potentiation (5-HT2A and 5-HT4 mediated)
+            const potentiationFactor = (ht2aActive || ht4Active) ? 1.5 : 1.0;
+
+            // A-type Potassium Current (Kv4.2) modulation
+            // 5-HT often inhibits Kv4.2 to increase dendritic excitability
+            const kv42Inhibition = (totalGq > 0.5) ? 1.2 : 1.0;
+
+            const excitabilityShift = (ionotropicEffect * potentiationFactor * kv42Inhibition);
+
+            // GABAergic Interneuron Control (Category 5, #45)
+            // 5-HT modulates PFC interneurons, usually inhibitory
+            this.gabaControl = 1.0 + (totalGq * 0.2) + (totalGi * 0.3);
+
+            // E/I Balance Visualization (Category 6, #58)
+            const totalE = totalGs + totalGq + totalIonotropic + (G.Transport && G.Transport.glutamateCoRelease ? 1 : 0);
+            const totalI = totalGi * this.gabaControl;
+            this.eiBalance = (totalE + 1) / (totalI + 1);
+
+            // Back-propagating Action Potentials (Category 6, #59)
+            // 5-HT modulation of dendritic spikes
+            const dendriticPropagation = (ht2aActive ? 1.4 : 1.0) * (totalGi > 1 ? 0.7 : 1.0);
+
+            // Membrane Resistance Modulation (Category 6, #57)
+            this.inputResistance = 100 * (1.0 + (girkActivation * -0.2) + (this.cAMP * 0.05));
+            const resistanceFactor = this.inputResistance / 100;
+
+            // Spike Frequency Adaptation (Category 6, #56)
+            // If Vmem is high, adaptation builds up to slow down firing
+            if (this.membranePotential > -50) {
+                this.adaptation += 0.2;
+            } else {
+                this.adaptation *= 0.98;
+            }
+
+            this.membranePotential += (girkEffect + hcnEffect + (excitabilityShift * dendriticPropagation) - (this.adaptation * 0.5 + this.sahp + this.skBK * 2)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
+
+            // Update pulses
+            this.pulses = this.pulses.filter(p => {
+                p.radius += 5;
+                p.life -= 0.02;
+                return p.life > 0;
+            });
+
+            // GIRK Visual Flow (Category 3, #22) - Monochromatic
+            if (girkActivation > 0.5 && G.state.timer % 10 === 0) {
+                this.triggerPulse(200, 0, 150, 'rgba(224, 224, 224,'); // Scientific Gray
+            }
+        },
+
+        triggerPulse(x, y, z, color) {
+            this.pulses.push({ x, y, z, radius: 10, life: 1.0, color: color || 'rgba(224, 224, 224,' });
+        },
+
+        renderSignaling(ctx, project, cam, w, h) {
+            // Render intracellular signaling "glow" based on Calcium/cAMP
+            const glowIntensity = Math.min(0.3, (this.calcium + this.cAMP * 0.1) * 0.05);
+            if (glowIntensity > 0) {
+                const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+                grad.addColorStop(0, `rgba(224, 224, 224, ${glowIntensity})`); // Scientific Gray
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            // Dynamic Signaling Waves (Category 10, #94) - Monochromatic
+            if (this.cAMP > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(208, 208, 208,'); // Warning Gray
+            if (this.calcium > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(224, 224, 224,'); // Scientific Gray
+
+            // Render pulses
+            this.pulses.forEach(p => {
+                const pt = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (pt.scale > 0) {
+                    ctx.strokeStyle = `${p.color} ${p.life})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, p.radius * pt.scale, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+
+            // HUD for signaling levels
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(w - 210, 10, 200, 280);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('INTRACELLULAR SIGNALING', w - 200, 30);
+
+            ctx.font = '11px Arial';
+            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 200, 48);
+            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 200, 61);
+            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 200, 74);
+            ctx.fillText(`PKC: ${this.pkc.toFixed(2)}`, w - 200, 87);
+            ctx.fillText(`RhoA: ${this.rhoA.toFixed(2)}`, w - 200, 100);
+            ctx.fillText(`AKT: ${this.akt.toFixed(2)}`, w - 200, 113);
+            ctx.fillText(`CREB: ${this.creb.toFixed(2)}`, w - 200, 126);
+            ctx.fillText(`SK/BK: ${this.skBK.toFixed(2)}`, w - 200, 139);
+            ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 152);
+            ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 165);
+            ctx.fillText(`PDE: ${this.pde.toFixed(2)}`, w - 200, 178);
+            ctx.fillText(`Src Kinase: ${this.srcKinase.toFixed(2)}`, w - 200, 191);
+            ctx.fillText(`GABA Ctrl: ${this.gabaControl.toFixed(2)}`, w - 200, 204);
+            ctx.fillText(`E/I Balance: ${this.eiBalance.toFixed(2)}`, w - 200, 217);
+            ctx.fillText(`Synaptic Str: ${this.synapticStrength.toFixed(2)}`, w - 200, 230);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 243);
+
+            if (G.Transport && G.Transport.glutamateCoRelease) {
+                ctx.fillStyle = '#E0E0E0';
+                ctx.fillText('Glutamate Co-transmission: ON', w - 200, 243);
+            }
+
+            // Draw membrane potential bar
+            ctx.fillStyle = '#444';
+            ctx.fillRect(w - 200, 265, 180, 8);
+            const vWidth = ((this.membranePotential + 90) / 60) * 180;
+            ctx.fillStyle = this.membranePotential > -60 ? '#E0E0E0' : '#D0D0D0';
+            ctx.fillRect(w - 200, 265, Math.max(0, Math.min(180, vWidth)), 8);
+
+            // Draw Pathway Bias indicator for 5-HT2A if active
+            const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;
+            if (ht2a && ht2a.state === 'Active') {
+                ctx.fillStyle = ht2a.biasedLigand ? '#A0AEC0' : '#E0E0E0';
+                ctx.fillText(ht2a.biasedLigand ? 'Biased Agonism Active' : 'Balanced Agonism', w - 200, 150);
+            }
+        }
+    };
+
+
+    const oldRender = G.render;
+    G.render = function() {
+        if (oldRender) oldRender.call(G);
+
+        const ctx = G.ctx;
+        const w = G.width;
+        const h = G.height;
+        const cam = G.state.camera;
+        if (!window.GreenhouseModels3DMath) return;
+        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+
+        G.Signaling.renderSignaling(ctx, project, cam, w, h);
+    };
+
+})();
