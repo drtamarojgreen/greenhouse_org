@@ -93,3 +93,7 @@
   - **Cognition Model**: ts_files = 12, js_files = 12, ts_loc = 3297, js_loc = 3508, pct_complete = 100.
   - **Emotion Model**: ts_files = 8, js_files = 8, ts_loc = 2291, js_loc = 2106, pct_complete = 100.
 - **Unsynced Files**: unsynced_ts_files = 0.
+
+## TypeScript Migration Increments (2026-07-16)
+
+- **Sip 07: models_ui_3d TypeScript Migration**: Converted `docs/js/models_ui_3d.js` to TS as `docs/js/models_ui_3d.ts`. Compiled to ES6 side-by-side using `npx -p typescript tsc`. ts_files_added = 1, compiled_js_bytes = 41291, compilation_exit_code = 0, regression_test_passed = 324, regression_test_failed = 59.
