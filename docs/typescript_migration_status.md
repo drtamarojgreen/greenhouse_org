@@ -1,11 +1,11 @@
 # TypeScript Migration Status Report — Greenhouse Mental Health IT
 **Date of Audit:** 2026-07-16
-**Compiled Migration Ratio:** ~73.3% (135 TS files / 184 JS files)
+**Compiled Migration Ratio:** ~73.9% (136 TS files / 184 JS files)
 
 ---
 
 ## 1. Executive Summary
-This document provides a comprehensive, complete audit of the entire `docs/js/` directory structure, including all core subdirectories that contain biological models and simulation systems. In accordance with the Greenhouse **TypeScript Migration Plan** (`docs/ts_migration_plan.md`), all primary biological models have been successfully migrated to TypeScript (`.ts`).
+This document provides a comprehensive, complete audit of the entire `docs/js/` directory structure, including all core subdirectories that contain biological models and simulation systems. In accordance with the Greenhouse **TypeScript Migration Plan** (`docs/ts_migration_plan.md`), all primary biological models and foundation utility managers have been successfully migrated to TypeScript (`.ts`).
 
 Specifically, **100% of the core simulation logic** is written and maintained as TypeScript source files. The remaining JavaScript (`.js`) files exist either as compiled ES6 artifacts (required for browser execution and Velo runtime loading) or as legacy utility loaders, Wix integration glue, and DOM-heavy UI Managers where static typing is not applicable.
 
@@ -14,10 +14,10 @@ Specifically, **100% of the core simulation logic** is written and maintained as
 ## 2. Global Migration Metrics & Directory Breakdown
 
 Across the entire `docs/js` directory hierarchy (including all subdirectories):
-* **Total TypeScript Source Files:** 135 files (134 implementation `.ts` files + 1 global `.d.ts` file)
+* **Total TypeScript Source Files:** 136 files (135 implementation `.ts` files + 1 global `.d.ts` file)
 * **Total JavaScript Files:** 184 files
-  * **Compiled JS Artifacts (Synced from TS):** 134 files
-  * **Native JS Source Files (No TS Source):** 50 files
+  * **Compiled JS Artifacts (Synced from TS):** 135 files
+  * **Native JS Source Files (No TS Source):** 49 files
 * **Biological Simulation Model Coverage:** **100% Type-Safe**. Every single mathematical, chemical, and biological simulation file is written in TypeScript.
 
 ---
@@ -69,7 +69,6 @@ These scripts serve as bootstrap loaders or baseline utility frameworks. They ar
 |---|---|---|
 | `docs/js/greenhouse.js` | Main bootstrap loader and dynamic entry controller. | **Bootstrap Minimal Overhead:** Must load with zero compilation overhead or TypeScript helper dependencies to maximize PageSpeed scores. |
 | `docs/js/GreenhouseUtils.js` | Core framework utility wrapper and legacy API bridge. | **Legacy Bridge:** Acts as a JS wrapper/bridge for other dynamic components and is too volatile/large to type without causing wide-scale cascade compilation side-effects. |
-| `docs/js/GreenhouseDependencyManager.js` | Script loader and dynamic dependency manager. | **Dynamic Dynamic-Script Loading:** Performs runtime script tag injection. Static typing provides zero benefit for runtime DOM injection logic. |
 | `docs/js/test_framework.js` | Internal test-assertion framework used by Node.js evaluator. | **Test Isolation:** Must execute in direct `eval()` contexts without compiled transpilation wrapper noise. |
 | `docs/js/assertion_library.js` | Unit test assertion module. | **Test Runtime Utility:** Kept as JS to match standard evaluation contexts. |
 | `docs/js/performance_profiler.js` | Performance and telemetry logger. | **Profiling Isolation:** Standard lightweight profiling callbacks wrapping native browser Performance APIs. |
