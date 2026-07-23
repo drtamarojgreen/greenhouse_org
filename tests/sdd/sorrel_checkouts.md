@@ -77,3 +77,25 @@
 - **Phase 1: Foundation - Type Definitions**: Created `docs/js/types/globals.d.ts`.
 - **Phase 1: Foundation - models_util.ts**: Converted to TS, compiled to ES6. bytes_written = 12450.
 - **Phase 1: Foundation - models_3d_math.ts**: Converted to TS, compiled to ES6. bytes_written = 6820.
+
+## TypeScript Migration Status Evaluation (2026-07-15)
+
+- **Overall Migration Metrics**: ts_file_count = 134, js_file_count = 184, ts_loc = 40906, js_loc = 61576, migration_ratio = 0.7283.
+- **Model specific status**:
+  - **Genetic Model**: ts_files = 14, js_files = 14, ts_loc = 5120, js_loc = 4627, pct_complete = 100.
+  - **Neuro Model**: ts_files = 16, js_files = 16, ts_loc = 6936, js_loc = 6300, pct_complete = 100.
+  - **Pathway Model**: ts_files = 9, js_files = 9, ts_loc = 2403, js_loc = 2240, pct_complete = 100.
+  - **Synapse Model**: ts_files = 12, js_files = 13, ts_loc = 3833, js_loc = 3929, pct_complete = 92.31.
+  - **Dopamine Model**: ts_files = 14, js_files = 14, ts_loc = 4329, js_loc = 4131, pct_complete = 100.
+  - **Serotonin Model**: ts_files = 9, js_files = 9, ts_loc = 2791, js_loc = 2556, pct_complete = 100.
+  - **Stress Model**: ts_files = 10, js_files = 10, ts_loc = 3087, js_loc = 2880, pct_complete = 100.
+  - **Inflammation Model**: ts_files = 14, js_files = 14, ts_loc = 4106, js_loc = 3992, pct_complete = 100.
+  - **Cognition Model**: ts_files = 12, js_files = 12, ts_loc = 3297, js_loc = 3508, pct_complete = 100.
+  - **Emotion Model**: ts_files = 8, js_files = 8, ts_loc = 2291, js_loc = 2106, pct_complete = 100.
+- **Unsynced Files**: unsynced_ts_files = 0.
+
+## TypeScript Migration Increments (2026-07-16)
+
+- **Sip 07: models_ui_3d TypeScript Migration**: Converted `docs/js/models_ui_3d.js` to TS as `docs/js/models_ui_3d.ts`. Compiled to ES6 side-by-side using `npx -p typescript tsc`. ts_files_added = 1, compiled_js_bytes = 41291, compilation_exit_code = 0, regression_test_passed = 324, regression_test_failed = 59.
+- **Sip 08: TypeScript Remaining JavaScript Audit**: Cataloged all 115 subdirectory model files (across 12 subdirectories) and all 50 remaining root JavaScript files in `docs/js/`. Fully assessed and documented reasons for maintaining them in JS inside `docs/typescript_migration_status.md`. subdirectories_audited = 12, subdirectory_files_audited = 115, root_files_documented = 50, audit_doc_bytes = 14320, regression_test_passed = 324, regression_test_failed = 59.
+- **Sip 09: GreenhouseDependencyManager TypeScript Migration**: Converted `docs/js/GreenhouseDependencyManager.js` to TS as `docs/js/GreenhouseDependencyManager.ts`. Compiled to ES6 side-by-side using `npx -p typescript tsc`. ts_files_added = 1, compiled_js_bytes = 16345, compilation_exit_code = 0, regression_test_passed = 324, regression_test_failed = 59.
