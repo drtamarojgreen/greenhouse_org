@@ -1,0 +1,12 @@
+{
+  "name": "greenhouse-site",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test:server": "node --test \"tests/server/*.test.js\""
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}

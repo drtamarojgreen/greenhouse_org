@@ -395,7 +395,7 @@
             button.disabled = true;
 
             try {
-                const baseUrl = window.GreenhouseUtils.config.githubPagesBaseUrl || 'https://drtamarojgreen.github.io/greenhouse_org/';
+                const baseUrl = window.GreenhouseUtils.appState.baseUrl || window.GreenhouseUtils.config.githubPagesBaseUrl || 'https://drtamarojgreen.github.io/greenhouse_org/';
                 window._greenhouseModelsAttributes = { baseUrl, targetSelector: '#models-prototype-container' };
 
                 await GreenhouseUtils.loadScript('models_lang.js', baseUrl);

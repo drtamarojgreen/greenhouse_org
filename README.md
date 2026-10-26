@@ -92,6 +92,22 @@ We provide privacy-compliant analytics and built-in practice insights:
 
 ---
 
+## 🌐 Standalone Website
+
+The site can run without Wix using only Node.js and Express:
+
+```bash
+npm install
+npm start            # http://localhost:8080 (override with PORT)
+npm run test:server  # server, API and loader tests
+```
+
+-   `app.js` is the entry point. Pages are rendered server-side by `server/views/` from the JSON in `docs/endpoints/` (replacing the Velo page code in `apps/frontend/`), and each route (`/books`, `/news`, `/schedule`, `/models`, `/genetic`, ...) is linked from the shared navigation.
+-   Client applications in `docs/js/` are loaded by the existing `docs/js/greenhouse.js` loader, which reads `window.GreenhouseSiteConfig` to use local assets and page containers instead of the Wix DOM.
+-   `/_functions/*` provides an in-memory replacement for the Wix Velo backend used by the books, news and scheduler apps. Appointment data is not persisted between restarts.
+
+---
+
 ## 🚀 Getting Started
 
 To contribute to or manage the IT infrastructure, please follow these guidelines:

@@ -386,7 +386,9 @@
 
         async _loadBrainPath() {
             try {
-                const response = await fetch(this._brainSVGUrl);
+                const localBase = window.GreenhouseUtils && window.GreenhouseUtils.appState && window.GreenhouseUtils.appState.baseUrl;
+                const brainSVGUrl = localBase ? `${localBase}images/brain.svg` : this._brainSVGUrl;
+                const response = await fetch(brainSVGUrl);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

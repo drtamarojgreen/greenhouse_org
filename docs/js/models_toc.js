@@ -155,7 +155,10 @@
                 const launchLink = document.createElement('a');
 
                 // Absolute URL Construction for Production
-                const canonicalDomain = 'https://www.greenhousemd.org';
+                const siteConfig = window.GreenhouseSiteConfig;
+                const canonicalDomain = (siteConfig && typeof siteConfig.siteOrigin === 'string')
+                    ? siteConfig.siteOrigin
+                    : 'https://www.greenhousemd.org';
                 launchLink.href = canonicalDomain + finalPath;
 
                 const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;

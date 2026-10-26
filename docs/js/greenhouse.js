@@ -175,6 +175,28 @@
     };
 
     /**
+     * @description Optional overrides supplied by a host page that is not the Wix site (for example the
+     * standalone Node/Express site served by app.js). When present, assets are loaded from the provided
+     * base URL and applications are mounted into the provided selectors instead of the Wix DOM structure.
+     */
+    const siteConfig = window.GreenhouseSiteConfig;
+    if (siteConfig && typeof siteConfig === 'object') {
+        if (siteConfig.baseUrl) {
+            config.githubPagesBaseUrl = siteConfig.baseUrl.endsWith('/') ? siteConfig.baseUrl : `${siteConfig.baseUrl}/`;
+        }
+        if (siteConfig.selectors) {
+            Object.assign(config.selectors, siteConfig.selectors);
+            Object.assign(config.fallbackSelectors, siteConfig.fallbackSelectors || siteConfig.selectors);
+        }
+        if (siteConfig.elementWaitTimeout) {
+            config.elementWaitTimeout = siteConfig.elementWaitTimeout;
+        }
+        if (GreenhouseUtils.appState && !GreenhouseUtils.appState.baseUrl) {
+            GreenhouseUtils.appState.baseUrl = config.githubPagesBaseUrl;
+        }
+    }
+
+    /**
      * @function loadApplication
      * @description Generic function to load an application.
      * @param {string} appName - The name of the application (e.g., 'scheduler', 'books').
@@ -485,7 +507,8 @@
             });
         }
 
-        const path = window.location.pathname;
+        const pathname = window.location.pathname || '/';
+        const path = pathname.endsWith('/') ? pathname : `${pathname}/`;
         // Check if the current page is one of the application pages.
         if (path.includes(config.schedulePagePath)) await loadSchedulerApplication();
         else if (path.includes(config.booksPagePath)) await loadBooksApplication();
