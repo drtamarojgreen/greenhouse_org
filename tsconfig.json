@@ -15,7 +15,7 @@
     "ignoreDeprecations": "6.0"
   },
   "include": [
-    "docs/js/**/*.ts",
+    "js/**/*.ts",
     "tests/unit/**/*.ts"
   ],
   "exclude": [
