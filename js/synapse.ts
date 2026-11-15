@@ -12,7 +12,7 @@
     // Function to wait for GreenhouseUtils to be available on the window object.
     const loadDependencies = async () => {
         console.log('Synapse App: loadDependencies started.');
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             let attempts = 0;
             const maxAttempts = 240; // 12 seconds timeout
             const interval = setInterval(() => {

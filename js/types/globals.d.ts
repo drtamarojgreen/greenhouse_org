@@ -24,6 +24,11 @@ declare interface Window {
     renderingComplete: boolean;
     _greenhouseModelsAttributes: any;
     _greenhouseScriptAttributes: any;
+    _greenhouseSynapseAttributes: {
+        baseUrl?: string | null;
+        targetSelector?: string | null;
+    };
+    GreenhouseSynapseApp: any;
 
     // Models - Genetic
     GreenhouseGeneticCameraController: any;
