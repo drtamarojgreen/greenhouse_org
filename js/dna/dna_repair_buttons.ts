@@ -81,7 +81,7 @@
             slider.style.width = '80px';
             slider.style.cursor = 'pointer';
             slider.oninput = (e) => {
-                this.state.radiationLevel = parseInt(e.target.value);
+                this.state.radiationLevel = parseInt((e.target as HTMLInputElement).value);
             };
 
             sliderContainer.appendChild(label);

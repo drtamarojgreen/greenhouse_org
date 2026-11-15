@@ -450,7 +450,7 @@
                 if (!v) return;
                 if (v.region) return; // Keep existing regional data from realistic generator
                 v.region = null;
-                for (const [name, data] of Object.entries(brainShell.regions || {})) {
+                for (const [name, data] of Object.entries((brainShell.regions || {}) as Record<string, any>)) {
                     if (data.vertices && data.vertices.includes(i)) { v.region = name; break; }
                 }
             });

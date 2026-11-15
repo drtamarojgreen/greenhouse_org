@@ -14,6 +14,7 @@
      * @description Simulates secondary structure formation (hairpins/loops).
      */
     class RNAFoldingEngine {
+        [key: string]: any;
         constructor() {
             this.hairpins = [];
             this.foldingStrength = 0;
@@ -65,6 +66,7 @@
      * @description Manages simulated pH and Temperature effects.
      */
     class RNAEnvironmentManager {
+        [key: string]: any;
         constructor() {
             this.ph = 7.4;
             this.temperature = 37.0; // Celsius

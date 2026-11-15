@@ -1,6 +1,4 @@
-(function () {
-    'use strict';
-    const GreenhouseTranslations = {
+const GreenhouseTranslations = {
         en: {
             "cog_ui_on": "On",
             "cog_ui_off": "Off",
@@ -4932,5 +4930,5 @@
             "view_mode_legend_text": "MODOS DE VISTA: 1:MACRO | 2:MICRO | 3:MOLECULAR | 4:PATHWAY | H:L-HEMI | R:EXPORTAR"
         }
     };
-    window.GreenhouseTranslations = GreenhouseTranslations;
-})();
+
+export { GreenhouseTranslations };

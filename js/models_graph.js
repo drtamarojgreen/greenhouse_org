@@ -1,6 +1,3 @@
-(function () {
-'use strict';
-
 /// <reference path="types/globals.d.ts" />
 const GreenhouseModelsGraph = {
     data: { nodes: [], edges: [] },
@@ -104,6 +101,5 @@ const GreenhouseModelsGraph = {
         return this.data.nodes.filter(n => n.group === groupId);
     }
 };
-window.GreenhouseModelsGraph = GreenhouseModelsGraph;
 
-})();
+export { GreenhouseModelsGraph };

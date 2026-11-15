@@ -1,7 +1,9 @@
-(function () {
-    'use strict';
+import { GreenhouseModelsUIEnvironmentHovers } from './models_ui_environment_hovers.js';
+import { GreenhouseDataAdapter } from './data_adapter.js';
+import { GreenhouseEnvironmentConfig } from './environment_config.js';
+import { GreenhouseModelsUI } from './models_ui.js';
 
-    const GreenhouseModelsUIEnvironmentTherapy = {
+const GreenhouseModelsUIEnvironmentTherapy = {
         state: null,
         util: null,
         regions: {},
@@ -10,14 +12,14 @@
             this.state = state;
             this.util = util;
 
-            if (window.GreenhouseEnvironmentConfig && window.GreenhouseEnvironmentConfig.interactiveElements) {
-                const config = window.GreenhouseEnvironmentConfig.interactiveElements.therapy;
+            if (GreenhouseEnvironmentConfig && GreenhouseEnvironmentConfig.interactiveElements) {
+                const config = GreenhouseEnvironmentConfig.interactiveElements.therapy;
                 if (config) {
                     let description = this.util.t(config.description); // Translate the base description first
 
                     // Data Binding
-                    if (config.dataSource && window.GreenhouseDataAdapter) {
-                        const data = window.GreenhouseDataAdapter.getValue(config.dataSource);
+                    if (config.dataSource && GreenhouseDataAdapter) {
+                        const data = GreenhouseDataAdapter.getValue(config.dataSource);
                         if (data && Array.isArray(data) && data.length > 0) {
                             // Format the array into a readable list
                             const items = data.map(t => `${t.type} (${t.date})`).join(', ');
@@ -105,7 +107,7 @@
             ctx.stroke();
 
             // Label
-            const darkMode = window.GreenhouseModelsUI && window.GreenhouseModelsUI.state && window.GreenhouseModelsUI.state.darkMode;
+            const darkMode = GreenhouseModelsUI && GreenhouseModelsUI.state && GreenhouseModelsUI.state.darkMode;
             ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
             ctx.font = 'bold 12px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
@@ -123,8 +125,8 @@
 
             // Fetch data dynamically
             let data = [];
-            if (dataSource && window.GreenhouseDataAdapter) {
-                data = window.GreenhouseDataAdapter.getValue(dataSource) || [];
+            if (dataSource && GreenhouseDataAdapter) {
+                data = GreenhouseDataAdapter.getValue(dataSource) || [];
             }
 
             const panelX = x - 320; // Draw to the left of the node
@@ -253,8 +255,8 @@
             });
 
             // Delegate to Hovers module
-            if (window.GreenhouseModelsUIEnvironmentHovers && hoveredRegion) {
-                window.GreenhouseModelsUIEnvironmentHovers.setHoverState({
+            if (GreenhouseModelsUIEnvironmentHovers && hoveredRegion) {
+                GreenhouseModelsUIEnvironmentHovers.setHoverState({
                     active: true,
                     x: mouseX,
                     y: mouseY,
@@ -291,8 +293,8 @@
                 }
             });
 
-            if (needsRedraw && window.GreenhouseModelsUI) {
-                window.GreenhouseModelsUI.drawEnvironmentView();
+            if (needsRedraw && GreenhouseModelsUI) {
+                GreenhouseModelsUI.drawEnvironmentView();
             }
         },
 
@@ -301,5 +303,4 @@
         }
     };
 
-    window.GreenhouseModelsUIEnvironmentTherapy = GreenhouseModelsUIEnvironmentTherapy;
-})();
+export { GreenhouseModelsUIEnvironmentTherapy };

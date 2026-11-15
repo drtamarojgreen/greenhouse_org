@@ -1,0 +1,609 @@
+<scan_report>
+<scan_summary>
+<total_vulnerabilities>12</total_vulnerabilities>
+<critical>3</critical>
+<high>5</high>
+<medium>3</medium>
+<low>1</low>
+</scan_summary>
+
+<vulnerabilities>
+<vulnerability>
+<id>VULN-001</id>
+<title>Critical Password Verification Logic Flaw - Authentication Bypass</title>
+<severity>Critical</severity>
+<category>Authentication Bypass</category>
+<description>The login function contains a fatal authentication bypass vulnerability. At line 154, a new password hash is generated from the submitted password and then compared against itself, which will always succeed. This allows any password to authenticate for any existing user account, completely bypassing authentication.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>153</line_start>
+<line_end>155</line_end>
+<function>login</function>
+</location>
+
+<vulnerable_code>password_hash = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+if not bcrypt.check_password_hash(password_hash, data['password']):
+return jsonify({'error': 'Invalid credentials'}), 401</vulnerable_code>
+
+<impact>Complete authentication bypass for all user accounts. An attacker can log into any account (including admin accounts) with any password, gaining full access to the system and all Protected Health Information (PHI). This violates HIPAA security requirements and enables unauthorized access to patient data, medical records, and administrative functions.</impact>
+
+<remediation>
+<summary>Retrieve the stored password hash from the database and compare it against the submitted password. Never generate a new hash from the submitted password for comparison purposes.</summary>
+<fixed_code># Get password hash from database
+cur.execute(
+"""
+SELECT p.password_hash
+FROM user_passwords p
+WHERE p.user_id = %s
+ORDER BY p.created_at DESC
+LIMIT 1
+""",
+(user[0],)
+)
+password_row = cur.fetchone()
+
+if not password_row or not bcrypt.check_password_hash(password_row[0], data['password']):
+audit_logger.log_authentication(
+user_id=user[0],
+email=user[1],
+action='LOGIN',
+ip_address=request.remote_addr,
+status='failure',
+details='Invalid password'
+)
+return jsonify({'error': 'Invalid credentials'}), 401</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-002</id>
+<title>Duplicate Password Verification in MFA Endpoint</title>
+<severity>High</severity>
+<category>Broken Authentication</category>
+<description>The verify_mfa endpoint (lines 208-223) requires the user to re-submit their password after already being authenticated via the temp_token. This creates confusion and violates the authentication flow design, where password verification should occur only in the login endpoint. Additionally, this duplicates the authentication logic and increases attack surface.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>208</line_start>
+<line_end>223</line_end>
+<function>verify_mfa</function>
+</location>
+
+<vulnerable_code># Get password hash from database
+cur.execute(
+"""
+SELECT p.password_hash
+FROM user_passwords p
+WHERE p.user_id = %s
+ORDER BY p.created_at DESC
+LIMIT 1
+""",
+(user[0],)
+)
+password_row = cur.fetchone()
+
+if not password_row or not bcrypt.check_password_hash(password_row[0], data['password']):
+audit_logger.log_authentication(
+user_id=user[0],
+email=user[1],
+action='LOGIN',
+ip_address=request.remote_addr,
+status='failure',
+details='Invalid password'
+)
+return jsonify({'error': 'Invalid credentials'}), 401</vulnerable_code>
+
+<impact>Breaks the multi-factor authentication flow by requiring password re-entry during MFA verification. This weakens the security model, creates user friction, and exposes password verification logic to additional attack vectors. May enable timing attacks or other authentication bypass techniques.</impact>
+
+<remediation>
+<summary>Remove the password verification logic from the MFA endpoint. The temp_token already proves the user successfully authenticated with their password. The MFA endpoint should only verify the MFA code.</summary>
+<fixed_code> try:
+# Get user details
+cur.execute(
+"""
+SELECT u.id, u.email, u.full_name, u.role_id, r.role_name
+FROM users u
+JOIN roles r ON r.id = u.role_id
+WHERE u.id = %s
+""",
+(user_id,)
+)
+user = cur.fetchone()
+
+if not user:
+return jsonify({'error': 'User not found'}), 404
+
+# Get MFA secret
+cur.execute(
+"""
+SELECT secret FROM mfa_secrets
+WHERE user_id = %s AND is_active = TRUE
+ORDER BY created_at DESC LIMIT 1
+""",
+(user_id,)
+)
+secret_row = cur.fetchone()
+if not secret_row:
+return jsonify({'error': 'MFA not enrolled'}), 400
+
+mfa_secret = secret_row[0]</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-003</id>
+<title>MFA Secret Exposure in Registration Response</title>
+<severity>Critical</severity>
+<category>Sensitive Data Exposure</category>
+<description>The registration endpoint returns the raw MFA secret in the JSON response (line 101). This secret should never be transmitted or stored in plaintext outside of secure setup flows. Exposing it allows attackers who intercept this response to generate valid MFA codes, completely bypassing multi-factor authentication.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>92</line_start>
+<line_end>105</line_end>
+<function>register</function>
+</location>
+
+<vulnerable_code>return jsonify({
+'message': 'User registered successfully',
+'user': {
+'id': user[0],
+'email': user[1],
+'full_name': user[2],
+'role_id': user[3]
+},
+'mfa_secret': mfa_secret,
+'mfa_required': True
+}), 201</vulnerable_code>
+
+<impact>Complete MFA bypass capability. An attacker who intercepts the registration response (via network sniffing, XSS, compromised client, or logging) obtains the MFA secret and can generate valid time-based one-time passwords indefinitely. This defeats the purpose of two-factor authentication and provides a persistent backdoor into the account.</impact>
+
+<remediation>
+<summary>Do not return the MFA secret in the registration response. Instead, return a QR code or provisioning URI that the user can scan with their authenticator app. The secret should only be displayed once during enrollment via a dedicated secure endpoint.</summary>
+<fixed_code># Generate QR code for MFA enrollment
+totp = pyotp.TOTP(mfa_secret)
+provisioning_uri = totp.provisioning_uri(
+name=data['email'],
+issuer_name=config.MFA_ISSUER_NAME
+)
+
+# Create QR code image
+qr = qrcode.QRCode(version=1, box_size=10, border=5)
+qr.add_data(provisioning_uri)
+qr.make(fit=True)
+
+img = qr.make_image(fill_color="black", back_color="white")
+
+# Convert to base64
+buffer = io.BytesIO()
+img.save(buffer, format='PNG')
+qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+return jsonify({
+'message': 'User registered successfully. Please scan QR code with your authenticator app.',
+'user': {
+'id': user[0],
+'email': user[1],
+'full_name': user[2],
+'role_id': user[3]
+},
+'qr_code': f'data:image/png;base64,{qr_code_base64}',
+'mfa_required': True
+}), 201</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-004</id>
+<title>Rate Limiter Initialization Error - Undefined 'app' Variable</title>
+<severity>High</severity>
+<category>Denial of Service / Configuration Error</category>
+<description>The Limiter object is instantiated with an undefined 'app' variable at line 114. This will cause a NameError at runtime, preventing the rate limiting functionality from working and potentially crashing the authentication module. Without rate limiting, the application is vulnerable to brute force attacks on authentication endpoints.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>113</line_start>
+<line_end>117</line_end>
+<function>module_level</function>
+</location>
+
+<vulnerable_code>limiter = Limiter(
+app,
+key_func=get_remote_address,
+default_limits=["200 per day", "50 per hour"]
+)</vulnerable_code>
+
+<impact>Rate limiting is completely non-functional, allowing unlimited authentication attempts. Attackers can perform brute force attacks against user accounts without restriction, credential stuffing attacks, and denial of service attacks by overwhelming the authentication endpoints. This is especially critical for a healthcare application handling PHI.</impact>
+
+<remediation>
+<summary>Initialize the Limiter with get_remote_address as the key function without referencing 'app' at the module level. The Limiter should be initialized in the application factory or imported from a central location where the Flask app is available.</summary>
+<fixed_code># Remove module-level limiter initialization
+# Instead, initialize in the app factory or use lazy initialization
+
+# In your app factory (e.g., create_app()):
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+app=app,
+key_func=get_remote_address,
+default_limits=["200 per day", "50 per hour"],
+storage_uri="redis://localhost:6379"
+)
+
+# Then register the blueprint
+app.register_blueprint(auth_bp)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-005</id>
+<title>Incomplete Audit Logging in Logout Function</title>
+<severity>Medium</severity>
+<category>Insufficient Logging and Monitoring</category>
+<description>The logout function at line 417 contains an incomplete audit log call with only ellipsis (...) as arguments. This prevents proper logging of logout events, which is required for HIPAA compliance and security monitoring. Logout events must be tracked to detect unauthorized access patterns and session hijacking.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>417</line_start>
+<line_end>417</line_end>
+<function>logout</function>
+</location>
+
+<vulnerable_code>audit_logger.log_authentication(...)</vulnerable_code>
+
+<impact>Missing audit trail for user logout events. This creates gaps in compliance documentation, hinders incident response, and prevents detection of suspicious session termination patterns. Violates HIPAA audit logging requirements for authentication events.</impact>
+
+<remediation>
+<summary>Complete the audit logging call with all required parameters to properly track logout events.</summary>
+<fixed_code>audit_logger.log_authentication(
+user_id=user_id,
+email=claims.get('email', 'unknown'),
+action='LOGOUT',
+ip_address=request.remote_addr,
+status='success',
+details='User logged out successfully'
+)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-006</id>
+<title>SQL Injection Risk - Unparameterized Database Commit</title>
+<severity>High</severity>
+<category>SQL Injection</category>
+<description>While the code uses parameterized queries for most operations, the database connection pattern uses manual transaction management with commit/rollback. If any part of the codebase constructs dynamic SQL without parameterization and uses the same database connection pattern, it could lead to SQL injection. The registration endpoint stores user-controlled data (email, full_name, role_id) which must be strictly validated.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>63</line_start>
+<line_end>73</line_end>
+<function>register</function>
+</location>
+
+<vulnerable_code>cur.execute(
+"""
+INSERT INTO users (email, full_name, role_id, created_at)
+VALUES (%s, %s, %s, %s)
+RETURNING id, email, full_name, role_id, created_at
+""",
+(data['email'], data['full_name'], data['role_id'], datetime.utcnow())
+)</vulnerable_code>
+
+<impact>Potential for SQL injection if role_id or other fields are not properly validated. Role_id appears to be user-controlled input that determines authorization level. An attacker could potentially escalate privileges by injecting malicious role_id values or exploit second-order SQL injection vulnerabilities.</impact>
+
+<remediation>
+<summary>Add strict validation for role_id to ensure it references valid role values only. Implement whitelist validation and verify the role exists before insertion.</summary>
+<fixed_code># Validate role_id exists and is a valid integer
+try:
+role_id = int(data['role_id'])
+except (ValueError, TypeError):
+return jsonify({'error': 'Invalid role_id format'}), 400
+
+# Verify role exists and get valid role IDs
+cur.execute('SELECT id FROM roles WHERE id = %s', (role_id,))
+if not cur.fetchone():
+return jsonify({'error': 'Invalid role_id'}), 400
+
+# Proceed with user creation
+cur.execute(
+"""
+INSERT INTO users (email, full_name, role_id, created_at)
+VALUES (%s, %s, %s, %s)
+RETURNING id, email, full_name, role_id, created_at
+""",
+(data['email'], data['full_name'], role_id, datetime.utcnow())
+)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-007</id>
+<title>Insecure Password Storage - Passwords Stored Separately from Users</title>
+<severity>High</severity>
+<category>Cryptographic Failure</category>
+<description>Password hashes are stored in a separate 'user_passwords' table rather than directly with the user record. While this pattern can support password history, the current implementation does not validate which password hash to use, potentially allowing authentication with old/revoked passwords. The ORDER BY created_at DESC LIMIT 1 pattern assumes the newest is current, but there's no active/revoked flag.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>74</line_start>
+<line_end>81</line_end>
+<function>register</function>
+</location>
+
+<vulnerable_code>cur.execute(
+"""
+INSERT INTO user_passwords (user_id, password_hash, created_at)
+VALUES (%s, %s, %s)
+""",
+(user[0], password_hash, datetime.utcnow())
+)
+db.commit()</vulnerable_code>
+
+<impact>Potential authentication with revoked or old passwords if password history is maintained. Without an is_active flag or proper password lifecycle management, expired passwords may remain valid. This violates HIPAA password management requirements for healthcare systems.</impact>
+
+<remediation>
+<summary>Add an is_active flag to the user_passwords table and ensure only one password hash is active per user. Implement proper password rotation and revocation mechanisms.</summary>
+<fixed_code># Store password hash with is_active flag
+cur.execute(
+"""
+UPDATE user_passwords
+SET is_active = FALSE
+WHERE user_id = %s
+""",
+(user[0],)
+)
+
+cur.execute(
+"""
+INSERT INTO user_passwords (user_id, password_hash, created_at, is_active)
+VALUES (%s, %s, %s, %s)
+""",
+(user[0], password_hash, datetime.utcnow(), True)
+)
+db.commit()
+
+# When retrieving password:
+cur.execute(
+"""
+SELECT password_hash
+FROM user_passwords
+WHERE user_id = %s AND is_active = TRUE
+""",
+(user_id,)
+)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-008</id>
+<title>Missing Session Timeout Configuration</title>
+<severity>Medium</severity>
+<category>Session Management</category>
+<description>JWT tokens are created without explicit expiration times in several locations, particularly for access tokens. While the temp_token has a 5-minute expiration, the permanent access tokens created after MFA verification do not specify an expires_delta, potentially creating long-lived sessions that violate HIPAA requirements for automatic session termination.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>250</line_start>
+<line_end>257</line_end>
+<function>verify_mfa</function>
+</location>
+
+<vulnerable_code>access_token = create_access_token(
+identity=user[0],
+additional_claims={
+'mfa_verified': True,
+'role': user[4],
+'email': user[1]
+}
+)</vulnerable_code>
+
+<impact>Sessions may persist indefinitely without automatic timeout, violating HIPAA requirements for automatic logoff after a period of inactivity. This increases the risk of unauthorized access through unattended workstations or stolen tokens, particularly dangerous in healthcare settings with PHI access.</impact>
+
+<remediation>
+<summary>Set explicit expiration times for all JWT tokens according to HIPAA guidelines. Access tokens should expire after 15-30 minutes of inactivity.</summary>
+<fixed_code>from datetime import timedelta
+
+access_token = create_access_token(
+identity=user[0],
+additional_claims={
+'mfa_verified': True,
+'role': user[4],
+'email': user[1]
+},
+expires_delta=timedelta(minutes=15)
+)
+
+refresh_token = create_refresh_token(
+identity=user[0],
+expires_delta=timedelta(days=7)
+)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-009</id>
+<title>Plaintext MFA Secret Storage</title>
+<severity>High</severity>
+<category>Cryptographic Failure</category>
+<description>MFA secrets are stored in plaintext in the database (line 86-93). While the mfa_secrets table stores these secrets, they appear to be stored without encryption. If the database is compromised, attackers gain access to all MFA secrets and can generate valid TOTP codes for all users, completely bypassing two-factor authentication.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>86</line_start>
+<line_end>93</line_end>
+<function>register</function>
+</location>
+
+<vulnerable_code>cur.execute(
+"""
+INSERT INTO mfa_secrets (user_id, secret, created_at, is_active)
+VALUES (%s, %s, %s, %s)
+""",
+(user[0], mfa_secret, datetime.utcnow(), True)
+)
+db.commit()</vulnerable_code>
+
+<impact>Database compromise exposes all MFA secrets, enabling complete MFA bypass for all user accounts. An attacker with database access can generate valid TOTP codes indefinitely, defeating the entire multi-factor authentication system. This is especially critical for healthcare applications with elevated security requirements.</impact>
+
+<remediation>
+<summary>Encrypt MFA secrets before storing them in the database using the field-level encryption utilities already present in the codebase.</summary>
+<fixed_code>from ..utils.encryption import FieldEncryption
+
+# Initialize field encryption
+field_encryption = FieldEncryption()
+
+# Encrypt MFA secret before storage
+encrypted_secret = field_encryption.encrypt(mfa_secret)
+
+cur.execute(
+"""
+INSERT INTO mfa_secrets (user_id, secret, created_at, is_active)
+VALUES (%s, %s, %s, %s)
+""",
+(user[0], encrypted_secret, datetime.utcnow(), True)
+)
+db.commit()
+
+# When retrieving for verification:
+cur.execute(
+"""
+SELECT secret FROM mfa_secrets
+WHERE user_id = %s AND is_active = TRUE
+ORDER BY created_at DESC LIMIT 1
+""",
+(user_id,)
+)
+secret_row = cur.fetchone()
+if secret_row:
+mfa_secret = field_encryption.decrypt(secret_row[0])</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-010</id>
+<title>Information Disclosure via Error Messages</title>
+<severity>Medium</severity>
+<category>Information Disclosure</category>
+<description>Multiple endpoints return detailed error messages including stack traces via str(e) in exception handlers (lines 104, 171, 274, 325, 360, 436). This exposes internal system information, database schema details, file paths, and potentially sensitive configuration data to attackers.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>102</line_start>
+<line_end>104</line_end>
+<function>register</function>
+</location>
+
+<vulnerable_code>except Exception as e:
+db.rollback()
+return jsonify({'error': str(e)}), 500</vulnerable_code>
+
+<impact>Attackers can gather information about the system architecture, database structure, installed libraries, and file paths by triggering errors. This reconnaissance information aids in crafting more sophisticated attacks. May also expose PHI or PII in error messages under certain conditions.</impact>
+
+<remediation>
+<summary>Log detailed errors server-side but return generic error messages to clients. Implement proper error handling with sanitized responses.</summary>
+<fixed_code>except Exception as e:
+db.rollback()
+# Log detailed error for debugging
+audit_logger.log_security_event(
+event_type='REGISTRATION_ERROR',
+user_id=None,
+ip_address=request.remote_addr,
+details=str(e)
+)
+# Return generic error to client
+return jsonify({'error': 'An error occurred during registration. Please try again.'}), 500</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-011</id>
+<title>Weak Password Hashing Configuration</title>
+<severity>Low</severity>
+<category>Cryptographic Failure</category>
+<description>The encryption.py module implements a custom PBKDF2 password hashing function with only 100,000 iterations (line 157). While bcrypt is used in auth_handler.py, the presence of a weaker alternative hash_password function in the utilities could lead to its misuse. Modern recommendations suggest 600,000+ iterations for PBKDF2-HMAC-SHA256.</description>
+
+<location>
+<file>backend/utils/encryption.py</file>
+<line_start>151</line_start>
+<line_end>171</line_end>
+<function>hash_password</function>
+</location>
+
+<vulnerable_code>kdf = PBKDF2HMAC(
+algorithm=hashes.SHA256(),
+length=32,
+salt=salt,
+iterations=100000
+)</vulnerable_code>
+
+<impact>If this function is used instead of bcrypt for password hashing, passwords are vulnerable to brute force attacks using GPU acceleration. With 100,000 iterations, modern hardware can test millions of password candidates per second against captured hashes.</impact>
+
+<remediation>
+<summary>Increase PBKDF2 iterations to at least 600,000 (OWASP 2023 recommendation) or remove this function entirely and enforce bcrypt usage throughout the application.</summary>
+<fixed_code>kdf = PBKDF2HMAC(
+algorithm=hashes.SHA256(),
+length=32,
+salt=salt,
+iterations=600000 # Updated to OWASP 2023 recommendation
+)
+
+# Better yet, remove this function and standardize on bcrypt:
+# from flask_bcrypt import Bcrypt
+# bcrypt = Bcrypt()
+# password_hash = bcrypt.generate_password_hash(password)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-012</id>
+<title>Missing Token Blacklist Validation</title>
+<severity>High</severity>
+<category>Broken Authentication</category>
+<description>While the logout endpoint adds tokens to a blacklist table, there is no visible middleware or decorator checking the blacklist before accepting JWTs on protected endpoints. This means tokens remain valid even after logout until they naturally expire, allowing continued access with stolen or logged-out tokens.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>401</line_start>
+<line_end>413</line_end>
+<function>logout</function>
+</location>
+
+<vulnerable_code>cur.execute(
+"""
+INSERT INTO token_blacklist (jti, user_id, blacklisted_at, expires_at)
+VALUES (%s, %s, %s, %s)
+""",
+(jti, user_id, datetime.utcnow(), datetime.fromtimestamp(claims['exp']))
+)
+db.commit()</vulnerable_code>
+
+<impact>Logged-out tokens remain valid until expiration. If a token is compromised or a user logs out, the token can still be used to access protected resources and PHI. This violates session management best practices and HIPAA requirements for immediate access termination upon logout.</impact>
+
+<remediation>
+<summary>Implement JWT token blacklist checking in a @jwt_required callback or middleware that validates every token against the blacklist before allowing access.</summary>
+<fixed_code># In your app initialization or middleware setup:
+from flask_jwt_extended import JWTManager
+
+jwt = JWTManager(app)
+
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+jti = jwt_payload['jti']
+db = get_db()
+cur = db.cursor()
+try:
+cur.execute(
+"SELECT id FROM token_blacklist WHERE jti = %s",
+(jti,)
+)
+return cur.fetchone() is not None
+finally:
+cur.close()
+
+# This callback will automatically check all @jwt_required() endpoints</fixed_code>
+</remediation>
+</vulnerability>
+</vulnerabilities>
+</scan_report>

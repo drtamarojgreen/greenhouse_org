@@ -1,7 +1,9 @@
-(function () {
-    'use strict';
+import { GreenhouseModelsUIEnvironmentHovers } from './models_ui_environment_hovers.js';
+import { GreenhouseDataAdapter } from './data_adapter.js';
+import { GreenhouseEnvironmentConfig } from './environment_config.js';
+import { GreenhouseModelsUI } from './models_ui.js';
 
-    const GreenhouseModelsUIEnvironmentMedication = {
+const GreenhouseModelsUIEnvironmentMedication = {
         state: null,
         util: null,
         regions: {},
@@ -10,14 +12,14 @@
             this.state = state;
             this.util = util;
 
-            if (window.GreenhouseEnvironmentConfig && window.GreenhouseEnvironmentConfig.interactiveElements) {
-                const config = window.GreenhouseEnvironmentConfig.interactiveElements.medication;
+            if (GreenhouseEnvironmentConfig && GreenhouseEnvironmentConfig.interactiveElements) {
+                const config = GreenhouseEnvironmentConfig.interactiveElements.medication;
                 if (config) {
                     let description = this.util.t(config.description); // Translate the base description first
 
                     // Data Binding
-                    if (config.dataSource && window.GreenhouseDataAdapter) {
-                        const data = window.GreenhouseDataAdapter.getValue(config.dataSource);
+                    if (config.dataSource && GreenhouseDataAdapter) {
+                        const data = GreenhouseDataAdapter.getValue(config.dataSource);
                         if (data && Array.isArray(data)) {
                             // Format the array into a readable list
                             const items = data.map(m => `${m.name} (${m.dosage})`).join(', ');
@@ -112,8 +114,8 @@
 
             // Fetch data dynamically
             let data = [];
-            if (dataSource && window.GreenhouseDataAdapter) {
-                data = window.GreenhouseDataAdapter.getValue(dataSource) || [];
+            if (dataSource && GreenhouseDataAdapter) {
+                data = GreenhouseDataAdapter.getValue(dataSource) || [];
             }
 
             const panelX = x + width + 20;
@@ -235,8 +237,8 @@
                     logicalY >= region.y && logicalY <= region.y + region.height) {
 
                     // Delegate to Hovers module
-                    if (window.GreenhouseModelsUIEnvironmentHovers) {
-                        window.GreenhouseModelsUIEnvironmentHovers.setHoverState({
+                    if (GreenhouseModelsUIEnvironmentHovers) {
+                        GreenhouseModelsUIEnvironmentHovers.setHoverState({
                             active: true,
                             x: mouseX,
                             y: mouseY,
@@ -275,11 +277,10 @@
                 }
             });
 
-            if (needsRedraw && window.GreenhouseModelsUI) {
-                window.GreenhouseModelsUI.drawEnvironmentView();
+            if (needsRedraw && GreenhouseModelsUI) {
+                GreenhouseModelsUI.drawEnvironmentView();
             }
         }
     };
 
-    window.GreenhouseModelsUIEnvironmentMedication = GreenhouseModelsUIEnvironmentMedication;
-})();
+export { GreenhouseModelsUIEnvironmentMedication };

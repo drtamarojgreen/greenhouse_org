@@ -7,7 +7,7 @@
      * Includes support for realistic brain meshes with polymorphic face structures.
      */
     const GreenhouseCognitionBrain = {
-        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeItem = null, options = {}) {
+        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeItem = null, options: any = {}) {
             const targetRegion = activeItem ? activeItem.region : null;
             const glassBrain = options.glassBrain || false;
             if (!brainShell) return;

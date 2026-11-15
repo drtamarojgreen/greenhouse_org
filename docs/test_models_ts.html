@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greenhouse Live Test Harness (TypeScript)</title>
+
+    <!-- Mandatory Production Stylesheets -->
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/style.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/image.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/effects.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/pages.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/tech.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/model.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/models_toc.css">
+
+    <!--
+        TypeScript compiler (in-browser transpilation).
+        The migrated model *.ts sources are fetched and transpiled at runtime, so
+        no compiled *.js model files are needed. A small fallback chain keeps the
+        harness working if a given CDN is unavailable.
+    -->
+    <script>
+        (function loadTypeScript() {
+            var cdns = [
+                'https://cdnjs.cloudflare.com/ajax/libs/typescript/5.4.5/typescript.min.js',
+                'https://cdn.jsdelivr.net/npm/typescript@5.4.5/lib/typescript.min.js',
+                'https://unpkg.com/typescript@5.4.5/lib/typescript.js'
+            ];
+            var i = 0;
+            function tryNext() {
+                if (i >= cdns.length) {
+                    console.error('[TS-Harness] Failed to load the TypeScript compiler from all CDNs.');
+                    return;
+                }
+                var s = document.createElement('script');
+                s.src = cdns[i++];
+                // Load synchronously relative to subsequent module setup by writing
+                // it out; but since we are in <head> we simply block later inline
+                // setup on window.ts existence via the guard below.
+                s.async = false;
+                s.onerror = tryNext;
+                document.head.appendChild(s);
+            }
+            tryNext();
+        })();
+    </script>
+
+    <!-- Essential Production Infrastructure (not part of the model migration; remain JS) -->
+    <script src="js/GreenhouseDependencyManager.js"></script>
+    <script src="js/GreenhouseUtils.js"></script>
+    <script src="js/greenhouse.js"></script>
+    <script src="js/performance_profiler.js" data-auto-start="true"></script>
+
+    <!--
+        models_3d_postprocess has been migrated to TypeScript. Transpile & execute
+        the *.ts source in-browser (replaces the former js/models_3d_postprocess.js
+        <script> include used by test_models.html).
+    -->
+    <script>
+        (function bootstrapPostProcess() {
+            function run() {
+                if (!window.ts || typeof window.ts.transpileModule !== 'function') {
+                    return setTimeout(run, 25);
+                }
+                try {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', 'js/models_3d_postprocess.ts', false);
+                    xhr.send(null);
+                    if (xhr.status < 200 || xhr.status >= 300) {
+                        console.warn('[TS-Harness] models_3d_postprocess.ts not found (HTTP ' + xhr.status + ').');
+                        return;
+                    }
+                    var out = window.ts.transpileModule(xhr.responseText, {
+                        compilerOptions: {
+                            module: window.ts.ModuleKind.CommonJS,
+                            target: window.ts.ScriptTarget.ES2017
+                        },
+                        fileName: 'models_3d_postprocess.ts'
+                    });
+                    var s = document.createElement('script');
+                    s.textContent = '(function(){ "use strict"; var exports = {}; var module = { exports: exports };\n' +
+                        out.outputText + '\n})();';
+                    document.head.appendChild(s);
+                    console.log('[TS-Harness] models_3d_postprocess.ts transpiled & executed.');
+                } catch (e) {
+                    console.error('[TS-Harness] Failed to bootstrap models_3d_postprocess.ts', e);
+                }
+            }
+            run();
+        })();
+    </script>
+
+    <!-- Mandatory Production Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/image.css">
+
+    <!-- Mandatory Test Infrastructure (remain JS) -->
+    <script src="js/assertion_library.js"></script>
+    <script src="js/test_framework.js"></script>
+    <script src="js/model_tests.js"></script>
+
+    <link rel="stylesheet" href="css/test_models.css">
+</head>
+
+<body>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loader-message">Initializing Live Site Environment (TypeScript)...</div>
+    </div>
+
+    <header>
+        <h1 class="harness-title">Greenhouse Live Simulator &mdash; TypeScript</h1>
+        <div class="controls">
+            <select id="model-selector">
+                <option value="" disabled selected>-- Select a Live Model --</option>
+                <option value="genetic">Genetic Model</option>
+                <option value="neuro">Neuro Model</option>
+                <option value="pathway">Pathway Model</option>
+                <option value="synapse">Synapse Model</option>
+                <option value="dopamine">Dopamine Signaling Model</option>
+                <option value="serotonin">Serotonin Structural Model</option>
+                <option value="dna">DNA Repair Model</option>
+                <option value="rna">RNA Repair Model</option>
+                <option value="emotion">Emotion Model</option>
+                <option value="cognition">Cognition Model</option>
+                <option value="inflammation">Neuroinflammation Model</option>
+                <option value="stress">Stress Dynamics Model</option>
+            </select>
+            <button id="run-suite-tests" class="btn">Run Model Tests</button>
+            <button id="run-common-tests" class="btn" style="background-color: #2196F3; color: white;">Run Common
+                Tests</button>
+            <button id="clear-results" class="btn" style="background-color: #ff9800; color: white;">Clear
+                Results</button>
+            <button id="clear-environment" class="btn">Clear Environment</button>
+        </div>
+        <div id="active-label">Active Model: None</div>
+    </header>
+
+    <div id="model-container">
+        <!-- Reconstructed DOM will go here -->
+    </div>
+
+    <script src="../tests/unit/ts_test_models.js"></script>
+
+    <div id="test-containers" style="display:none;">
+        <div id="cognition-container"></div>
+        <div id="models-toc-container"></div>
+        <div id="neuro-app-container"></div>
+        <div id="hub-scroller"></div>
+        <div id="scheduler-container"></div>
+        <div id="dashboard-calendar"></div>
+        <div id="dashboard-schedule"></div>
+        <div id="dashboard-conflicts"></div>
+        <button id="fetch-mock-user-btn"></button>
+        <button id="load-models-prototype-btn"></button>
+    </div>
+</body>
+
+</html>

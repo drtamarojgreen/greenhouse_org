@@ -119,7 +119,7 @@
             }
 
             // Update Shockwave (Enhancement 15)
-            if (scores.env > 0 && Math.random() > 0.99) this.shockWave = 1.0;
+            if ((scores as any).env > 0 && Math.random() > 0.99) this.shockWave = 1.0;
             if (this.shockWave > 0) this.shockWave -= 0.01;
 
             // Update Histories (Enhancement 20)

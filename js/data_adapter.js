@@ -1,7 +1,4 @@
-(function () {
-    'use strict';
-
-    const GreenhouseDataAdapter = {
+const GreenhouseDataAdapter = {
         store: {
             health: {},
             genomics: {}
@@ -43,5 +40,4 @@
         }
     };
 
-    window.GreenhouseDataAdapter = GreenhouseDataAdapter;
-})();
+export { GreenhouseDataAdapter };

@@ -1,137 +1,27 @@
-// docs/js/models.js
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhouseDataAdapter } from './data_adapter.js';
+import { GreenhouseModelsGraph } from './models_graph.js';
+import { GreenhouseModelGraphViewer } from './model_graph_viewer.js';
+import { GreenhouseGraphParser } from './graph_parser.js';
+import { GreenhouseModelsUX } from './models_ux.js';
 
-(async function () {
-    'use strict';
-    console.log('Models App: Loader execution started.');
+console.log('Models App: Explicit module dependencies loaded.');
 
-    let GreenhouseUtils;
+const entryScript = document.querySelector('script[data-greenhouse-models-entry]');
+const targetSelector = entryScript?.getAttribute('data-target-selector-left') || '#models-app-container';
+const baseUrl = new URL(entryScript?.getAttribute('data-base-url') || '../', document.baseURI).href;
 
-    const loadDependencies = async () => {
-        console.log('Models App: loadDependencies started.');
-        if (window.GreenhouseDependencyManager) {
-            try {
-                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-                console.log('Models App: GreenhouseUtils loaded via dependency manager');
-            } catch (error) {
-                console.error('Models App: Failed to load GreenhouseUtils via dependency manager:', error.message);
-            }
-        } else {
-            // Fallback to a polling mechanism if the dependency manager is not available
-            await new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 240; // 12 seconds
-                const interval = setInterval(() => {
-                    if (window.GreenhouseUtils) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (attempts++ >= maxAttempts) {
-                        clearInterval(interval);
-                        console.error('Models App: GreenhouseUtils not available after 12 second timeout');
-                        reject(new Error('GreenhouseUtils load timeout'));
-                    }
-                }, 50);
-            });
-        }
-        GreenhouseUtils = window.GreenhouseUtils;
-    };
+GreenhouseModelsUX.configure({ baseUrl, targetSelector });
 
-    const captureScriptAttributes = () => {
-        if (window._greenhouseModelsAttributes) {
-            console.log('Models App: Using pre-defined attributes.');
-            return true;
-        }
-        const scriptElement = document.currentScript;
-        if (!scriptElement) {
-            console.error('Models App: Could not find current script element to capture attributes.');
-            return false;
-        }
-        window._greenhouseModelsAttributes = {
-            baseUrl: scriptElement.getAttribute('data-base-url'),
-            targetSelector: scriptElement.getAttribute('data-target-selector-left')
-        };
-        return true;
-    };
-
-    async function main() {
-        console.log('Models App: main() started.');
-        try {
-            if (!captureScriptAttributes()) {
-                throw new Error("Could not capture script attributes.");
-            }
-
-            await loadDependencies();
-            if (!GreenhouseUtils) {
-                throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
-            }
-
-            const { baseUrl } = window._greenhouseModelsAttributes;
-            if (!baseUrl) {
-                throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
-            }
-
-            // Load the new modules sequentially
-            await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_data.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_synapse.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_brain.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_overlay.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_hovers.js', baseUrl);
-            await GreenhouseUtils.loadScript('data_adapter.js', baseUrl);
-            await GreenhouseUtils.loadScript('environment_config.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_background.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_medication.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_therapy.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment.js', baseUrl);
-
-            // Load 3D modules
-            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_3d.js', baseUrl);
-
-            // Load Graph modules
-            await GreenhouseUtils.loadScript('models_graph.js', baseUrl);
-            await GreenhouseUtils.loadScript('model_graph_viewer.js', baseUrl);
-
-            await GreenhouseUtils.loadScript('models_ui.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ux.js', baseUrl);
-
-            // Check if all modules are loaded
-            if (window.GreenhouseModelsData && window.GreenhouseModelsUI && window.GreenhouseModelsUX) {
-                console.log('Models App: All modules loaded successfully.');
-                // Initialize the data adapter with the correct base URL
-                await window.GreenhouseDataAdapter.init(baseUrl);
-
-                // Kick off the application by initializing the UX module
-                GreenhouseModelsUX.init();
-
-                // Render bottom navigation TOC via common utilities
-                const { targetSelector } = window._greenhouseModelsAttributes;
-                if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
-                    GreenhouseUtils.renderModelsTOC(targetSelector);
-                }
-            } else {
-                throw new Error("One or more application modules failed to load.");
-            }
-
-        } catch (error) {
-            console.error('Models App: Initialization failed:', error);
-            if (GreenhouseUtils) {
-                GreenhouseUtils.displayError(`Failed to load simulation components: ${error.message}`);
-            }
-        }
+async function initializeModelsApp() {
+    try {
+        await GreenhouseDataAdapter.init(baseUrl);
+        GreenhouseModelsUX.init();
+        await GreenhouseUtils.renderModelsTOC(targetSelector);
+    } catch (error) {
+        console.error('Models App: Initialization failed:', error);
+        GreenhouseUtils.displayError(`Failed to load simulation components: ${error.message}`);
     }
+}
 
-    // --- Main Execution Logic ---
-    main();
-
-    // Expose a reinitialization function on the global scope
-    window.GreenhouseModels = {
-        reinitialize: () => {
-            if (window.GreenhouseModelsUX) {
-                console.log('Models App: Re-initializing from global scope.');
-                window.GreenhouseModelsUX.reinitialize();
-            }
-        }
-    };
-
-})();
+initializeModelsApp();

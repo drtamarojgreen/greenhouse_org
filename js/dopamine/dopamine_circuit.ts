@@ -248,7 +248,7 @@
         });
 
         // 76. Render GABAergic Interneurons
-        Object.values(cState.interneurons.gabaergic).forEach(inter => {
+        Object.values(cState.interneurons.gabaergic as Record<string, any>).forEach((inter: any) => {
             const p = project(inter.x, inter.y, inter.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
                 ctx.fillStyle = inter.label === 'PV+' ? '#E0E0E0' : '#A0AEC0';

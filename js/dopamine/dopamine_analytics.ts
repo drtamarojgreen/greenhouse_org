@@ -39,7 +39,7 @@
         }
         if (eState) aState.history.potential.push(eState.membranePotential);
 
-        Object.values(aState.history).forEach(h => {
+        Object.values(aState.history).forEach((h: any) => {
             if (h.length > aState.maxHistory) h.shift();
         });
 

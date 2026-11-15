@@ -62,7 +62,7 @@
 
         // Check Interneurons
         if (!found && G.circuitState.interneurons.gabaergic) {
-            Object.values(G.circuitState.interneurons.gabaergic).forEach(inter => {
+            Object.values(G.circuitState.interneurons.gabaergic as Record<string, any>).forEach((inter: any) => {
                 const p = project(inter.x, inter.y, inter.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
                 if (dist < 15 * p.scale) {
@@ -116,7 +116,7 @@
 
         // Check Projections
         if (!found && G.circuitState && G.circuitState.projections) {
-            Object.values(G.circuitState.projections).forEach(proj => {
+            Object.values(G.circuitState.projections as Record<string, any>).forEach((proj: any) => {
                 const p = project(proj.x, proj.y, proj.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
                 if (dist < 20 * p.scale) {

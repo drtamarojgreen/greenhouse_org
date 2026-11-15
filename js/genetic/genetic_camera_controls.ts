@@ -6,6 +6,7 @@
     'use strict';
 
     class GeneticCameraController {
+        [key: string]: any;
         constructor(camera, config) {
             this.camera = camera;
             this.config = config || window.GreenhouseGeneticConfig;
@@ -118,7 +119,7 @@
          * Handle Touch Move
          */
         handleTouchMove(e) {
-            const newTouches = Array.from(e.touches);
+            const newTouches: Touch[] = Array.from(e.touches);
 
             if (newTouches.length === 1 && this.isDragging) {
                 // Rotate
@@ -144,9 +145,10 @@
                 const centerX = (newTouches[0].clientX + newTouches[1].clientX) / 2;
                 const centerY = (newTouches[0].clientY + newTouches[1].clientY) / 2;
 
-                if (this.touches.length === 2) {
-                    const oldCenterX = (this.touches[0].clientX + this.touches[1].clientX) / 2;
-                    const oldCenterY = (this.touches[0].clientY + this.touches[1].clientY) / 2;
+                const oldTouches: any = this.touches;
+                if (oldTouches && oldTouches.length === 2) {
+                    const oldCenterX = (oldTouches[0].clientX + oldTouches[1].clientX) / 2;
+                    const oldCenterY = (oldTouches[0].clientY + oldTouches[1].clientY) / 2;
                     this.pan(centerX - oldCenterX, centerY - oldCenterY);
                 }
             }

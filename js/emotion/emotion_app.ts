@@ -176,7 +176,7 @@
                         { id: 'medicationTreatments', label: t('emotion_cat_medication') },
                         { id: 'advancedTheories', label: t('emotion_cat_advanced') }
                     ];
-                    Array.from(catDiv.children).forEach((btn, i) => {
+                    Array.from(catDiv.children).forEach((btn: any, i) => {
                         if (categories[i]) btn.textContent = categories[i].label;
                     });
                 }
@@ -227,7 +227,7 @@
 
                 btn.onclick = () => {
                     this.currentCategory = cat.id;
-                    Array.from(catDiv.children).forEach(b => {
+                    Array.from(catDiv.children).forEach((b: any) => {
                         b.style.borderColor = '#4a5568';
                         b.style.background = '#1a202c';
                     });
@@ -301,7 +301,7 @@
                     this.updateInfoPanel();
 
                     // Reset all button styles in this container
-                    Array.from(selectorDiv.children).forEach(b => b.style.borderColor = '#4a5568');
+                    Array.from(selectorDiv.children).forEach((b: any) => b.style.borderColor = '#4a5568');
                     btn.style.borderColor = '#E0E0E0';
                 };
                 selectorDiv.appendChild(btn);

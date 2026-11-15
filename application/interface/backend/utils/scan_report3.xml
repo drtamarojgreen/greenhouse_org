@@ -1,0 +1,564 @@
+<scan_report>
+<scan_summary>
+<total_vulnerabilities>11</total_vulnerabilities>
+<critical>3</critical>
+<high>5</high>
+<medium>2</medium>
+<low>1</low>
+</scan_summary>
+
+<vulnerabilities>
+<vulnerability>
+<id>VULN-001</id>
+<title>Password Hash Double-Hashing Prevents Authentication</title>
+<severity>Critical</severity>
+<category>Authentication Bypass</category>
+<description>In the login function, a password is hashed before being passed to bcrypt.check_password_hash(), which expects a plaintext password. This causes authentication to always fail for legitimate users. An attacker who discovers this flaw could potentially exploit timing differences or use it as part of a broader authentication bypass strategy.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>144</line_start>
+<line_end>146</line_end>
+<function>login</function>
+</location>
+
+<vulnerable_code>password_hash = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+if not bcrypt.check_password_hash(password_hash, data['password']):
+return jsonify({'error': 'Invalid credentials'}), 401</vulnerable_code>
+
+<impact>Complete authentication failure for all legitimate users. This breaks the entire authentication system and prevents valid users from logging in while potentially allowing attackers to exploit the broken logic. In a healthcare system handling PHI, this creates a critical availability and security risk.</impact>
+
+<remediation>
+<summary>Remove the password hashing step and directly compare the stored hash from the database with the provided plaintext password using bcrypt.check_password_hash().</summary>
+<fixed_code># Get password hash from database
+cur.execute(
+"""
+SELECT p.password_hash
+FROM user_passwords p
+WHERE p.user_id = %s
+ORDER BY p.created_at DESC
+LIMIT 1
+""",
+(user[0],)
+)
+password_row = cur.fetchone()
+
+if not password_row or not bcrypt.check_password_hash(password_row[0], data['password']):
+audit_logger.log_authentication(
+user_id=user[0],
+email=user[1],
+action='LOGIN',
+ip_address=request.remote_addr,
+status='failure',
+details='Invalid password'
+)
+return jsonify({'error': 'Invalid credentials'}), 401</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-002</id>
+<title>Password Verification in MFA Endpoint Re-introduces Double-Hash Vulnerability</title>
+<severity>Critical</severity>
+<category>Authentication Logic Error</category>
+<description>The verify_mfa endpoint incorrectly retrieves and validates passwords again after MFA verification. The same double-hashing vulnerability exists here (hashing before check_password_hash), and password validation should not occur at this stage since it was already validated in the login endpoint.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>218</line_start>
+<line_end>239</line_end>
+<function>verify_mfa</function>
+</location>
+
+<vulnerable_code># Get password hash from database
+cur.execute(
+"""
+SELECT p.password_hash
+FROM user_passwords p
+WHERE p.user_id = %s
+ORDER BY p.created_at DESC
+LIMIT 1
+""",
+(user[0],)
+)
+password_row = cur.fetchone()
+
+if not password_row or not bcrypt.check_password_hash(password_row[0], data['password']):
+audit_logger.log_authentication(
+user_id=user[0],
+email=user[1],
+action='LOGIN',
+ip_address=request.remote_addr,
+status='failure',
+details='Invalid password'
+)
+return jsonify({'error': 'Invalid credentials'}), 401</vulnerable_code>
+
+<impact>Breaks MFA verification workflow completely. Users cannot complete two-factor authentication even with valid MFA codes. This creates a denial-of-service condition for all users and undermines the security architecture.</impact>
+
+<remediation>
+<summary>Remove password validation logic entirely from the MFA verification endpoint. Password validation should only occur in the login endpoint. The temp_token already proves the user provided valid credentials.</summary>
+<fixed_code># Remove the password validation block entirely
+# The temp_token proves password was already validated
+# Proceed directly to MFA verification
+
+cur.execute(
+"""
+SELECT secret FROM mfa_secrets
+WHERE user_id = %s AND is_active = TRUE
+ORDER BY created_at DESC LIMIT 1
+""",
+(user_id,)
+)
+secret_row = cur.fetchone()
+if not secret_row:
+return jsonify({'error': 'MFA not enrolled'}), 400
+
+mfa_secret = secret_row[0]</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-003</id>
+<title>MFA Secret Exposed in Registration Response</title>
+<severity>Critical</severity>
+<category>Information Disclosure</category>
+<description>The registration endpoint returns the raw MFA secret in the JSON response. This secret should only be displayed once during enrollment via QR code. Exposing it in API responses allows network interception, logging systems, or browser history to capture the secret, completely bypassing MFA protection.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>77</line_start>
+<line_end>88</line_end>
+<function>register</function>
+</location>
+
+<vulnerable_code>return jsonify({
+'message': 'User registered successfully',
+'user': {
+'id': user[0],
+'email': user[1],
+'full_name': user[2],
+'role_id': user[3]
+},
+'mfa_secret': mfa_secret,
+'mfa_required': True
+}), 201</vulnerable_code>
+
+<impact>Complete compromise of multi-factor authentication. An attacker who intercepts the registration response or accesses logs can extract the MFA secret and generate valid TOTP codes indefinitely. This negates the "second factor" and reduces security to single-factor authentication for PHI access.</impact>
+
+<remediation>
+<summary>Remove mfa_secret from the response. Redirect users to a dedicated MFA enrollment endpoint where they can retrieve a QR code in a secure, time-limited manner. Alternatively, generate the QR code during registration and return only the QR code image, never the raw secret.</summary>
+<fixed_code>return jsonify({
+'message': 'User registered successfully. Please complete MFA enrollment.',
+'user': {
+'id': user[0],
+'email': user[1],
+'full_name': user[2],
+'role_id': user[3]
+},
+'mfa_required': True,
+'next_step': '/auth/mfa/enroll'
+}), 201</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-004</id>
+<title>SQL Injection via Unparameterized Audit Logging</title>
+<severity>High</severity>
+<category>SQL Injection</category>
+<description>The audit_logger.log_access method constructs a SQL query by directly concatenating user_id, action, resource_type, and resource_id into the action field without proper parameterization. While these values may come from internal sources in current usage, if any controller passes user-controlled data (e.g., resource names, custom action strings), SQL injection is possible.</description>
+
+<location>
+<file>backend/utils/audit_logger.py</file>
+<line_start>63</line_start>
+<line_end>71</line_end>
+<function>log_access</function>
+</location>
+
+<vulnerable_code>cur.execute(
+"""
+INSERT INTO access_log (user_id, action, ip_address, user_agent, accessed_at)
+VALUES (%s, %s, %s, %s, %s)
+""",
+(user_id, f"{action}_{resource_type}_{resource_id}", ip_address, user_agent, datetime.now(UTC))
+)</vulnerable_code>
+
+<impact>Potential SQL injection if action, resource_type, or resource_id contain attacker-controlled values. An attacker could manipulate audit logs, extract PHI from the database, or execute arbitrary SQL commands. Given this is a healthcare system with PHI, successful exploitation could lead to HIPAA violations and complete data breach.</impact>
+
+<remediation>
+<summary>Store action, resource_type, and resource_id as separate columns in the access_log table with proper parameterization. Do not concatenate values into the action field. If concatenation is required for display, perform it during retrieval, not insertion.</summary>
+<fixed_code>cur.execute(
+"""
+INSERT INTO access_log (user_id, action, resource_type, resource_id, ip_address, user_agent, accessed_at)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+""",
+(user_id, action, resource_type, resource_id, ip_address, user_agent, datetime.now(UTC))
+)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-005</id>
+<title>Limiter Applied to Undefined Flask App Variable</title>
+<severity>High</severity>
+<category>Improper Initialization</category>
+<description>The Limiter is instantiated with a reference to 'app' which is not defined in the auth_handler.py module scope. This causes a NameError at module load time, preventing the application from starting and disabling all rate limiting protection on authentication endpoints.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>98</line_start>
+<line_end>102</line_end>
+<function>module level</function>
+</location>
+
+<vulnerable_code>limiter = Limiter(
+app,
+key_func=get_remote_address,
+default_limits=["200 per day", "50 per hour"]
+)</vulnerable_code>
+
+<impact>Application fails to start due to NameError. If the error is caught and ignored elsewhere, rate limiting is completely disabled, allowing brute-force attacks on login and MFA endpoints. Attackers can make unlimited authentication attempts to compromise accounts containing PHI.</impact>
+
+<remediation>
+<summary>Initialize the Limiter in the application factory or main app initialization code where the Flask app instance is available. Pass it to the blueprint registration or use init_app pattern. Alternatively, import the limiter from a shared module.</summary>
+<fixed_code># In app initialization file (e.g., __init__.py):
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+key_func=get_remote_address,
+default_limits=["200 per day", "50 per hour"]
+)
+
+def create_app():
+app = Flask(__name__)
+limiter.init_app(app)
+app.register_blueprint(auth_bp)
+return app
+
+# In auth_handler.py:
+from ..app import limiter # Import from where it's properly initialized</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-006</id>
+<title>Incomplete Logout Implementation Missing Audit Logging</title>
+<severity>High</severity>
+<category>Audit Logging Failure</category>
+<description>The logout endpoint contains a placeholder call to audit_logger.log_authentication with ellipsis (...) instead of actual parameters. This means logout events are never logged, violating HIPAA audit requirements and preventing detection of unauthorized session termination or session hijacking.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>340</line_start>
+<line_end>342</line_end>
+<function>logout</function>
+</location>
+
+<vulnerable_code># Log logout
+audit_logger.log_authentication(...)
+
+return jsonify({'message': 'Logout successful'}), 200</vulnerable_code>
+
+<impact>HIPAA compliance violation due to missing audit trail for logout events. Security teams cannot track session lifecycle, detect forced logouts, or investigate suspicious account activity. This undermines the entire audit logging system for a healthcare application handling PHI.</impact>
+
+<remediation>
+<summary>Complete the audit logging call with proper parameters including user_id, email, action, ip_address, and status.</summary>
+<fixed_code># Get user email for logging
+db_temp = get_db()
+cur_temp = db_temp.cursor()
+cur_temp.execute('SELECT email FROM users WHERE id = %s', (user_id,))
+user_email = cur_temp.fetchone()[0] if cur_temp.fetchone() else 'unknown'
+cur_temp.close()
+
+# Log logout
+audit_logger.log_authentication(
+user_id=user_id,
+email=user_email,
+action='LOGOUT',
+ip_address=request.remote_addr,
+status='success'
+)
+
+return jsonify({'message': 'Logout successful'}), 200</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-007</id>
+<title>Race Condition in MFA Secret Storage Without Transaction Isolation</title>
+<severity>High</severity>
+<category>Race Condition</category>
+<description>In the register function, MFA secret insertion occurs after user creation with an intermediate commit. If multiple registration requests occur simultaneously for the same user (edge case) or if the system fails between commits, users can be created without MFA secrets, bypassing two-factor authentication entirely.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>57</line_start>
+<line_end>82</line_end>
+<function>register</function>
+</location>
+
+<vulnerable_code>db.commit()
+
+
+# Log registration
+audit_logger.log_authentication(...)
+
+# Generate MFA secret
+mfa_secret = pyotp.random_base32()
+
+
+# Store MFA secret
+cur.execute(...)
+db.commit()</vulnerable_code>
+
+<impact>Users can be created without MFA protection due to race conditions or partial failures. In a healthcare environment, this means some accounts may only have single-factor authentication protecting access to PHI, violating security requirements and potentially HIPAA technical safeguards.</impact>
+
+<remediation>
+<summary>Perform both user creation and MFA secret insertion within a single transaction. Commit only after both operations succeed. Add database constraints to ensure every user has an associated MFA secret.</summary>
+<fixed_code># Generate MFA secret before user creation
+mfa_secret = pyotp.random_base32()
+
+# Create user
+cur.execute(
+"""
+INSERT INTO users (email, full_name, role_id, created_at)
+VALUES (%s, %s, %s, %s)
+RETURNING id, email, full_name, role_id, created_at
+""",
+(data['email'], data['full_name'], data['role_id'], datetime.utcnow())
+)
+user = cur.fetchone()
+
+# Store password hash
+cur.execute(
+"""
+INSERT INTO user_passwords (user_id, password_hash, created_at)
+VALUES (%s, %s, %s)
+""",
+(user[0], password_hash, datetime.utcnow())
+)
+
+# Store MFA secret
+cur.execute(
+"""
+INSERT INTO mfa_secrets (user_id, secret, created_at, is_active)
+VALUES (%s, %s, %s, %s)
+""",
+(user[0], mfa_secret, datetime.utcnow(), True)
+)
+
+# Commit all together
+db.commit()</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-008</id>
+<title>Weak Password Hashing Using PBKDF2 with Inadequate Iterations</title>
+<severity>High</severity>
+<category>Cryptographic Weakness</category>
+<description>The hash_password function in encryption.py uses PBKDF2 with SHA256 and 100,000 iterations. While PBKDF2 is acceptable, 100,000 iterations is below current OWASP recommendations (600,000 for PBKDF2-SHA256 as of 2023). Additionally, this custom implementation is redundant since bcrypt is already used in auth_handler.py, creating confusion about which hashing method is actually protecting passwords.</description>
+
+<location>
+<file>backend/utils/encryption.py</file>
+<line_start>169</line_start>
+<line_end>185</line_end>
+<function>hash_password</function>
+</location>
+
+<vulnerable_code>kdf = PBKDF2HMAC(
+algorithm=hashes.SHA256(),
+length=32,
+salt=salt,
+iterations=100000
+)</vulnerable_code>
+
+<impact>Passwords may be crackable with modern GPU-based attacks if the database is compromised. While 100,000 iterations provides some protection, it falls short of current security standards for protecting PHI-related credentials. The confusion between two hashing implementations increases risk of implementation errors.</impact>
+
+<remediation>
+<summary>Remove the redundant hash_password function entirely and use bcrypt consistently throughout the application. If PBKDF2 must be used, increase iterations to at least 600,000 and document why bcrypt is not used. Consider Argon2id as the modern standard for password hashing.</summary>
+<fixed_code># Remove hash_password and verify_password functions entirely
+# Use bcrypt consistently as shown in auth_handler.py:
+
+from flask_bcrypt import Bcrypt
+bcrypt = Bcrypt()
+
+# Hashing:
+password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+# Verification:
+bcrypt.check_password_hash(stored_hash, provided_password)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-009</id>
+<title>Fernet Encryption Key Management via Environment Variable</title>
+<severity>Medium</severity>
+<category>Key Management</category>
+<description>The FieldEncryption class loads encryption keys from environment variables without validation, rotation mechanism, or secure storage integration. Environment variables are logged by many systems, visible in process listings, and included in crash dumps. For PHI encryption under HIPAA, this does not meet requirements for secure key management.</description>
+
+<location>
+<file>backend/utils/encryption.py</file>
+<line_start>16</line_start>
+<line_end>27</line_end>
+<function>__init__</function>
+</location>
+
+<vulnerable_code>def __init__(self, encryption_key=None):
+"""
+Initialize encryption with a key
+
+Args:
+encryption_key: Base64-encoded Fernet key. If None, uses environment variable.
+"""
+if encryption_key is None:
+encryption_key = os.environ.get('FIELD_ENCRYPTION_KEY')
+
+if not encryption_key:
+raise ValueError("Encryption key not provided. Set FIELD_ENCRYPTION_KEY environment variable.")</vulnerable_code>
+
+<impact>Encryption keys protecting PHI can be exposed through environment variable dumps, logs, or process inspection. Key rotation is not supported, so if a key is compromised, all historical PHI must be re-encrypted. This violates HIPAA Security Rule requirements for proper key management (§164.312(a)(2)(iv)).</impact>
+
+<remediation>
+<summary>Integrate with a proper key management system (AWS KMS, Azure Key Vault, HashiCorp Vault). Load keys from secure storage with access control, implement key rotation with versioning, and ensure keys are never logged or exposed in memory dumps.</summary>
+<fixed_code>import boto3
+from botocore.exceptions import ClientError
+
+def __init__(self, key_id=None):
+"""
+Initialize encryption with KMS-managed key
+
+Args:
+key_id: KMS key ID or ARN
+"""
+if key_id is None:
+key_id = os.environ.get('KMS_KEY_ID')
+
+if not key_id:
+raise ValueError("KMS key ID not provided")
+
+self.kms_client = boto3.client('kms')
+self.key_id = key_id
+
+# Generate data encryption key from KMS
+try:
+response = self.kms_client.generate_data_key(
+KeyId=self.key_id,
+KeySpec='AES_256'
+)
+self.cipher = Fernet(base64.b64encode(response['Plaintext']))
+except ClientError as e:
+raise ValueError(f"Failed to initialize encryption: {e}")</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-010</id>
+<title>Insufficient MFA Code Validation Window</title>
+<severity>Medium</severity>
+<category>Authentication Logic Weakness</category>
+<description>The verify_mfa function uses totp.verify() with valid_window=1, allowing codes from one time step before and after the current time. While this provides some tolerance for clock skew, it only allows a ~90 second window. If set too restrictive, legitimate users may be locked out. If set too permissive elsewhere, it could enable replay attacks.</description>
+
+<location>
+<file>backend/handlers/auth_handler.py</file>
+<line_start>246</line_start>
+<line_end>247</line_end>
+<function>verify_mfa</function>
+</location>
+
+<vulnerable_code>totp = pyotp.TOTP(mfa_secret)
+if not totp.verify(data['mfa_code'], valid_window=1):</vulnerable_code>
+
+<impact>Legitimate users may experience authentication failures if there is clock skew between the server and their authenticator app, leading to help desk calls and potential use of insecure workarounds. However, the current window is reasonable and the impact is moderate usability concern rather than critical security flaw.</impact>
+
+<remediation>
+<summary>Maintain valid_window=1 as current setting is acceptable. Implement additional protections: track used MFA codes in a short-term cache to prevent replay attacks within the validation window, add monitoring for excessive MFA failures, and ensure NTP synchronization on all servers.</summary>
+<fixed_code># Add code reuse prevention
+totp = pyotp.TOTP(mfa_secret)
+code = data['mfa_code']
+
+# Check if code was recently used (implement cache/database check)
+if is_code_recently_used(user_id, code):
+audit_logger.log_security_event(
+event_type='MFA_REPLAY_ATTEMPT',
+user_id=user_id,
+ip_address=request.remote_addr,
+details='MFA code reuse detected'
+)
+return jsonify({'error': 'Invalid MFA code'}), 401
+
+if not totp.verify(code, valid_window=1):
+audit_logger.log_authentication(...)
+return jsonify({'error': 'Invalid MFA code'}), 401
+
+# Mark code as used
+mark_code_as_used(user_id, code)</fixed_code>
+</remediation>
+</vulnerability>
+
+<vulnerability>
+<id>VULN-011</id>
+<title>PHI Field Detection Using String Matching Heuristic</title>
+<severity>Low</severity>
+<category>Information Classification</category>
+<description>The DataMasking.is_phi_field() method uses simple substring matching to identify PHI fields. This heuristic approach may miss PHI fields with non-standard naming or incorrectly flag non-PHI fields. It should be a secondary validation only, not a primary security control.</description>
+
+<location>
+<file>backend/utils/encryption.py</file>
+<line_start>141</line_start>
+<line_end>159</line_end>
+<function>is_phi_field</function>
+</location>
+
+<vulnerable_code>@staticmethod
+def is_phi_field(field_name):
+"""
+Check if a field name indicates PHI (Protected Health Information)
+
+Args:
+field_name: Name of the field to check
+
+Returns:
+Boolean indicating if field contains PHI
+"""
+phi_indicators = [
+'ssn', 'social_security', 'dob', 'date_of_birth', 'birth_date',
+'phone', 'email', 'address', 'name', 'first_name', 'last_name',
+'full_name', 'medical_record', 'mrn', 'patient_id', 'diagnosis',
+'medication', 'treatment', 'insurance', 'policy_number'
+]
+
+field_lower = field_name.lower()
+return any(indicator in field_lower for indicator in phi_indicators)</vulnerable_code>
+
+<impact>PHI may not be properly identified and protected if field names use uncommon conventions or abbreviations. Fields like "pt_dx" (patient diagnosis) or "rx_hist" (prescription history) would not be detected. This could lead to unmasked PHI appearing in logs or displays, violating HIPAA minimum necessary standard.</impact>
+
+<remediation>
+<summary>Replace heuristic detection with explicit field classification at the schema level. Use database metadata, configuration files, or annotations to definitively mark PHI fields. The is_phi_field() method should only be used as a fallback warning mechanism, not a security control.</summary>
+<fixed_code># In database schema or configuration:
+PHI_FIELDS = {
+'users': ['date_of_birth', 'ssn', 'phone', 'email', 'address'],
+'patients': ['medical_record_number', 'diagnosis', 'medications'],
+'appointments': ['reason', 'notes']
+}
+
+@staticmethod
+def is_phi_field(table_name, field_name):
+"""
+Check if a field contains PHI using explicit configuration
+
+Args:
+table_name: Name of the database table
+field_name: Name of the field
+
+Returns:
+Boolean indicating if field contains PHI
+"""
+return field_name in PHI_FIELDS.get(table_name, [])</fixed_code>
+</remediation>
+</vulnerability>
+</vulnerabilities>
+</scan_report>

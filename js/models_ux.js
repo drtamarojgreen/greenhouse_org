@@ -1,9 +1,13 @@
+import { GreenhouseModelsUtil } from './models_util.js';
+import { GreenhouseModelsData } from './models_data.js';
+import { GreenhouseModelsUI } from './models_ui.js';
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+
 // docs/js/models_ux.js
 
-(function () {
-    'use strict';
-    let resilienceObserver = null;
+let resilienceObserver = null;
     const GreenhouseModelsUX = {
+        runtimeConfig: { baseUrl: null, targetSelector: null },
         config: {
             COMMUNITY_BOOST_THRESHOLD: 0.7,
             COMMUNITY_BOOST_FACTOR: 1.5,
@@ -114,7 +118,7 @@
                 await GreenhouseModelsData.loadData();
                 Object.assign(this.state, GreenhouseModelsData.state);
 
-                GreenhouseModelsUI.init(this.state, window.GreenhouseModelsUtil);
+                GreenhouseModelsUI.init(this.state, GreenhouseModelsUtil, this);
 
                 await GreenhouseModelsUI.loadCSS(this.state.baseUrl);
 
@@ -135,15 +139,13 @@
         },
 
 
+        configure(options) {
+            this.runtimeConfig = { ...this.runtimeConfig, ...options };
+        },
+
         getConfiguration() {
-            if (!window._greenhouseModelsAttributes) {
-                console.error('Models App: Global attributes not found.');
-                return false;
-            }
-            this.state.targetSelector = window._greenhouseModelsAttributes.targetSelector;
-            this.state.baseUrl = window._greenhouseModelsAttributes.baseUrl;
-            // Clean up the global object after use
-            //delete window._greenhouseModelsAttributes;
+            this.state.targetSelector = this.runtimeConfig.targetSelector;
+            this.state.baseUrl = this.runtimeConfig.baseUrl;
             return !!(this.state.targetSelector && this.state.baseUrl);
         },
 
@@ -288,7 +290,7 @@
         toggleFullScreen() {
             if (!document.fullscreenElement) {
                 this.state.mainAppContainer.requestFullscreen().catch(err => {
-                    alert(`${window.GreenhouseModelsUtil.t('alert_fullscreen_error')}: ${err.message} (${err.name})`);
+                    alert(`${GreenhouseModelsUtil.t('alert_fullscreen_error')}: ${err.message} (${err.name})`);
                 });
             } else {
                 if (document.exitFullscreen) {
@@ -352,9 +354,9 @@
             const url = `${window.location.origin}${window.location.pathname}?${queryString}`;
 
             navigator.clipboard.writeText(url).then(() => {
-                alert(window.GreenhouseModelsUtil.t('alert_url_copied'));
+                alert(GreenhouseModelsUtil.t('alert_url_copied'));
             }, () => {
-                alert(window.GreenhouseModelsUtil.t('alert_url_fail') + '\n' + url);
+                alert(GreenhouseModelsUtil.t('alert_url_fail') + '\n' + url);
             });
         },
 
@@ -456,10 +458,10 @@
                     this.state.network.isRunning = !this.state.network.isRunning;
                     if (this.state.network.isRunning) {
                         this.runSimulation();
-                        playPauseBtn.textContent = window.GreenhouseModelsUtil.t('btn_pause');
+                        playPauseBtn.textContent = GreenhouseModelsUtil.t('btn_pause');
                     } else {
                         cancelAnimationFrame(this.state.network.animationFrameId);
-                        playPauseBtn.textContent = window.GreenhouseModelsUtil.t('btn_play');
+                        playPauseBtn.textContent = GreenhouseModelsUtil.t('btn_play');
                     }
                 });
             }
@@ -502,7 +504,7 @@
             if (playPauseBtnEnv) {
                 playPauseBtnEnv.addEventListener('click', () => {
                     this.state.environment.isRunning = !this.state.environment.isRunning;
-                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? window.GreenhouseModelsUtil.t('btn_pause') : window.GreenhouseModelsUtil.t('btn_play');
+                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? GreenhouseModelsUtil.t('btn_pause') : GreenhouseModelsUtil.t('btn_play');
                     if (this.state.environment.isRunning) {
                         this.runEnvironmentSimulation();
                     }
@@ -737,7 +739,7 @@
 
             document.getElementById('play-pause-btn-synaptic').addEventListener('click', e => {
                 this.state.synaptic.isRunning = !this.state.synaptic.isRunning;
-                e.target.textContent = this.state.synaptic.isRunning ? window.GreenhouseModelsUtil.t('btn_pause') : window.GreenhouseModelsUtil.t('btn_play');
+                e.target.textContent = this.state.synaptic.isRunning ? GreenhouseModelsUtil.t('btn_pause') : GreenhouseModelsUtil.t('btn_play');
                 if (this.state.synaptic.isRunning) {
                     this.simulationLoop(performance.now());
                 }
@@ -808,9 +810,7 @@
                 if (wasRemoved) {
                     if (resilienceObserver) resilienceObserver.disconnect();
                     setTimeout(() => {
-                        if (window.GreenhouseModels && typeof window.GreenhouseModels.reinitialize === 'function') {
-                            window.GreenhouseModels.reinitialize();
-                        }
+                        this.reinitialize();
                     }, 0);
                 }
             };
@@ -853,5 +853,4 @@
         }
     };
 
-    window.GreenhouseModelsUX = GreenhouseModelsUX;
-})();
+export { GreenhouseModelsUX };

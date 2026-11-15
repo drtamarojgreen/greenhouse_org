@@ -10,7 +10,7 @@
     let GreenhouseUtils;
 
     const loadDependencies = async () => {
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             let attempts = 0;
             const maxAttempts = 240;
             const interval = setInterval(() => {

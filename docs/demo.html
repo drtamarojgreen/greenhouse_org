@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo of Programmatic Script Loading</title>
+    <link rel="stylesheet" href="css/schedule.css">
+
+    <h1>Demonstration of Programmatic Script Loading</h1>
+
+    <p>This page demonstrates how <code>admin.js</code> and <code>dashboard.js</code> are loaded and executed programmatically.</p>
+<div style="display:block; width:100%;">
+
+        <div id="dashboard-container"></div>
+
+</div>
+    <div id="demo-container">
+        <div id="admin-container"></div>
+    </div>
+
+    <h1>Demonstration of Programmatic Script Loading</h1>
+
+    <p>This page demonstrates how <code>admin.js</code> and <code>dashboard.js</code> are loaded and executed programmatically.</p>
+
+    <p>The <code>greenhouse.js</code> script is included below, and it is responsible for loading the other scripts.</p>
+
+    <style>
+        #demo-container > div {
+            display: block;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <script>
+        (async function() {
+            function loadScript(url) {
+                return new Promise((resolve, reject) => {
+                    console.log(`Loading script: ${url}`);
+                    const scriptElement = document.createElement('script');
+                    scriptElement.src = url;
+                    scriptElement.onload = () => {
+                        console.log(`Script loaded: ${url}`);
+                        resolve();
+                    };
+                    scriptElement.onerror = () => {
+                        console.error(`Error loading script: ${url}`);
+                        reject(new Error(`Error loading script: ${url}`));
+                    };
+                    document.body.appendChild(scriptElement);
+                });
+            }
+
+            try {
+                await loadScript('js/dashboard.js');
+                if (typeof window.buildDashboardUI === 'function') {
+                    console.log('buildDashboardUI function found. Building dashboard UI...');
+                    const dashboardFragment = await window.buildDashboardUI();
+                    document.getElementById('dashboard-container').appendChild(dashboardFragment);
+                    console.log('Dashboard UI appended.');
+                } else {
+                    console.error('buildDashboardUI function not found in dashboard.js.');
+                }
+
+                await loadScript('js/admin.js');
+                if (typeof window.buildAdminUI === 'function') {
+                    console.log('buildAdminUI function found. Building admin UI...');
+                    const adminFragment = await window.buildAdminUI();
+                    document.getElementById('admin-container').appendChild(adminFragment);
+                    console.log('Admin UI appended.');
+                } else {
+                    console.error('buildAdminUI function not found in admin.js.');
+                }
+            } catch (error) {
+                console.error('An error occurred during script loading and execution:', error);
+            }
+        })();
+    </script>
+</body>
+</html>

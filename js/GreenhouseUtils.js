@@ -1,4 +1,6 @@
-window.GreenhouseUtils = (function () {
+import { GreenhouseModelsTOC } from './models_toc.js';
+
+const GreenhouseUtils = (function () {
     /**
      * @description Configuration for shared utilities and application state.
      */
@@ -46,6 +48,7 @@ window.GreenhouseUtils = (function () {
      * @type {HTMLScriptElement}
      */
     const currentExecutingScriptElement = document.currentScript;
+    let loaderAttributes = {};
 
     /**
      * @function displayMessage
@@ -153,7 +156,7 @@ window.GreenhouseUtils = (function () {
 
         // Fallback to global attributes if currentScript attributes are missing (e.g., for blob URLs)
         // This global variable is set by loadScript just before appending the script.
-        const globalAttributes = window._greenhouseScriptAttributes || {};
+        const globalAttributes = loaderAttributes;
 
         appState.targetSelectorLeft = scriptAttributes['target-selector-left'] || globalAttributes['target-selector-left'];
         appState.targetSelectorRight = scriptAttributes['target-selector-right'] || globalAttributes['target-selector-right'];
@@ -236,8 +239,7 @@ window.GreenhouseUtils = (function () {
                 }
 
                 // Temporarily store attributes globally for scripts loaded via blob URLs
-                window._greenhouseScriptAttributes = attributes;
-                console.log(`GreenhouseUtils: loadScript - Setting _greenhouseScriptAttributes for ${scriptName}:`, attributes);
+                loaderAttributes = attributes;
 
                 const blob = new Blob([scriptText], { type: 'text/javascript' });
                 const objectUrl = URL.createObjectURL(blob);
@@ -256,7 +258,7 @@ window.GreenhouseUtils = (function () {
                     const error = new Error(`Failed to execute script ${scriptName}`);
                     console.error(`GreenhouseUtils: ${error.message}`);
                     URL.revokeObjectURL(objectUrl);
-                    delete window._greenhouseScriptAttributes; // Clean up global variable
+                    loaderAttributes = {};
                     reject(error);
                 };
 
@@ -265,7 +267,7 @@ window.GreenhouseUtils = (function () {
 
             } catch (error) {
                 console.error(`GreenhouseUtils: Failed to load script ${scriptName}:`, error);
-                delete window._greenhouseScriptAttributes; // Clean up global variable on error too
+                loaderAttributes = {};
                 reject(error);
             }
         });
@@ -514,14 +516,11 @@ window.GreenhouseUtils = (function () {
             document.head.appendChild(link);
         }
 
-        // Load JS if not present
-        if (!window.GreenhouseModelsTOC) {
-            try {
-                await loadScript('models_toc.js', githubUrl);
-            } catch (e) {
-                console.error('[GreenhouseUtils] Failed to load models_toc.js', e);
-                return;
-            }
+        // The Models entry imports this dependency explicitly before calling
+        // renderModelsTOC. Keep this helper free of runtime script loading.
+        if (!GreenhouseModelsTOC) {
+            console.error('[GreenhouseUtils] Models TOC module was not imported.');
+            return;
         }
 
         // Create or find the footer container
@@ -652,9 +651,7 @@ window.GreenhouseUtils = (function () {
         }
 
         // Initialize the TOC component inside the new footer container
-        if (window.GreenhouseModelsTOC) {
-            window.GreenhouseModelsTOC.init({ target: tocContainer, baseUrl: githubUrl });
-        }
+        GreenhouseModelsTOC.init({ target: tocContainer, baseUrl: githubUrl });
     }
 
     /**
@@ -764,21 +761,4 @@ window.GreenhouseUtils = (function () {
     };
 })();
 
-// Register with dependency manager if available, otherwise emit ready event
-if (window.GreenhouseDependencyManager) {
-    window.GreenhouseDependencyManager.register('utils', window.GreenhouseUtils, {
-        version: '1.2.0',
-        description: 'Core utilities for Greenhouse applications',
-        features: ['DOM manipulation', 'Script loading', 'Form validation', 'Notifications']
-    });
-    console.log('GreenhouseUtils: Registered with GreenhouseDependencyManager');
-} else {
-    // Fallback to direct event emission for backward compatibility
-    window.dispatchEvent(new CustomEvent('greenhouse:utils-ready', {
-        detail: {
-            utils: window.GreenhouseUtils,
-            timestamp: Date.now()
-        }
-    }));
-    console.log('GreenhouseUtils: Ready event dispatched (fallback mode)');
-}
+export { GreenhouseUtils };

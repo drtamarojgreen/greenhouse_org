@@ -1,8 +1,5 @@
 
-(function() {
-    'use strict';
-
-    const GreenhouseModelsUIBrain = {
+const GreenhouseModelsUIBrain = {
         _renderElement(ctx, element, renderContext) {
             if (!element) return;
 
@@ -338,5 +335,4 @@
         }
     };
 
-    window.GreenhouseModelsUIBrain = GreenhouseModelsUIBrain;
-})();
+export { GreenhouseModelsUIBrain };

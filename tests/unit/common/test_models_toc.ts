@@ -3,7 +3,7 @@
     const { assert } = window;
     const TestFramework = window.TestFramework;
 
-    const mockContainer = {
+    const mockContainer: any = {
         classList: {
             add: (cls) => { mockContainer.className = (mockContainer.className || '') + ' ' + cls; }
         },

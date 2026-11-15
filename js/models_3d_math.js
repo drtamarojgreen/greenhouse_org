@@ -1,5 +1,3 @@
-(function () {
-'use strict';
 /**
  * @file models_3d_math.ts
  * @description 3D Mathematics Foundation for Models Canvas.
@@ -184,6 +182,5 @@ const GreenhouseModels3DMath = {
         return ambientLight + (1 - ambientLight) * diffuse;
     }
 };
-window.GreenhouseModels3DMath = GreenhouseModels3DMath;
 
-})();
+export { GreenhouseModels3DMath };

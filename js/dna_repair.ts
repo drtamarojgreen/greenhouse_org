@@ -11,7 +11,7 @@
 
     // Ensure GreenhouseUtils is loaded before proceeding
     const loadDependencies = async () => {
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             let attempts = 0;
             const maxAttempts = 240; // 12 seconds
             const interval = setInterval(() => {
@@ -81,9 +81,9 @@
             if (this.createUI) this.createUI(wrapper);
 
             if (isMobile) {
-                const staticHeader = document.querySelector('.page-header');
+                const staticHeader = document.querySelector('.page-header') as HTMLElement | null;
                 if (staticHeader) staticHeader.style.display = 'none';
-                const infoOverlay = wrapper.querySelector('.dna-info-overlay');
+                const infoOverlay = wrapper.querySelector('.dna-info-overlay') as HTMLElement | null;
                 if (infoOverlay) infoOverlay.style.display = 'none';
             }
 
@@ -225,6 +225,7 @@
         animate() { if (!this.isRunning) return; this.update(); this.render(); requestAnimationFrame(() => this.animate()); },
 
         update() {
+            const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
             const st = this.state; st.camera.rotationX += 0.005;
             if (st.simulating) {
                 st.timer++;

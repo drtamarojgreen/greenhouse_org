@@ -1,7 +1,4 @@
-(function () {
-    'use strict';
-
-    window.GreenhouseEnvironmentConfig = {
+const GreenhouseEnvironmentConfig = {
         canvas: {
             logicalWidth: 1536,
             logicalHeight: 1024
@@ -73,4 +70,5 @@
             }
         }
     };
-})();
+
+export { GreenhouseEnvironmentConfig };

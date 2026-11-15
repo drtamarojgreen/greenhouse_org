@@ -195,7 +195,7 @@
             ctx.fillText('ANATOMICAL ATLAS LEGEND', x + 15, y + 25);
 
             let i = 0;
-            for (const [key, val] of Object.entries(config.atlasLegend || {})) {
+            for (const [key, val] of Object.entries((config.atlasLegend || {}) as Record<string, any>)) {
                 // Item 81: Filtering
                 if (viewMode === 1 && (key === 'trp' || key === 'kyn' || key === 'quin')) continue;
                 if (viewMode === 2 && (key === 'microglia' || key === 'astrocyte')) continue;

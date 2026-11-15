@@ -1,7 +1,4 @@
-(function () {
-    'use strict';
-
-    const GreenhouseModelsUIEnvironmentHovers = {
+const GreenhouseModelsUIEnvironmentHovers = {
         state: null,
         util: null,
         hoverPersistenceTimer: null,
@@ -224,5 +221,4 @@
         }
     };
 
-    window.GreenhouseModelsUIEnvironmentHovers = GreenhouseModelsUIEnvironmentHovers;
-})();
+export { GreenhouseModelsUIEnvironmentHovers };

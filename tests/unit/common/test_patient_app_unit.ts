@@ -16,7 +16,7 @@
         TestFramework.describe('UI Population Helpers', () => {
             TestFramework.it('populateServices should handle empty API response', async () => {
                 const originalFetch = window.fetch;
-                window.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+                window.fetch = (() => Promise.resolve({ ok: true, json: () => Promise.resolve([]) })) as any;
 
                 await App.populateServices();
 

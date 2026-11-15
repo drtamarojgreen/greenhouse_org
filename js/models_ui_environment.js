@@ -1,8 +1,14 @@
+import { GreenhouseModelsUtil } from './models_util.js';
+import { GreenhouseModelsUIEnvironmentOverlay } from './models_ui_environment_overlay.js';
+import { GreenhouseModelsUIEnvironmentHovers } from './models_ui_environment_hovers.js';
+import { GreenhouseEnvironmentConfig } from './environment_config.js';
+import { GreenhouseModelsUIEnvironmentBackground } from './models_ui_environment_background.js';
+import { GreenhouseModelsUIEnvironmentMedication } from './models_ui_environment_medication.js';
+import { GreenhouseModelsUIEnvironmentTherapy } from './models_ui_environment_therapy.js';
+import { GreenhouseModelsUI3D } from './models_ui_3d.js';
 
-(function () {
-    'use strict';
 
-    class BackgroundComponent {
+class BackgroundComponent {
         constructor(state, util) {
             this.state = state;
             this.util = util;
@@ -15,12 +21,12 @@
         }
         update() { }
         draw(ctx, width, height) {
-            if (window.GreenhouseModelsUIEnvironmentBackground) {
-                if (!window.GreenhouseModelsUIEnvironmentBackground.state) {
+            if (GreenhouseModelsUIEnvironmentBackground) {
+                if (!GreenhouseModelsUIEnvironmentBackground.state) {
                     // Pass the stored system reference
-                    window.GreenhouseModelsUIEnvironmentBackground.init(this.state, this.util, this.system);
+                    GreenhouseModelsUIEnvironmentBackground.init(this.state, this.util, this.system);
                 }
-                window.GreenhouseModelsUIEnvironmentBackground.draw(ctx, width, height);
+                GreenhouseModelsUIEnvironmentBackground.draw(ctx, width, height);
             }
         }
     }
@@ -51,7 +57,7 @@
                 ctx.stroke();
             };
 
-            const config = window.GreenhouseEnvironmentConfig;
+            const config = GreenhouseEnvironmentConfig;
             if (config && config.influencePaths) {
                 config.influencePaths.forEach(path => {
                     drawPath(path.startX, path.startY, path.endX, path.endY, path.color, path.width);
@@ -71,18 +77,18 @@
         init(system) { }
         update(deltaTime) { }
         draw(ctx, width, height) {
-            if (window.GreenhouseModelsUIEnvironmentHovers) {
+            if (GreenhouseModelsUIEnvironmentHovers) {
                 let allRegions = {};
-                if (window.GreenhouseModelsUIEnvironmentBackground && window.GreenhouseModelsUIEnvironmentBackground.getBrainRegions) {
-                    allRegions = { ...window.GreenhouseModelsUIEnvironmentBackground.getBrainRegions() };
+                if (GreenhouseModelsUIEnvironmentBackground && GreenhouseModelsUIEnvironmentBackground.getBrainRegions) {
+                    allRegions = { ...GreenhouseModelsUIEnvironmentBackground.getBrainRegions() };
                 }
-                if (window.GreenhouseModelsUIEnvironmentMedication && window.GreenhouseModelsUIEnvironmentMedication.regions) {
-                    allRegions = { ...allRegions, ...window.GreenhouseModelsUIEnvironmentMedication.regions };
+                if (GreenhouseModelsUIEnvironmentMedication && GreenhouseModelsUIEnvironmentMedication.regions) {
+                    allRegions = { ...allRegions, ...GreenhouseModelsUIEnvironmentMedication.regions };
                 }
-                if (window.GreenhouseModelsUIEnvironmentTherapy && window.GreenhouseModelsUIEnvironmentTherapy.regions) {
-                    allRegions = { ...allRegions, ...window.GreenhouseModelsUIEnvironmentTherapy.regions };
+                if (GreenhouseModelsUIEnvironmentTherapy && GreenhouseModelsUIEnvironmentTherapy.regions) {
+                    allRegions = { ...allRegions, ...GreenhouseModelsUIEnvironmentTherapy.regions };
                 }
-                window.GreenhouseModelsUIEnvironmentHovers.drawHeatmaps(ctx, width, height, allRegions);
+                GreenhouseModelsUIEnvironmentHovers.drawHeatmaps(ctx, width, height, allRegions);
             }
         }
     }
@@ -95,17 +101,17 @@
             this.active = true;
         }
         init(system) {
-            if (window.GreenhouseModelsUIEnvironmentMedication) {
-                window.GreenhouseModelsUIEnvironmentMedication.init(this.state, this.util);
+            if (GreenhouseModelsUIEnvironmentMedication) {
+                GreenhouseModelsUIEnvironmentMedication.init(this.state, this.util);
             }
         }
         update(deltaTime) { }
         draw(ctx, width, height) {
-            if (window.GreenhouseModelsUIEnvironmentMedication) {
-                if (!window.GreenhouseModelsUIEnvironmentMedication.state) {
-                    window.GreenhouseModelsUIEnvironmentMedication.init(this.state, this.util);
+            if (GreenhouseModelsUIEnvironmentMedication) {
+                if (!GreenhouseModelsUIEnvironmentMedication.state) {
+                    GreenhouseModelsUIEnvironmentMedication.init(this.state, this.util);
                 }
-                window.GreenhouseModelsUIEnvironmentMedication.draw(ctx, width, height);
+                GreenhouseModelsUIEnvironmentMedication.draw(ctx, width, height);
             } else {
                 this._drawDefaultMedication(ctx, width, height);
             }
@@ -149,17 +155,17 @@
             this.active = true;
         }
         init(system) {
-            if (window.GreenhouseModelsUIEnvironmentTherapy) {
-                window.GreenhouseModelsUIEnvironmentTherapy.init(this.state, this.util);
+            if (GreenhouseModelsUIEnvironmentTherapy) {
+                GreenhouseModelsUIEnvironmentTherapy.init(this.state, this.util);
             }
         }
         update(deltaTime) { }
         draw(ctx, width, height) {
-            if (window.GreenhouseModelsUIEnvironmentTherapy) {
-                if (!window.GreenhouseModelsUIEnvironmentTherapy.state) {
-                    window.GreenhouseModelsUIEnvironmentTherapy.init(this.state, this.util);
+            if (GreenhouseModelsUIEnvironmentTherapy) {
+                if (!GreenhouseModelsUIEnvironmentTherapy.state) {
+                    GreenhouseModelsUIEnvironmentTherapy.init(this.state, this.util);
                 }
-                window.GreenhouseModelsUIEnvironmentTherapy.draw(ctx, width, height);
+                GreenhouseModelsUIEnvironmentTherapy.draw(ctx, width, height);
             } else {
                 this._drawDefaultTherapy(ctx, width, height);
             }
@@ -216,7 +222,7 @@
                 ctx.fillText(translatedText, x, y);
             };
 
-            const config = window.GreenhouseEnvironmentConfig;
+            const config = GreenhouseEnvironmentConfig;
             if (config && config.labels) {
                 config.labels.forEach(label => drawLabelWithBackground(label.text, label.x, label.y, label.fontSize || 20)); // #27 - Increased default font size
             }
@@ -306,11 +312,11 @@
         init(system) { }
         update(deltaTime) { }
         draw(ctx, width, height) {
-            if (window.GreenhouseModelsUIEnvironmentOverlay && !window.GreenhouseModelsUIEnvironmentOverlay.state) {
-                window.GreenhouseModelsUIEnvironmentOverlay.init(this.state);
+            if (GreenhouseModelsUIEnvironmentOverlay && !GreenhouseModelsUIEnvironmentOverlay.state) {
+                GreenhouseModelsUIEnvironmentOverlay.init(this.state);
             }
-            if (window.GreenhouseModelsUIEnvironmentOverlay) {
-                window.GreenhouseModelsUIEnvironmentOverlay.drawOverlays(ctx, width, height);
+            if (GreenhouseModelsUIEnvironmentOverlay) {
+                GreenhouseModelsUIEnvironmentOverlay.drawOverlays(ctx, width, height);
             }
         }
     }
@@ -359,11 +365,11 @@
         init(system) { }
         update(deltaTime) { }
         draw(ctx, width, height) {
-            if (window.GreenhouseModelsUIEnvironmentHovers && !window.GreenhouseModelsUIEnvironmentHovers.state) {
-                window.GreenhouseModelsUIEnvironmentHovers.init(this.state, this.util);
+            if (GreenhouseModelsUIEnvironmentHovers && !GreenhouseModelsUIEnvironmentHovers.state) {
+                GreenhouseModelsUIEnvironmentHovers.init(this.state, this.util);
             }
-            if (window.GreenhouseModelsUIEnvironmentHovers) {
-                window.GreenhouseModelsUIEnvironmentHovers.drawTooltip(ctx);
+            if (GreenhouseModelsUIEnvironmentHovers) {
+                GreenhouseModelsUIEnvironmentHovers.drawTooltip(ctx);
             }
         }
     }
@@ -374,7 +380,7 @@
         drawEnvironmentView() {
             if (!this.environmentSystem) {
                 // Initialize the system and components
-                this.environmentSystem = new window.GreenhouseModelsUtil.GreenhouseSystem(this.canvases.environment);
+                this.environmentSystem = new GreenhouseModelsUtil.GreenhouseSystem(this.canvases.environment);
 
                 // #91 - Refactor component initialization to be data-driven
                 const components = [
@@ -420,40 +426,39 @@
             };
 
             // Pass pre-calculated values to all handlers (eliminates redundant calculations)
-            if (window.GreenhouseModelsUIEnvironmentHovers) {
+            if (GreenhouseModelsUIEnvironmentHovers) {
                 // Get brain regions from background module
                 let brainRegions = {};
-                if (window.GreenhouseModelsUIEnvironmentBackground && window.GreenhouseModelsUIEnvironmentBackground.getBrainRegions) {
-                    brainRegions = window.GreenhouseModelsUIEnvironmentBackground.getBrainRegions();
+                if (GreenhouseModelsUIEnvironmentBackground && GreenhouseModelsUIEnvironmentBackground.getBrainRegions) {
+                    brainRegions = GreenhouseModelsUIEnvironmentBackground.getBrainRegions();
                 }
 
-                window.GreenhouseModelsUIEnvironmentHovers.handleMouseMove(hitContext, brainRegions);
+                GreenhouseModelsUIEnvironmentHovers.handleMouseMove(hitContext, brainRegions);
                 
                 // Store the hovered region key in state for 3D highlighting
                 const hoveredKey = this.state.environment.hoveredRegionKey;
                 
                 // Notify 3D module of hover state
-                if (window.GreenhouseModelsUI3D && window.GreenhouseModelsUI3D.setHoveredRegion) {
-                    window.GreenhouseModelsUI3D.setHoveredRegion(hoveredKey);
+                if (GreenhouseModelsUI3D && GreenhouseModelsUI3D.setHoveredRegion) {
+                    GreenhouseModelsUI3D.setHoveredRegion(hoveredKey);
                 }
             }
-            if (window.GreenhouseModelsUIEnvironmentMedication) {
-                window.GreenhouseModelsUIEnvironmentMedication.handleMouseMove(hitContext);
+            if (GreenhouseModelsUIEnvironmentMedication) {
+                GreenhouseModelsUIEnvironmentMedication.handleMouseMove(hitContext);
             }
-            if (window.GreenhouseModelsUIEnvironmentTherapy) {
-                window.GreenhouseModelsUIEnvironmentTherapy.handleMouseMove(hitContext);
+            if (GreenhouseModelsUIEnvironmentTherapy) {
+                GreenhouseModelsUIEnvironmentTherapy.handleMouseMove(hitContext);
             }
         },
 
         _handleClick(event, canvas, ctx) { // This function is called by models_ux.js
-            if (window.GreenhouseModelsUIEnvironmentMedication && window.GreenhouseModelsUIEnvironmentMedication.handleClick) {
-                window.GreenhouseModelsUIEnvironmentMedication.handleClick(event, canvas, ctx);
+            if (GreenhouseModelsUIEnvironmentMedication && GreenhouseModelsUIEnvironmentMedication.handleClick) {
+                GreenhouseModelsUIEnvironmentMedication.handleClick(event, canvas, ctx);
             }
-            if (window.GreenhouseModelsUIEnvironmentTherapy && window.GreenhouseModelsUIEnvironmentTherapy.handleClick) {
-                window.GreenhouseModelsUIEnvironmentTherapy.handleClick(event, canvas, ctx);
+            if (GreenhouseModelsUIEnvironmentTherapy && GreenhouseModelsUIEnvironmentTherapy.handleClick) {
+                GreenhouseModelsUIEnvironmentTherapy.handleClick(event, canvas, ctx);
             }
         },
     };
 
-    window.GreenhouseModelsUIEnvironment = GreenhouseModelsUIEnvironment;
-})();
+export { GreenhouseModelsUIEnvironment };

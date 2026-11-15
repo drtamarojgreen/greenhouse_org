@@ -32,9 +32,10 @@
         TestFramework.it('GreenhouseBioStatus should dispatch events on sync', () => {
             let eventCaught = false;
             const originalDispatch = window.dispatchEvent;
-            window.dispatchEvent = (ev) => {
+            window.dispatchEvent = ((ev: Event) => {
                 if (ev.type === 'greenhouseBioUpdate') eventCaught = true;
-            };
+                return true;
+            }) as any;
 
             window.GreenhouseBioStatus.sync('stress', { load: 0.5 });
             assert.isTrue(eventCaught);

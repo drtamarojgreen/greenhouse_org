@@ -1,6 +1,3 @@
-(function () {
-'use strict';
-
 /// <reference path="types/globals.d.ts" />
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -235,9 +232,5 @@ const GreenhouseModelsData = {
         return networkState; // Return the updated state
     }
 };
-window.GreenhouseModelsData = GreenhouseModelsData;
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = GreenhouseModelsData;
-}
 
-})();
+export { GreenhouseModelsData };

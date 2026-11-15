@@ -100,7 +100,7 @@
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
 
-            for (const [name, data] of Object.entries(regions)) {
+            for (const [name, data] of Object.entries(regions as Record<string, any>)) {
                 if (data.count > 0) {
                     const cx = data.x / data.count;
                     const cy = data.y / data.count;

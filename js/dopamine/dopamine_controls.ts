@@ -35,7 +35,7 @@
         if (btnLang) btnLang.innerText = t('btn_language');
 
         // Update dropdown headers
-        const dropdowns = document.querySelectorAll('.dopamine-dropdown .dopamine-btn');
+        const dropdowns = document.querySelectorAll<HTMLElement>('.dopamine-dropdown .dopamine-btn');
         if (dropdowns.length >= 4) {
             dropdowns[0].innerText = t('signaling');
             dropdowns[1].innerText = t('scenarios');
@@ -66,10 +66,12 @@
             btn.innerText = label;
             btn.onclick = (e) => {
                 e.stopPropagation();
-                const content = dropdown.querySelector('.dropdown-content');
-                const isOpen = content.style.display === 'block';
-                document.querySelectorAll('.dropdown-content').forEach(c => c.style.display = 'none');
-                content.style.display = isOpen ? 'none' : 'block';
+                const content = dropdown.querySelector('.dropdown-content') as HTMLElement | null;
+                if (content) {
+                    const isOpen = content.style.display === 'block';
+                    document.querySelectorAll<HTMLElement>('.dropdown-content').forEach(c => c.style.display = 'none');
+                    content.style.display = isOpen ? 'none' : 'block';
+                }
             };
             dropdown.appendChild(btn);
 
@@ -102,7 +104,7 @@
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
                     cb.checked = opt.checked();
-                    cb.onchange = (e) => opt.action(e.target.checked);
+                    cb.onchange = (e) => opt.action((e.target as HTMLInputElement).checked);
                     item.appendChild(cb);
                     const lbl = document.createElement('span');
                     lbl.innerText = opt.label;
@@ -276,7 +278,7 @@
 
         // Global click listener to close dropdowns
         window.addEventListener('click', () => {
-            document.querySelectorAll('.dropdown-content').forEach(c => c.style.display = 'none');
+            document.querySelectorAll<HTMLElement>('.dropdown-content').forEach(c => c.style.display = 'none');
         });
 
         const info = document.createElement('div');

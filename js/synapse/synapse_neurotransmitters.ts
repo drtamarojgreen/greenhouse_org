@@ -11,7 +11,7 @@
         ions: [],
         plasticityFactor: 1.0,
 
-        create(w, h, count = 1, config = {}, forceBurst = false) {
+        create(w, h, count = 1, config: any = {}, forceBurst = false) {
             const chem = G.Chemistry.neurotransmitters[config.activeNT || 'serotonin'];
 
             if (G.config.pharmacology?.bbbActive && Math.random() > 0.8) return;

@@ -1,8 +1,7 @@
+import { GreenhouseModelsUtil } from './models_util.js';
 
-(function() {
-    'use strict';
 
-    const GreenhouseModelsUISynapse = {
+const GreenhouseModelsUISynapse = {
         _renderElement(ctx, element, { w, h, tw, psy }) {
             if (!element) return;
 
@@ -341,5 +340,4 @@
         }
     };
 
-    window.GreenhouseModelsUISynapse = GreenhouseModelsUISynapse;
-})();
+export { GreenhouseModelsUISynapse };

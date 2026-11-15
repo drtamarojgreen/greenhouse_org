@@ -37,7 +37,7 @@
         selectors: geneticSelectors
     };
     // For backwards compatibility, though the new selectors object is primary.
-    window._greenhouseGeneticAttributes.targetSelector = geneticSelectors.genetic || scriptAttributes['target-selector-left'];
+    (window as any)._greenhouseGeneticAttributes.targetSelector = (geneticSelectors as any).genetic || scriptAttributes['target-selector-left'];
 
     // --- Dependency Loading ---
     let GreenhouseUtils;
@@ -46,7 +46,7 @@
 
     const loadDependencies = async () => {
         // This function remains to ensure GreenhouseUtils is available for loading sub-modules.
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             let attempts = 0;
             const maxAttempts = 240;
             const interval = setInterval(() => {
@@ -121,7 +121,7 @@
 
         // If re-initialized via utility, args are (container, selectorString)
         let targetSelector;
-        if (selectors instanceof HTMLElement || (typeof selectors === 'string' && !selectors.genetic)) {
+        if (selectors instanceof HTMLElement || typeof selectors === 'string' || !(selectors as any).genetic) {
             // We are in a re-init scenario where 'selectors' might be the container or selector string
             // We need to fallback to the stored global attributes
             if (window._greenhouseGeneticAttributes && window._greenhouseGeneticAttributes.selectors) {

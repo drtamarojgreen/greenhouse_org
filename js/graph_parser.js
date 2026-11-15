@@ -4,10 +4,7 @@
  * Defines 3D positions for the filtered nodes.
  */
 
-(function () {
-    'use strict';
-
-    window.GreenhouseGraphParser = {
+const GreenhouseGraphParser = {
         data: { nodes: [], edges: [] },
         isLoaded: false,
         subscribers: [],
@@ -147,4 +144,5 @@
             this.data = { nodes, edges };
         }
     };
-})();
+
+export { GreenhouseGraphParser };

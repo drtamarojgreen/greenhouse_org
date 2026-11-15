@@ -1,5 +1,5 @@
-(function () {
-'use strict';
+import { GreenhouseTranslations } from './models_lang.js';
+
 /**
  * @file models_util.ts
  * @description Lightweight shared simulation engine and utilities for Greenhouse models.
@@ -212,7 +212,7 @@ const GreenhouseModelsUtil = {
     DiurnalClock,
     currentLanguage: 'en',
     get translations() {
-        return window.GreenhouseTranslations || {};
+        return GreenhouseTranslations || {};
     },
     createElement(tag, attributes, ...children) {
         const element = document.createElement(tag);
@@ -440,8 +440,7 @@ const GreenhouseModelsUtil = {
         }
     }
 };
-window.GreenhouseModelsUtil = GreenhouseModelsUtil;
-window.GreenhouseBioStatus = {
+const GreenhouseBioStatus = {
     stress: { load: 0, hpa: 0, autonomic: 0 },
     inflammation: { tone: 0, bbb: 1, microglia: 0 },
     sync(model, stats) {
@@ -450,4 +449,4 @@ window.GreenhouseBioStatus = {
     }
 };
 
-})();
+export { GreenhouseModelsUtil, GreenhouseBioStatus };

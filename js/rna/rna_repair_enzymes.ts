@@ -12,6 +12,7 @@
      * @class BaseEnzyme
      */
     class BaseEnzyme {
+        [key: string]: any;
         constructor(name, targetIndex, x, y, speed = 3) {
             this.name = name;
             this.targetIndex = targetIndex;

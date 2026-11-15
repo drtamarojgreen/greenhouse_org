@@ -172,7 +172,7 @@
                 const cb = document.createElement('input');
                 cb.type = 'checkbox';
                 cb.setAttribute('aria-label', opt.name);
-                if (opt.checked) cb.checked = true;
+                if ((opt as any).checked) cb.checked = true;
                 cb.onchange = (e) => {
                     opt.toggle();
                     // Visual confirmation ping (Category III, #46)
@@ -186,7 +186,7 @@
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const isVisible = modal.style.display === 'block';
-                document.querySelectorAll('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
+                document.querySelectorAll<HTMLElement>('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
                 modal.style.display = isVisible ? 'none' : 'block';
             };
 
@@ -196,7 +196,7 @@
         });
 
         window.addEventListener('click', () => {
-            document.querySelectorAll('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
+            document.querySelectorAll<HTMLElement>('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
         });
 
         // Language Selection - Standardized for both mobile and desktop
@@ -229,7 +229,7 @@
             if (infoBox) infoBox.innerHTML = `<strong>${t2('neuro_serotonin_title')}</strong><br>${t2('neuro_serotonin_desc')}`;
 
             // Update dropdown headers
-            const dropdowns = document.querySelectorAll('.serotonin-dropdown .dropdown-toggle');
+            const dropdowns = document.querySelectorAll<HTMLElement>('.serotonin-dropdown .dropdown-toggle');
             if (dropdowns.length >= 5) {
                 dropdowns[0].innerText = t2('accessibility');
                 dropdowns[1].innerText = t2('aesthetics');
@@ -292,7 +292,7 @@
             cholesterolSlider.max = '2.0';
             cholesterolSlider.step = '0.1';
             cholesterolSlider.value = '1.0';
-            cholesterolSlider.oninput = (e) => { G.cholesterolLevel = parseFloat(e.target.value); };
+            cholesterolSlider.oninput = (e) => { G.cholesterolLevel = parseFloat((e.target as HTMLInputElement).value); };
             cholesterolControl.appendChild(cholesterolSlider);
             container.appendChild(cholesterolControl);
         }

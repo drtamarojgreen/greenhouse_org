@@ -187,55 +187,16 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/js/GreenhouseDependencyManager.js"></script>
-    <script src="/js/GreenhouseUtils.js"></script>
     <script src="/js/GreenhouseMobile.js"></script>
     <script src="/js/performance_profiler.js" data-auto-start="true"></script>
-    <script src="/js/assertion_library.js"></script>
-    <script src="/js/test_framework.js"></script>
-    <script src="/js/model_tests.js"></script>
-    <script src="/js/mobile_integration_tests.js"></script>
-    <script src="/js/models.js"
+    <script type="module" src="/js/models.js" data-greenhouse-models-entry
             data-base-url="./"
             data-target-selector-left="#models-app-container"></script>
 
-    <!-- Console Logger for Testing -->
+    <!-- Console logger -->
     <script>
-        // Log 3D module loading status
         window.addEventListener('load', () => {
-            console.log('%c🎨 Models 3D Test Page Loaded', 'color: #667eea; font-size: 16px; font-weight: bold;');
-
-            // Check for 3D modules after a delay
-            setTimeout(() => {
-                if (window.GreenhouseModels3DMath) {
-                    console.log('%c✅ 3D Math Module Loaded', 'color: #48bb78; font-weight: bold;');
-                } else {
-                    console.warn('⚠️ 3D Math Module not found');
-                }
-
-                if (window.GreenhouseModelsUI3D) {
-                    console.log('%c✅ 3D UI Module Loaded', 'color: #48bb78; font-weight: bold;');
-                } else {
-                    console.warn('⚠️ 3D UI Module not found');
-                }
-
-                if (window.GreenhouseModelsUI) {
-                    console.log('%c✅ Main UI Module Loaded', 'color: #48bb78; font-weight: bold;');
-
-                    // Check if 3D methods are available
-                    if (window.GreenhouseModelsUI.init3DCanvas) {
-                        console.log('%c✅ 3D Canvas initialization method available', 'color: #48bb78; font-weight: bold;');
-                    }
-                } else {
-                    console.warn('⚠️ Main UI Module not found');
-                }
-
-                console.log('%c📋 Testing Instructions:', 'color: #667eea; font-size: 14px; font-weight: bold;');
-                console.log('1. Accept the consent screen');
-                console.log('2. Look for "Launch 3D View" button in the left column');
-                console.log('3. Click it to activate the 3D visualization');
-                console.log('4. Interact with the 3D view using mouse controls');
-            }, 2000);
+            console.log('Greenhouse Models page loaded.');
         });
 
         // Monitor for errors

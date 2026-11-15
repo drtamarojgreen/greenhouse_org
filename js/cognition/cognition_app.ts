@@ -70,7 +70,7 @@
 
                 // Assign regions to vertices for highlighting
                 if (this.brainMesh.regions) {
-                    for (const [regionId, regionData] of Object.entries(this.brainMesh.regions)) {
+                    for (const [regionId, regionData] of Object.entries(this.brainMesh.regions as Record<string, any>)) {
                         if (regionData.vertices) {
                             regionData.vertices.forEach(vIdx => {
                                 if (this.brainMesh.vertices[vIdx]) {
@@ -122,7 +122,7 @@
             this.updateInfoPanel();
 
             // Refresh search placeholder
-            const searchInput = document.getElementById('enhancement-search');
+            const searchInput = document.getElementById('enhancement-search') as HTMLInputElement | null;
             if (searchInput) searchInput.placeholder = t('cog_search_placeholder');
 
             // Refresh UI Row
@@ -295,7 +295,7 @@
                         this.activeRegion = enh.region;
                         this.updateInfoPanel();
                         this.zoomToRegion(enh.region);
-                        Array.from(listContainer.children).forEach(b => b.style.borderColor = '#4a5568');
+                        Array.from(listContainer.children).forEach(b => (b as HTMLElement).style.borderColor = '#4a5568');
                         btn.style.borderColor = '#A0AEC0';
                     };
                     listContainer.appendChild(btn);
@@ -411,7 +411,8 @@
             const listContainer = document.getElementById('enhancement-list');
             if (!listContainer) return;
 
-            Array.from(listContainer.children).forEach(btn => {
+            Array.from(listContainer.children).forEach(btnElem => {
+                const btn = btnElem as HTMLElement;
                 if (btn.textContent === t(this.activeEnhancement?.name)) {
                     btn.style.borderColor = '#A0AEC0';
                     btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });

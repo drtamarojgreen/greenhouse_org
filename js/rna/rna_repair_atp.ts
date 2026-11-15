@@ -13,6 +13,7 @@
      * @description Manages ATP state, regeneration, and consumption.
      */
     class RNAAtpManager {
+        [key: string]: any;
         constructor(initialAtp = 100) {
             this.atp = initialAtp;
             this.atpConsumed = 0;

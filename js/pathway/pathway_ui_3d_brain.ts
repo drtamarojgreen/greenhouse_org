@@ -15,11 +15,11 @@
             'spinal_cord': 'rgba(160, 174, 192, 0.20)'
         },
 
-        drawBrain(ctx, brainShell, camera, projection, width, height, options = {}) {
+        drawBrain(ctx, brainShell, camera, projection, width, height, options: any = {}) {
             this.drawShell(ctx, brainShell, camera, projection, width, height, options.activeRegion);
         },
 
-        drawTorso(ctx, torsoShell, camera, projection, width, height, options = {}) {
+        drawTorso(ctx, torsoShell, camera, projection, width, height, options: any = {}) {
             this.drawShell(ctx, torsoShell, camera, projection, width, height, options.activeRegion);
         },
 

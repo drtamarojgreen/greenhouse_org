@@ -452,7 +452,7 @@
                 option.textContent = p.name;
                 selector.appendChild(option);
             });
-            selector.onchange = (e) => this.switchPathway(e.target.value);
+            selector.onchange = (e) => this.switchPathway((e.target as HTMLSelectElement).value);
         },
 
         async switchPathway(pathwayId) {
@@ -702,7 +702,7 @@
 
         updateGeneSelector() {
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-            const selector = document.getElementById('pathway-selector');
+            const selector = document.getElementById('pathway-selector') as HTMLSelectElement | null;
             if (selector && this.pathwayData) {
                 const currentVal = selector.value;
                 selector.innerHTML = `<option value="">${t('select_focus')}</option>`;
@@ -911,8 +911,8 @@
                 'cytokine': '#E0E0E0'
             };
 
-            types.forEach((type, i) => {
-                const color = typeColors[type] || '#A0AEC0';
+            types.forEach((type: any, i) => {
+                const color = (typeColors as Record<string, string>)[type] || '#A0AEC0';
                 ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.arc(legendX + 20, legendY + padding + 10 + i * itemHeight, 5, 0, Math.PI * 2);
@@ -921,7 +921,7 @@
                 ctx.fillStyle = '#ddd';
                 ctx.font = 'bold 10px "Segoe UI", Roboto, Arial';
                 ctx.textAlign = 'left';
-                ctx.fillText(type.toUpperCase(), legendX + 35, legendY + padding + 14 + i * itemHeight);
+                ctx.fillText(String(type).toUpperCase(), legendX + 35, legendY + padding + 14 + i * itemHeight);
             });
             ctx.restore();
         },

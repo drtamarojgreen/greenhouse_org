@@ -1,0 +1,6 @@
+_id,anonymousId,title,start,end,platform,serviceRef,date,time,confirmed,conflicts,appointmentType,owner
+"apt001","anon-abc123","Therapy Session","2025-09-05 10:00","2025-09-05 11:00","Zoom","svc001","2025-09-05","10:00 AM",TRUE,"","app-scheduled","admin"
+"apt002","anon-def456","Mindfulness Workshop","2025-09-06 14:00","2025-09-06 15:30","Google Meet","svc002","2025-09-06","2:00 PM",FALSE,"Overlaps with staff meeting","external-service","admin"
+"apt003","anon-ghi789","Follow-up Call","2025-09-07 09:30","2025-09-07 10:00","Zoom","svc003","2025-09-07","9:30 AM",TRUE,"","app-scheduled","staff1"
+"apt004","anon-jkl012","Support Group","2025-09-08 18:00","2025-09-08 19:30","Google Meet","svc004","2025-09-08","6:00 PM",FALSE,"Check facilitator availability","external-service","staff2"
+"apt005","anon-mno345","Assessment Meeting","2025-09-09 13:00","2025-09-09 14:00","Zoom","svc005","2025-09-09","1:00 PM",TRUE,"","app-scheduled","admin"

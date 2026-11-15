@@ -141,7 +141,7 @@
 
             this.container.innerHTML = '';
             if (isMobile) {
-                const staticHeader = document.querySelector('.page-header');
+                const staticHeader = document.querySelector('.page-header') as HTMLElement | null;
                 if (staticHeader) staticHeader.style.display = 'none';
             }
             this.container.style.cssText = `

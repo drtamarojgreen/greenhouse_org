@@ -1,5 +1,4 @@
-(function () {
-'use strict';
+import { GreenhouseModelsUtil } from './models_util.js';
 
 /// <reference path="types/globals.d.ts" />
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -68,7 +67,7 @@ const GreenhouseModelsTOC = {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 // Adjust the base URL based on the main app's state if available
-                const baseUrl = this.config.baseUrl || (window.GreenhouseModelsUX ? window.GreenhouseModelsUX.state.baseUrl : './');
+                const baseUrl = this.config.baseUrl || './';
                 const response = yield fetch(`${baseUrl}${this.config.xmlPath}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -81,7 +80,7 @@ const GreenhouseModelsTOC = {
             }
             catch (error) {
                 console.error('AGENT_DEBUG: Error fetching or parsing XML for TOC:', error);
-                const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
                 if (this.container) {
                     this.container.innerHTML = `<p>${t('err_loading_models')}</p>`;
                 }
@@ -147,7 +146,7 @@ const GreenhouseModelsTOC = {
             // Absolute URL Construction for Production
             const canonicalDomain = 'https://www.greenhousemd.org';
             launchLink.href = canonicalDomain + finalPath;
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             launchLink.className = 'greenhouse-btn greenhouse-btn-primary';
             launchLink.textContent = t('launch_btn');
             actionGroup.appendChild(launchLink);
@@ -162,6 +161,5 @@ const GreenhouseModelsTOC = {
         console.log('AGENT_DEBUG: TOC dynamic interactions ready.');
     }
 };
-window.GreenhouseModelsTOC = GreenhouseModelsTOC;
 
-})();
+export { GreenhouseModelsTOC };

@@ -1,7 +1,8 @@
-(function () {
-    'use strict';
+import { GreenhouseModelsUtil } from './models_util.js';
+import { GreenhouseModelsUIEnvironment } from './models_ui_environment.js';
+import { GreenhouseModelsUI } from './models_ui.js';
 
-    const GreenhouseModelsUIEnvironmentOverlay = {
+const GreenhouseModelsUIEnvironmentOverlay = {
         overlays: [],
         state: null,
 
@@ -193,7 +194,7 @@
                 ctx.fill();
                 ctx.fillStyle = '#FFF';
                 ctx.font = 'bold 12px Arial';
-                ctx.fillText(window.GreenhouseModelsUtil.t('label_ceo'), x + 8, y + 25);
+                ctx.fillText(GreenhouseModelsUtil.t('label_ceo'), x + 8, y + 25);
             },
             amygdala: (ctx, x, y) => {
                 // Alarm bell
@@ -261,8 +262,8 @@
                     }
                 });
                 if (needsRedraw) {
-                    if (window.GreenhouseModelsUI && window.GreenhouseModelsUI.drawEnvironmentView) {
-                        window.GreenhouseModelsUI.drawEnvironmentView();
+                    if (GreenhouseModelsUI && GreenhouseModelsUI.drawEnvironmentView) {
+                        GreenhouseModelsUI.drawEnvironmentView();
                     }
                     this.animationFrameId = requestAnimationFrame(animate);
                 } else {
@@ -308,8 +309,8 @@
             ctx.globalAlpha = item.opacity;
 
             // 1. Draw Highlight on Brain Region if applicable
-            if (item.targetRegion && window.GreenhouseModelsUIEnvironment && window.GreenhouseModelsUIEnvironment._brainRegions) {
-                const region = window.GreenhouseModelsUIEnvironment._brainRegions[item.targetRegion];
+            if (item.targetRegion && GreenhouseModelsUIEnvironment && GreenhouseModelsUIEnvironment._brainRegions) {
+                const region = GreenhouseModelsUIEnvironment._brainRegions[item.targetRegion];
                 if (region && region.path) {
                     ctx.save();
                     // Draw target circle indicator (White for monochromatic visibility)
@@ -322,7 +323,7 @@
                 }
             }
 
-            const t = (k) => window.GreenhouseModelsUtil.t(k);
+            const t = (k) => GreenhouseModelsUtil.t(k);
             const metaphor = t(item.metaphor);
             const concept = t(item.concept);
             const text = t(item.text);
@@ -447,5 +448,4 @@
         }
     };
 
-    window.GreenhouseModelsUIEnvironmentOverlay = GreenhouseModelsUIEnvironmentOverlay;
-})();
+export { GreenhouseModelsUIEnvironmentOverlay };

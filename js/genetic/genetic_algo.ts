@@ -6,6 +6,7 @@
     console.log('Genetic Algo: Loading...');
 
     class Network {
+        [key: string]: any;
         constructor(id, inputSize, hiddenSize, outputSize) {
             this.id = id;
             this.fitness = 0;

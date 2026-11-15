@@ -1,22 +1,28 @@
+import { GreenhouseModelsUtil } from './models_util.js';
+import { GreenhouseModelsUISynapse } from './models_ui_synapse.js';
+import { GreenhouseModelsUIBrain } from './models_ui_brain.js';
+import { GreenhouseModelsUIEnvironment } from './models_ui_environment.js';
+import { GreenhouseModelsUI3D } from './models_ui_3d.js';
+import { GreenhouseModelsTOC } from './models_toc.js';
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+
 // docs/js/models_ui.js
 
-(function () {
-    'use strict';
-
-    const GreenhouseModelsUI = {
+const GreenhouseModelsUI = {
         canvases: {},
         contexts: {},
         state: {}, // This will be a reference to the main app state
 
-        init(state, GreenhouseModelsUtil) {
+        init(state, GreenhouseModelsUtil, ux) {
             this.state = state;
             this.util = GreenhouseModelsUtil;
+            this.ux = ux;
             Object.assign(this, GreenhouseModelsUISynapse);
             Object.assign(this, GreenhouseModelsUIBrain);
             Object.assign(this, GreenhouseModelsUIEnvironment);
 
             // Initialize 3D module if available
-            if (window.GreenhouseModelsUI3D) {
+            if (GreenhouseModelsUI3D) {
                 Object.assign(this, GreenhouseModelsUI3D);
             }
         },
@@ -38,7 +44,7 @@
             const t = (k) => this.util.t(k);
 
             const container = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-landing-container' });
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const isMobile = GreenhouseUtils.isMobileUser();
             container.innerHTML = `
                 ${isMobile ? `
                 <div style="position: absolute; top: 10px; right: 10px;">
@@ -77,8 +83,8 @@
                     // Actually, models_ux.js calls addConsentListeners right after renderConsentScreen.
                     // If I re-render here, those listeners are lost.
                     // I should trigger the UX to re-bind.
-                    if (window.GreenhouseModelsUX && window.GreenhouseModelsUX.addConsentListeners) {
-                        window.GreenhouseModelsUX.addConsentListeners();
+                    if (this.ux && this.ux.addConsentListeners) {
+                        this.ux.addConsentListeners();
                     }
                 });
             }
@@ -149,14 +155,14 @@
             this._drawLoadingState(this.contexts.environment, this.canvases.environment);
 
             // Initialize 3D canvas if module is available
-            if (window.GreenhouseModelsUI3D && this.init3DCanvas) {
+            if (GreenhouseModelsUI3D && this.init3DCanvas) {
                 this.init3DCanvas();
             }
 
             // Re-bind controls since we replaced the DOM
-            if (window.GreenhouseModelsUX && window.GreenhouseModelsUX.bindSimulationControls) {
-                window.GreenhouseModelsUX.bindSimulationControls();
-                window.GreenhouseModelsUX.addEnvironmentListeners();
+            if (this.ux && this.ux.bindSimulationControls) {
+                this.ux.bindSimulationControls();
+                this.ux.addEnvironmentListeners();
             }
 
 
@@ -277,7 +283,7 @@
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="download-btn-general">${t('btn_download')}</button>
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="dark-mode-toggle">${t('btn_dark_mode')}</button>
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="fullscreen-btn-general">${t('btn_fullscreen')}</button>
-                        ${window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser() ? `<button class="greenhouse-btn greenhouse-btn-primary" id="language-btn-general" style="width: auto !important; max-width: fit-content;">${t('btn_language')}</button>` : ''}
+                        ${GreenhouseUtils.isMobileUser() ? `<button class="greenhouse-btn greenhouse-btn-primary" id="language-btn-general" style="width: auto !important; max-width: fit-content;">${t('btn_language')}</button>` : ''}
                     </div>
                 `;
             }
@@ -354,14 +360,10 @@
                 const tocContainer = document.createElement('div');
                 tocTargetElement.appendChild(tocContainer);
 
-                console.log('AGENT_DEBUG: Loading models_toc.js...');
-                const utils = window.GreenhouseUtils || this.util;
-                await utils.loadScript('models_toc.js', this.state.baseUrl);
-
-                if (window.GreenhouseModelsTOC && typeof window.GreenhouseModelsTOC.init === 'function') {
+                if (GreenhouseModelsTOC && typeof GreenhouseModelsTOC.init === 'function') {
                     console.log('AGENT_DEBUG: GreenhouseModelsTOC object found. Calling init().');
                     // Pass the specific container element to init.
-                    window.GreenhouseModelsTOC.init({ target: tocContainer });
+                    GreenhouseModelsTOC.init({ target: tocContainer, baseUrl: this.state.baseUrl });
                 } else {
                     console.error('AGENT_DEBUG: GreenhouseModelsTOC.init is not available after loading the script.');
                 }
@@ -371,5 +373,4 @@
         }
     };
 
-    window.GreenhouseModelsUI = GreenhouseModelsUI;
-})();
+export { GreenhouseModelsUI };

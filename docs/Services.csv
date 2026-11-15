@@ -1,0 +1,6 @@
+_id,name,description,priority,url
+"svc001","Individual Therapy","One-on-one therapy session with a licensed professional.",1,"https://example.org/services/therapy"
+"svc002","Mindfulness Workshop","Group workshop focusing on mindfulness and stress reduction.",2,"https://example.org/services/mindfulness"
+"svc003","Follow-up Call","Short follow-up call to check progress and provide support.",3,"https://example.org/services/followup"
+"svc004","Support Group","Peer support group facilitated by a trained counselor.",2,"https://example.org/services/supportgroup"
+"svc005","Assessment Meeting","Initial assessment to evaluate needs and plan services.",1,"https://example.org/services/assessment"

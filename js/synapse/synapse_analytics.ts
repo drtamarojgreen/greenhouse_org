@@ -149,7 +149,7 @@
         },
 
         drawChart() {
-            const canvas = document.getElementById('dose-response-chart');
+            const canvas = document.getElementById('dose-response-chart') as HTMLCanvasElement | null;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             const w = canvas.width;

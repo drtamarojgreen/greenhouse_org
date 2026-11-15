@@ -18,7 +18,7 @@
 
     // Ensure GreenhouseUtils is loaded before proceeding
     const loadDependencies = async () => {
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             let attempts = 0;
             const maxAttempts = 240;
             const interval = setInterval(() => {
@@ -39,6 +39,7 @@
      * @description Manages the state and animation of the RNA repair simulation.
      */
     class RNARepairSimulation {
+        [key: string]: any;
         constructor(canvas) {
             this.canvas = canvas;
             this.ctx = canvas.getContext('2d');
@@ -956,7 +957,7 @@
         wrapper.appendChild(langBtn);
 
         if (isMobile) {
-            const staticHeader = document.querySelector('.page-header');
+            const staticHeader = document.querySelector('.page-header') as HTMLElement | null;
             if (staticHeader) staticHeader.style.display = 'none';
         }
 

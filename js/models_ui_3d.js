@@ -1,11 +1,10 @@
+import { GreenhouseModels3DMath } from './models_3d_math.js';
+
 // docs/js/models_ui_3d.js
 // 3D Canvas Rendering Module for Models Visualization
 // Implements the fourth canvas with 3D neural network visualization
 
-(function() {
-    'use strict';
-
-    const GreenhouseModelsUI3D = {
+const GreenhouseModelsUI3D = {
         canvas3D: null,
         context3D: null,
         camera: {
@@ -37,7 +36,7 @@
          * Initializes the 3D canvas system
          */
         init3DCanvas() {
-            if (!window.GreenhouseModels3DMath) {
+            if (!GreenhouseModels3DMath) {
                 console.error('3D Math module not loaded');
                 return;
             }
@@ -992,5 +991,5 @@
     };
 
     // Export to global scope
-    window.GreenhouseModelsUI3D = GreenhouseModelsUI3D;
-})();
+
+export { GreenhouseModelsUI3D };

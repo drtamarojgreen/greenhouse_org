@@ -19,13 +19,13 @@
                 { id: 'neurotransmitter', label: config.translations.neurotransmitter[lang], color: config.accentCyan },
             ];
 
-            const ntOptions = Object.values(chem.neurotransmitters).map(nt => `
+            const ntOptions = Object.values(chem.neurotransmitters as Record<string, any>).map((nt: any) => `
                 <option value="${nt.id}" ${config.activeNT === nt.id ? 'selected' : ''}>
                     ${nt.name[lang]} (${nt.type})
                 </option>
             `).join('');
 
-            const scenarioOptions = Object.values(chem.scenarios).map(s => `
+            const scenarioOptions = Object.values(chem.scenarios as Record<string, any>).map((s: any) => `
                 <option value="${s.id}" ${config.activeScenario === s.id ? 'selected' : ''}>
                     ${s.name[lang]}
                 </option>

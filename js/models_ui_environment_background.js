@@ -1,7 +1,4 @@
-(function () {
-    'use strict';
-
-    const GreenhouseModelsUIEnvironmentBackground = {
+const GreenhouseModelsUIEnvironmentBackground = {
         state: null,
         util: null,
         _brainSVGUrl: 'https://drtamarojgreen.github.io/greenhouse_org/images/brain.svg',
@@ -446,5 +443,4 @@
         }
     };
 
-    window.GreenhouseModelsUIEnvironmentBackground = GreenhouseModelsUIEnvironmentBackground;
-})();
+export { GreenhouseModelsUIEnvironmentBackground };

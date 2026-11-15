@@ -1,13 +1,13 @@
+import { GreenhouseModels3DMath } from './models_3d_math.js';
+import { GreenhouseGraphParser } from './graph_parser.js';
+
 /**
  * @file model_graph_viewer.js
  * @description 3D Force-Directed Graph Renderer.
  * Renders the graph loaded by graph_parser.js onto an HTML5 Canvas using 3D projection.
  */
 
-(function () {
-    'use strict';
-
-    const GreenhouseModelGraphViewer = {
+const GreenhouseModelGraphViewer = {
         canvas: null,
         ctx: null,
         graphData: null,
@@ -39,13 +39,13 @@
 
         initData: function () {
             // Subscribe to graph data via the new Parser
-            if (window.GreenhouseGraphParser) {
-                if (window.GreenhouseGraphParser.isLoaded && window.GreenhouseGraphParser.data) {
-                    this.graphData = window.GreenhouseGraphParser.data;
+            if (GreenhouseGraphParser) {
+                if (GreenhouseGraphParser.isLoaded && GreenhouseGraphParser.data) {
+                    this.graphData = GreenhouseGraphParser.data;
                     this.resetLayout();
                 }
 
-                window.GreenhouseGraphParser.onLoad((data) => {
+                GreenhouseGraphParser.onLoad((data) => {
                     this.graphData = data;
                     this.resetLayout();
                     if (this.canvas) this.start();
@@ -194,7 +194,7 @@
             const ctx = externalCtx || this.ctx;
             if (!ctx || !this.graphData) return;
 
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             // If no camera passed, use default simple projection centered
             const defaultCam = { x: 0, y: 0, z: -800, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 600 };
             const defaultProj = { width: width || 800, height: height || 600, near: 10, far: 5000 };
@@ -282,5 +282,4 @@
         }
     };
 
-    window.GreenhouseModelGraphViewer = GreenhouseModelGraphViewer;
-})();
+export { GreenhouseModelGraphViewer };

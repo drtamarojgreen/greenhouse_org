@@ -29,7 +29,7 @@
             for (const scenario of this.scenarios) {
                 console.log(`Executing Scenario: ${scenario.name}`);
                 this.applyScenario(app, scenario);
-                await new Promise(r => setTimeout(r, 5000)); // Wait for stabilization
+                await new Promise<void>(resolve => setTimeout(resolve, 5000)); // Wait for stabilization
                 this.verifyMetrics(app, scenario);
             }
 

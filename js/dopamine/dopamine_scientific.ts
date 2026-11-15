@@ -203,8 +203,8 @@
 
         if (G._sciChartInterval) clearInterval(G._sciChartInterval);
         G._sciChartInterval = setInterval(() => {
-            const canvas = document.getElementById('scientific-time-series');
-            const sCanvas = document.getElementById('scientific-spatial-map');
+            const canvas = document.getElementById('scientific-time-series') as HTMLCanvasElement | null;
+            const sCanvas = document.getElementById('scientific-spatial-map') as HTMLCanvasElement | null;
             if (!canvas || !sCanvas) {
                 clearInterval(G._sciChartInterval);
                 return;
