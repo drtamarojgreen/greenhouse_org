@@ -25,10 +25,10 @@
 
             TestFramework.it('populateAppointments should create list items', async () => {
                 const originalFetch = window.fetch;
-                window.fetch = () => Promise.resolve({
+                window.fetch = (() => Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve([{ _id: '1', title: 'Test', date: '2024-01-01', time: '10:00', platform: 'Zoom' }])
-                });
+                })) as unknown as typeof window.fetch;
 
                 await App.populateAppointments();
 

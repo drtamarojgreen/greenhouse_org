@@ -3,7 +3,22 @@
  * @description Provides specific mocks for Genetic and Neuro simulation systems.
  */
 
+
 const dummy = () => {};
+
+    (global as any).NeuroGA = class {
+        init = dummy;
+        step = dummy;
+        evaluateFitness = dummy;
+        createRandomGenome = () => ({});
+    } as any;
+
+    global.NeuroGA = class {
+        init = dummy;
+        step = dummy;
+        evaluateFitness = dummy;
+        createRandomGenome = () => ({});
+    } as any;
 
 function setupGeneticNeuroMocks() {
     const win = global.window || global;
@@ -116,9 +131,15 @@ function setupGeneticNeuroMocks() {
         effects: {}
     }));
 
+
     // --- Other Genetic/Neuro Specific objects ---
     if (!global.NeuroGA) {
-        global.NeuroGA = class { constructor() { this.init = dummy; this.step = dummy; this.evaluateFitness = dummy; this.createRandomGenome = () => ({}); } };
+        (global as any).NeuroGA = class {
+            init = dummy;
+            step = dummy;
+            evaluateFitness = dummy;
+            createRandomGenome = () => ({});
+        } as any;
         if (win !== global) win.NeuroGA = global.NeuroGA;
     }
 }

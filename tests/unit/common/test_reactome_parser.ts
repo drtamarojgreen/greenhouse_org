@@ -72,10 +72,10 @@
                 nodes: [{ dbId: 1, displayName: "N", x: 10, y: 20 }]
             });
 
-            window.fetch = () => Promise.resolve({
+            window.fetch = (() => Promise.resolve({
                 ok: true,
-                text: () => Promise.resolve(mockJson)
-            });
+                text: () => Promise.resolve(mockJson),
+            })) as unknown as typeof window.fetch;
 
             const result = await Parser.parse('http://any.url');
             assert.isDefined(result.nodes);

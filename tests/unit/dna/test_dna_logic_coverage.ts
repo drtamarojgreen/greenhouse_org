@@ -3,6 +3,14 @@
     const { assert } = window;
     const TestFramework = window.TestFramework;
 
+    interface DnaPair {
+        base1: string;
+        base2: string;
+        isDamaged: boolean;
+        spectrum?: string;
+        originalBase?: string;
+    }
+
     TestFramework.describe('DNA Logic Coverage (Unit)', () => {
         const G = window.GreenhouseDNARepair;
 
@@ -41,13 +49,13 @@
                 const pair = { isDamaged: false };
                 G.applyUVDamage(pair, 90);
                 assert.isTrue(pair.isDamaged);
-                assert.equal(pair.spectrum, 'UVC');
+                assert.equal((pair as any).spectrum, 'UVC');
 
                 G.applyUVDamage(pair, 50);
-                assert.equal(pair.spectrum, 'UVB');
+                assert.equal((pair as any).spectrum, 'UVB');
 
                 G.applyUVDamage(pair, 20);
-                assert.equal(pair.spectrum, 'UVA');
+                assert.equal((pair as any).spectrum, 'UVA');
             });
 
             TestFramework.it('should deaminate Cytosine to Uracil', () => {
@@ -55,7 +63,7 @@
                 G.applyDeamination(pair);
                 assert.isTrue(pair.isDamaged);
                 assert.equal(pair.base1, 'U');
-                assert.equal(pair.originalBase, 'C');
+                assert.equal((pair as any).originalBase, 'C'); 
             });
 
             TestFramework.it('should NOT deaminate Adenine', () => {

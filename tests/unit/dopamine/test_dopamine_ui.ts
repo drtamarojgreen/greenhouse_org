@@ -25,10 +25,10 @@
         TestFramework.it('should update text on language change', () => {
             const originalGetElementById = document.getElementById;
             const mockInfo = { innerHTML: '', style: {} };
-            document.getElementById = (id) => {
+            document.getElementById = ((id: string) => {
                 if (id === 'dopamine-info-display') return mockInfo;
                 return { innerText: '', style: {}, appendChild: () => {} };
-            };
+            }) as unknown as typeof document.getElementById;;
 
             const originalUtil = window.GreenhouseModelsUtil;
             window.GreenhouseModelsUtil = { t: (k) => 'T_' + k };
@@ -36,7 +36,7 @@
             G.updateLanguage();
             assert.contains(mockInfo.innerHTML, 'T_');
 
-            document.getElementById = originalGetElementById;
+            document.getElementById = ((id) => {originalGetElementById; }) as unknown as typeof document.getElementById;
             window.GreenhouseModelsUtil = originalUtil;
         });
     });

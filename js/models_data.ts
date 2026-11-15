@@ -312,3 +312,5 @@ const GreenhouseModelsData = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = GreenhouseModelsData;
 }
+
+export { GreenhouseModelsData };

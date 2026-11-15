@@ -190,3 +190,4 @@ const GreenhouseModelsTOC = {
 };
 
 (window as any).GreenhouseModelsTOC = GreenhouseModelsTOC;
+export { GreenhouseModelsTOC };

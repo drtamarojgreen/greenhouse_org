@@ -1,5 +1,5 @@
 // tests/unit/common/test_ui_labels.js
-const assert = require('assert');
+var assert = require('assert');
 
 TestFramework.describe('UI Region Labels Rendering', () => {
     let mockCtx;
