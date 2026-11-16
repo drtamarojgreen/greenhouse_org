@@ -8,8 +8,7 @@
     "build": "node scripts/copy-js-to-public.mjs"
   },
   "dependencies": {
-    "express": "^5.3.0",
-    "vercel": "^65.16.0"
+    "express": "^5.3.0"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

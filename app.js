@@ -9,6 +9,7 @@ const { createPageRouter, notFoundHandler, errorHandler } = require('./server/ro
 const DEFAULT_PORT = 8080;
 const STATIC_DIRECTORIES = ['js', 'css', 'endpoints', 'images', 'assets'];
 
+
 function createApp(options = {}) {
     const app = express();
     app.disable('x-powered-by');
@@ -52,6 +53,12 @@ function start(port = Number(process.env.PORT) || DEFAULT_PORT) {
 
 if (require.main === module) {
     start();
+}
+
+if (require.main === module) {
+  app.listen(process.env.PORT || 3000, () => {
+    console.log(`listening on ${process.env.PORT || 3000}`);
+  });
 }
 
 module.exports = { createApp, start };
