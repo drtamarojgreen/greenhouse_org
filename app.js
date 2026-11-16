@@ -51,14 +51,14 @@ function start(port = Number(process.env.PORT) || DEFAULT_PORT) {
     return server;
 }
 
-if (require.main === module) {
-    start();
-}
+
+
+module.exports = app;
 
 if (require.main === module) {
-  app.listen(process.env.PORT || 3000, () => {
-    console.log(`listening on ${process.env.PORT || 3000}`);
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Listening on http://localhost:${port}`);
   });
 }
 
-module.exports = { createApp, start };
