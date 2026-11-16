@@ -29,15 +29,15 @@ await mkdir(path.join(publicDirectory, 'css'), { recursive: true });
 await mkdir(path.join(publicDirectory, 'endpoints'), { recursive: true });
 await copyJavaScriptTree(sourceDirectory, path.join(publicDirectory, 'js'));
 await copyFile(
-  path.join(projectRoot, 'docs', 'css', 'model.css'),
+  path.join(projectRoot, 'css', 'model.css'),
   path.join(publicDirectory, 'css', 'model.css'),
 );
 await copyFile(
-  path.join(projectRoot, 'docs', 'endpoints', 'models_pathways.json'),
+  path.join(projectRoot,  'endpoints', 'models_pathways.json'),
   path.join(publicDirectory, 'endpoints', 'models_pathways.json'),
 );
 await copyFile(
-  path.join(projectRoot, 'docs', 'endpoints', 'model_descriptions.xml'),
+  path.join(projectRoot,  'endpoints', 'model_descriptions.xml'),
   path.join(publicDirectory, 'endpoints', 'model_descriptions.xml'),
 );
 
