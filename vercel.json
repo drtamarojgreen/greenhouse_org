@@ -10,7 +10,6 @@
         "includeFiles": [
           "server/**",
           "views/**",
-          "public/**",
           "js/**",
           "css/**",
           "docs/**",
