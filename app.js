@@ -1,32 +1,57 @@
-const path = require('node:path');
+'use strict';
+
+const path = require('path');
 const express = require('express');
+const { DOCS_DIR } = require('./server/content');
+const { createFunctionsRouter } = require('./server/functions');
+const { createPageRouter, notFoundHandler, errorHandler } = require('./server/routes');
 
-const app = express();
-const projectRoot = __dirname;
+const DEFAULT_PORT = 8080;
+const STATIC_DIRECTORIES = ['js', 'css', 'endpoints', 'images', 'assets'];
 
-app.use('/js', express.static(path.join(projectRoot, 'js')));
+function createApp(options = {}) {
+    const app = express();
+    app.disable('x-powered-by');
 
-app.get('/css/model.css', (_request, response) => {
-  response.sendFile(path.join(projectRoot, 'docs', 'css', 'model.css'));
-});
+    app.use((req, res, next) => {
+        res.set({
+            'X-Content-Type-Options': 'nosniff',
+            'Referrer-Policy': 'strict-origin-when-cross-origin',
+            'X-Frame-Options': 'SAMEORIGIN'
+        });
+        next();
+    });
 
-app.get('/endpoints/models_pathways.json', (_request, response) => {
-  response.sendFile(path.join(projectRoot, 'docs', 'endpoints', 'models_pathways.json'));
-});
+    app.use('/site', express.static(path.join(__dirname, 'public'), { fallthrough: false }));
+    for (const dir of STATIC_DIRECTORIES) {
+        app.use(`/${dir}`, express.static(path.join(DOCS_DIR, dir), { fallthrough: false, dotfiles: 'ignore' }));
+    }
 
-app.get('/endpoints/model_descriptions.xml', (_request, response) => {
-  response.sendFile(path.join(projectRoot, 'docs', 'endpoints', 'model_descriptions.xml'));
-});
+    app.use('/_functions', createFunctionsRouter(options));
+    app.use(createPageRouter());
 
-app.get('/', (_request, response) => {
-  response.sendFile(path.join(projectRoot, 'index.html'));
-});
+    app.use(notFoundHandler);
+    app.use((err, req, res, next) => {
+        if (err && err.status === 404) return notFoundHandler(req, res);
+        errorHandler(err, req, res, next);
+    });
 
-module.exports = app;
+    return app;
+}
+
+function start(port = Number(process.env.PORT) || DEFAULT_PORT) {
+    const app = createApp();
+    const server = app.listen(port, () => {
+        console.log(`Greenhouse site listening on http://localhost:${port}`);
+    });
+    const shutdown = () => server.close(() => process.exit(0));
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+    return server;
+}
 
 if (require.main === module) {
-  const port = Number(process.env.PORT) || 3000;
-  app.listen(port, () => {
-    console.log(`Greenhouse site listening on port ${port}`);
-  });
+    start();
 }
+
+module.exports = { createApp, start };
