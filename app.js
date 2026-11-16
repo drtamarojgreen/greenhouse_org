@@ -9,7 +9,6 @@ const { createPageRouter, notFoundHandler, errorHandler } = require('./server/ro
 const DEFAULT_PORT = 8080;
 const STATIC_DIRECTORIES = ['js', 'css', 'endpoints', 'images', 'assets'];
 
-
 function createApp(options = {}) {
     const app = express();
     app.disable('x-powered-by');
@@ -51,14 +50,14 @@ function start(port = Number(process.env.PORT) || DEFAULT_PORT) {
     return server;
 }
 
+// --- Module-level app instance (what Vercel invokes) ---------------------
+const app = createApp();
 
+module.exports = app;                 // Vercel calls this as the handler
+module.exports.createApp = createApp; // keep factory available for tests
+module.exports.start = start;         // keep CLI start available
 
-module.exports = app;
-
+// --- Local CLI entry point (node app.js) --------------------------------
 if (require.main === module) {
-  const port = process.env.PORT || 3000;
-  app.listen(port, () => {
-    console.log(`Listening on http://localhost:${port}`);
-  });
+    start();
 }
-
