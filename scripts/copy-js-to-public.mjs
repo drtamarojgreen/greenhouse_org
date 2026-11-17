@@ -2,6 +2,9 @@ import { copyFile, mkdir, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cpSync, mkdirSync, existsSync } from 'node:fs';
+
+
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, '..');
@@ -55,5 +58,26 @@ await copyIfExists(
   path.join(projectRoot, 'docs', 'endpoints', 'model_descriptions.xml'),
   path.join(publicDirectory, 'endpoints', 'model_descriptions.xml'),
 );
+
+mkdirSync('public', { recursive: true });
+
+// Adjust source paths to match whether folders live in root or docs/
+const assetMappings = [
+  ['docs/index.html', 'public/index.html'],
+  ['docs/css', 'public/css'],
+  ['docs/site', 'public/site'],
+  ['site', 'public/site'],
+  ['docs/js', 'public/js'],
+  ['docs/images', 'public/images'],
+  ['docs/endpoints', 'public/endpoints']
+];
+
+for (const [src, dest] of assetMappings) {
+  if (existsSync(src)) {
+    cpSync(src, dest, { recursive: true });
+    console.log(`Copied ${src} -> ${dest}`);
+  }
+}
+
 
 console.log('Copied app assets to public/ for Vercel static delivery.');
