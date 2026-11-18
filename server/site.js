@@ -51,12 +51,4 @@ const SELECTORS = {
     ...Object.fromEntries(SIMULATIONS.map(sim => [sim.key, `#${containerId(sim.key)}`]))
 };
 
-function clientConfig() {
-    return {
-        baseUrl: '/',
-        siteOrigin: '',
-        selectors: SELECTORS
-    };
-}
-
-module.exports = { SITE_NAME, SIMULATIONS, PRIMARY_NAV, SELECTORS, containerId, clientConfig };
+module.exports = { SITE_NAME, SIMULATIONS, PRIMARY_NAV, SELECTORS, containerId };

@@ -506,13 +506,13 @@ const GreenhouseUtils = (function () {
     async function renderModelsTOC(targetSelector = null) {
         console.log('[GreenhouseUtils] Preparing bottom navigation TOC...');
 
-        const githubUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
+        const baseUrl = appState.baseUrl || '/';
 
         // Load CSS if not present
         if (!document.querySelector('link[href*="models_toc.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = `${githubUrl}css/models_toc.css`;
+            link.href = `${baseUrl}css/models_toc.css`;
             document.head.appendChild(link);
         }
 
@@ -698,7 +698,7 @@ const GreenhouseUtils = (function () {
      * @description Fetches model metadata from the central XML repository.
      */
     async function fetchModelDescriptions() {
-        const baseUrl = appState.baseUrl || "https://drtamarojgreen.github.io/greenhouse_org/";
+        const baseUrl = appState.baseUrl || '/';
         const xmlUrl = `${baseUrl}endpoints/model_descriptions.xml`;
 
         try {

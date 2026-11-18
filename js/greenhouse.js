@@ -1,520 +1,64 @@
 /**
  * @file greenhouse.js
- * @description This script is the central loader for all Greenhouse applications intended to be embedded on
- * the Greenhouse Mental Health website (https://greenhousementalhealth.org). It is designed to be a single,
- * lightweight entry point that can be included in the site's header or footer.
- *
- * @integration This script is intended to be loaded on all pages of the Greenhouse Mental Health website.
- * It detects the presence of specific application containers (e.g., for the scheduler) and
- * dynamically loads the necessary application scripts and styles. This approach avoids the need to
- * manually add application-specific scripts to each page, simplifying deployment and maintenance.
- *
- * @design The script is designed to be completely anonymous and self-contained. It uses an Immediately
- * Invoked Function Expression (IIFE) to avoid polluting the global namespace. It also uses a
- * data-driven approach to pass information to the loaded applications, further decoupling the loader
- * from the applications themselves. This design is crucial for preventing conflicts with other scripts
- * on the site, which is known to be sensitive to global namespace pollution.
+ * @description ES module entry point for the standalone Greenhouse web application.
+ * Imports shared utilities and dynamically imports route-specific modules without
+ * relying on global `window` loaders or injecting `<script>` tags into HTML.
  */
 
-(function () {
-    // Import GreenhouseUtils
-    const GreenhouseUtils = window.GreenhouseUtils;
-    if (!GreenhouseUtils) {
-        return;
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+
+GreenhouseUtils.appState.baseUrl = '/';
+
+const ROUTE_MODULES = {
+    '/models': () => import('./models.js'),
+    '/schedule': () => import('./scheduler.js'),
+    '/books': () => import('./books.js'),
+    '/news': () => import('./news.js'),
+    '/quizzes': () => import('./quizzes.js'),
+    '/tech': () => import('./tech.js'),
+    '/genetic': () => import('./genetic.js'),
+    '/neuro': () => import('./neuro.js'),
+    '/pathway': () => import('./pathway.js'),
+    '/synapse': () => import('./synapse.js'),
+    '/dopamine': () => import('./dopamine.js'),
+    '/serotonin': () => import('./serotonin.js'),
+    '/dna': () => import('./dna_repair.js'),
+    '/rna': () => import('./rna_repair.js'),
+    '/emotion': () => import('./emotion.js'),
+    '/cognition': () => import('./cognition.js'),
+    '/inflammation': () => import('./inflammation.js'),
+    '/stress': () => import('./stress.js'),
+};
+
+function normalizePathname(pathname) {
+    if (!pathname || pathname === '/') return '/';
+    return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+}
+
+async function initialize() {
+    import('./effects.js').catch(error => {
+        console.warn('[Greenhouse] Optional effects module failed to import:', error);
+    });
+
+    if (GreenhouseUtils.isMobileUser()) {
+        import('./GreenhouseMobile.js').catch(error => {
+            console.warn('[Greenhouse] Optional mobile module failed to import:', error);
+        });
     }
 
-    /**
-     * @description Configuration for the Greenhouse application loader.
-     */
-    const config = {
-        /**
-         * The base URL for fetching application assets from the GitHub Pages site.
-         */
-        githubPagesBaseUrl: 'https://drtamarojgreen.github.io/greenhouse_org/',
-        /**
-         * The path segment that identifies the schedule page.
-         */
-        schedulePagePath: '/schedule/',
-        /**
-         * The path segment that identifies the books page.
-         */
-        booksPagePath: '/books/',
-        /**
-         * The path segment that identifies the videos page.
-         */
-        videosPagePath: '/videos/',
-        /**
-         * The path segment that identifies the news page.
-         */
-        newsPagePath: '/news/',
-        /**
-         * The path segment that identifies the models page.
-         */
-        modelsPagePath: '/models',
-        /**
-         * The path segment that identifies the tech page.
-         */
-        techPagePath: '/tech',
-        /**
-         * The path segment that identifies the neuro page.
-         */
-        neuroPagePath: '/neuro',
-        /**
-         * The path segment that identifies the inflammation page.
-         */
-        inflammationPagePath: '/inflammation',
-        /**
-         * The path segment that identifies the stress page.
-         */
-        stressPagePath: '/stress',
-        /**
-         * The path segment that identifies the synapse page.
-         */
-        synapsePagePath: '/synapse',
-        /**
-         * The path segment that identifies the pathway page.
-         */
-        pathwayPagePath: '/pathway',
-        /**
-         * The path segment that identifies the genetic page.
-         */
-        geneticPagePath: '/genetic',
-        /**
-         * The path segment that identifies the DNA repair page.
-         */
-        dnaPagePath: '/dna',
-        /**
-         * The path segment that identifies the RNA repair page.
-         */
-        rnaPagePath: '/rna',
-        /**
-         * The path segment that identifies the Quizzes page.
-         */
-        quizzesPagePath: '/quizzes',
-        /**
-         * The path segment that identifies the Dopamine signaling page.
-         */
-        dopaminePagePath: '/dopamine',
-        /**
-         * The path segment that identifies the Serotonin structural model page.
-         */
-        serotoninPagePath: '/serotonin',
-        /**
-         * The path segment that identifies the emotion page.
-         */
-        emotionPagePath: '/emotion',
-        /**
-         * The path segment that identifies the cognition page.
-         */
-        cognitionPagePath: '/cognition',
-        /**
-         * Timeout for waiting for elements to appear (in milliseconds).
-         */
-        elementWaitTimeout: 15000,
-        /**
-         * CSS selectors for the different views of the scheduling application.
-         * These are specific to the Wix site structure and may need updating if the site changes.
-         */
-        selectors: {
-            patient: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
-            patientRight: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)', // Generic right column selector
-            dashboardLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // First column for schedule/conflicts
-            dashboardRight: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)', // Second column for calendar
-            admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
-            books: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', // User-specified selector for books
-            models: '#SITE_PAGES_TRANSITION_GROUP .wixui-section > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            videos: '.wixui-repeater', // Selector for the videos repeater
-            news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
-            genetic: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            geneticTitle: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)',
-            geneticParagraph: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)',
-            tech: '#SITE_PAGES_TRANSITION_GROUP .wixui-section',
-            neuro: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            pathway: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            synapse: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            dna: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            rna: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            dopamine: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            serotonin: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            emotion: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            cognition: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            inflammation: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            stress: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
-            quizzes: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div > section > div:nth-child(2) > div > section > div:nth-child(1)',
-            repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
-            repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
-            repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
-        },
-        /**
-         * Fallback selectors to try if primary selectors fail.
-         */
-        fallbackSelectors: {
-            patient: '.wixui-column-strip__column:first-child',
-            patientRight: '.wixui-column-strip__column:nth-child(2)', // Fallback for patient instructions
-            dashboardLeft: '.wixui-column-strip__column:first-child',
-            dashboardRight: '.wixui-column-strip__column:nth-child(2)',
-            admin: '.wixui-column-strip__column:last-child',
-            books: 'section.wixui-section', // Fallback to a more general section if the specific one isn't found
-            models: 'section.wixui-section',
-            videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
-            news: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
-            tech: 'section.wixui-section',
-            neuro: 'section.wixui-section',
-            synapse: 'section.wixui-section',
-            pathway: 'section.wixui-section',
-            dna: 'section.wixui-section',
-            rna: 'section.wixui-section',
-            dopamine: 'section.wixui-section',
-            serotonin: 'section.wixui-section',
-            emotion: 'section.wixui-section',
-            cognition: 'section.wixui-section',
-            inflammation: 'section.wixui-section',
-            stress: 'section.wixui-section',
-            quizzes: 'section.wixui-section'
-        }
-    };
-
-    /**
-     * @function loadApplication
-     * @description Generic function to load an application.
-     * @param {string} appName - The name of the application (e.g., 'scheduler', 'books').
-     * @param {string} scriptName - The main script file for the application (e.g., 'scheduler.js').
-     * @param {string|string[]} mainSelector - The primary CSS selector(s) for the application's main container.
-     * @param {string|string[]} [fallbackSelector] - Optional fallback CSS selector(s).
-     * @param {string} [uiScriptName] - Optional UI script file (e.g., 'schedulerUI.js').
-     * @param {string} [viewParam='default'] - The URL parameter for the view (e.g., 'dashboard' for scheduler).
-     * @param {string} [rightPanelSelector] - Optional selector for a right panel (e.g., for dashboard view).
-     * @param {string} [rightPanelFallbackSelector] - Optional fallback selector for a right panel.
-     * @param {object} [extraAttributes={}] - Optional object of extra data attributes to add to the script tag.
-     */
-    async function loadApplication(appName, scriptName, mainSelector, fallbackSelector, uiScriptName = null, viewParam = 'default', rightPanelSelector = null, rightPanelFallbackSelector = null, extraAttributes = {}) {
+    const route = normalizePathname(window.location.pathname);
+    const importRouteModule = ROUTE_MODULES[route];
+    if (importRouteModule) {
         try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const view = urlParams.get('view') || viewParam;
-
-            let selectorsToTryLeft = Array.isArray(mainSelector) ? [...mainSelector] : [mainSelector];
-            if (fallbackSelector) {
-                selectorsToTryLeft.push(...(Array.isArray(fallbackSelector) ? fallbackSelector : [fallbackSelector]));
-            }
-
-            let targetSelectorLeft = null;
-            let targetSelectorRight = null;
-
-            // Determine target selectors based on whether a right panel is expected
-            if (rightPanelSelector) {
-                let selectorsToTryRight = Array.isArray(rightPanelSelector) ? [...rightPanelSelector] : [rightPanelSelector];
-                if (rightPanelFallbackSelector) {
-                    selectorsToTryRight.push(...(Array.isArray(rightPanelFallbackSelector) ? rightPanelFallbackSelector : [rightPanelFallbackSelector]));
-                }
-
-                // Wait for both left and right target elements
-                const [targetElementLeft, targetElementRight] = await Promise.all([
-                    GreenhouseUtils.waitForElement(selectorsToTryLeft, config.elementWaitTimeout),
-                    GreenhouseUtils.waitForElement(selectorsToTryRight, config.elementWaitTimeout)
-                ]);
-
-                // Find the actual selector that matched for both
-                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
-                targetSelectorRight = selectorsToTryRight.find(selector => document.querySelector(selector));
-
-            } else {
-                // For single-panel applications, only wait for the left target element
-                await GreenhouseUtils.waitForElement(selectorsToTryLeft, config.elementWaitTimeout);
-                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
-            }
-
-            const appAttributes = {
-                'target-selector-left': targetSelectorLeft,
-                'target-selector-right': targetSelectorRight, // Will be null if not a two-panel app
-                'base-url': config.githubPagesBaseUrl,
-                'view': view,
-                ...extraAttributes
-            };
-
-            if (uiScriptName) {
-                const scripts = Array.isArray(uiScriptName) ? uiScriptName : [uiScriptName];
-                for (const script of scripts) {
-                    await GreenhouseUtils.loadScript(script, config.githubPagesBaseUrl);
-                }
-            }
-            await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
-
+            await importRouteModule();
         } catch (error) {
-            // Silently fail
+            console.error(`[Greenhouse] Failed to import module for ${route}:`, error);
         }
     }
+}
 
-    /**
-     * @function loadEmotionApplication
-     * @description Loads the emotion simulation application.
-     */
-    async function loadEmotionApplication() {
-        await loadApplication('emotion', 'emotion.js', config.selectors.emotion, config.fallbackSelectors.emotion);
-    }
-
-    /**
-     * @function loadCognitionApplication
-     * @description Loads the cognition simulation application.
-     */
-    async function loadCognitionApplication() {
-        await loadApplication('cognition', 'cognition.js', config.selectors.cognition, config.fallbackSelectors.cognition);
-    }
-
-    /**
-     * @function loadSchedulerApplication
-     * @description Loads the scheduler application.
-     */
-    async function loadSchedulerApplication() {
-        const schedulerSelectors = {
-            dashboardLeft: config.selectors.dashboardLeft,
-            dashboardRight: config.selectors.dashboardRight,
-            repeaterLeft: config.selectors.repeaterLeft,
-            repeaterRight: config.selectors.repeaterRight
-        };
-
-        const extraAttributes = {
-            'data-scheduler-selectors': JSON.stringify(schedulerSelectors)
-        };
-
-        const mainSelector = [config.selectors.dashboardLeft, config.selectors.repeaterLeft];
-        const fallbackSelector = config.fallbackSelectors.dashboardLeft;
-        const rightPanelSelector = [config.selectors.dashboardRight, config.selectors.repeaterRight];
-        const rightPanelFallbackSelector = config.fallbackSelectors.dashboardRight;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const view = urlParams.get('view') || 'all';
-
-        await loadApplication(
-            'scheduler',
-            'scheduler.js',
-            mainSelector,
-            fallbackSelector,
-            'schedulerUI.js',
-            view,
-            rightPanelSelector,
-            rightPanelFallbackSelector,
-            extraAttributes
-        );
-    }
-
-    /**
-     * @function loadBooksApplication
-     * @description Loads the books application after ensuring the target element exists.
-     */
-    async function loadBooksApplication() {
-        await loadApplication('books', 'books.js', config.selectors.books, config.fallbackSelectors.books);
-    }
-
-    /**
-     * @function loadVideosApplication
-     * @description Loads the videos application after ensuring the target element exists.
-     */
-    async function loadVideosApplication() {
-        await loadApplication('videos', 'videos.js', config.selectors.videos, config.fallbackSelectors.videos);
-    }
-
-    /**
-     * @function loadNewsApplication
-     * @description Loads the news application after ensuring the target element exists.
-     */
-    async function loadNewsApplication() {
-        await loadApplication('news', 'news.js', config.selectors.news, config.fallbackSelectors.news);
-    }
-
-    /**
-     * @function loadModelsApplication
-     * @description Loads the models application after ensuring the target element exists.
-     */
-    async function loadModelsApplication() {
-        await loadApplication('models', 'models.js', config.selectors.models, config.fallbackSelectors.models);
-    }
-
-    /**
-     * @function loadTechApplication
-     * @description Loads the tech application after ensuring the target element exists.
-     */
-    async function loadTechApplication() {
-        await loadApplication('tech', 'tech.js', config.selectors.tech, config.fallbackSelectors.tech);
-    }
-
-    /**
-     * @function loadNeuroApplication
-     * @description Loads the neuro application.
-     */
-    async function loadNeuroApplication() {
-        await loadApplication('neuro', 'neuro.js', config.selectors.neuro, config.fallbackSelectors.neuro);
-    }
-
-    /**
-     * @function loadSynapseApplication
-     * @description Loads the synapse application.
-     */
-    async function loadSynapseApplication() {
-        await loadApplication('synapse', 'synapse.js', config.selectors.synapse, config.fallbackSelectors.synapse);
-    }
-
-    /**
-     * @function loadPathwayApplication
-     * @description Loads the pathway application.
-     */
-    async function loadPathwayApplication() {
-        await loadApplication('pathway', 'pathway.js', config.selectors.pathway, config.fallbackSelectors.pathway);
-    }
-
-    /**
-     * @function loadInflammationApplication
-     * @description Loads the inflammation simulation application.
-     */
-    async function loadInflammationApplication() {
-        await loadApplication('inflammation', 'inflammation.js', config.selectors.inflammation, config.fallbackSelectors.inflammation);
-    }
-
-    /**
-     * @function loadStressApplication
-     * @description Loads the stress simulation application.
-     */
-    async function loadStressApplication() {
-        await loadApplication('stress', 'stress.js', config.selectors.stress, config.fallbackSelectors.stress);
-    }
-
-    /**
-    * @function loadGeneticApplication
-    * @description Loads the genetic application after ensuring the target element exists.
-    */
-    async function loadGeneticApplication() {
-        const geneticSelectors = {
-            genetic: config.selectors.genetic,
-            geneticTitle: config.selectors.geneticTitle,
-            geneticParagraph: config.selectors.geneticParagraph
-        };
-
-        const extraAttributes = {
-            'data-genetic-selectors': JSON.stringify(geneticSelectors)
-        };
-
-        await loadApplication(
-            'genetic',
-            'genetic.js',
-            config.selectors.genetic,
-            config.fallbackSelectors.models,
-            null, // uiScriptName
-            'default', // viewParam
-            null, // rightPanelSelector
-            null, // rightPanelFallbackSelector
-            extraAttributes
-        );
-    }
-
-    /**
-     * @function loadDnaRepairApplication
-     * @description Loads the DNA repair simulation application.
-     */
-    async function loadDnaRepairApplication() {
-        await loadApplication('dnaRepair', 'dna_repair.js', config.selectors.dna, config.fallbackSelectors.dna);
-    }
-
-    /**
-     * @function loadQuizzesApplication
-     * @description Loads the Quizzes application.
-     */
-    async function loadQuizzesApplication() {
-        await loadApplication('quizzes', 'quizzes.js', config.selectors.quizzes, config.fallbackSelectors.quizzes);
-    }
-
-    /**
-     * @function loadRnaRepairApplication
-     * @description Loads the RNA repair simulation application.
-     */
-    async function loadRnaRepairApplication() {
-        await loadApplication('rnaRepair', 'rna_repair.js', config.selectors.rna, config.fallbackSelectors.rna);
-    }
-
-    /**
-     * @function loadDopamineApplication
-     * @description Loads the Dopamine signaling simulation application.
-     */
-    async function loadDopamineApplication() {
-        await loadApplication('dopamine', 'dopamine.js', config.selectors.dopamine, config.fallbackSelectors.dopamine);
-    }
-
-    /**
-     * @function loadSerotoninApplication
-     * @description Loads the Serotonin structural model application.
-     */
-    async function loadSerotoninApplication() {
-        await loadApplication('serotonin', 'serotonin.js', config.selectors.serotonin, config.fallbackSelectors.serotonin);
-    }
-
-    /**
-     * @function pollAndLoad
-     * @description Polls for a selector and loads the application when found.
-     * @param {string} selector - The CSS selector to wait for.
-     * @param {function} loadFn - The async function to load the application.
-     */
-    async function pollAndLoad(selector, loadFn) {
-        const pollInterval = 100;
-        const maxAttempts = 150; // 15 seconds
-        let attempts = 0;
-
-        const poll = setInterval(async () => {
-            const element = document.querySelector(selector);
-            if (element) {
-                clearInterval(poll);
-                await loadFn();
-            } else {
-                attempts++;
-                if (attempts >= maxAttempts) {
-                    clearInterval(poll);
-                }
-            }
-        }, pollInterval);
-    }
-
-    /**
-     * @function initialize
-     * @description Main initialization function that runs when the DOM is ready.
-     */
-    async function initialize() {
-        // Load the visual effects script on all pages (no need to wait for specific elements)
-        GreenhouseUtils.loadScript('effects.js', config.githubPagesBaseUrl);
-
-        // Load mobile experience handler if on a mobile device
-        if (GreenhouseUtils.isMobileUser()) {
-            GreenhouseUtils.loadScript('GreenhouseMobile.js', config.githubPagesBaseUrl, {
-                'base-url': config.githubPagesBaseUrl
-            });
-        }
-
-        const path = window.location.pathname;
-        // Check if the current page is one of the application pages.
-        if (path.includes(config.schedulePagePath)) await loadSchedulerApplication();
-        else if (path.includes(config.booksPagePath)) await loadBooksApplication();
-        else if (path.includes(config.newsPagePath)) await loadNewsApplication();
-        else if (path.includes(config.quizzesPagePath)) await loadQuizzesApplication();
-        else if (path.includes(config.modelsPagePath)) pollAndLoad(config.selectors.models, loadModelsApplication);
-        else if (path.includes(config.geneticPagePath)) pollAndLoad(config.selectors.genetic, loadGeneticApplication);
-        else if (path.includes(config.techPagePath)) pollAndLoad(config.selectors.tech, loadTechApplication);
-        else if (path.includes(config.neuroPagePath)) pollAndLoad(config.selectors.neuro, loadNeuroApplication);
-        else if (path.includes(config.synapsePagePath)) pollAndLoad(config.selectors.synapse, loadSynapseApplication);
-        else if (path.includes(config.pathwayPagePath)) pollAndLoad(config.selectors.pathway, loadPathwayApplication);
-        else if (path.includes(config.dnaPagePath)) pollAndLoad(config.selectors.dna, loadDnaRepairApplication);
-        else if (path.includes(config.rnaPagePath)) pollAndLoad(config.selectors.rna, loadRnaRepairApplication);
-        else if (path.includes(config.dopaminePagePath)) pollAndLoad(config.selectors.dopamine, loadDopamineApplication);
-        else if (path.includes(config.serotoninPagePath)) pollAndLoad(config.selectors.serotonin, loadSerotoninApplication);
-        else if (path.includes(config.emotionPagePath)) pollAndLoad(config.selectors.emotion, loadEmotionApplication);
-        else if (path.includes(config.cognitionPagePath)) pollAndLoad(config.selectors.cognition, loadCognitionApplication);
-        else if (path.includes(config.inflammationPagePath)) pollAndLoad(config.selectors.inflammation, loadInflammationApplication);
-        else if (path.includes(config.stressPagePath)) pollAndLoad(config.selectors.stress, loadStressApplication);
-    }
-
-    // --- Main execution logic ---
-
-    // Wait for DOM to be ready, then initialize
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-        // DOM is already ready, but give Wix a moment to finish rendering
-        setTimeout(initialize, 1000);
-    }
-
-})();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+} else {
+    initialize();
+}

@@ -1,10 +1,12 @@
 'use strict';
 
 const fs = require('fs/promises');
+const { existsSync } = require('fs');
 const path = require('path');
 
-const DOCS_DIR = path.join(__dirname, '..', 'docs');
-const ENDPOINTS_DIR = path.join(DOCS_DIR, 'endpoints');
+const cwdPublic = path.join(process.cwd(), 'public');
+const PUBLIC_DIR = existsSync(cwdPublic) ? cwdPublic : path.join(__dirname, '..', 'public');
+const ENDPOINTS_DIR = path.join(PUBLIC_DIR, 'endpoints');
 
 async function readEndpoint(relativePath, fallback = null) {
     const fullPath = path.resolve(ENDPOINTS_DIR, relativePath);
@@ -22,4 +24,4 @@ async function readEndpoint(relativePath, fallback = null) {
     }
 }
 
-module.exports = { DOCS_DIR, ENDPOINTS_DIR, readEndpoint };
+module.exports = { PUBLIC_DIR, ENDPOINTS_DIR, readEndpoint };

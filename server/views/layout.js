@@ -1,7 +1,7 @@
 'use strict';
 
-const { html, raw, serializeForScript } = require('../html');
-const { SITE_NAME, PRIMARY_NAV, SIMULATIONS, clientConfig } = require('../site');
+const { html, raw } = require('../html');
+const { SITE_NAME, PRIMARY_NAV, SIMULATIONS } = require('../site');
 
 function navLink(item, activeKey) {
     const current = item.key === activeKey ? raw(' aria-current="page"') : '';
@@ -49,9 +49,7 @@ function layout({ key, title, description, body, loadApps = true }) {
     const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
     const scripts = loadApps
         ? html`
-    <script>window.GreenhouseSiteConfig = ${raw(serializeForScript(clientConfig()))};</script>
-    <script src="/js/GreenhouseUtils.js"></script>
-    <script src="/js/greenhouse.js"></script>`
+    <script type="module" src="/js/greenhouse.js"></script>`
         : '';
 
     return html`<!DOCTYPE html>

@@ -2,12 +2,18 @@
 
 const path = require('path');
 const express = require('express');
-const { DOCS_DIR } = require('./server/content');
+const { PUBLIC_DIR } = require('./server/content');
 const { createFunctionsRouter } = require('./server/functions');
 const { createPageRouter, notFoundHandler, errorHandler } = require('./server/routes');
 
 const DEFAULT_PORT = 8080;
-const STATIC_DIRECTORIES = ['js', 'css', 'endpoints', 'images', 'assets'];
+const STATIC_DIRECTORIES = ['site', 'js', 'css', 'endpoints', 'images', 'assets'];
+const STATIC_PREFIXES = STATIC_DIRECTORIES.map(dir => `/${dir}/`);
+
+function isStaticAssetRequest(req) {
+    const urlPath = req.path || req.originalUrl || '';
+    return STATIC_PREFIXES.some(prefix => urlPath.startsWith(prefix) || urlPath === prefix.slice(0, -1));
+}
 
 function createApp(options = {}) {
     const app = express();
@@ -22,17 +28,27 @@ function createApp(options = {}) {
         next();
     });
 
-    app.use('/site', express.static(path.join(__dirname, 'public'), { fallthrough: false }));
     for (const dir of STATIC_DIRECTORIES) {
-        app.use(`/${dir}`, express.static(path.join(DOCS_DIR, dir), { fallthrough: false, dotfiles: 'ignore' }));
+        app.use(`/${dir}`, express.static(path.join(PUBLIC_DIR, dir), { fallthrough: false, dotfiles: 'ignore' }));
     }
 
     app.use('/_functions', createFunctionsRouter(options));
     app.use(createPageRouter());
 
-    app.use(notFoundHandler);
+    app.use((req, res) => {
+        if (isStaticAssetRequest(req)) {
+            return res.status(404).type('text/plain').send('Not Found');
+        }
+        return notFoundHandler(req, res);
+    });
+
     app.use((err, req, res, next) => {
-        if (err && err.status === 404) return notFoundHandler(req, res);
+        if (err && err.status === 404) {
+            if (isStaticAssetRequest(req)) {
+                return res.status(404).type('text/plain').send('Not Found');
+            }
+            return notFoundHandler(req, res);
+        }
         errorHandler(err, req, res, next);
     });
 

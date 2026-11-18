@@ -9,7 +9,7 @@ console.log('Models App: Explicit module dependencies loaded.');
 
 const entryScript = document.querySelector('script[data-greenhouse-models-entry]');
 const targetSelector = entryScript?.getAttribute('data-target-selector-left') || '#models-app-container';
-const baseUrl = new URL(entryScript?.getAttribute('data-base-url') || '../', document.baseURI).href;
+const baseUrl = new URL(entryScript?.getAttribute('data-base-url') || '/', document.baseURI).href;
 
 GreenhouseModelsUX.configure({ baseUrl, targetSelector });
 
