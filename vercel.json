@@ -17,7 +17,32 @@
           "docs/**"
         ]
       }
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "js/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "css/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "images/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/**",
+      "use": "@vercel/static"
     }
   ],
-  "routes": [{ "src": "/(.*)", "dest": "app.js" }]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/app.js"
+    }
+  ]
 }
