@@ -1,16 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "express",
   "buildCommand": "npm run build",
-  "outputDirectory": "public",
   "functions": {
-    "api/index.js": {
+    "app.js": {
       "includeFiles": "public/endpoints/**"
     }
-  },
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index"
-    }
-  ]
+  }
 }

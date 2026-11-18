@@ -22,3 +22,7 @@ logs/
 # Coverage
 .coverage
 htmlcov/
+.vercel
+.env*
+
+public/
