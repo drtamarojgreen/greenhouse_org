@@ -63,7 +63,6 @@ mkdirSync('public', { recursive: true });
 
 // Adjust source paths to match whether folders live in root or docs/
 const assetMappings = [
-  ['docs/index.html', 'public/index.html'],
   ['docs/css', 'public/css'],
   ['docs/site', 'public/site'],
   ['site', 'public/site'],

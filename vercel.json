@@ -1,10 +1,23 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "public",
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/((?!api/|js/|css/|site/|images/|endpoints/).*)",
-      "destination": "/index.html"
+      "src": "app.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "server/**",
+          "views/**",
+          "public/**",
+          "js/**",
+          "css/**",
+          "images/**",
+          "endpoints/**",
+          "assets/**",
+          "docs/**"
+        ]
+      }
     }
-  ]
+  ],
+  "routes": [{ "src": "/(.*)", "dest": "app.js" }]
 }
