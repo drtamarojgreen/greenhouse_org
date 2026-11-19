@@ -1,10 +1,10 @@
+import { GreenhouseSynapseApp } from '../context.js';
 // docs/js/synapse_3d.js
 
 (function () {
     'use strict';
 
-    const G = window.GreenhouseSynapseApp || {};
-    window.GreenhouseSynapseApp = G;
+    const G = GreenhouseSynapseApp;
 
     G.Visuals3D = {
         applyDepth(ctx, w, h) {

@@ -1,3 +1,4 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file neuro_ui_3d_stats.ts
  * @description Stats and Event Logging UI for Neuro simulation.
@@ -14,7 +15,7 @@ export const GreenhouseNeuroStats = {
     eventLog: [] as LogEntry[],
 
     logEvent(messageKey: string) {
-        const util = (window as any).GreenhouseModelsUtil;
+        const util = GreenhouseModelsUtil;
         const message = util ? util.t(messageKey) : messageKey;
         this.eventLog.unshift({ message, timestamp: Date.now() });
         if (this.eventLog.length > 5) this.eventLog.pop();
@@ -41,7 +42,7 @@ export const GreenhouseNeuroStats = {
     },
 
     drawStats(ctx: CanvasRenderingContext2D, neuronCount: number, connectionCount: number) {
-        const util = (window as any).GreenhouseModelsUtil;
+        const util = GreenhouseModelsUtil;
         const t = util ? util.t.bind(util) : (k: string) => k;
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -54,7 +55,7 @@ export const GreenhouseNeuroStats = {
     },
 
     drawLabels(ctx: CanvasRenderingContext2D, projectedNeurons: any[]) {
-        const util = (window as any).GreenhouseModelsUtil;
+        const util = GreenhouseModelsUtil;
         if (projectedNeurons.length === 0) return;
 
         const t = util ? util.t.bind(util) : (k: string) => k;

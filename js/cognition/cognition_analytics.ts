@@ -1,14 +1,17 @@
+import { GreenhouseCognitionDrawingUtils } from './cognition_drawing_utils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file cognition_analytics.js
  * @description Analytical features for the Cognition model.
  * Covers Enhancements 1-6 and other analytical visualizations.
  */
 
+var _exported_GreenhouseCognitionAnalytics: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-    const utils = () => window.GreenhouseCognitionDrawingUtils;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+    const utils = () => GreenhouseCognitionDrawingUtils;
 
     const GreenhouseCognitionAnalytics = {
         init(app) {
@@ -75,7 +78,7 @@
 
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
+            if (!activeEnhancement || !GreenhouseCognitionDrawingUtils) return;
 
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
@@ -244,5 +247,8 @@
         }
     };
 
-    window.GreenhouseCognitionAnalytics = GreenhouseCognitionAnalytics;
+    _exported_GreenhouseCognitionAnalytics = GreenhouseCognitionAnalytics;
 })();
+
+
+export var GreenhouseCognitionAnalytics = _exported_GreenhouseCognitionAnalytics;

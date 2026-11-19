@@ -1,12 +1,11 @@
+import { GreenhouseDNARepair } from '../context.js';
 // docs/js/dna_repair_mutations.js
 // DNA Repair Simulation Module - Mutations and Radiation
 // Handles biologically diverse damage induction
 
 (function () {
     'use strict';
-
-    window.GreenhouseDNARepair = window.GreenhouseDNARepair || {};
-    const G = window.GreenhouseDNARepair;
+    const G = GreenhouseDNARepair;
 
     /**
      * Induces various types of DNA damage based on radiation level and environmental factors.

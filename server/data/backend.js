@@ -2,12 +2,20 @@
 
 const fs = require('fs');
 const path = require('path');
+const { ENDPOINTS_DIR } = require('../content');
 
 function readEndpoint(name, fallback) {
+    const fullPath = path.resolve(ENDPOINTS_DIR, name);
+    if (!fullPath.startsWith(ENDPOINTS_DIR + path.sep)) {
+        throw new Error(`Invalid endpoint path: ${name}`);
+    }
     try {
-        return JSON.parse(fs.readFileSync(path.join(__dirname, '../../docs/endpoints', name), 'utf8'));
-    } catch {
-        return fallback;
+        return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    } catch (error) {
+        if (error.code === 'ENOENT' || error instanceof SyntaxError) {
+            return fallback;
+        }
+        throw error;
     }
 }
 
@@ -16,9 +24,9 @@ const newsPage = readEndpoint('news.json', {});
 const inspirationPage = readEndpoint('inspiration.json', {});
 
 module.exports = {
-    books: booksPage.books || [],
-    news: newsPage.articles || [],
-    quotes: inspirationPage.quotes || [],
+    books: Array.isArray(booksPage && booksPage.books) ? booksPage.books : [],
+    news: Array.isArray(newsPage && newsPage.articles) ? newsPage.articles : [],
+    quotes: Array.isArray(inspirationPage && inspirationPage.quotes) ? inspirationPage.quotes : [],
     videoFeed: [
         { id: 'video_rss_1', title: 'Latest Insights on Mental Well-being', description: 'A new video discussing mental health and practical tips for daily well-being.', link: 'https://www.youtube.com/watch?v=latest_video_id_1', published: '2023-11-01T12:00:00Z' },
         { id: 'video_rss_2', title: 'Quick Tips for Managing Stress', description: 'Short, practical strategies for managing stress in everyday life.', link: 'https://www.youtube.com/shorts/short_video_id_2', published: '2023-10-29T10:00:00Z' },

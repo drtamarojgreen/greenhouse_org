@@ -4,6 +4,7 @@
  * Includes 100 scientifically & philosophically verified systemic factors.
  */
 
+var _exported_GreenhouseStressConfig: any;
 (function () {
     'use strict';
 
@@ -226,5 +227,8 @@
         }
     };
 
-    window.GreenhouseStressConfig = GreenhouseStressConfig;
+    _exported_GreenhouseStressConfig = GreenhouseStressConfig;
 })();
+
+
+export var GreenhouseStressConfig = _exported_GreenhouseStressConfig;

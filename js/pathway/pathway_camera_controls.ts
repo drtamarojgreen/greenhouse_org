@@ -1,6 +1,7 @@
 // docs/js/pathway_camera_controls.js
 // Decoupled Camera Controls for Pathway
 
+var _exported_GreenhousePathwayCameraControls: any;
 (function () {
     'use strict';
 
@@ -191,5 +192,8 @@
         }
     };
 
-    window.GreenhousePathwayCameraControls = GreenhousePathwayCameraControls;
+    _exported_GreenhousePathwayCameraControls = GreenhousePathwayCameraControls;
 })();
+
+
+export var GreenhousePathwayCameraControls = _exported_GreenhousePathwayCameraControls;

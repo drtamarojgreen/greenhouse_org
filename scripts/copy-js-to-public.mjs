@@ -1,37 +1,22 @@
-import { copyFile, cp, mkdir, readdir, rm } from 'node:fs/promises';
+import { copyFile, cp, mkdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, '..');
-const sourceJsDirectory = path.join(projectRoot, 'js');
+const sourceJsPackageJson = path.join(projectRoot, 'js', 'package.json');
 const publicDirectory = path.join(projectRoot, 'public');
-
-async function copyJavaScriptTree(source, destination) {
-  const entries = await readdir(source, { withFileTypes: true });
-  await mkdir(destination, { recursive: true });
-
-  for (const entry of entries) {
-    const sourcePath = path.join(source, entry.name);
-    const destinationPath = path.join(destination, entry.name);
-
-    if (entry.isDirectory()) {
-      await copyJavaScriptTree(sourcePath, destinationPath);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      await copyFile(sourcePath, destinationPath);
-    }
-  }
-}
+const publicJsDirectory = path.join(publicDirectory, 'js');
 
 await rm(publicDirectory, { recursive: true, force: true });
-await mkdir(publicDirectory, { recursive: true });
+await mkdir(publicJsDirectory, { recursive: true });
 
-if (existsSync(sourceJsDirectory)) {
-  await copyJavaScriptTree(sourceJsDirectory, path.join(publicDirectory, 'js'));
-  console.log('Copied js -> public/js');
+if (existsSync(sourceJsPackageJson)) {
+  await copyFile(sourceJsPackageJson, path.join(publicJsDirectory, 'package.json'));
+  console.log('Copied js/package.json -> public/js/package.json');
 } else {
-  console.warn('Skipping missing source directory: js/');
+  console.warn('Skipping missing file: js/package.json');
 }
 
 const assetMappings = [
@@ -53,4 +38,4 @@ for (const [relativeSrc, relativeDest] of assetMappings) {
   }
 }
 
-console.log('Generated public/ directory for static and endpoint delivery.');
+console.log('Generated public/ static assets and public/js/package.json.');

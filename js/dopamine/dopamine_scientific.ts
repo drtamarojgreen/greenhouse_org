@@ -1,3 +1,4 @@
+import { GreenhouseDopamine } from '../context.js';
 /**
  * @file dopamine_scientific.js
  * @description Scientific Dashboard and 100 Enhancements Tracker for Dopamine Simulation.
@@ -5,8 +6,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.enhancements = [
         { id: 1, cat: "Molecular", desc: "D1-D2 Heteromerization", status: "Active" },

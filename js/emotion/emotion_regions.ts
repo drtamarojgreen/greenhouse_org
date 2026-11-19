@@ -1,3 +1,4 @@
+import { GreenhouseEmotionConfig } from './emotion_config.js';
 /**
  * @file emotion_regions.js
  * @description Enhancements for Modeling Emotional Regulation in the Emotion Simulation.
@@ -35,7 +36,7 @@
         { id: 25, name: 'emotion_enh_25_name', description: 'emotion_enh_25_desc', regions: ['hypothalamus', 'hippocampus'], wellnessFocus: 'emotion_enh_25_wellness', conditionMapping: 'emotion_enh_25_cond' }
     ];
 
-    if (window.GreenhouseEmotionConfig) {
-        window.GreenhouseEmotionConfig.regulations = emotionalRegulationEnhancements;
+    if (GreenhouseEmotionConfig) {
+        GreenhouseEmotionConfig.regulations = emotionalRegulationEnhancements;
     }
 })();

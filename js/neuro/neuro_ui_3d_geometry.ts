@@ -1,3 +1,5 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
 /**
  * @file neuro_ui_3d_geometry.ts
  * @description 3D Geometry generation utilities for Neuro simulation.
@@ -207,8 +209,8 @@ export const GreenhouseNeuroGeometry = {
 
     initializeBrainShell(brainShell: Geometry) {
         // Use realistic brain mesh if available
-        if ((window as any).GreenhouseBrainMeshRealistic) {
-            const realisticBrain = (window as any).GreenhouseBrainMeshRealistic.generateRealisticBrain();
+        if (GreenhouseBrainMeshRealistic) {
+            const realisticBrain = GreenhouseBrainMeshRealistic.generateRealisticBrain();
             brainShell.vertices = realisticBrain.vertices;
             // realisticBrain.faces already has the { indices: [...] } structure
             brainShell.faces = realisticBrain.faces.map((face: any) => ({ ...face, region: null }));

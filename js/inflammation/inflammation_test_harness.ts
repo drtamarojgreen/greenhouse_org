@@ -1,9 +1,14 @@
+import { GreenhouseInflammationAnalysis } from './inflammation_analysis.js';
+import { GreenhouseInflammationControls } from './inflammation_controls.js';
+import { GreenhouseInflammationMacro } from './inflammation_macro.js';
+import { GreenhouseInflammationUI3D } from './inflammation_ui_3d.js';
 /**
  * @file inflammation_test_harness.js
  * @description Automated test scenarios for the Neuroinflammation Simulation.
  * Replays known inflammation scenarios and verifies enhancement availability.
  */
 
+var _exported_GreenhouseInflammationTestHarness: any;
 (function () {
     'use strict';
 
@@ -40,7 +45,7 @@
 
         verifyGraphIntegrity(app) {
             console.log("Verifying Pathway Graph Integrity...");
-            const ui3d = window.GreenhouseInflammationUI3D;
+            const ui3d = GreenhouseInflammationUI3D;
             const graph = ui3d ? ui3d.pathwayCache['tryptophan'] : null;
             if (!graph) {
                 console.warn("[FAIL] Pathway graph not loaded.");
@@ -91,12 +96,12 @@
         verifyEnhancementCoverage(app) {
             console.log("Checking Enhancement Module Coverage...");
             const modules = {
-                'Atlas Legend': !!window.GreenhouseInflammationControls.drawAtlasLegend,
-                'Mini-map': !!window.GreenhouseInflammationControls.drawMiniMap,
-                'Analysis Matrix': !!window.GreenhouseInflammationAnalysis.drawMatrix,
-                'Temporal Timeline': !!window.GreenhouseInflammationAnalysis.drawTimeline,
-                'Lobe Boundaries': !!window.GreenhouseInflammationMacro.drawLobeBoundaries,
-                'Region Confidence': !!window.GreenhouseInflammationUI3D.drawRegionConfidence,
+                'Atlas Legend': !!GreenhouseInflammationControls.drawAtlasLegend,
+                'Mini-map': !!GreenhouseInflammationControls.drawMiniMap,
+                'Analysis Matrix': !!GreenhouseInflammationAnalysis.drawMatrix,
+                'Temporal Timeline': !!GreenhouseInflammationAnalysis.drawTimeline,
+                'Lobe Boundaries': !!GreenhouseInflammationMacro.drawLobeBoundaries,
+                'Region Confidence': !!GreenhouseInflammationUI3D.drawRegionConfidence,
                 'Disease Presets': !!app.applyPreset,
                 'Keyboard Accessibility': !!app.handleKeyDown
             };
@@ -107,5 +112,8 @@
         }
     };
 
-    window.GreenhouseInflammationTestHarness = GreenhouseInflammationTestHarness;
+    _exported_GreenhouseInflammationTestHarness = GreenhouseInflammationTestHarness;
 })();
+
+
+export var GreenhouseInflammationTestHarness = _exported_GreenhouseInflammationTestHarness;

@@ -1,3 +1,4 @@
+import { Greenhouse } from '../context.js';
 (function () {
     'use strict';
 
@@ -89,7 +90,6 @@
     };
 
     // Expose to global scope
-    window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.RNALegend = GreenhouseRNALegend;
+    Greenhouse.RNALegend = GreenhouseRNALegend;
 
 })();

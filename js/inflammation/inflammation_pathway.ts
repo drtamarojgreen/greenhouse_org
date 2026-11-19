@@ -1,13 +1,16 @@
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file inflammation_pathway.js
  * @description Specialized Pathway Visualization for the Neuroinflammation Simulation.
  * Implements items 88-94 from the 100 enhancements list.
  */
 
+var _exported_GreenhouseInflammationPathway: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseInflammationPathway = {
         isLoading: false,
@@ -28,7 +31,7 @@
 
             const nodes = ui3d.currentPathwayNodes || [];
             const edges = ui3d.currentPathwayEdges || [];
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
 
             if (!nodes.length || !Math3D) return;
 
@@ -172,5 +175,8 @@
         }
     };
 
-    window.GreenhouseInflammationPathway = GreenhouseInflammationPathway;
+    _exported_GreenhouseInflammationPathway = GreenhouseInflammationPathway;
 })();
+
+
+export var GreenhouseInflammationPathway = _exported_GreenhouseInflammationPathway;

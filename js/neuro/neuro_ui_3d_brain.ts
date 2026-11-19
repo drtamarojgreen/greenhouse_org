@@ -1,3 +1,6 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseNeuroLighting } from './neuro_lighting.js';
 /**
  * @file neuro_ui_3d_brain.ts
  * @description Enhanced 3D Brain Rendering Engine with Post-processing and advanced Shading for Neuro simulation.
@@ -42,7 +45,7 @@ export const GreenhouseNeuroBrain = {
                     projectedVertices.push(null);
                     continue;
                 }
-                const p = (window as any).GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
+                const p = GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
                 projectedVertices.push(p);
             }
         }
@@ -63,7 +66,7 @@ export const GreenhouseNeuroBrain = {
                     const v2 = brainShell.vertices[indices[1]];
                     const v3 = brainShell.vertices[indices[2]];
                     if (!v1 || !v2 || !v3) continue;
-                    const normal = (window as any).GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
+                    const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
                     const depth = (p1.depth + p2.depth + p3.depth) / 3;
                     facesToDraw.push({ indices, p1, p2, p3, depth, normal, region: face.region || v1.region });
                 }
@@ -98,14 +101,14 @@ export const GreenhouseNeuroBrain = {
             // v.curvature is 0..1, higher values = more "fold"
             const ao = Math.max(0.1, 1.0 - (v0.curvature || 0) * 2.5);
 
-            const color = (window as any).GreenhouseNeuroLighting.calculateLighting(f.normal, center, camera, material);
+            const color = GreenhouseNeuroLighting.calculateLighting(f.normal, center, camera, material);
 
             // Apply AO for anatomical depth
             color.r *= ao; color.g *= ao; color.b *= ao;
 
             const isTarget = targetRegion && (f.region === targetRegion);
             const alphaToUse = isTarget ? 0.85 : material.alpha;
-            const fog = (window as any).GreenhouseModels3DMath.applyDepthFog(alphaToUse, f.depth);
+            const fog = GreenhouseModels3DMath.applyDepthFog(alphaToUse, f.depth);
 
             ctx.fillStyle = `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${fog})`;
             ctx.beginPath();
@@ -167,7 +170,7 @@ export const GreenhouseNeuroBrain = {
         ];
 
         axes.forEach(axis => {
-            const p = (window as any).GreenhouseModels3DMath.project3DTo2D(axis.x * 30, axis.y * 30, axis.z * 30,
+            const p = GreenhouseModels3DMath.project3DTo2D(axis.x * 30, axis.y * 30, axis.z * 30,
                 { x: 0, y: 0, z: -100, rotationX: camera.rotationX, rotationY: camera.rotationY, rotationZ: camera.rotationZ, fov: 200 },
                 { width: 0, height: 0, near: 1, far: 1000 });
 

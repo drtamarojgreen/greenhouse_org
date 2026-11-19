@@ -1,13 +1,15 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
+var _exported_GreenhouseGeneticStats: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseGeneticStats = {
         eventLog: [],
 
         logEvent(messageKey) {
-            const util = window.GreenhouseModelsUtil;
+            const util = GreenhouseModelsUtil;
             const message = util ? util.t(messageKey) : messageKey;
             this.eventLog.unshift({ message, timestamp: Date.now() });
             if (this.eventLog.length > 5) this.eventLog.pop();
@@ -162,5 +164,8 @@
         }
     };
 
-    window.GreenhouseGeneticStats = GreenhouseGeneticStats;
+    _exported_GreenhouseGeneticStats = GreenhouseGeneticStats;
 })();
+
+
+export var GreenhouseGeneticStats = _exported_GreenhouseGeneticStats;

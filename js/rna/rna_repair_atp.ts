@@ -1,3 +1,4 @@
+import { Greenhouse } from '../context.js';
 /**
  * @file rna_repair_atp.js
  * @description Advanced ATP/GTP energy currency management for RNA repair simulations.
@@ -5,8 +6,6 @@
 
 (function () {
     'use strict';
-
-    window.Greenhouse = window.Greenhouse || {};
 
     /**
      * @class RNAAtpManager
@@ -60,6 +59,6 @@
         }
     }
 
-    window.Greenhouse.RNAAtpManager = RNAAtpManager;
+    Greenhouse.RNAAtpManager = RNAAtpManager;
     console.log("RNA ATP Manager module loaded.");
 })();

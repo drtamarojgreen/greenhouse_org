@@ -1,15 +1,18 @@
+import { Greenhouse } from './context.js';
 /**
  * @file models_util.ts
  * @description Lightweight shared simulation engine and utilities for Greenhouse models.
  */
 
 /// <reference path="types/globals.d.ts" />
+import { GreenhouseTranslations } from './models_lang.js';
 
 /**
  * @class GreenhouseComponent
  * Base class for all visual components in the system.
  */
 export class GreenhouseComponent {
+    [key: string]: any;
     name: string;
     layer: number;
     active: boolean = true;
@@ -46,6 +49,7 @@ export class GreenhouseComponent {
  * Central rendering engine.
  */
 export class GreenhouseSystem {
+    [key: string]: any;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     components: GreenhouseComponent[] = [];
@@ -106,6 +110,7 @@ export class GreenhouseSystem {
  * Manages assets and sprite atlases.
  */
 export class GreenhouseAssetManager {
+    [key: string]: any;
     assets: Map<string, HTMLImageElement> = new Map();
     loading: boolean = false;
 
@@ -133,6 +138,7 @@ export class GreenhouseAssetManager {
  * Lightweight shared simulation engine for Greenhouse models.
  */
 export class SimulationEngine {
+    [key: string]: any;
     state: Greenhouse.SimulationState;
     updateFn: (state: Greenhouse.SimulationState, dt: number) => void;
     tickRate: number;
@@ -193,6 +199,7 @@ export class SimulationEngine {
  * Simulates 24-hour biological cycle.
  */
 export class DiurnalClock {
+    [key: string]: any;
     timeInHours: number = 8.0;
     dayCount: number = 0;
 
@@ -233,8 +240,8 @@ const GreenhouseModelsUtil = {
 
     currentLanguage: 'en' as string,
 
-    get translations() {
-        return (window as any).GreenhouseTranslations || {};
+    get translations(): Record<string, Record<string, string>> {
+        return GreenhouseTranslations || {};
     },
 
     createElement(tag: string, attributes: any, ...children: any[]): HTMLElement {
@@ -323,9 +330,11 @@ const GreenhouseModelsUtil = {
 
     toggleLanguage(): string {
         this.currentLanguage = this.currentLanguage === 'en' ? 'es' : 'en';
-        window.dispatchEvent(new CustomEvent('greenhouseLanguageChanged', {
-            detail: { language: this.currentLanguage }
-        }));
+        if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('greenhouseLanguageChanged', {
+                detail: { language: this.currentLanguage }
+            }));
+        }
         return this.currentLanguage;
     },
 
@@ -365,21 +374,21 @@ const GreenhouseModelsUtil = {
     },
 
     PathwayService: {
-        async loadMetadata(baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
+        async loadMetadata(baseUrl: string = '/') {
             try {
                 const response = await fetch(baseUrl + 'endpoints/models_pathways.json');
                 if (!response.ok) return { pathways: [] };
                 return await response.json();
             } catch (e) { return { pathways: [] }; }
         },
-        async loadJSONPathway(url: string, baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
+        async loadJSONPathway(url: string, baseUrl: string = '/') {
             try {
                 const response = await fetch(baseUrl + url);
                 if (!response.ok) return null;
                 return await response.json();
             } catch (e) { return null; }
         },
-        async loadPathway(url: string, baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
+        async loadPathway(url: string, baseUrl: string = '/') {
             try {
                 const response = await fetch(baseUrl + url);
                 if (!response.ok) return null;
@@ -462,12 +471,20 @@ const GreenhouseModelsUtil = {
     }
 };
 
-(window as any).GreenhouseModelsUtil = GreenhouseModelsUtil;
-(window as any).GreenhouseBioStatus = {
+const GreenhouseBioStatus: {
+    stress: { load: number; hpa: number; autonomic: number };
+    inflammation: { tone: number; bbb: number; microglia: number };
+    sync(model: string, stats: Record<string, any>): void;
+    [key: string]: any;
+} = {
     stress: { load: 0, hpa: 0, autonomic: 0 },
     inflammation: { tone: 0, bbb: 1, microglia: 0 },
-    sync(model: string, stats: any) {
-        (this as any)[model] = { ...(this as any)[model], ...stats };
-        window.dispatchEvent(new CustomEvent('greenhouseBioUpdate', { detail: { model, stats } }));
+    sync(model: string, stats: Record<string, any>): void {
+        this[model] = { ...this[model], ...stats };
+        if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('greenhouseBioUpdate', { detail: { model, stats } }));
+        }
     }
 };
+
+export { GreenhouseModelsUtil, GreenhouseBioStatus };

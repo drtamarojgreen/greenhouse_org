@@ -1,16 +1,18 @@
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
 /**
  * @file stress_geometry.js
  * @description Master-HD Brain Model specifically for Stress Dynamics.
  * Advanced lobing logic to prevent "golf ball" facets while maintaining anatomical fidelity.
  */
 
+var _exported_GreenhouseStressGeometry: any;
 (function () {
     'use strict';
 
     const GreenhouseStressGeometry = {
         initializeBrainShell(brainShell) {
-            if (window.GreenhouseBrainMeshRealistic) {
-                const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            if (GreenhouseBrainMeshRealistic) {
+                const realisticBrain = GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 brainShell.vertices = realisticBrain.vertices;
                 brainShell.faces = realisticBrain.faces.map(face => ({ ...face, region: null }));
                 brainShell.regions = realisticBrain.regions;
@@ -124,5 +126,8 @@
         }
     };
 
-    window.GreenhouseStressGeometry = GreenhouseStressGeometry;
+    _exported_GreenhouseStressGeometry = GreenhouseStressGeometry;
 })();
+
+
+export var GreenhouseStressGeometry = _exported_GreenhouseStressGeometry;

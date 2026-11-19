@@ -1,12 +1,14 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file stress_controls.js
  * @description UI Control components (Checkboxes, Buttons) for the Stress Dynamics App.
  */
 
+var _exported_GreenhouseStressControls: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressControls = {
         drawCheckbox(ctx, app, c, state) {
@@ -62,7 +64,7 @@
 
             if (app.roundRect) app.roundRect(ctx, b.x, b.y, b.w, b.h, 6, true);
 
-            const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => (GreenhouseModelsUtil && GreenhouseModelsUtil.t) ? GreenhouseModelsUtil.t(k) : k;
             ctx.fillStyle = isActive ? '#fff' : (isHovered ? '#fff' : 'rgba(255,255,255,0.6)');
             ctx.font = 'bold 10px Quicksand, sans-serif';
             ctx.textAlign = 'center';
@@ -71,7 +73,7 @@
         },
 
         drawCategoryHeader(ctx, app, header) {
-            const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => (GreenhouseModelsUtil && GreenhouseModelsUtil.t) ? GreenhouseModelsUtil.t(k) : k;
             const isHovered = header.isHovered;
             const isOpen = header.isOpen;
 
@@ -107,5 +109,8 @@
         }
     };
 
-    window.GreenhouseStressControls = GreenhouseStressControls;
+    _exported_GreenhouseStressControls = GreenhouseStressControls;
 })();
+
+
+export var GreenhouseStressControls = _exported_GreenhouseStressControls;

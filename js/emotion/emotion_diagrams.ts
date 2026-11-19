@@ -1,9 +1,11 @@
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 /**
  * @file emotion_diagrams.js
  * @description Visualization engine for emotional and neurological diagrams.
  * Part of the 100 enhancements project, focusing on visual accuracy and interactivity.
  */
 
+var _exported_GreenhouseEmotionDiagrams: any;
 (function () {
     'use strict';
 
@@ -724,9 +726,9 @@
 
         projectRegion(app, region) {
             const center = this.centers[region];
-            if (!center || !window.GreenhouseModels3DMath) return null;
+            if (!center || !GreenhouseModels3DMath) return null;
 
-            return window.GreenhouseModels3DMath.project3DTo2D(
+            return GreenhouseModels3DMath.project3DTo2D(
                 center.x, center.y, center.z,
                 app.camera,
                 app.projection
@@ -734,5 +736,8 @@
         }
     };
 
-    window.GreenhouseEmotionDiagrams = GreenhouseEmotionDiagrams;
+    _exported_GreenhouseEmotionDiagrams = GreenhouseEmotionDiagrams;
 })();
+
+
+export var GreenhouseEmotionDiagrams = _exported_GreenhouseEmotionDiagrams;

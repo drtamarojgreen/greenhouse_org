@@ -1,3 +1,5 @@
+import { GreenhouseDopamine } from '../context.js';
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
 /**
  * @file dopamine_circuit.js
  * @description Anatomical and circuit integration for Dopamine Simulation.
@@ -6,8 +8,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.circuitState = {
         pathways: {
@@ -132,8 +133,8 @@
 
     // Initialize Realistic Brain Mesh
     G.initRealisticBrain = function() {
-        if (window.GreenhouseBrainMeshRealistic) {
-            G.circuitState.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+        if (GreenhouseBrainMeshRealistic) {
+            G.circuitState.brainMesh = GreenhouseBrainMeshRealistic.generateRealisticBrain();
             console.log("Realistic Brain Mesh Generated.");
         }
     };

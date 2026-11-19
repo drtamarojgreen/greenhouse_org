@@ -1,13 +1,15 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file neuro_controls.js
  * @description UI Control components for the Neuro Simulation (Canvas-based).
  * Optimized for responsiveness and robust hit detection.
  */
 
+var _exported_GreenhouseNeuroControls: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseNeuroControls = {
         drawButton(ctx, app, b, isActive) {
@@ -148,5 +150,7 @@
         }
     };
 
-    window.GreenhouseNeuroControls = GreenhouseNeuroControls;
+    _exported_GreenhouseNeuroControls = GreenhouseNeuroControls;
 })();
+
+export var GreenhouseNeuroControls = _exported_GreenhouseNeuroControls;

@@ -1,12 +1,11 @@
+import { GreenhouseDNARepair } from '../context.js';
 // docs/js/dna_replication.js
 // DNA Replication Simulation Module
 // Demonstrates Replication Fork, DNA Polymerase, Helicase, Leading/Lagging strands
 
 (function () {
     'use strict';
-
-    window.GreenhouseDNARepair = window.GreenhouseDNARepair || {};
-    const G = window.GreenhouseDNARepair;
+    const G = GreenhouseDNARepair;
 
     G.handleReplication = function(t) {
         const st = this.state;

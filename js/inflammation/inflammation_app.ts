@@ -1,13 +1,20 @@
+import { GreenhouseInflammationAnalysis } from './inflammation_analysis.js';
+import { GreenhouseInflammationConfig } from './inflammation_config.js';
+import { GreenhouseInflammationControls } from './inflammation_controls.js';
+import { GreenhouseInflammationTooltips } from './inflammation_tooltips.js';
+import { GreenhouseInflammationUI3D } from './inflammation_ui_3d.js';
+import { GreenhouseBioStatus, GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file inflammation_app.js
  * @description Main application logic for the Neuroinflammation Simulation.
  * Implements binary factor logic (Checkboxes) and restored physiological metrics.
  */
 
+var _exported_GreenhouseInflammationApp: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseInflammationApp = {
         engine: null,
@@ -65,9 +72,9 @@
             this.projection.width = this.canvas.width;
             this.projection.height = this.canvas.height;
 
-            const config = window.GreenhouseInflammationConfig;
+            const config = GreenhouseInflammationConfig;
 
-            this.engine = new window.GreenhouseModelsUtil.SimulationEngine({
+            this.engine = new GreenhouseModelsUtil.SimulationEngine({
                 initialFactors: config.factors.reduce((acc, f) => {
                     acc[f.id] = f.defaultValue;
                     return acc;
@@ -95,9 +102,9 @@
                 updateFn: (state, dt) => this.updateModel(state, dt)
             });
 
-            this.clock = new window.GreenhouseModelsUtil.DiurnalClock();
+            this.clock = new GreenhouseModelsUtil.DiurnalClock();
 
-            if (window.GreenhouseInflammationUI3D) window.GreenhouseInflammationUI3D.init(this);
+            if (GreenhouseInflammationUI3D) GreenhouseInflammationUI3D.init(this);
 
             // Initialize Category State
             let savedCategories = [];
@@ -141,7 +148,7 @@
         },
 
         setupUI() {
-            const config = window.GreenhouseInflammationConfig;
+            const config = GreenhouseInflammationConfig;
             this.ui.checkboxes = [];
 
             config.factors.forEach(f => {
@@ -295,7 +302,7 @@
             }
 
             // Metric Card Click (Select for timeline)
-            const Analysis = window.GreenhouseInflammationAnalysis;
+            const Analysis = GreenhouseInflammationAnalysis;
             if (Analysis) {
                 const totalMetrics = 8;
                 for (let i = 0; i < Math.min(totalMetrics, this.ui.metricsPerPage); i++) {
@@ -332,9 +339,9 @@
                         else if (b.id === 'export_csv') this.exportData('csv');
                         else if (b.id === 'undo_factor') this.popHistoryState();
                         else if (b.id === 'export_screenshot') this.exportScreenshot();
-                        else if (b.id === 'regen_micro') { if (window.GreenhouseInflammationUI3D) window.GreenhouseInflammationUI3D.initMicroData(); }
+                        else if (b.id === 'regen_micro') { if (GreenhouseInflammationUI3D) GreenhouseInflammationUI3D.initMicroData(); }
                         else if (b.id === 'timeline_window') {
-                            const Analysis = window.GreenhouseInflammationAnalysis;
+                            const Analysis = GreenhouseInflammationAnalysis;
                             if (Analysis) {
                                 Analysis.timelineWindow = Analysis.timelineWindow === 200 ? 400 : (Analysis.timelineWindow === 400 ? 600 : 200);
                             }
@@ -406,8 +413,8 @@
                 }
             }
 
-            if (!this.ui.hoveredElement && window.GreenhouseInflammationUI3D) {
-                this.ui.hoveredElement = window.GreenhouseInflammationUI3D.checkHover(mx, my, this.camera, this.projection);
+            if (!this.ui.hoveredElement && GreenhouseInflammationUI3D) {
+                this.ui.hoveredElement = GreenhouseInflammationUI3D.checkHover(mx, my, this.camera, this.projection);
                 if (this.ui.hoveredElement && this.ui.hoveredElement.id === 'brain_region') {
                     this.ui.currentRegion = this.ui.hoveredElement.label;
                 }
@@ -523,7 +530,7 @@
         },
 
         applyPreset(id) {
-            const config = window.GreenhouseInflammationConfig;
+            const config = GreenhouseInflammationConfig;
             const preset = config.diseasePresets[id];
             if (preset) {
                 this.pushHistoryState();
@@ -540,7 +547,7 @@
 
         clearCategory(catId) {
             this.pushHistoryState();
-            const config = window.GreenhouseInflammationConfig;
+            const config = GreenhouseInflammationConfig;
             config.factors.forEach(f => {
                 if (f.category === catId && f.type === 'checkbox') {
                     this.engine.state.factors[f.id] = 0;
@@ -576,12 +583,12 @@
         },
 
         exportData(format = 'json') {
-            if (window.GreenhouseInflammationAnalysis) {
+            if (GreenhouseInflammationAnalysis) {
                 let result;
                 if (format === 'csv') {
-                    result = window.GreenhouseInflammationAnalysis.exportToCSV(this.engine.state);
+                    result = GreenhouseInflammationAnalysis.exportToCSV(this.engine.state);
                 } else {
-                    result = window.GreenhouseInflammationAnalysis.exportToJSON(this.engine.state);
+                    result = GreenhouseInflammationAnalysis.exportToJSON(this.engine.state);
                 }
 
                 if (result) {
@@ -599,7 +606,7 @@
         updateModel(state, dt) {
             const f = state.factors;
             const m = state.metrics;
-            const Util = window.GreenhouseModelsUtil;
+            const Util = GreenhouseModelsUtil;
 
             if (this.clock) {
                 this.clock.update(dt);
@@ -607,7 +614,7 @@
             }
 
             let scoreEnv = 0, scorePsych = 0, scorePhilo = 0, scoreRes = 0;
-            const config = window.GreenhouseInflammationConfig;
+            const config = GreenhouseInflammationConfig;
             config.factors.forEach(fact => {
                 if (f[fact.id] === 1) {
                     if (fact.category === 'env') scoreEnv++;
@@ -617,7 +624,7 @@
                 }
             });
 
-            const stressSync = window.GreenhouseBioStatus ? window.GreenhouseBioStatus.stress.load : 0.2;
+            const stressSync = GreenhouseBioStatus ? GreenhouseBioStatus.stress.load : 0.2;
 
             const ageImpact = f.agePreset ? 0.15 : 0;
             const sexImpact = f.sexSpecific ? 0.05 : 0;
@@ -681,8 +688,8 @@
             m.pi3kAkt = Util.SimulationEngine.smooth(m.pi3kAkt, Util.SimulationEngine.clamp(1.0 - (m.tnfAlpha * 0.5) + (m.il10 * 0.3), 0.1, 1.0), 0.02);
             m.campPka = Util.SimulationEngine.smooth(m.campPka, Util.SimulationEngine.clamp(m.il10 * 0.7 + (scorePhilo * 0.2), 0.05, 1.0), 0.04);
 
-            if (window.GreenhouseBioStatus) {
-                window.GreenhouseBioStatus.sync('inflammation', {
+            if (GreenhouseBioStatus) {
+                GreenhouseBioStatus.sync('inflammation', {
                     tone: m.tnfAlpha,
                     bbb: m.bbbIntegrity,
                     microglia: m.microgliaActivation,
@@ -693,8 +700,8 @@
                 });
             }
 
-            if (window.GreenhouseInflammationAnalysis) {
-                window.GreenhouseInflammationAnalysis.updateHistory(state);
+            if (GreenhouseInflammationAnalysis) {
+                GreenhouseInflammationAnalysis.updateHistory(state);
             }
         },
 
@@ -716,7 +723,7 @@
 
             this.updateCameraInertia();
 
-            if (window.GreenhouseInflammationUI3D) window.GreenhouseInflammationUI3D.render(ctx, state, this.camera, this.projection);
+            if (GreenhouseInflammationUI3D) GreenhouseInflammationUI3D.render(ctx, state, this.camera, this.projection);
 
             this.drawUI(ctx, w, h, state);
         },
@@ -800,8 +807,8 @@
                 ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '8px monospace'; ctx.fillText(ml.rv, bx + 10, by + 40); // Raw Value (Item 21)
 
                 // Sparkline (Item 27)
-                if (window.GreenhouseInflammationAnalysis && window.GreenhouseInflammationAnalysis.history[ml.id]) {
-                    this.drawMiniSparkline(ctx, bx + 10, by + 55, 80, 15, window.GreenhouseInflammationAnalysis.history[ml.id], ml.c);
+                if (GreenhouseInflammationAnalysis && GreenhouseInflammationAnalysis.history[ml.id]) {
+                    this.drawMiniSparkline(ctx, bx + 10, by + 55, 80, 15, GreenhouseInflammationAnalysis.history[ml.id], ml.c);
                 }
             });
 
@@ -812,8 +819,8 @@
             if (this.ui.categories) {
                 // Draw all headers first
                 this.ui.categories.forEach(cat => {
-                    if (window.GreenhouseInflammationControls) {
-                        window.GreenhouseInflammationControls.drawCategoryHeader(ctx, this, cat);
+                    if (GreenhouseInflammationControls) {
+                        GreenhouseInflammationControls.drawCategoryHeader(ctx, this, cat);
                     }
                 });
 
@@ -849,39 +856,39 @@
                         const row = isNarrow ? i : Math.floor(i / 2);
                         c.x = openCat.x + 10 + (col * 190);
                         c.y = openCat.y + 55 + (row * 22); // Shifted down for search bar
-                        if (window.GreenhouseInflammationControls) {
-                            window.GreenhouseInflammationControls.drawCheckbox(ctx, this, c, state);
+                        if (GreenhouseInflammationControls) {
+                            GreenhouseInflammationControls.drawCheckbox(ctx, this, c, state);
                         }
                     });
                 }
             }
 
             this.ui.buttons.forEach(b => {
-                if (window.GreenhouseInflammationControls) {
+                if (GreenhouseInflammationControls) {
                     const btnState = JSON.parse(JSON.stringify(state));
                     if (b.id === 'toggle_left' && this.ui.showLeftHemisphere) btnState.factors.viewMode = b.val;
                     if (b.id === 'toggle_right' && this.ui.showRightHemisphere) btnState.factors.viewMode = b.val;
                     if (b.id === 'toggle_deep' && this.ui.showDeepStructures) btnState.factors.viewMode = b.val;
-                    window.GreenhouseInflammationControls.drawButton(ctx, this, b, btnState);
+                    GreenhouseInflammationControls.drawButton(ctx, this, b, btnState);
                 }
             });
 
-            if (window.GreenhouseInflammationControls) {
-                const config = window.GreenhouseInflammationConfig;
-                window.GreenhouseInflammationControls.drawAtlasLegend(ctx, this, config, l.legend);
-                window.GreenhouseInflammationControls.drawMiniMap(ctx, this, w, h, l.miniMap);
-                window.GreenhouseInflammationControls.drawBreadcrumbs(ctx, this, this.ui.currentRegion, l.breadcrumbs);
-                window.GreenhouseInflammationControls.drawDebugBadge(ctx, this);
+            if (GreenhouseInflammationControls) {
+                const config = GreenhouseInflammationConfig;
+                GreenhouseInflammationControls.drawAtlasLegend(ctx, this, config, l.legend);
+                GreenhouseInflammationControls.drawMiniMap(ctx, this, w, h, l.miniMap);
+                GreenhouseInflammationControls.drawBreadcrumbs(ctx, this, this.ui.currentRegion, l.breadcrumbs);
+                GreenhouseInflammationControls.drawDebugBadge(ctx, this);
                 this.drawExportStatus(ctx);
                 if (this.ui.showImplementationNotes) this.drawImplementationNotes(ctx);
             }
 
-            if (window.GreenhouseInflammationAnalysis) {
-                window.GreenhouseInflammationAnalysis.render(ctx, this, state, l.analysisMatrix, l.analysisTimeline);
+            if (GreenhouseInflammationAnalysis) {
+                GreenhouseInflammationAnalysis.render(ctx, this, state, l.analysisMatrix, l.analysisTimeline);
             }
 
-            if (this.ui.hoveredElement && window.GreenhouseInflammationTooltips && this.ui.hoveredElement.type !== 'header') {
-                window.GreenhouseInflammationTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
+            if (this.ui.hoveredElement && GreenhouseInflammationTooltips && this.ui.hoveredElement.type !== 'header') {
+                GreenhouseInflammationTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
                 if (this.ui.hoveredElement.type === 'checkbox') this.drawImpactPreview(ctx);
             }
         },
@@ -950,7 +957,7 @@
 
         drawClinicalStrip(ctx, w, h, state) {
             const f = state.factors;
-            const stressSync = window.GreenhouseBioStatus ? window.GreenhouseBioStatus.stress.load : null;
+            const stressSync = GreenhouseBioStatus ? GreenhouseBioStatus.stress.load : null;
 
             ctx.save();
             ctx.fillStyle = 'rgba(255,255,255,0.05)';
@@ -1062,5 +1069,8 @@
         }
     };
 
-    window.GreenhouseInflammationApp = GreenhouseInflammationApp;
+    _exported_GreenhouseInflammationApp = GreenhouseInflammationApp;
 })();
+
+
+export var GreenhouseInflammationApp = _exported_GreenhouseInflammationApp;

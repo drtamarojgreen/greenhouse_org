@@ -1,3 +1,4 @@
+import { GreenhouseDopamine } from '../context.js';
 /**
  * @file dopamine_analytics.js
  * @description Analytics and tracking for Dopamine Simulation.
@@ -6,8 +7,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.analyticsState = {
         history: {

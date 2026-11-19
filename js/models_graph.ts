@@ -28,7 +28,7 @@ const GreenhouseModelsGraph = {
      * @param url - Optional URL to csv, defaults to 'endpoints/graph.csv'
      * @returns Resolves with the graph data
      */
-    init(url: string = '', baseUrl: string = 'https://drtamarojgreen.github.io/greenhouse_org/'): Promise<GraphData | null> {
+    init(url: string = '', baseUrl: string = '/'): Promise<GraphData | null> {
         const base = baseUrl ? (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') : '';
         const path = url || 'endpoints/graph.csv';
         const dataUrl = (path.startsWith('http') || path.startsWith('/')) ? path : base + path;
@@ -132,4 +132,4 @@ const GreenhouseModelsGraph = {
     }
 };
 
-(window as any).GreenhouseModelsGraph = GreenhouseModelsGraph;
+export { GreenhouseModelsGraph };

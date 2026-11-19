@@ -1,3 +1,14 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhousePostProcessor } from '../models_3d_postprocess.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseNeuroApp } from './neuro_app.js';
+import { GreenhouseNeuroConfig } from './neuro_config.js';
+import { NeuroSynapseCameraController } from './neuro_synapse_camera_controls.js';
+import { GreenhouseNeuroBrain } from './neuro_ui_3d_brain.js';
+import { GreenhouseNeuroGeometry } from './neuro_ui_3d_geometry.js';
+import { GreenhouseNeuroStats } from './neuro_ui_3d_stats.js';
+import { GreenhouseNeuroSynapse } from './neuro_ui_3d_synapse.js';
 /**
  * @file neuro_ui_3d.ts
  * @description Enhanced 3D Visualization for Neuro GA in Neuro simulation.
@@ -36,9 +47,9 @@ export const GreenhouseNeuroUI3D = {
         const container = (typeof containerSelector === 'string') ? document.querySelector(containerSelector) : containerSelector;
         if (!container) return;
 
-        if ((window as any).NeuroSynapseCameraController) {
-            this.networkCameraController = new (window as any).NeuroSynapseCameraController(this.camera, (window as any).GreenhouseNeuroConfig);
-            this.synapseCameraController = new (window as any).NeuroSynapseCameraController(this.synapseCamera, (window as any).GreenhouseNeuroConfig);
+        if (NeuroSynapseCameraController) {
+            this.networkCameraController = new NeuroSynapseCameraController(this.camera, GreenhouseNeuroConfig);
+            this.synapseCameraController = new NeuroSynapseCameraController(this.synapseCamera, GreenhouseNeuroConfig);
             this.synapseCameraController.autoRotate = true;
         }
 
@@ -47,8 +58,8 @@ export const GreenhouseNeuroUI3D = {
         this.canvas.height = 750;
 
         // Initialize Post-Processor
-        if ((window as any).GreenhousePostProcessor) {
-            (window as any).GreenhousePostProcessor.init(this.canvas);
+        if (GreenhousePostProcessor) {
+            GreenhousePostProcessor.init(this.canvas);
         }
 
         this.canvas.style.width = '100%';
@@ -123,14 +134,14 @@ export const GreenhouseNeuroUI3D = {
     },
 
     addStartOverlay(container: HTMLElement) {
-        const util = (window as any).GreenhouseModelsUtil;
+        const util = GreenhouseModelsUtil;
         const overlay = document.createElement('div');
         overlay.id = 'neuro-start-overlay';
         overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background:rgba(0,0,0,0.6);z-index:10;';
         const btn = document.createElement('button');
         btn.textContent = util ? util.t('Start Simulation') : 'Start Simulation';
         btn.style.cssText = 'padding:15px 30px;font-size:18px;cursor:pointer;background:#E0E0E0;color:#222;border:none;border-radius:5px;font-weight:bold;';
-        btn.onclick = () => { overlay.style.display = 'none'; if ((window as any).GreenhouseNeuroApp) (window as any).GreenhouseNeuroApp.startSimulation(); };
+        btn.onclick = () => { overlay.style.display = 'none'; if (GreenhouseNeuroApp) GreenhouseNeuroApp.startSimulation(); };
         overlay.appendChild(btn);
         container.style.position = 'relative';
         container.appendChild(overlay);
@@ -159,7 +170,7 @@ export const GreenhouseNeuroUI3D = {
             const fromNeuron = this.neurons.find(n => n.id === conn.from), toNeuron = this.neurons.find(n => n.id === conn.to);
             if (!fromNeuron || !toNeuron) return null;
             const cp = { x: (fromNeuron.x + toNeuron.x) * 0.4, y: (fromNeuron.y + toNeuron.y) * 0.4, z: (fromNeuron.z + toNeuron.z) * 0.4 };
-            return { ...conn, from: fromNeuron, to: toNeuron, controlPoint: cp, mesh: (window as any).GreenhouseNeuroGeometry?.generateTubeMesh(fromNeuron, toNeuron, cp, Math.abs(conn.weight) * 10, 8) };
+            return { ...conn, from: fromNeuron, to: toNeuron, controlPoint: cp, mesh: GreenhouseNeuroGeometry?.generateTubeMesh(fromNeuron, toNeuron, cp, Math.abs(conn.weight) * 10, 8) };
         }).filter(c => c);
 
         if (this.connections.length > 0 && !this.selectedConnection) {
@@ -185,8 +196,8 @@ export const GreenhouseNeuroUI3D = {
         const w = this.canvas.width;
         const h = this.canvas.height;
 
-        const config = (window as any).GreenhouseNeuroConfig;
-        const post = (window as any).GreenhousePostProcessor;
+        const config = GreenhouseNeuroConfig;
+        const post = GreenhousePostProcessor;
 
         // 1. Prepare Frame (e.g. TAA Jitter)
         if (post && config) {
@@ -204,8 +215,8 @@ export const GreenhouseNeuroUI3D = {
         // We can apply global contrast/saturation here if needed.
 
         if (this.selectedConnection) {
-            if ((window as any).GreenhouseNeuroSynapse) {
-                (window as any).GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, w, h, this.selectedConnection, this.synapseMeshes, true, this.synapseCamera);
+            if (GreenhouseNeuroSynapse) {
+                GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, w, h, this.selectedConnection, this.synapseMeshes, true, this.synapseCamera);
             }
         }
 
@@ -219,20 +230,20 @@ export const GreenhouseNeuroUI3D = {
         }
 
         // --- Draw UI Overlay ---
-        if ((window as any).GreenhouseNeuroApp && (window as any).GreenhouseNeuroApp.drawUI) {
-            (window as any).GreenhouseNeuroApp.drawUI(ctx, w, h);
+        if (GreenhouseNeuroApp && GreenhouseNeuroApp.drawUI) {
+            GreenhouseNeuroApp.drawUI(ctx, w, h);
         }
 
         // Draw Region Labels
-        if ((window as any).GreenhouseNeuroStats) {
+        if (GreenhouseNeuroStats) {
             const projectedBrainNeurons = this.neurons
                 .map(n => {
-                    const p = (window as any).GreenhouseModels3DMath?.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                    const p = GreenhouseModels3DMath?.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
                     return { ...n, ...p };
                 })
                 .filter(p => p.scale > 0);
 
-            (window as any).GreenhouseNeuroStats.drawLabels(ctx, projectedBrainNeurons);
+            GreenhouseNeuroStats.drawLabels(ctx, projectedBrainNeurons);
         }
     },
 
@@ -247,11 +258,11 @@ export const GreenhouseNeuroUI3D = {
         ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
 
         if (this.brainShell) {
-            (window as any).GreenhouseNeuroBrain?.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w, h, null);
+            GreenhouseNeuroBrain?.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w, h, null);
         }
 
         this.neurons.forEach(n => {
-            const p = (window as any).GreenhouseModels3DMath?.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+            const p = GreenhouseModels3DMath?.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
             if (p && p.scale > 0) {
                 ctx.fillStyle = n.baseColor;
                 ctx.beginPath(); ctx.arc(p.x, p.y, n.radius * p.scale, 0, Math.PI * 2); ctx.fill();
@@ -264,11 +275,11 @@ export const GreenhouseNeuroUI3D = {
 
     initializeBrainShell() {
         this.brainShell = { vertices: [], faces: [] };
-        (window as any).GreenhouseNeuroGeometry?.initializeBrainShell(this.brainShell);
+        GreenhouseNeuroGeometry?.initializeBrainShell(this.brainShell);
     },
 
     getRegionVertices(regionKey: string) {
-        return (window as any).GreenhouseNeuroGeometry?.getRegionVertices(this.brainShell, regionKey) || [];
+        return GreenhouseNeuroGeometry?.getRegionVertices(this.brainShell, regionKey) || [];
     },
 
     handleMouseClick(e: MouseEvent) {
@@ -283,7 +294,7 @@ export const GreenhouseNeuroUI3D = {
             // Logic to switch selected connection
             const localX = mouseX - pipX, localY = mouseY - pipY;
             this.connections.forEach(conn => {
-                const p = (window as any).GreenhouseModels3DMath?.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, { width: pipW, height: pipH, near: 10, far: 5000 });
+                const p = GreenhouseModels3DMath?.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, { width: pipW, height: pipH, near: 10, far: 5000 });
                 if (Math.hypot(p.x - localX, p.y - localY) < 20) this.selectedConnection = conn;
             });
         }

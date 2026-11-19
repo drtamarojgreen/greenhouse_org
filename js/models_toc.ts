@@ -1,4 +1,5 @@
 /// <reference path="types/globals.d.ts" />
+import { GreenhouseModelsUtil } from './models_util.js';
 
 interface TOCConfig {
     xmlPath: string;
@@ -35,7 +36,7 @@ const GreenhouseModelsTOC = {
 
         if (typeof target === 'string') {
             container = document.querySelector(target) as HTMLElement | null;
-        } else if (target instanceof HTMLElement || (target && typeof target === 'object' && 'classList' in target)) {
+        } else if ((typeof HTMLElement !== 'undefined' && target instanceof HTMLElement) || (target && typeof target === 'object' && 'classList' in target)) {
             container = target as HTMLElement;
         }
 
@@ -75,8 +76,8 @@ const GreenhouseModelsTOC = {
 
     async fetchDataAndRender(): Promise<void> {
         try {
-            // Adjust the base URL based on the main app's state if available
-            const baseUrl = this.config.baseUrl || ((window as any).GreenhouseModelsUX ? (window as any).GreenhouseModelsUX.state.baseUrl : './');
+            // Adjust the base URL based on configuration
+            const baseUrl = this.config.baseUrl || './';
 
             const response = await fetch(`${baseUrl}${this.config.xmlPath}`);
             if (!response.ok) {
@@ -90,7 +91,7 @@ const GreenhouseModelsTOC = {
             this.renderComponent(xmlDoc);
         } catch (error: any) {
             console.error('AGENT_DEBUG: Error fetching or parsing XML for TOC:', error);
-            const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+            const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             if (this.container) {
                 this.container.innerHTML = `<p>${t('err_loading_models')}</p>`;
             }
@@ -170,7 +171,7 @@ const GreenhouseModelsTOC = {
             const canonicalDomain = 'https://www.greenhousemd.org';
             launchLink.href = canonicalDomain + finalPath;
 
-            const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+            const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             launchLink.className = 'greenhouse-btn greenhouse-btn-primary';
             launchLink.textContent = t('launch_btn');
 
@@ -189,5 +190,4 @@ const GreenhouseModelsTOC = {
     }
 };
 
-(window as any).GreenhouseModelsTOC = GreenhouseModelsTOC;
 export { GreenhouseModelsTOC };

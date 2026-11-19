@@ -1,3 +1,5 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
+var _exported_GreenhouseDNATooltip: any;
 (function () {
     'use strict';
 
@@ -34,7 +36,7 @@
         // Show Tooltip at specific screen coordinates
         show(x, y, key) {
             if (!this.tooltipElement) this.initialize();
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
             const keyMap = {
                 'A': 'dna_base_a',
@@ -94,6 +96,9 @@
         }
     };
 
-    window.GreenhouseDNATooltip = GreenhouseDNATooltip;
+    _exported_GreenhouseDNATooltip = GreenhouseDNATooltip;
 
 })();
+
+
+export var GreenhouseDNATooltip = _exported_GreenhouseDNATooltip;

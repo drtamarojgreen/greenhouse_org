@@ -1,14 +1,17 @@
+import { GreenhouseCognitionDrawingUtils } from './cognition_drawing_utils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file cognition_medications.js
  * @description Medication Management features for the Cognition model.
  * Covers Enhancements 81-100.
  */
 
+var _exported_GreenhouseCognitionMedications: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-    const utils = () => window.GreenhouseCognitionDrawingUtils;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+    const utils = () => GreenhouseCognitionDrawingUtils;
 
     const GreenhouseCognitionMedications = {
         init(app) {
@@ -127,7 +130,7 @@
 
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
+            if (!activeEnhancement || !GreenhouseCognitionDrawingUtils) return;
 
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
@@ -140,5 +143,8 @@
         }
     };
 
-    window.GreenhouseCognitionMedications = GreenhouseCognitionMedications;
+    _exported_GreenhouseCognitionMedications = GreenhouseCognitionMedications;
 })();
+
+
+export var GreenhouseCognitionMedications = _exported_GreenhouseCognitionMedications;

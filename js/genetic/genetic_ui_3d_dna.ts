@@ -1,3 +1,7 @@
+import { GreenhouseGeneticConfig } from './genetic_config.js';
+import { GreenhouseGeneticLighting } from './genetic_lighting.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+var _exported_GreenhouseGeneticDNA: any;
 (function () {
     'use strict';
 
@@ -81,8 +85,8 @@
             const helixNodes = neurons3D.filter(n => n.type === 'gene');
             if (helixNodes.length < 2) return;
 
-            const config = window.GreenhouseGeneticConfig;
-            const lighting = window.GreenhouseGeneticLighting;
+            const config = GreenhouseGeneticConfig;
+            const lighting = GreenhouseGeneticLighting;
 
             // 1. Draw Rungs (Base Pairs) with 3D tube effect
             for (let i = 0; i < helixNodes.length; i += 2) {
@@ -280,5 +284,8 @@
         }
     };
 
-    window.GreenhouseGeneticDNA = GreenhouseGeneticDNA;
+    _exported_GreenhouseGeneticDNA = GreenhouseGeneticDNA;
 })();
+
+
+export var GreenhouseGeneticDNA = _exported_GreenhouseGeneticDNA;

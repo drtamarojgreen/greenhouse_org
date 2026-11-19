@@ -1,3 +1,7 @@
+import { GreenhouseSerotonin } from '../context.js';
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 // [TypeScript Migration] Source migrated from serotonin_controls.js — behavior preserved.
 /**
  * @file serotonin_controls.js
@@ -6,13 +10,12 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseSerotonin || {};
-    (window as any).GreenhouseSerotonin = G;
+    const G = GreenhouseSerotonin;
 
     G.createUI = function (container) {
         this.injectStyles();
-        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+        const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls-modular';
 
@@ -210,7 +213,7 @@
         langBtn.innerText = t('btn_language');
         langBtn.onclick = (e) => {
             e.stopPropagation();
-            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            if (GreenhouseModelsUtil) GreenhouseModelsUtil.toggleLanguage();
         };
         langDropdown.appendChild(langBtn);
         controls.appendChild(langDropdown);
@@ -222,7 +225,7 @@
         });
 
         this.refreshUIText = () => {
-            const t2 = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t2 = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             const lBtn = document.getElementById('serotonin-lang-toggle');
             if (lBtn) lBtn.innerText = t2('btn_language');
             const infoBox = document.querySelector('.serotonin-info');
@@ -472,8 +475,8 @@
         const w = G.width;
         const h = G.height;
         const cam = G.state.camera;
-        if (!window.GreenhouseModels3DMath) return;
-        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+        if (!GreenhouseModels3DMath) return;
+        const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
 
         if (G.renderSubcellularMarkers) G.renderSubcellularMarkers(ctx, project, cam, w, h);
     };

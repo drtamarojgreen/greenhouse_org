@@ -1,3 +1,5 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseNeuroConfig } from './neuro_config.js';
 /**
  * @file neuro_synapse_camera_controls.ts
  * @description Camera Controls for Synapse View (Zoom, Pan, Rotate) in Neuro simulation.
@@ -40,7 +42,7 @@ export class NeuroSynapseCameraController {
         if (this.camera.rotationY === undefined) this.camera.rotationY = 0;
         if (this.camera.rotationZ === undefined) this.camera.rotationZ = 0;
 
-        this.config = config || (window as any).GreenhouseNeuroConfig;
+        this.config = config || GreenhouseNeuroConfig;
     }
 
     /**

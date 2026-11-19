@@ -1,13 +1,21 @@
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
+import { GreenhouseEmotionConfig } from './emotion_config.js';
+import { GreenhouseEmotionDiagrams } from './emotion_diagrams.js';
+import { GreenhouseEmotionBrain } from './emotion_ui_3d_brain.js';
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file emotion_app.js
  * @description Main application logic for the Emotion Simulation Model.
  * Provides a 3D visualization of the Limbic System and interactive psychological theories.
  */
 
+var _exported_GreenhouseEmotionApp: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseEmotionApp = {
         canvas: null,
@@ -40,7 +48,7 @@
 
         init(selector) {
             console.log('EmotionApp: Initializing:', selector);
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
 
             const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) {
@@ -57,8 +65,8 @@
             container.style.flexDirection = 'column';
             container.style.overflow = 'hidden';
 
-            this.config = window.GreenhouseEmotionConfig || {};
-            this.diagrams = window.GreenhouseEmotionDiagrams || null;
+            this.config = GreenhouseEmotionConfig || {};
+            this.diagrams = GreenhouseEmotionDiagrams || null;
 
             // Create UI Container (Top)
             this.uiContainer = document.createElement('div');
@@ -85,7 +93,7 @@
             // Local Language Toggle for Emotion - Positioned within UI container to avoid covering menus
             const langBtn = document.createElement('button');
             langBtn.id = 'emotion-lang-toggle';
-            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+            langBtn.textContent = GreenhouseModelsUtil ? GreenhouseModelsUtil.t('btn_language') : 'Language';
             langBtn.style.cssText = `
                 position: absolute; top: 10px; right: 10px; z-index: 100;
                 background: #E0E0E0; color: white; border: none; padding: 5px 12px;
@@ -93,15 +101,15 @@
                 width: auto !important; max-width: fit-content;
             `;
             langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+                if (GreenhouseModelsUtil) GreenhouseModelsUtil.toggleLanguage();
             };
             this.uiContainer.appendChild(langBtn);
 
             // Generate Enhanced Brain Mesh (localized to Emotion App)
-            if (window.GreenhouseEmotionBrain && window.GreenhouseEmotionBrain.generateEnhancedBrain) {
-                this.brainMesh = window.GreenhouseEmotionBrain.generateEnhancedBrain();
-            } else if (window.GreenhouseBrainMeshRealistic) {
-                this.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            if (GreenhouseEmotionBrain && GreenhouseEmotionBrain.generateEnhancedBrain) {
+                this.brainMesh = GreenhouseEmotionBrain.generateEnhancedBrain();
+            } else if (GreenhouseBrainMeshRealistic) {
+                this.brainMesh = GreenhouseBrainMeshRealistic.generateRealisticBrain();
             } else {
                 console.error('EmotionApp: Brain mesh generator not found.');
             }
@@ -148,10 +156,10 @@
         },
 
         applyResilience(container, selector) {
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
+            if (GreenhouseUtils) {
+                GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
                 if (this.startSentinel) {
-                    window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
+                    GreenhouseUtils.startSentinel(container, selector, this, 'init');
                 }
             }
         },
@@ -421,7 +429,7 @@
         },
 
         updateHoveredRegion() {
-            if (!this.brainMesh || !window.GreenhouseModels3DMath) return;
+            if (!this.brainMesh || !GreenhouseModels3DMath) return;
 
             let minDiv = 20;
             let closest = null;
@@ -430,7 +438,7 @@
             const step = 5;
             for (let i = 0; i < this.brainMesh.vertices.length; i += step) {
                 const v = this.brainMesh.vertices[i];
-                const proj = window.GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, this.camera, this.projection);
+                const proj = GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, this.camera, this.projection);
                 if (proj.scale > 0 && proj.depth < 0.8) {
                     const dx = proj.x - this.mousePos.x;
                     const dy = proj.y - this.mousePos.y;
@@ -471,12 +479,12 @@
                 regionInfo = this.activeRegion.map(r => {
                     const reg = this.config.regions[r] || { name: r };
                     const color = reg.color || '#E0E0E0';
-                    return `<button onclick="window.GreenhouseEmotionApp.selectRegion('${r}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0; margin-right: 5px;">${t(reg.name)}</button>`;
+                    return `<button onclick="GreenhouseEmotionApp.selectRegion('${r}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0; margin-right: 5px;">${t(reg.name)}</button>`;
                 }).join(', ');
             } else if (this.activeRegion) {
                 const reg = this.config.regions[this.activeRegion] || {};
                 const color = reg.color || '#E0E0E0';
-                regionInfo = `<button onclick="window.GreenhouseEmotionApp.selectRegion('${this.activeRegion}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0;">${t(reg.name) || this.activeRegion}</button>: ${t(reg.description) || ''}`;
+                regionInfo = `<button onclick="GreenhouseEmotionApp.selectRegion('${this.activeRegion}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0;">${t(reg.name) || this.activeRegion}</button>: ${t(reg.description) || ''}`;
             }
 
             const wellnessInfo = this.activeTheory.wellnessFocus ? `
@@ -515,7 +523,7 @@
         },
 
         updateDeepDivePanel() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             if (!this.deepDivePanel) return;
 
 
@@ -571,7 +579,7 @@
             this.deepDivePanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h4 style="color: ${reg.color || '#E0E0E0'}; margin: 0;">${t(reg.name)}</h4>
-                    <button onclick="window.GreenhouseEmotionApp.selectRegion(null)" style="background: none; border: none; color: #888; cursor: pointer; font-size: 20px;">&times;</button>
+                    <button onclick="GreenhouseEmotionApp.selectRegion(null)" style="background: none; border: none; color: #888; cursor: pointer; font-size: 20px;">&times;</button>
                 </div>
                 <p style="font-size: 14px; line-height: 1.5; color: #ccc; margin-bottom: 20px;">${t(reg.description) || ''}</p>
 
@@ -679,10 +687,10 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
-            if (window.GreenhouseEmotionBrain && window.GreenhouseModels3DMath) {
+            if (GreenhouseEmotionBrain && GreenhouseModels3DMath) {
                 // Pulse effect for highlighted regions
                 const pulse = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
-                window.GreenhouseEmotionBrain.drawBrainShell(
+                GreenhouseEmotionBrain.drawBrainShell(
                     ctx,
                     this.brainMesh,
                     this.camera,
@@ -732,5 +740,8 @@
         }
     };
 
-    window.GreenhouseEmotionApp = GreenhouseEmotionApp;
+    _exported_GreenhouseEmotionApp = GreenhouseEmotionApp;
 })();
+
+
+export var GreenhouseEmotionApp = _exported_GreenhouseEmotionApp;

@@ -1,3 +1,4 @@
+import { GreenhouseDopamine } from '../context.js';
 /**
  * @file dopamine_molecular.js
  * @description Molecular signaling components for Dopamine Simulation.
@@ -6,8 +7,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.molecularState = {
         gProteins: [], // 2. G-Protein Cycle: Dissociation of Gα from Gβγ

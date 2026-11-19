@@ -1,3 +1,4 @@
+import { GreenhouseDopamine } from '../context.js';
 /**
  * @file dopamine_legend.js
  * @description Legend for Dopamine Simulation with detailed visual mapping.
@@ -5,8 +6,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.initLegend = function (container) {
         const legend = document.createElement('div');

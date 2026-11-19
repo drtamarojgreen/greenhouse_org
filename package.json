@@ -5,7 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node app.js",
-    "build": "node scripts/copy-js-to-public.mjs"
+    "build": "node scripts/copy-js-to-public.mjs && tsc",
+    "test": "npm run build && node tests/unit/run_js_unit_tests.js"
   },
   "dependencies": {
     "express": "^5.3.0"

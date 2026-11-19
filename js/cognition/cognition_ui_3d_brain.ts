@@ -1,3 +1,6 @@
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+var _exported_GreenhouseCognitionBrain: any;
 (function () {
     'use strict';
 
@@ -387,7 +390,7 @@
                     // Shadow/Outline for readability
                     ctx.shadowBlur = 4;
                     ctx.shadowColor = 'black';
-                    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
                     ctx.fillText(t(regionConfig.name).toUpperCase(), proj.x, proj.y);
                     ctx.shadowBlur = 0;
 
@@ -430,5 +433,8 @@
         }
     };
 
-    window.GreenhouseCognitionBrain = GreenhouseCognitionBrain;
+    _exported_GreenhouseCognitionBrain = GreenhouseCognitionBrain;
 })();
+
+
+export var GreenhouseCognitionBrain = _exported_GreenhouseCognitionBrain;

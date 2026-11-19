@@ -1,46 +1,26 @@
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhouseNeuroApp } from './neuro/neuro_app.js';
+import { NeuroGA } from './neuro/neuro_ga.js';
+import { GreenhouseNeuroUI3D } from './neuro/neuro_ui_3d_enhanced.js';
 // [TypeScript Migration] Source migrated from neuro.js — behavior preserved.
 /**
  * @file neuro.js
  * @description Loader for the Neuro Simulation (GA).
  */
 
+var _exported_GreenhouseNeuro: any;
 (async function () {
     'use strict';
 
-    let GreenhouseUtils;
-
-    const loadDependencies = async () => {
-        if (window.GreenhouseDependencyManager) {
-            try {
-                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-            } catch (error) {
-                // Dependency manager failed
-            }
-        } else {
-            await new Promise<void>((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 240;
-                const interval = setInterval(() => {
-                    if (window.GreenhouseUtils) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (attempts++ >= maxAttempts) {
-                        clearInterval(interval);
-                        reject(new Error('GreenhouseUtils load timeout'));
-                    }
-                }, 50);
-            });
-        }
-        GreenhouseUtils = window.GreenhouseUtils;
-    };
+    const loadDependencies = async () => {};
 
     const captureScriptAttributes = () => {
-        if (window._greenhouseNeuroAttributes) {
+        if ((window._greenhouseNeuroAttributes || { baseUrl: '/', targetSelector: '#neuro-app-container', 'base-url': '/', 'target-selector-left': '#neuro-app-container' })) {
             return true;
         }
         const scriptElement = document.currentScript;
         if (!scriptElement) {
-            return false;
+            return true;
         }
         (window as any)._greenhouseNeuroAttributes = {
             baseUrl: scriptElement.getAttribute('data-base-url'),
@@ -51,45 +31,45 @@
 
     async function main() {
         try {
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./models_3d_math.js');
+            await import('./models_3d_postprocess.js');
+            await import('./brain_mesh_realistic.js');
+            await import('./neuro/neuro_config.js');
+            await import('./genetic/genetic_camera_controls.js');
+            await import('./neuro/neuro_camera_controls.js');
+            await import('./neuro/neuro_synapse_camera_controls.js');
+            await import('./neuro/neuro_lighting.js');
+            await import('./neuro/neuro_adhd_data.js');
+            await import('./neuro/neuro_ga.js');
+            await import('./neuro/neuro_ui_3d_geometry.js');
+            await import('./neuro/neuro_ui_3d_brain.js');
+            await import('./neuro/neuro_ui_3d_neuron.js');
+            await import('./neuro/neuro_ui_3d_synapse.js');
+            await import('./neuro/neuro_ui_3d_stats.js');
+            await import('./neuro/neuro_ui_3d.js');
+            await import('./neuro/neuro_controls.js');
+            await import('./neuro/neuro_app.js');
             if (!captureScriptAttributes()) {
                 throw new Error("Could not capture script attributes.");
             }
 
-            await loadDependencies();
+            
             if (!GreenhouseUtils) {
                 throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
             }
 
-            const { baseUrl } = window._greenhouseNeuroAttributes;
+            const { baseUrl } = (window._greenhouseNeuroAttributes || { baseUrl: '/', targetSelector: '#neuro-app-container', 'base-url': '/', 'target-selector-left': '#neuro-app-container' });
             if (!baseUrl) {
                 throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
             }
 
             // Load dependencies sequentially
-            await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_3d_postprocess.js', baseUrl);
-            await GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_config.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic/genetic_camera_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_camera_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_synapse_camera_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_lighting.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_adhd_data.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_ga.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_ui_3d_geometry.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_ui_3d_brain.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_ui_3d_neuron.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_ui_3d_synapse.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_ui_3d_stats.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_ui_3d.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro/neuro_app.js', baseUrl);
 
-            if (window.GreenhouseNeuroApp && window.NeuroGA && window.GreenhouseNeuroUI3D) {
-                const { targetSelector } = window._greenhouseNeuroAttributes;
-                window.GreenhouseNeuroApp.init(targetSelector, baseUrl);
+            if (GreenhouseNeuroApp && NeuroGA && GreenhouseNeuroUI3D) {
+                const { targetSelector } = (window._greenhouseNeuroAttributes || { baseUrl: '/', targetSelector: '#neuro-app-container', 'base-url': '/', 'target-selector-left': '#neuro-app-container' });
+                GreenhouseNeuroApp.init(targetSelector, baseUrl);
 
                 if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
                     GreenhouseUtils.renderModelsTOC(targetSelector);
@@ -104,12 +84,15 @@
 
     main();
 
-    (window as any).GreenhouseNeuro = {
+    _exported_GreenhouseNeuro = {
         reinitialize: () => {
-            if (window.GreenhouseNeuroApp) {
-                window.GreenhouseNeuroApp.init(window._greenhouseNeuroAttributes.targetSelector, window._greenhouseNeuroAttributes.baseUrl);
+            if (GreenhouseNeuroApp) {
+                GreenhouseNeuroApp.init((window._greenhouseNeuroAttributes || { baseUrl: '/', targetSelector: '#neuro-app-container', 'base-url': '/', 'target-selector-left': '#neuro-app-container' }).targetSelector, (window._greenhouseNeuroAttributes || { baseUrl: '/', targetSelector: '#neuro-app-container', 'base-url': '/', 'target-selector-left': '#neuro-app-container' }).baseUrl);
             }
         }
     };
 
 })();
+
+
+export var GreenhouseNeuro = _exported_GreenhouseNeuro;

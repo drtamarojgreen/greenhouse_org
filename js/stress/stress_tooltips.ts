@@ -1,13 +1,17 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseStressConfig } from './stress_config.js';
+import { GreenhouseStressSystemic } from './stress_systemic.js';
 /**
  * @file stress_tooltips.js
  * @description Enhanced Tooltip definitions for Stress Dynamics.
  * Covers Environmental, Genetic, and Modulatory factors.
  */
 
+var _exported_GreenhouseStressTooltips: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressTooltips = {
         definitions: {
@@ -139,8 +143,8 @@
 
         drawCategoryTooltip(ctx, app, el, x, y) {
             const catId = el.id.replace('cat_', '');
-            const systemic = window.GreenhouseStressSystemic;
-            const config = window.GreenhouseStressConfig;
+            const systemic = GreenhouseStressSystemic;
+            const config = GreenhouseStressConfig;
             const state = app.engine.state;
 
             const catDef = systemic ? systemic.categories[catId] : null;
@@ -219,5 +223,8 @@
         }
     };
 
-    window.GreenhouseStressTooltips = GreenhouseStressTooltips;
+    _exported_GreenhouseStressTooltips = GreenhouseStressTooltips;
 })();
+
+
+export var GreenhouseStressTooltips = _exported_GreenhouseStressTooltips;

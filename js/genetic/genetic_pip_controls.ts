@@ -1,7 +1,10 @@
+import { GreenhouseGeneticCameraController } from './genetic_camera_controls.js';
+import { GreenhouseGeneticConfig } from './genetic_config.js';
 // docs/js/genetic_pip_controls.js
 // Individual Controls for Each Picture-in-Picture View
 // Uses GeneticCameraController for physics-based controls
 
+var _exported_GreenhouseGeneticPiPControls: any;
 (function () {
     'use strict';
 
@@ -18,7 +21,7 @@
          * @param {Array} camerasArray - Array of 5 cameras from main UI3D
          */
         init(config, camerasArray) {
-            this.config = config || window.GreenhouseGeneticConfig;
+            this.config = config || GreenhouseGeneticConfig;
 
             if (!camerasArray || camerasArray.length !== 5) {
                 console.error('[PiP Controls] Invalid cameras array! Expected 5 cameras.');
@@ -40,8 +43,8 @@
                 this.cameras[name] = camerasArray[index];
 
                 // Create Controller for this camera
-                if (window.GreenhouseGeneticCameraController) {
-                    this.controllers[name] = new window.GreenhouseGeneticCameraController(
+                if (GreenhouseGeneticCameraController) {
+                    this.controllers[name] = new GreenhouseGeneticCameraController(
                         this.cameras[name],
                         this.config
                     );
@@ -381,5 +384,8 @@
         }
     };
 
-    window.GreenhouseGeneticPiPControls = GreenhouseGeneticPiPControls;
+    _exported_GreenhouseGeneticPiPControls = GreenhouseGeneticPiPControls;
 })();
+
+
+export var GreenhouseGeneticPiPControls = _exported_GreenhouseGeneticPiPControls;

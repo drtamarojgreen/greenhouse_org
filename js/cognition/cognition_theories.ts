@@ -1,14 +1,17 @@
+import { GreenhouseCognitionDrawingUtils } from './cognition_drawing_utils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file cognition_theories.js
  * @description Modeling Theory mappings for the Cognition model.
  * Covers Enhancements 7-30.
  */
 
+var _exported_GreenhouseCognitionTheories: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-    const utils = () => window.GreenhouseCognitionDrawingUtils;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+    const utils = () => GreenhouseCognitionDrawingUtils;
 
     const GreenhouseCognitionTheories = {
         init(app) {
@@ -243,7 +246,7 @@
 
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
+            if (!activeEnhancement || !GreenhouseCognitionDrawingUtils) return;
 
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
@@ -272,5 +275,8 @@
         }
     };
 
-    window.GreenhouseCognitionTheories = GreenhouseCognitionTheories;
+    _exported_GreenhouseCognitionTheories = GreenhouseCognitionTheories;
 })();
+
+
+export var GreenhouseCognitionTheories = _exported_GreenhouseCognitionTheories;

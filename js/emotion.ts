@@ -1,3 +1,5 @@
+import { GreenhouseEmotionApp } from './emotion/emotion_app.js';
+import { GreenhouseUtils } from './GreenhouseUtils.js';
 // [TypeScript Migration] Source migrated from emotion.js — behavior preserved.
 /**
  * @file emotion.js
@@ -8,32 +10,7 @@
     'use strict';
     console.log('Emotion App: Loader execution started.');
 
-    let GreenhouseUtils;
-
-    const loadDependencies = async () => {
-        if (window.GreenhouseDependencyManager) {
-            try {
-                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-            } catch (error) {
-                console.error('Emotion App: Dependency manager timeout:', error);
-            }
-        } else {
-            await new Promise<void>((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 240;
-                const interval = setInterval(() => {
-                    if (window.GreenhouseUtils) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (attempts++ >= maxAttempts) {
-                        clearInterval(interval);
-                        reject(new Error('GreenhouseUtils load timeout'));
-                    }
-                }, 50);
-            });
-        }
-        GreenhouseUtils = window.GreenhouseUtils;
-    };
+    const loadDependencies = async () => {};
 
     const captureScriptAttributes = () => {
         const scriptElement = document.currentScript || document.querySelector('script[src*="emotion.js"]');
@@ -49,29 +26,29 @@
 
     async function main() {
         try {
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./models_3d_math.js');
+            await import('./brain_mesh_realistic.js');
+            await import('./emotion/emotion_ui_3d_brain.js');
+            await import('./emotion/emotion_diagrams.js');
+            await import('./emotion/emotion_config.js');
+            await import('./emotion/emotion_regions.js');
+            await import('./emotion/emotion_interventions.js');
+            await import('./emotion/emotion_theories.js');
+            await import('./emotion/emotion_app.js');
             const { baseUrl, targetSelector } = captureScriptAttributes();
-            await loadDependencies();
+            
 
-            if (!window.GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
+            if (!GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
 
             // Load components
-            await window.GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('emotion/emotion_ui_3d_brain.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('emotion/emotion_diagrams.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('emotion/emotion_config.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('emotion/emotion_regions.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('emotion/emotion_interventions.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('emotion/emotion_theories.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('emotion/emotion_app.js', baseUrl);
 
-            if (window.GreenhouseEmotionApp) {
-                window.GreenhouseEmotionApp.init(targetSelector);
+            if (GreenhouseEmotionApp) {
+                GreenhouseEmotionApp.init(targetSelector);
 
-                if (window.GreenhouseUtils.renderModelsTOC) {
-                    window.GreenhouseUtils.renderModelsTOC(targetSelector);
+                if (GreenhouseUtils.renderModelsTOC) {
+                    GreenhouseUtils.renderModelsTOC(targetSelector);
                 }
             } else {
                 throw new Error("GreenhouseEmotionApp failed to load.");

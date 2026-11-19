@@ -1,3 +1,6 @@
+import { GreenhouseGeneticChromosome } from './genetic_ui_3d_chromosome.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+var _exported_GreenhouseGeneticGene: any;
 (function () {
     'use strict';
 
@@ -17,8 +20,8 @@
             const microCamera = cameraState.camera;
 
             // Render High-Fidelity Chromatin Structure instead of abstract mesh
-            if (window.GreenhouseGeneticChromosome) {
-                window.GreenhouseGeneticChromosome.drawChromatinStructure(
+            if (GreenhouseGeneticChromosome) {
+                GreenhouseGeneticChromosome.drawChromatinStructure(
                     ctx, x, y, w, h, activeGene, null, cameraState // Pass cameraState
                 );
             } else {
@@ -78,7 +81,7 @@
         },
 
         drawNeuron(ctx, p) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             // This is the generic "Gene/Neuron" dot renderer used in Macro View
             if (p.scale <= 0) return;
 
@@ -114,5 +117,8 @@
         }
     };
 
-    window.GreenhouseGeneticGene = GreenhouseGeneticGene;
+    _exported_GreenhouseGeneticGene = GreenhouseGeneticGene;
 })();
+
+
+export var GreenhouseGeneticGene = _exported_GreenhouseGeneticGene;

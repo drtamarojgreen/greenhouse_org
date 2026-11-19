@@ -1,3 +1,5 @@
+import { GreenhouseSerotonin } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 // [TypeScript Migration] Source migrated from serotonin_kinetics.js — behavior preserved.
 /**
  * @file serotonin_kinetics.js
@@ -7,8 +9,7 @@
 (function () {
     'use strict';
 
-    const G = window.GreenhouseSerotonin || {};
-    (window as any).GreenhouseSerotonin = G;
+    const G = GreenhouseSerotonin;
 
     G.Kinetics = {
         ligandTypes: {
@@ -241,8 +242,8 @@
         const w = G.width;
         const h = G.height;
         const cam = G.state.camera;
-        if (!window.GreenhouseModels3DMath) return;
-        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+        if (!GreenhouseModels3DMath) return;
+        const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
 
         G.Kinetics.renderKinetics(ctx, project, cam, w, h);
     };

@@ -1,6 +1,7 @@
 // docs/js/genetic_algo.js
 // Genetic Algorithm Logic for Neural Network Evolution
 
+var _exported_GreenhouseGeneticAlgo: any;
 (function() {
     'use strict';
     console.log('Genetic Algo: Loading...');
@@ -237,6 +238,9 @@
         }
     };
 
-    window.GreenhouseGeneticAlgo = GreenhouseGeneticAlgo;
+    _exported_GreenhouseGeneticAlgo = GreenhouseGeneticAlgo;
     console.log('Genetic Algo: Loaded and attached to window.');
 })();
+
+
+export var GreenhouseGeneticAlgo = _exported_GreenhouseGeneticAlgo;

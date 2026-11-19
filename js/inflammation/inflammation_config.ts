@@ -4,6 +4,7 @@
  * Reconfigured with binary factors (Checkboxes) for triggers and interventions.
  */
 
+var _exported_GreenhouseInflammationConfig: any;
 (function () {
     'use strict';
 
@@ -117,5 +118,8 @@
         ]
     };
 
-    window.GreenhouseInflammationConfig = GreenhouseInflammationConfig;
+    _exported_GreenhouseInflammationConfig = GreenhouseInflammationConfig;
 })();
+
+
+export var GreenhouseInflammationConfig = _exported_GreenhouseInflammationConfig;

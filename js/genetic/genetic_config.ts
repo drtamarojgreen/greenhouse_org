@@ -1,6 +1,7 @@
 // docs/js/genetic_config.js
 // Modular Configuration System for Genetic Simulation
 
+var _exported_GreenhouseGeneticConfig: any;
 (function () {
     'use strict';
 
@@ -409,5 +410,8 @@
         }
     };
 
-    window.GreenhouseGeneticConfig = GreenhouseGeneticConfig;
+    _exported_GreenhouseGeneticConfig = GreenhouseGeneticConfig;
 })();
+
+
+export var GreenhouseGeneticConfig = _exported_GreenhouseGeneticConfig;

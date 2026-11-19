@@ -1,12 +1,14 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file inflammation_tooltips.js
  * @description Tooltip definitions and drawing logic for the Inflammation App.
  */
 
+var _exported_GreenhouseInflammationTooltips: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseInflammationTooltips = {
         definitions: {
@@ -125,5 +127,8 @@
         }
     };
 
-    window.GreenhouseInflammationTooltips = GreenhouseInflammationTooltips;
+    _exported_GreenhouseInflammationTooltips = GreenhouseInflammationTooltips;
 })();
+
+
+export var GreenhouseInflammationTooltips = _exported_GreenhouseInflammationTooltips;

@@ -1,3 +1,6 @@
+import { Greenhouse, GreenhouseDopamine } from './context.js';
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhouseModels3DMath } from './models_3d_math.js';
 // [TypeScript Migration] Source migrated from dopamine.js — behavior preserved.
 /**
  * @file dopamine.js
@@ -5,8 +8,7 @@
  */
 
 (function () {
-    const G = window.GreenhouseDopamine || {};
-    (window as any).GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.state = G.state || {
         camera: { x: 0, y: 0, z: -400, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
@@ -40,24 +42,9 @@
 (async function () {
     'use strict';
 
-    const G = window.GreenhouseDopamine || {};
-    (window as any).GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
-    G.loadDependencies = async () => {
-        await new Promise<void>((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 240;
-            const interval = setInterval(() => {
-                if (window.GreenhouseUtils) {
-                    clearInterval(interval);
-                    resolve();
-                } else if (attempts++ >= maxAttempts) {
-                    clearInterval(interval);
-                    reject(new Error('GreenhouseUtils load timeout'));
-                }
-            }, 50);
-        });
-    };
+    const loadDependencies = async () => {};
 
     G.canvas = null;
     G.ctx = null;
@@ -139,14 +126,14 @@
         G.animate();
 
         // Resilience using shared GreenhouseUtils
-        if (window.GreenhouseUtils) {
-            window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, G, 'initialize');
-            window.GreenhouseUtils.startSentinel(container, selector, G, 'initialize');
+        if (GreenhouseUtils) {
+            GreenhouseUtils.observeAndReinitializeApplication(container, selector, G, 'initialize');
+            GreenhouseUtils.startSentinel(container, selector, G, 'initialize');
         }
     };
 
     G.initSidePanels = function (container) {
-        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+        const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
         if (isMobile) return;
 
         G.leftPanel = document.createElement('div');
@@ -176,7 +163,8 @@
                 item.innerHTML = `<span class="dopamine-metric-label">${label}</span><span class="dopamine-metric-value"></span>`;
                 section.appendChild(item);
             }
-            item.querySelector('.dopamine-metric-value').innerText = value;
+            const valEl: any = item.querySelector('.dopamine-metric-value');
+            if (valEl) valEl.innerText = value;
         };
     };
 
@@ -330,8 +318,8 @@
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, w, h);
 
-        if (!window.GreenhouseModels3DMath) return;
-        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+        if (!GreenhouseModels3DMath) return;
+        const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
 
         G.state.receptors.forEach(r => {
             const baseP = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -437,7 +425,7 @@
     };
 
     function captureAttributes() {
-        if (window._greenhouseScriptAttributes) return { targetSelector: window._greenhouseScriptAttributes['target-selector-left'], baseUrl: window._greenhouseScriptAttributes['base-url'] };
+        if ((window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#dopamine-app-container', 'base-url': '/', 'target-selector-left': '#dopamine-app-container' })) return { targetSelector: (window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#dopamine-app-container', 'base-url': '/', 'target-selector-left': '#dopamine-app-container' })['target-selector-left'], baseUrl: (window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#dopamine-app-container', 'base-url': '/', 'target-selector-left': '#dopamine-app-container' })['base-url'] };
         const script = document.querySelector('script[src*="dopamine.js"]');
         let baseUrl = script ? script.getAttribute('data-base-url') : null;
         if (baseUrl === null) {
@@ -452,34 +440,29 @@
 
     async function main() {
         try {
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./dopamine/dopamine_controls.js');
+            await import('./dopamine/dopamine_legend.js');
+            await import('./dopamine/dopamine_tooltips.js');
+            await import('./dopamine/dopamine_molecular.js');
+            await import('./dopamine/dopamine_synapse.js');
+            await import('./dopamine/dopamine_electrophysiology.js');
+            await import('./dopamine/dopamine_circuit.js');
+            await import('./dopamine/dopamine_plasticity.js');
+            await import('./dopamine/dopamine_clinical.js');
+            await import('./dopamine/dopamine_pharmacology.js');
+            await import('./dopamine/dopamine_scientific.js');
+            await import('./dopamine/dopamine_analytics.js');
+            await import('./dopamine/dopamine_ux.js');
+            await import('./models_3d_math.js');
             const attributes = captureAttributes();
             const { targetSelector, baseUrl } = attributes;
 
             console.log('Dopamine App Initializing with:', attributes);
 
-            await G.loadDependencies();
-            const GreenhouseUtils = window.GreenhouseUtils;
-
             // Load modular simulation components
-            await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_legend.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_tooltips.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_molecular.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_synapse.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_electrophysiology.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_circuit.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_plasticity.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_clinical.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_pharmacology.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_scientific.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_analytics.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine/dopamine_ux.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-
-            (window as any).Greenhouse = window.Greenhouse || {};
-            window.Greenhouse.initializeDopamineSimulation = function (selector) {
+            Greenhouse.initializeDopamineSimulation = function (selector) {
                 const container = document.querySelector(selector);
                 if (container) G.initialize(container);
             };
@@ -490,7 +473,6 @@
                     G.initialize(container, targetSelector);
 
                     // Render bottom navigation TOC via common utilities
-                    const GreenhouseUtils = window.GreenhouseUtils;
                     if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
                         GreenhouseUtils.renderModelsTOC(targetSelector);
                     }

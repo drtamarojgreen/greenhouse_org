@@ -1,3 +1,9 @@
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseADHDData } from './neuro_adhd_data.js';
+import { GreenhouseNeuroControls } from './neuro_controls.js';
+import { NeuroGA } from './neuro_ga.js';
+import { GreenhouseNeuroUI3D } from './neuro_ui_3d_enhanced.js';
 /**
  * @file neuro_app.ts
  * @description Main Application Entry Point for Neuro Simulation in Neuro simulation.
@@ -96,18 +102,18 @@ export const GreenhouseNeuroApp = {
         this.container.style.position = 'relative';
 
         // Check dependencies
-        if (!(window as any).NeuroGA || !(window as any).GreenhouseNeuroUI3D) {
+        if (!NeuroGA || !GreenhouseNeuroUI3D) {
             console.error('NeuroApp: Missing GA or UI3D dependencies.');
             return;
         }
 
-        this.ga = new (window as any).NeuroGA();
+        this.ga = new NeuroGA();
         this.ga.init({
             populationSize: 50,
             bounds: { x: 500, y: 500, z: 500 }
         });
 
-        this.ui3d = (window as any).GreenhouseNeuroUI3D;
+        this.ui3d = GreenhouseNeuroUI3D;
         if (this.ui3d) {
             this.ui3d.init(this.container);
         }
@@ -119,14 +125,14 @@ export const GreenhouseNeuroApp = {
 
         this.startSimulation();
 
-        if ((window as any).GreenhouseUtils && (window as any).GreenhouseUtils.renderModelsTOC) {
+        if (GreenhouseUtils && GreenhouseUtils.renderModelsTOC) {
             const tocSelector = (typeof selector === 'string') ? selector : (selector.id ? `#${selector.id}` : null);
-            if (tocSelector) (window as any).GreenhouseUtils.renderModelsTOC(tocSelector);
+            if (tocSelector) GreenhouseUtils.renderModelsTOC(tocSelector);
         }
     },
 
     setupUIComponents() {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
         const w = this.ui3d?.canvas?.width || 1000;
         const offsetX = 15;
 
@@ -153,7 +159,7 @@ export const GreenhouseNeuroApp = {
 
         // ADHD Scenarios
         this.ui.checkboxes = [];
-        const data = (window as any).GreenhouseADHDData;
+        const data = GreenhouseADHDData;
         if (data && data.scenarios) {
             Object.keys(data.scenarios).forEach((key) => {
                 if (key === 'none') return;
@@ -342,7 +348,7 @@ export const GreenhouseNeuroApp = {
                         else this.startSimulation();
                         this.refreshUIText();
                     } else if (b.action === 'lang') {
-                        if ((window as any).GreenhouseModelsUtil) (window as any).GreenhouseModelsUtil.toggleLanguage();
+                        if (GreenhouseModelsUtil) GreenhouseModelsUtil.toggleLanguage();
                         this.refreshUIText();
                     } else if (b.action === 'info') {
                         this.state.showInfo = !this.state.showInfo;
@@ -431,7 +437,7 @@ export const GreenhouseNeuroApp = {
     },
 
     refreshUIText() {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
         this.ui.tabs.forEach(tab => {
             tab.label = t(tab.id) || tab.val.toUpperCase();
         });
@@ -446,8 +452,8 @@ export const GreenhouseNeuroApp = {
     },
 
     drawUI(ctx: CanvasRenderingContext2D, w: number, h: number) {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
-        const Controls = (window as any).GreenhouseNeuroControls;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const Controls = GreenhouseNeuroControls;
         if (!Controls) return;
 
         // Reset state for robust rendering
@@ -495,8 +501,8 @@ export const GreenhouseNeuroApp = {
     },
 
     drawSimTab(ctx: CanvasRenderingContext2D, offsetX: number) {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
-        const Controls = (window as any).GreenhouseNeuroControls;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const Controls = GreenhouseNeuroControls;
         if (!Controls) return;
 
         ctx.fillStyle = '#A0AEC0';
@@ -526,8 +532,8 @@ export const GreenhouseNeuroApp = {
     },
 
     drawADHDTab(ctx: CanvasRenderingContext2D, offsetX: number) {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
-        const Controls = (window as any).GreenhouseNeuroControls;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const Controls = GreenhouseNeuroControls;
         const panelW = this.ui.panelW || 350;
 
         // Category buttons
@@ -583,8 +589,8 @@ export const GreenhouseNeuroApp = {
     },
 
     drawSynapseTab(ctx: CanvasRenderingContext2D, offsetX: number) {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
-        const Controls = (window as any).GreenhouseNeuroControls;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const Controls = GreenhouseNeuroControls;
         const panelW = this.ui.panelW || 350;
 
         if (!this.ui3d?.selectedConnection) {
@@ -623,7 +629,7 @@ export const GreenhouseNeuroApp = {
     },
 
     drawInfoOverlay(ctx: CanvasRenderingContext2D, w: number, h: number) {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
         ctx.save();
         ctx.fillStyle = 'rgba(0,0,0,0.9)';
         ctx.fillRect(0, 0, w, h);
@@ -689,12 +695,12 @@ export const GreenhouseNeuroApp = {
 
     toggleScenario(scenarioId: string, active: boolean) {
         if (active) {
-            (window as any).GreenhouseADHDData.scenarios[scenarioId].enhancements.forEach((enhId: number) => {
+            GreenhouseADHDData.scenarios[scenarioId].enhancements.forEach((enhId: number) => {
                 this.state.activeEnhancements.add(enhId);
                 this.ga?.setADHDEnhancement(enhId, true);
             });
         } else {
-            (window as any).GreenhouseADHDData.scenarios[scenarioId].enhancements.forEach((enhId: number) => {
+            GreenhouseADHDData.scenarios[scenarioId].enhancements.forEach((enhId: number) => {
                 this.state.activeEnhancements.delete(enhId);
                 this.ga?.setADHDEnhancement(enhId, false);
             });
@@ -704,8 +710,8 @@ export const GreenhouseNeuroApp = {
     },
 
     updateADHDCheckboxes() {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
-        const data = (window as any).GreenhouseADHDData;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const data = GreenhouseADHDData;
         if (!data) return;
 
         this.ui.checkboxes = []; // Clear existing for dynamic rebuild
@@ -766,7 +772,7 @@ export const GreenhouseNeuroApp = {
     },
 
     initSearch() {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
         // Check if there's already an input, remove if so
         const existingInput = document.getElementById('search_adhd_enhancements');
         if (existingInput) {

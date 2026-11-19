@@ -1,3 +1,4 @@
+import { GreenhouseDopamine } from '../context.js';
 /**
  * @file dopamine_ux.js
  * @description UX, Accessibility, and Welcome workflow for Dopamine Simulation.
@@ -5,8 +6,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.uxState = {
         fps: 0,

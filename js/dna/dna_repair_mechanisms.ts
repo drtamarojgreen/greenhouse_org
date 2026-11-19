@@ -1,12 +1,11 @@
+import { GreenhouseDNARepair } from '../context.js';
 // docs/js/dna_repair_mechanisms.js
 // DNA Repair Simulation Module - Repair Pathways
 // Implements specific biological repair mechanisms
 
 (function () {
     'use strict';
-
-    window.GreenhouseDNARepair = window.GreenhouseDNARepair || {};
-    const G = window.GreenhouseDNARepair;
+    const G = GreenhouseDNARepair;
 
     G.handleBER = function(t) {
         const targetIdx = Math.floor(this.config.helixLength / 2);

@@ -1,51 +1,41 @@
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhousePathwayViewer } from './pathway/pathway_viewer.js';
+import { V8GraphRenderer } from './V8GraphRenderer.js';
 // [TypeScript Migration] Source migrated from pathway.js — behavior preserved.
 // docs/js/pathway.js
 // Entry point and dependency loader for the Pathway Viewer application.
 
+var _exported_GreenhousePathwayApp: any;
 (function () {
     'use strict';
 
     const GreenhousePathwayApp = {
 
-        loadScript(url) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = url;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        },
-
-        async init(containerSelector, baseUrl) {
+        
+        async init(containerSelector: any, baseUrl: any) {
             try {
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./models_3d_math.js');
+            await import('./brain_mesh_realistic.js');
+            await import('./pathway/pathway_ui_3d_geometry.js');
+            await import('./pathway/pathway_camera_controls.js');
+            await import('./pathway/pathway_ui_3d_brain.js');
+            await import('./reactome_parser.js');
+            await import('./pathway/pathway_viewer.js');
+            await import('./V8GraphRenderer.js');
                 const base = baseUrl && !baseUrl.endsWith('/') ? baseUrl + '/' : (baseUrl || '');
                 // Define the correct loading order for the native 3D engine and our application
-                const scriptsToLoad = [
-                    'js/models_lang.js',
-                    'js/models_util.js',
-                    'js/models_3d_math.js',
-                    'js/brain_mesh_realistic.js',
-                    'js/pathway/pathway_ui_3d_geometry.js',
-                    'js/pathway/pathway_camera_controls.js',
-                    'js/pathway/pathway_ui_3d_brain.js',
-                    'js/reactome_parser.js',
-                    'js/pathway/pathway_viewer.js',
-                    'js/V8GraphRenderer.js'
-                ];
-
-                for (const script of scriptsToLoad) {
-                    await this.loadScript(base + script);
-                }
+                
 
                 // All scripts are loaded, now initialize the main viewer
-                if (window.GreenhousePathwayViewer) {
+                if (GreenhousePathwayViewer) {
                     console.log('Pathway App: All modules loaded. Initializing...');
-                    window.GreenhousePathwayViewer.init(containerSelector, base);
+                    GreenhousePathwayViewer.init(containerSelector, base);
 
                     // Render bottom navigation TOC via common utilities
-                    if (window.GreenhouseUtils && typeof window.GreenhouseUtils.renderModelsTOC === 'function') {
-                        window.GreenhouseUtils.renderModelsTOC(containerSelector);
+                    if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
+                        GreenhouseUtils.renderModelsTOC(containerSelector);
                     }
                 } else {
                     console.error('Pathway App: GreenhousePathwayViewer failed to load.');
@@ -57,13 +47,13 @@
         }
     };
 
-    (window as any).GreenhousePathwayApp = GreenhousePathwayApp;
+    _exported_GreenhousePathwayApp = GreenhousePathwayApp;
 
     // --- Main Execution Logic ---
     function captureAttributes() {
         // 1. Try global object (set by GreenhouseUtils)
-        if (window._greenhouseScriptAttributes) {
-            const attrs = window._greenhouseScriptAttributes;
+        if ((window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#pathway-app-container', 'base-url': '/', 'target-selector-left': '#pathway-app-container' })) {
+            const attrs = (window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#pathway-app-container', 'base-url': '/', 'target-selector-left': '#pathway-app-container' });
             return {
                 targetSelector: attrs['target-selector-left'],
                 baseUrl: attrs['base-url']
@@ -118,3 +108,6 @@
         main();
     }
 })();
+
+
+export var GreenhousePathwayApp = _exported_GreenhousePathwayApp;

@@ -1,3 +1,5 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseNeuroConfig } from './neuro_config.js';
 /**
  * @file neuro_lighting.ts
  * @description Enhanced PBR-lite Lighting System for Realistic 3D Rendering in Neuro simulation.
@@ -35,7 +37,7 @@ export const GreenhouseNeuroLighting = {
     exposure: 1.0,
 
     init(config?: any) {
-        this.config = config || (window as any).GreenhouseNeuroConfig;
+        this.config = config || GreenhouseNeuroConfig;
         this.setupLights();
         console.log('NeuroLighting: PBR-lite System initialized');
     },

@@ -1,6 +1,8 @@
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
 // docs/js/pathway_app.js
 // Main application logic for the Pathway Visualization
 
+var _exported_GreenhousePathwayApp: any;
 (function () {
     'use strict';
 
@@ -47,9 +49,9 @@
             this.animate();
 
             // Resilience using shared GreenhouseUtils
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(this.container, targetSelector, this, 'init');
-                window.GreenhouseUtils.startSentinel(this.container, targetSelector, this, 'init');
+            if (GreenhouseUtils) {
+                GreenhouseUtils.observeAndReinitializeApplication(this.container, targetSelector, this, 'init');
+                GreenhouseUtils.startSentinel(this.container, targetSelector, this, 'init');
             }
         },
 
@@ -117,6 +119,9 @@
     };
 
     // Expose the app to the global window object
-    window.GreenhousePathwayApp = GreenhousePathwayApp;
+    _exported_GreenhousePathwayApp = GreenhousePathwayApp;
 
 })();
+
+
+export var GreenhousePathwayApp = _exported_GreenhousePathwayApp;

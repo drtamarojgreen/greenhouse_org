@@ -1,10 +1,10 @@
+import { GreenhouseSynapseApp } from '../context.js';
 // docs/js/synapse_molecular.js
 
 (function () {
     'use strict';
 
-    const G = window.GreenhouseSynapseApp || {};
-    window.GreenhouseSynapseApp = G;
+    const G = GreenhouseSynapseApp;
 
     G.Molecular = {
         ecmParticles: [],

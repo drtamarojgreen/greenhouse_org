@@ -1,15 +1,17 @@
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 /**
  * @file inflammation_signaling.js
  * @description Specialized molecular signaling visualizations for Neuroinflammation.
  * Implements ligand-receptor network overlays, occupancy curves, and threshold indicators.
  */
 
+var _exported_GreenhouseInflammationSignaling: any;
 (function () {
     'use strict';
 
     const GreenhouseInflammationSignaling = {
         render(ctx, app, state, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const viewMode = state.factors.viewMode;
 
             if (viewMode !== 2) return; // Only in Molecular view
@@ -24,7 +26,7 @@
         },
 
         drawSignalingNetwork(ctx, app, state, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             if (!ui3d.molecularCells) return;
 
             const mast = ui3d.molecularCells.find(c => c.type === 'mast_cell');
@@ -94,7 +96,7 @@
         },
 
         drawTranscriptionOverlays(ctx, app, state, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             if (!ui3d.molecularCells) return;
 
             ui3d.molecularCells.forEach(c => {
@@ -152,5 +154,8 @@
         }
     };
 
-    window.GreenhouseInflammationSignaling = GreenhouseInflammationSignaling;
+    _exported_GreenhouseInflammationSignaling = GreenhouseInflammationSignaling;
 })();
+
+
+export var GreenhouseInflammationSignaling = _exported_GreenhouseInflammationSignaling;

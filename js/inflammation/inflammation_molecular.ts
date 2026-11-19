@@ -1,15 +1,18 @@
+import { GreenhouseInflammationSignaling } from './inflammation_signaling.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 /**
  * @file inflammation_molecular.js
  * @description Molecular-level rendering logic for the Neuroinflammation Simulation.
  * Features 3D molecular structures and a complex 3D lipid bilayer segment.
  */
 
+var _exported_GreenhouseInflammationMolecular: any;
 (function () {
     'use strict';
 
     const GreenhouseInflammationMolecular = {
         render(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const tone = state.metrics.inflammatoryTone || 0.05;
 
             ctx.save();
@@ -49,8 +52,8 @@
             }
 
             // 4. Advanced Signaling Overlays (Enhancements 4-40)
-            if (window.GreenhouseInflammationSignaling) {
-                window.GreenhouseInflammationSignaling.render(ctx, ui3d.app, state, projection, ui3d);
+            if (GreenhouseInflammationSignaling) {
+                GreenhouseInflammationSignaling.render(ctx, ui3d.app, state, projection, ui3d);
             }
 
             ctx.restore();
@@ -93,7 +96,7 @@
         },
 
         drawMembrane(ctx, mesh, camera, projection, tone) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             ctx.save();
             ctx.lineWidth = 0.5;
 
@@ -168,5 +171,8 @@
         }
     };
 
-    window.GreenhouseInflammationMolecular = GreenhouseInflammationMolecular;
+    _exported_GreenhouseInflammationMolecular = GreenhouseInflammationMolecular;
 })();
+
+
+export var GreenhouseInflammationMolecular = _exported_GreenhouseInflammationMolecular;

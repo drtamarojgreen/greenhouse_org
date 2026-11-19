@@ -1,3 +1,5 @@
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhouseStressApp } from './stress/stress_app.js';
 // [TypeScript Migration] Source migrated from stress.js — behavior preserved.
 /**
  * @file stress.js
@@ -8,32 +10,7 @@
     'use strict';
     console.log('Stress App: Loader execution started.');
 
-    let GreenhouseUtils;
-
-    const loadDependencies = async () => {
-        if (window.GreenhouseDependencyManager) {
-            try {
-                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-            } catch (error) {
-                console.error('Stress App: Dependency manager timeout:', error);
-            }
-        } else {
-            await new Promise<void>((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 240;
-                const interval = setInterval(() => {
-                    if (window.GreenhouseUtils) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (attempts++ >= maxAttempts) {
-                        clearInterval(interval);
-                        reject(new Error('GreenhouseUtils load timeout'));
-                    }
-                }, 50);
-            });
-        }
-        GreenhouseUtils = window.GreenhouseUtils;
-    };
+    const loadDependencies = async () => {};
 
     const captureScriptAttributes = () => {
         const scriptElement = document.currentScript || document.querySelector('script[src*="stress.js"]');
@@ -49,38 +26,37 @@
 
     async function main() {
         try {
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./models_3d_math.js');
+            await import('./brain_mesh_realistic.js');
+            await import('./neuro/neuro_ui_3d_geometry.js');
+            await import('./stress/stress_geometry.js');
+            await import('./neuro/neuro_ui_3d_brain.js');
+            await import('./graph_parser.js');
+            await import('./model_graph_viewer.js');
+            await import('./stress/stress_config.js');
+            await import('./stress/stress_ui_3d.js');
+            await import('./stress/stress_macro.js');
+            await import('./stress/stress_pathway.js');
+            await import('./stress/stress_systemic.js');
+            await import('./stress/stress_tooltips.js');
+            await import('./stress/stress_controls.js');
+            await import('./stress/stress_app.js');
             const { baseUrl, targetSelector } = captureScriptAttributes();
-            await loadDependencies();
+            
 
-            if (!window.GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
+            if (!GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
 
             // Load dependencies sequentially
-            await window.GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_geometry.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress/stress_geometry.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_brain.js', baseUrl);
 
             // Graph Visualization Modules
-            await window.GreenhouseUtils.loadScript('graph_parser.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('model_graph_viewer.js', baseUrl);
 
-            await window.GreenhouseUtils.loadScript('stress/stress_config.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress/stress_ui_3d.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress/stress_macro.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress/stress_pathway.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress/stress_systemic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress/stress_tooltips.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress/stress_controls.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress/stress_app.js', baseUrl);
+            if (GreenhouseStressApp) {
+                GreenhouseStressApp.init(targetSelector, baseUrl);
 
-            if (window.GreenhouseStressApp) {
-                window.GreenhouseStressApp.init(targetSelector, baseUrl);
-
-                if (window.GreenhouseUtils.renderModelsTOC) {
-                    window.GreenhouseUtils.renderModelsTOC(targetSelector);
+                if (GreenhouseUtils.renderModelsTOC) {
+                    GreenhouseUtils.renderModelsTOC(targetSelector);
                 }
             } else {
                 throw new Error("GreenhouseStressApp failed to load.");

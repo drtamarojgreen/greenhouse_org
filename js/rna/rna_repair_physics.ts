@@ -1,3 +1,4 @@
+import { Greenhouse } from '../context.js';
 /**
  * @file rna_repair_physics.js
  * @description Physics and environmental engine for RNA repair simulation.
@@ -6,8 +7,6 @@
 
 (function () {
     'use strict';
-
-    window.Greenhouse = window.Greenhouse || {};
 
     /**
      * @class RNAFoldingEngine
@@ -108,7 +107,7 @@
         }
     }
 
-    window.Greenhouse.RNAFoldingEngine = RNAFoldingEngine;
-    window.Greenhouse.RNAEnvironmentManager = RNAEnvironmentManager;
+    Greenhouse.RNAFoldingEngine = RNAFoldingEngine;
+    Greenhouse.RNAEnvironmentManager = RNAEnvironmentManager;
     console.log("RNA Physics module loaded.");
 })();

@@ -28,8 +28,10 @@ function createApp(options = {}) {
         next();
     });
 
-    for (const dir of STATIC_DIRECTORIES) {
-        app.use(`/${dir}`, express.static(path.join(PUBLIC_DIR, dir), { fallthrough: false, dotfiles: 'ignore' }));
+    if (!process.env.VERCEL) {
+        for (const dir of STATIC_DIRECTORIES) {
+            app.use(`/${dir}`, express.static(path.join(PUBLIC_DIR, dir), { fallthrough: false, dotfiles: 'ignore' }));
+        }
     }
 
     app.use('/_functions', createFunctionsRouter(options));

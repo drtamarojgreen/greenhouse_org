@@ -1,3 +1,4 @@
+import { GreenhouseDopamine } from '../context.js';
 /**
  * @file dopamine_clinical.js
  * @description Clinical and pathological states for Dopamine Simulation.
@@ -6,8 +7,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.clinicalState = {
         oxidativeStress: 0, // 88. Oxidative Stress

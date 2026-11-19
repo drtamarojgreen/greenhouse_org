@@ -1,3 +1,7 @@
+import { Greenhouse } from './context.js';
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhouseModelsUtil } from './models_util.js';
+import { GreenhouseRNATooltip } from './rna/rna_tooltip.js';
 // [TypeScript Migration] Source migrated from rna_repair.js — behavior preserved.
 /**
  * @file rna_repair.js
@@ -10,29 +14,12 @@
     'use strict';
 
     console.log("RNA Repair simulation script loaded.");
-
-    let GreenhouseUtils;
     let resilienceObserver = null;
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     // Ensure GreenhouseUtils is loaded before proceeding
-    const loadDependencies = async () => {
-        await new Promise<void>((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 240;
-            const interval = setInterval(() => {
-                if (window.GreenhouseUtils) {
-                    clearInterval(interval);
-                    GreenhouseUtils = window.GreenhouseUtils;
-                    resolve();
-                } else if (attempts++ >= maxAttempts) {
-                    clearInterval(interval);
-                    reject(new Error('GreenhouseUtils load timeout'));
-                }
-            }, 50);
-        });
-    };
+    const loadDependencies = async () => {};
 
     /**
      * @class RNARepairSimulation
@@ -54,8 +41,8 @@
             this.proteins = []; // Enhancement 22: RNPs
 
             // Enhancement 66: ATP Currency (Modular)
-            if (window.Greenhouse && window.Greenhouse.RNAAtpManager) {
-                this.atpManager = new window.Greenhouse.RNAAtpManager();
+            if (Greenhouse && Greenhouse.RNAAtpManager) {
+                this.atpManager = new Greenhouse.RNAAtpManager();
             } else {
                 // Fallback ATP
                 this.atp = 100;
@@ -73,11 +60,11 @@
             };
 
             // Modular Physics
-            if (window.Greenhouse && window.Greenhouse.RNAFoldingEngine) {
-                this.foldingEngine = new window.Greenhouse.RNAFoldingEngine();
+            if (Greenhouse && Greenhouse.RNAFoldingEngine) {
+                this.foldingEngine = new Greenhouse.RNAFoldingEngine();
             }
-            if (window.Greenhouse && window.Greenhouse.RNAEnvironmentManager) {
-                this.environmentManager = new window.Greenhouse.RNAEnvironmentManager();
+            if (Greenhouse && Greenhouse.RNAEnvironmentManager) {
+                this.environmentManager = new Greenhouse.RNAEnvironmentManager();
             }
 
             // Enhancement 36: Background particles
@@ -143,8 +130,8 @@
             });
 
             // Initialize tooltip if available
-            if (window.GreenhouseRNATooltip && window.GreenhouseRNATooltip.initialize) {
-                window.GreenhouseRNATooltip.initialize();
+            if (GreenhouseRNATooltip && GreenhouseRNATooltip.initialize) {
+                GreenhouseRNATooltip.initialize();
             }
         }
 
@@ -159,7 +146,7 @@
         setupInteraction() {
             if (!this.canvas) return;
             this.canvas.addEventListener('mousemove', (e) => {
-                if (!window.GreenhouseRNATooltip) return;
+                if (!GreenhouseRNATooltip) return;
 
                 const rect = this.canvas.getBoundingClientRect();
                 const mx = e.clientX - rect.left;
@@ -205,9 +192,9 @@
                 }
 
                 if (hit) {
-                    window.GreenhouseRNATooltip.show(hit.x, hit.y, hit.key);
+                    GreenhouseRNATooltip.show(hit.x, hit.y, hit.key);
                 } else {
-                    window.GreenhouseRNATooltip.hide();
+                    GreenhouseRNATooltip.hide();
                 }
             });
         }
@@ -352,13 +339,13 @@
             const startX = Math.random() * this.width;
             const startY = Math.random() > 0.5 ? -50 : this.height + 50;
 
-            if (window.Greenhouse && window.Greenhouse.RNAEnzymeFactory) {
+            if (Greenhouse && Greenhouse.RNAEnzymeFactory) {
                 // Randomly upgrade to advanced enzymes if available
                 let finalName = name;
                 if (name === 'Ligase' && Math.random() > 0.7) finalName = 'RtcB';
                 if (name === 'Demethylase' && Math.random() > 0.7) finalName = 'AlkB';
 
-                const enzyme = window.Greenhouse.RNAEnzymeFactory.create(finalName, targetIndex, startX, startY);
+                const enzyme = Greenhouse.RNAEnzymeFactory.create(finalName, targetIndex, startX, startY);
                 this.enzymes.push(enzyme);
             } else {
                 // Fallback Enzyme Object
@@ -889,8 +876,8 @@
             this.draw();
 
             // Notify legend if it exists
-            if (window.Greenhouse && window.Greenhouse.RNALegend && window.Greenhouse.RNALegend.update) {
-                window.Greenhouse.RNALegend.update(this.ctx, this.width, this.height, this.colors);
+            if (Greenhouse && Greenhouse.RNALegend && Greenhouse.RNALegend.update) {
+                Greenhouse.RNALegend.update(this.ctx, this.width, this.height, this.colors);
             }
 
             requestAnimationFrame((ts) => this.animate(ts));
@@ -911,7 +898,7 @@
             return;
         }
 
-        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+        const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
 
         if (typeof targetElement === 'string') {
             selector = targetElement;
@@ -920,7 +907,7 @@
         }
 
         // Avoid double init/running
-        if (targetElement.dataset.initialized === 'true' && window.Greenhouse.rnaSimulation && window.Greenhouse.rnaSimulation.isRunning) return;
+        if (targetElement.dataset.initialized === 'true' && Greenhouse.rnaSimulation && Greenhouse.rnaSimulation.isRunning) return;
         targetElement.dataset.initialized = 'true';
 
         targetElement.innerHTML = '';
@@ -952,7 +939,7 @@
             width: auto !important; max-width: fit-content;
         `;
         langBtn.onclick = () => {
-            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            if (GreenhouseModelsUtil) GreenhouseModelsUtil.toggleLanguage();
         };
         wrapper.appendChild(langBtn);
 
@@ -962,18 +949,16 @@
         }
 
         const simulation = new RNARepairSimulation(canvas);
-
-        (window as any).Greenhouse = window.Greenhouse || {};
-        window.Greenhouse.rnaSimulation = simulation;
+        Greenhouse.rnaSimulation = simulation;
 
         // Expose re-init function on the simulation instance for the utility to call
         // The utility calls appInstance[reinitFunctionName](container, selector)
         // Here, the 'appInstance' is essentially this module scope, but we need to map it.
         // Or we can attach the function to the existing global object used for re-init.
-        window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
+        Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
 
-        if (window.Greenhouse.initializeRNADisplay) {
-            window.Greenhouse.initializeRNADisplay(simulation);
+        if (Greenhouse.initializeRNADisplay) {
+            Greenhouse.initializeRNADisplay(simulation);
         }
 
         requestAnimationFrame((ts) => simulation.animate(ts));
@@ -989,28 +974,26 @@
 
         console.log('RNA Repair simulation initialized (Vertical).');
 
-        if (window.GreenhouseUtils) {
-            // We pass 'window.Greenhouse' as the appInstance and 'initializeRNARepairSimulation' as the function name
-            window.GreenhouseUtils.observeAndReinitializeApplication(targetElement, selector, window.Greenhouse, 'initializeRNARepairSimulation');
-            window.GreenhouseUtils.startSentinel(targetElement, selector, window.Greenhouse, 'initializeRNARepairSimulation');
+        if (GreenhouseUtils) {
+            // We pass 'Greenhouse' as the appInstance and 'initializeRNARepairSimulation' as the function name
+            GreenhouseUtils.observeAndReinitializeApplication(targetElement, selector, Greenhouse, 'initializeRNARepairSimulation');
+            GreenhouseUtils.startSentinel(targetElement, selector, Greenhouse, 'initializeRNARepairSimulation');
 
             // Render bottom navigation TOC via common utilities
-            if (typeof window.GreenhouseUtils.renderModelsTOC === 'function') {
-                window.GreenhouseUtils.renderModelsTOC(selector);
+            if (typeof GreenhouseUtils.renderModelsTOC === 'function') {
+                GreenhouseUtils.renderModelsTOC(selector);
             }
         }
     }
-
-    (window as any).Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
-    window.Greenhouse.RNARepairSimulation = RNARepairSimulation;
+    Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
+    Greenhouse.RNARepairSimulation = RNARepairSimulation;
 
     // --- Auto-Initialization Logic ---
     function captureAttributes() {
-        if (window._greenhouseScriptAttributes) {
+        if ((window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#rna-app-container', 'base-url': '/', 'target-selector-left': '#rna-app-container' })) {
             return {
-                targetSelector: window._greenhouseScriptAttributes['target-selector-left'],
-                baseUrl: window._greenhouseScriptAttributes['base-url']
+                targetSelector: (window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#rna-app-container', 'base-url': '/', 'target-selector-left': '#rna-app-container' })['target-selector-left'],
+                baseUrl: (window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#rna-app-container', 'base-url': '/', 'target-selector-left': '#rna-app-container' })['base-url']
             };
         }
         const script = document.currentScript;
@@ -1025,15 +1008,15 @@
 
     async function main() {
         try {
-            await loadDependencies();
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./rna/rna_tooltip.js');
+            await import('./rna/rna_display.js');
+            await import('./rna/rna_legend.js');
+            
             const { targetSelector, baseUrl } = captureAttributes();
 
             if (baseUrl) {
-                await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-                await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-                await GreenhouseUtils.loadScript('rna/rna_tooltip.js', baseUrl);
-                await GreenhouseUtils.loadScript('rna/rna_display.js', baseUrl);
-                await GreenhouseUtils.loadScript('rna/rna_legend.js', baseUrl);
             }
 
             if (targetSelector) {

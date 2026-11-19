@@ -1,3 +1,5 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
+var _exported_GreenhouseRNATooltip: any;
 (function () {
     'use strict';
 
@@ -35,7 +37,7 @@
         // Show Tooltip at specific screen coordinates
         show(x, y, key) {
             if (!this.tooltipElement) this.initialize();
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
             // Map keys to translation keys
             const keyMap = {
@@ -78,6 +80,9 @@
         }
     };
 
-    window.GreenhouseRNATooltip = GreenhouseRNATooltip;
+    _exported_GreenhouseRNATooltip = GreenhouseRNATooltip;
 
 })();
+
+
+export var GreenhouseRNATooltip = _exported_GreenhouseRNATooltip;

@@ -1,3 +1,4 @@
+import { Greenhouse } from '../context.js';
 /**
  * @file rna_repair_enzymes.js
  * @description Advanced enzyme definitions and factory for RNA repair simulation.
@@ -5,8 +6,6 @@
 
 (function () {
     'use strict';
-
-    window.Greenhouse = window.Greenhouse || {};
 
     /**
      * @class BaseEnzyme
@@ -137,7 +136,7 @@
         }
     }
 
-    window.Greenhouse.RNAEnzymeFactory = RNAEnzymeFactory;
-    window.Greenhouse.RNABaseEnzyme = BaseEnzyme;
+    Greenhouse.RNAEnzymeFactory = RNAEnzymeFactory;
+    Greenhouse.RNABaseEnzyme = BaseEnzyme;
     console.log("RNA Enzymes module loaded.");
 })();

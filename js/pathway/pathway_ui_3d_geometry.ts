@@ -1,3 +1,5 @@
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
+var _exported_GreenhousePathwayGeometry: any;
 (function () {
     'use strict';
 
@@ -5,8 +7,8 @@
 
         initializeBrainShell(brainShell) {
             // Realistic realistic brain mesh if available
-            if (window.GreenhouseBrainMeshRealistic) {
-                const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            if (GreenhouseBrainMeshRealistic) {
+                const realisticBrain = GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 brainShell.vertices = realisticBrain.vertices;
                 // Preserve face indices property from realistic mesh
                 brainShell.faces = realisticBrain.faces.map(face => ({ ...face, region: null }));
@@ -239,5 +241,8 @@
         }
     };
 
-    window.GreenhousePathwayGeometry = GreenhousePathwayGeometry;
+    _exported_GreenhousePathwayGeometry = GreenhousePathwayGeometry;
 })();
+
+
+export var GreenhousePathwayGeometry = _exported_GreenhousePathwayGeometry;

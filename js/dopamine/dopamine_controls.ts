@@ -1,3 +1,6 @@
+import { GreenhouseDopamine } from '../context.js';
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file dopamine_controls.js
  * @description UI controls for Dopamine Simulation.
@@ -5,8 +8,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.applyPalette = function (palette) {
         console.log(`Applying ${palette} palette`);
@@ -25,7 +27,7 @@
     };
 
     G.updateLanguage = function () {
-        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+        const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
         const info = document.getElementById('dopamine-info-display');
         if (info) {
             info.innerHTML = `<strong>${t('neuro_dopamine_signaling')}</strong><br>${t('neuro_dopamine_select')}`;
@@ -232,8 +234,8 @@
             }
         };
 
-        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+        const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
 
         controls.appendChild(createDropdown(t('signaling'), signalingOptions));
         controls.appendChild(createDropdown(t('scenarios'), scenarioOptions));
@@ -266,7 +268,7 @@
         langBtn.innerText = t('btn_language');
         langBtn.onclick = (e) => {
             e.stopPropagation();
-            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            if (GreenhouseModelsUtil) GreenhouseModelsUtil.toggleLanguage();
         };
         controls.appendChild(langBtn);
 

@@ -1,3 +1,5 @@
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+var _exported_GreenhousePathwayBrain: any;
 (function () {
     'use strict';
 
@@ -199,5 +201,8 @@
         }
     };
 
-    window.GreenhousePathwayBrain = GreenhousePathwayBrain;
+    _exported_GreenhousePathwayBrain = GreenhousePathwayBrain;
 })();
+
+
+export var GreenhousePathwayBrain = _exported_GreenhousePathwayBrain;

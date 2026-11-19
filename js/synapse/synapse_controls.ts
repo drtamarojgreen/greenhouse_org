@@ -1,10 +1,10 @@
+import { GreenhouseSynapseApp } from '../context.js';
 // docs/js/synapse_controls.js
 
 (function () {
     'use strict';
 
-    const G = window.GreenhouseSynapseApp || {};
-    window.GreenhouseSynapseApp = G;
+    const G = GreenhouseSynapseApp;
 
     G.Controls = {
         render(container, config, callbacks) {

@@ -1,12 +1,14 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file inflammation_controls.js
  * @description UI Control components (Checkboxes, Buttons) for the Inflammation App.
  */
 
+var _exported_GreenhouseInflammationControls: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseInflammationControls = {
         drawDebugBadge(ctx, app) {
@@ -285,5 +287,8 @@
         }
     };
 
-    window.GreenhouseInflammationControls = GreenhouseInflammationControls;
+    _exported_GreenhouseInflammationControls = GreenhouseInflammationControls;
 })();
+
+
+export var GreenhouseInflammationControls = _exported_GreenhouseInflammationControls;

@@ -1,11 +1,13 @@
+import { GreenhouseSynapseApp } from '../context.js';
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 // docs/js/synapse_app.js
 // Optimized & Refactored Synapse Visualization Logic - Chemistry Integrated
 
 (function () {
     'use strict';
 
-    const G = window.GreenhouseSynapseApp || {};
-    window.GreenhouseSynapseApp = G;
+    const G = GreenhouseSynapseApp;
 
     G.config = G.config || {
         backgroundColor: '#050510',
@@ -128,16 +130,16 @@
             this.animate();
 
             // Resilience using shared GreenhouseUtils
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(this.container, selector, G, 'init');
-                window.GreenhouseUtils.startSentinel(this.container, selector, G, 'init');
+            if (GreenhouseUtils) {
+                GreenhouseUtils.observeAndReinitializeApplication(this.container, selector, G, 'init');
+                GreenhouseUtils.startSentinel(this.container, selector, G, 'init');
             }
         },
 
         setupDOM() {
             const config = G.config;
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+            const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
 
             this.container.innerHTML = '';
             if (isMobile) {
@@ -201,8 +203,8 @@
                 font-size: ${isMobile ? '16px' : '14px'};
             `;
             langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) {
-                    window.GreenhouseModelsUtil.toggleLanguage();
+                if (GreenhouseModelsUtil) {
+                    GreenhouseModelsUtil.toggleLanguage();
                 }
             };
             canvasWrapper.appendChild(langBtn);
@@ -230,8 +232,8 @@
         },
 
         refreshUIText() {
-            this.currentLanguage = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.currentLanguage : 'en';
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            this.currentLanguage = GreenhouseModelsUtil ? GreenhouseModelsUtil.currentLanguage : 'en';
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
             const burstBtn = document.getElementById('synapse-mobile-burst-btn');
             if (burstBtn) burstBtn.textContent = t('Burst');

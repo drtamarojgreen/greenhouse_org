@@ -1,9 +1,15 @@
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseNeuroGeometry } from '../neuro/neuro_ui_3d_geometry.js';
+import { GreenhouseStressApp } from './stress_app.js';
+import { GreenhouseStressConfig } from './stress_config.js';
 /**
  * @file stress_systemic.js
  * @description Advanced Systemic Visualization: Renders the aggregate state of the 4 major systemic categories.
  * Visualizes the balance between Environmental Stressors and Resilient buffers (Psych/Philo/Research).
  */
 
+var _exported_GreenhouseStressSystemic: any;
 (function () {
     'use strict';
 
@@ -37,7 +43,7 @@
 
         initVisuals() {
             if (this.initialized) return;
-            const Geo = window.GreenhouseNeuroGeometry;
+            const Geo = GreenhouseNeuroGeometry;
             if (Geo) {
                 Object.keys(this.categories).forEach(catKey => {
                     // All nodes are spheres per explicit request
@@ -71,9 +77,9 @@
         },
 
         render(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
-            const Geo = window.GreenhouseNeuroGeometry;
-            const config = window.GreenhouseStressConfig;
+            const Math3D = GreenhouseModels3DMath;
+            const Geo = GreenhouseNeuroGeometry;
+            const config = GreenhouseStressConfig;
 
             if (!this.initialized) this.initVisuals();
             if (!this.crystalMesh && Geo) this.crystalMesh = Geo.generateSphere(60, 8);
@@ -355,7 +361,7 @@
                     let countY = p.y + radius + 15;
 
                     // Robust Collision Check for 12 nodes
-                    const labelText = window.GreenhouseModelsUtil.t(cat.label);
+                    const labelText = GreenhouseModelsUtil.t(cat.label);
                     const textWidth = ctx.measureText(labelText).width;
 
                     // UI Occupancy Check (Item 74/Vision Enhancement)
@@ -430,7 +436,7 @@
                 ctx.setLineDash([]);
                 ctx.fillStyle = '#E0E0E0';
                 ctx.font = 'bold 12px Arial';
-                ctx.fillText(window.GreenhouseModelsUtil.t('stress_ui_critical_overload'), cp.x, cp.y - 110 * cp.scale);
+                ctx.fillText(GreenhouseModelsUtil.t('stress_ui_critical_overload'), cp.x, cp.y - 110 * cp.scale);
             }
 
             // 5. Timeline Scrubber (Enhancement 2)
@@ -441,7 +447,7 @@
             const scrubberY = sh - 40;
 
             // Check if hovering scrubber for cursor change or interaction
-            const app = window.GreenhouseStressApp;
+            const app = GreenhouseStressApp;
             const mx = app ? app.interaction.mouseX : 0;
             const my = app ? app.interaction.mouseY : 0;
             const isHoveringScrubber = mx >= scrubberX && mx <= scrubberX + scrubberW && my >= scrubberY - 10 && my <= scrubberY + 20;
@@ -460,11 +466,11 @@
             ctx.fillStyle = '#fff';
             ctx.font = '10px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText(window.GreenhouseModelsUtil.t('stress_ui_acute'), scrubberX, scrubberY + 25);
+            ctx.fillText(GreenhouseModelsUtil.t('stress_ui_acute'), scrubberX, scrubberY + 25);
             ctx.textAlign = 'center';
-            ctx.fillText(window.GreenhouseModelsUtil.t('stress_ui_subacute'), scrubberX + scrubberW / 2, scrubberY + 25);
+            ctx.fillText(GreenhouseModelsUtil.t('stress_ui_subacute'), scrubberX + scrubberW / 2, scrubberY + 25);
             ctx.textAlign = 'right';
-            ctx.fillText(window.GreenhouseModelsUtil.t('stress_ui_chronic'), scrubberX + scrubberW, scrubberY + 25);
+            ctx.fillText(GreenhouseModelsUtil.t('stress_ui_chronic'), scrubberX + scrubberW, scrubberY + 25);
 
             // 6. Real-time Metrics Dashboard (Enhancement 21)
             this.renderMetricsDashboard(ctx, state, sw, sh);
@@ -483,8 +489,8 @@
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.strokeStyle = 'rgba(208, 208, 208, 0.3)';
             ctx.lineWidth = 1;
-            if (window.GreenhouseStressApp && window.GreenhouseStressApp.roundRect) {
-                window.GreenhouseStressApp.roundRect(ctx, dx, dy, dw, dh, 8, true, true);
+            if (GreenhouseStressApp && GreenhouseStressApp.roundRect) {
+                GreenhouseStressApp.roundRect(ctx, dx, dy, dw, dh, 8, true, true);
             } else {
                 ctx.fillRect(dx, dy, dw, dh);
                 ctx.strokeRect(dx, dy, dw, dh);
@@ -493,7 +499,7 @@
             ctx.fillStyle = '#D0D0D0';
             ctx.font = 'bold 10px Quicksand, sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(window.GreenhouseModelsUtil.t('stress_ui_live_telemetry').toUpperCase(), dx + 10, dy + 20);
+            ctx.fillText(GreenhouseModelsUtil.t('stress_ui_live_telemetry').toUpperCase(), dx + 10, dy + 20);
 
             const telemetry = [
                 { label: 'HRV', value: (m.hrv || 0).toFixed(0) + 'ms', color: '#D0D0D0' },
@@ -530,11 +536,11 @@
 
         // Hit check for the 8 main nodes
         checkHit(mx, my, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
-            const app = window.GreenhouseStressApp;
+            const Math3D = GreenhouseModels3DMath;
+            const app = GreenhouseStressApp;
             const time = app ? app.engine.state.time : 0;
             const state = app ? app.engine.state : null;
-            const config = window.GreenhouseStressConfig;
+            const config = GreenhouseStressConfig;
 
             if (!state || !config) return null;
 
@@ -567,5 +573,8 @@
         }
     };
 
-    window.GreenhouseStressSystemic = GreenhouseStressSystemic;
+    _exported_GreenhouseStressSystemic = GreenhouseStressSystemic;
 })();
+
+
+export var GreenhouseStressSystemic = _exported_GreenhouseStressSystemic;

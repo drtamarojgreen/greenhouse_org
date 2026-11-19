@@ -1,12 +1,27 @@
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
+import { GreenhouseCognitionAnalytics } from './cognition_analytics.js';
+import { GreenhouseCognitionConfig } from './cognition_config.js';
+import { GreenhouseCognitionDevelopment } from './cognition_development.js';
+import { GreenhouseCognitionDrawingUtils } from './cognition_drawing_utils.js';
+import { GreenhouseCognitionEducational } from './cognition_educational.js';
+import { GreenhouseCognitionInterventions } from './cognition_interventions.js';
+import { GreenhouseCognitionMedications } from './cognition_medications.js';
+import { GreenhouseCognitionResearch } from './cognition_research.js';
+import { GreenhouseCognitionTheories } from './cognition_theories.js';
+import { GreenhouseCognitionBrain } from './cognition_ui_3d_brain.js';
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file cognition_app.js
  * @description Main application logic for the Cognition Simulation Model.
  */
 
+var _exported_GreenhouseCognitionApp: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseCognitionApp = {
         canvas: null,
@@ -31,7 +46,7 @@
             // Standardize selector argument handling if re-invoked by GreenhouseUtils
             if (typeof selector !== 'string' && selArg) selector = selArg;
 
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
 
             console.log('CognitionApp: Initializing with selector:', selector);
             const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
@@ -40,7 +55,7 @@
                 return;
             }
 
-            this.config = window.GreenhouseCognitionConfig || {};
+            this.config = GreenhouseCognitionConfig || {};
 
             container.innerHTML = '';
             container.style.position = 'relative';
@@ -65,8 +80,8 @@
             this.projection.width = this.canvas.width;
             this.projection.height = this.canvas.height;
 
-            if (window.GreenhouseBrainMeshRealistic) {
-                this.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            if (GreenhouseBrainMeshRealistic) {
+                this.brainMesh = GreenhouseBrainMeshRealistic.generateRealisticBrain();
 
                 // Assign regions to vertices for highlighting
                 if (this.brainMesh.regions) {
@@ -81,19 +96,19 @@
                     }
                 }
 
-                if (window.GreenhouseCognitionBrain) {
-                    this.centroids = window.GreenhouseCognitionBrain.calculateCentroids(this.brainMesh);
+                if (GreenhouseCognitionBrain) {
+                    this.centroids = GreenhouseCognitionBrain.calculateCentroids(this.brainMesh);
                 }
             }
 
             // Initialize Sub-modules
-            if (window.GreenhouseCognitionAnalytics) window.GreenhouseCognitionAnalytics.init(this);
-            if (window.GreenhouseCognitionTheories) window.GreenhouseCognitionTheories.init(this);
-            if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.init(this);
-            if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.init(this);
-            if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.init(this);
-            if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.init(this);
-            if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.init(this);
+            if (GreenhouseCognitionAnalytics) GreenhouseCognitionAnalytics.init(this);
+            if (GreenhouseCognitionTheories) GreenhouseCognitionTheories.init(this);
+            if (GreenhouseCognitionDevelopment) GreenhouseCognitionDevelopment.init(this);
+            if (GreenhouseCognitionInterventions) GreenhouseCognitionInterventions.init(this);
+            if (GreenhouseCognitionMedications) GreenhouseCognitionMedications.init(this);
+            if (GreenhouseCognitionResearch) GreenhouseCognitionResearch.init(this);
+            if (GreenhouseCognitionEducational) GreenhouseCognitionEducational.init(this);
 
             this.initBackground();
             this.createEnhancementUI(container);
@@ -110,8 +125,8 @@
             this.isRunning = true;
             this.startLoop();
 
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
+            if (GreenhouseUtils) {
+                GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
             }
         },
 
@@ -238,14 +253,14 @@
 
             const langBtn = document.createElement('button');
             langBtn.id = 'cognition-lang-toggle';
-            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+            langBtn.textContent = GreenhouseModelsUtil ? GreenhouseModelsUtil.t('btn_language') : 'Language';
             langBtn.style.cssText = `
                 background: #A0AEC0; color: white; border: none; padding: 5px 12px;
                 border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
                 width: auto !important; max-width: fit-content;
             `;
             langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+                if (GreenhouseModelsUtil) GreenhouseModelsUtil.toggleLanguage();
             };
             controlsRow.appendChild(langBtn);
 
@@ -388,8 +403,8 @@
         },
 
         onBrainClick(x, y) {
-            if (window.GreenhouseCognitionBrain) {
-                const pickedRegion = window.GreenhouseCognitionBrain.pickRegion(
+            if (GreenhouseCognitionBrain) {
+                const pickedRegion = GreenhouseCognitionBrain.pickRegion(
                     x, y, this.brainMesh, this.camera, this.projection
                 );
 
@@ -526,7 +541,7 @@
             const ctx = this.ctx;
             const w = this.canvas.width;
             const h = this.canvas.height;
-            const utils = window.GreenhouseCognitionDrawingUtils;
+            const utils = GreenhouseCognitionDrawingUtils;
 
             ctx.clearRect(0, 0, w, h);
 
@@ -540,20 +555,20 @@
             grad.addColorStop(0, '#0a200a'); grad.addColorStop(1, '#051005');
             ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
 
-            if (window.GreenhouseCognitionBrain && window.GreenhouseModels3DMath) {
-                window.GreenhouseCognitionBrain.drawBrainShell(
+            if (GreenhouseCognitionBrain && GreenhouseModels3DMath) {
+                GreenhouseCognitionBrain.drawBrainShell(
                     ctx, this.brainMesh, this.camera, this.projection, w, h,
                     this.activeRegion ? { region: this.activeRegion } : null,
                     this.options
                 );
-                if (this.pulses.length > 0) window.GreenhouseCognitionBrain.drawPulses(ctx, this.pulses, this.camera, this.projection);
+                if (this.pulses.length > 0) GreenhouseCognitionBrain.drawPulses(ctx, this.pulses, this.camera, this.projection);
 
                 const enh = this.activeEnhancement;
                 if (enh) {
-                    if (enh.id === 12) window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['prefrontalCortex', 'parietalLobe', 'temporalLobe'], this.camera, this.projection, '80, 100, 255');
-                    else if (enh.id === 11) window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['amygdala', 'temporalLobe', 'prefrontalCortex'], this.camera, this.projection, '255, 100, 50');
+                    if (enh.id === 12) GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['prefrontalCortex', 'parietalLobe', 'temporalLobe'], this.camera, this.projection, '80, 100, 255');
+                    else if (enh.id === 11) GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['amygdala', 'temporalLobe', 'prefrontalCortex'], this.camera, this.projection, '255, 100, 50');
                 }
-                window.GreenhouseCognitionBrain.drawLabels(ctx, this.centroids, this.config, this.camera, this.projection);
+                GreenhouseCognitionBrain.drawLabels(ctx, this.centroids, this.config, this.camera, this.projection);
             }
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -566,13 +581,13 @@
                     this.activeEnhancement.render(ctx, this);
                 } else {
                     // Fallback to sub-modules
-                    if (window.GreenhouseCognitionAnalytics) window.GreenhouseCognitionAnalytics.render(ctx);
-                    if (window.GreenhouseCognitionTheories) window.GreenhouseCognitionTheories.render(ctx);
-                    if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.render(ctx);
-                    if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.render(ctx);
-                    if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.render(ctx);
-                    if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.render(ctx);
-                    if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.render(ctx);
+                    if (GreenhouseCognitionAnalytics) GreenhouseCognitionAnalytics.render(ctx);
+                    if (GreenhouseCognitionTheories) GreenhouseCognitionTheories.render(ctx);
+                    if (GreenhouseCognitionDevelopment) GreenhouseCognitionDevelopment.render(ctx);
+                    if (GreenhouseCognitionInterventions) GreenhouseCognitionInterventions.render(ctx);
+                    if (GreenhouseCognitionMedications) GreenhouseCognitionMedications.render(ctx);
+                    if (GreenhouseCognitionResearch) GreenhouseCognitionResearch.render(ctx);
+                    if (GreenhouseCognitionEducational) GreenhouseCognitionEducational.render(ctx);
                 }
             } else if (this.activeCategory !== 'All' && this.config.categories[this.activeCategory]) {
                 const cat = this.config.categories[this.activeCategory];
@@ -581,5 +596,8 @@
         }
     };
 
-    window.GreenhouseCognitionApp = GreenhouseCognitionApp;
+    _exported_GreenhouseCognitionApp = GreenhouseCognitionApp;
 })();
+
+
+export var GreenhouseCognitionApp = _exported_GreenhouseCognitionApp;

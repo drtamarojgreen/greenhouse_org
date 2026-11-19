@@ -1,6 +1,7 @@
 // docs/js/neuro_adhd_data.js
 // Metadata for 100 ADHD Enhancements (Symptoms, Treatments, Pathology, Etiology)
 
+var _exported_GreenhouseADHDData: any;
 (function () {
     'use strict';
 
@@ -145,7 +146,7 @@
         autism: { id: 'autism', name: "Autism Spectrum", enhancements: [106, 57, 18, 21] }
     };
 
-    window.GreenhouseADHDData = {
+    _exported_GreenhouseADHDData = {
         categories: ADHD_ENHANCEMENTS,
         scenarios: SCENARIOS,
         getFlatList: function() {
@@ -164,3 +165,6 @@
         }
     };
 })();
+
+
+export var GreenhouseADHDData = _exported_GreenhouseADHDData;

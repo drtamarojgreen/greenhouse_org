@@ -1,13 +1,17 @@
+import { GreenhouseInflammationConfig } from './inflammation_config.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file inflammation_macro.js
  * @description Macro-level (Brain) rendering logic for the Neuroinflammation Simulation.
  * Implements holographic schematics, orbital triggers, and the Kynurenine pathway (Tryptophan/3HAA).
  */
 
+var _exported_GreenhouseInflammationMacro: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseInflammationMacro = {
         orbitalRotation: 0,
@@ -16,7 +20,7 @@
         render(ctx, state, camera, projection, ui3d) {
             if (!ui3d.brainShell) return;
 
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const tone = state.metrics.inflammatoryTone || 0.02;
             // Transition from orbital revolution to local rotation
             this.localRotation = (this.localRotation || 0) + 0.02;
@@ -58,7 +62,7 @@
         },
 
         drawCompartmentFlowNetwork(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const graph = ui3d.pathwayCache['tryptophan'];
             if (!graph || !graph.compartments || !graph.reactions) return;
 
@@ -207,7 +211,7 @@
         },
 
         drawInflammatoryFactors(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const factors = state.factors;
             const activeFactors = Object.keys(factors).filter(k => factors[k] === 1 && k !== 'viewMode');
 
@@ -273,7 +277,7 @@
         },
 
         drawEliteBrain(ctx, shell, camera, projection, tone, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const hovered = ui3d.app.ui.hoveredElement;
             const lightDir = { x: -0.5, y: -0.7, z: 1.0 };
             const len = Math.sqrt(lightDir.x ** 2 + lightDir.y ** 2 + lightDir.z ** 2);
@@ -360,7 +364,7 @@
         },
 
         drawHUDLabels(ctx, ui3d, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const camForward = {
                 x: Math.sin(camera.rotationY) * Math.cos(camera.rotationX),
                 y: Math.sin(camera.rotationX),
@@ -395,8 +399,8 @@
         },
 
         drawLobeBoundaries(ctx, ui3d, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
-            const config = window.GreenhouseInflammationConfig;
+            const Math3D = GreenhouseModels3DMath;
+            const config = GreenhouseInflammationConfig;
             if (!config || !config.lobes) return;
 
             ctx.save();
@@ -429,7 +433,7 @@
         },
 
         drawInflammationOverlays(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const tone = state.metrics.tnfAlpha || 0;
 
             if (tone > 0.5) {
@@ -457,5 +461,8 @@
         }
     };
 
-    window.GreenhouseInflammationMacro = GreenhouseInflammationMacro;
+    _exported_GreenhouseInflammationMacro = GreenhouseInflammationMacro;
 })();
+
+
+export var GreenhouseInflammationMacro = _exported_GreenhouseInflammationMacro;

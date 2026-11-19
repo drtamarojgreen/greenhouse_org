@@ -1,6 +1,9 @@
+import { GreenhouseGeneticLighting } from './genetic_lighting.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 // docs/js/genetic/genetic_ui_3d_brain.js
 // Enhanced 3D Brain Rendering Engine for Genetic Model (adapted from neuro_ui_3d_brain.js)
 
+var _exported_GreenhouseGeneticBrain: any;
 (function () {
     'use strict';
 
@@ -22,7 +25,7 @@
             ctx.rect(0, 0, w, h);
             ctx.clip();
 
-            if (window.GreenhouseModels3DMath && window.GreenhouseGeneticLighting) {
+            if (GreenhouseModels3DMath && GreenhouseGeneticLighting) {
                 this.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h, activeGene);
             }
             ctx.restore();
@@ -465,5 +468,8 @@
         },
     };
 
-    window.GreenhouseGeneticBrain = GreenhouseGeneticBrain;
+    _exported_GreenhouseGeneticBrain = GreenhouseGeneticBrain;
 })();
+
+
+export var GreenhouseGeneticBrain = _exported_GreenhouseGeneticBrain;

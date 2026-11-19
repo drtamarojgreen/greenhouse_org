@@ -1,3 +1,4 @@
+import { Greenhouse } from '../context.js';
 /**
  * @file rna_display.js
  * @description Zoom and scroll (pan) controls for the RNA repair simulation.
@@ -113,8 +114,6 @@
 
         console.log('RNA Display controls attached.');
     }
-
-    window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeRNADisplay = initializeRNADisplay;
+    Greenhouse.initializeRNADisplay = initializeRNADisplay;
 
 })();

@@ -1,3 +1,4 @@
+var _exported_NeuroGA: any;
 "use strict";
 // docs/js/neuro_ga.js
 // Genetic Algorithm for Neuron Growth Simulation - Optimized for High Performance
@@ -720,5 +721,8 @@
         }
     }
     // Export
-    window.NeuroGA = NeuroGA;
+    _exported_NeuroGA = NeuroGA;
 })();
+
+
+export var NeuroGA = _exported_NeuroGA;

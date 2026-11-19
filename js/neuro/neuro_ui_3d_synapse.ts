@@ -1,3 +1,9 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseADHDData } from './neuro_adhd_data.js';
+import { GreenhouseNeuroApp } from './neuro_app.js';
+import { NeuroSynapseCameraController } from './neuro_synapse_camera_controls.js';
 /**
  * @file neuro_ui_3d_synapse.ts
  * @description Molecular Synapse Visualization for Neuro simulation.
@@ -79,7 +85,7 @@ export const GreenhouseNeuroSynapse = {
         const nodeProjMap = new Map();
         for (let i = 0; i < neurons.length; i++) {
             const n = neurons[i];
-            nodeProjMap.set(n.id, (window as any).GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, camera, projection));
+            nodeProjMap.set(n.id, GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, camera, projection));
         }
 
         const batches: Record<string, Path2D> = {};
@@ -96,7 +102,7 @@ export const GreenhouseNeuroSynapse = {
             const avgScale = (Math.max(0, p1.scale) + Math.max(0, p2.scale)) / 2;
 
             if (avgScale < 0.5) {
-                const alphaRaw = (window as any).GreenhouseModels3DMath.applyDepthFog(0.5, (p1.depth + p2.depth) / 2);
+                const alphaRaw = GreenhouseModels3DMath.applyDepthFog(0.5, (p1.depth + p2.depth) / 2);
                 const alpha = Math.round(alphaRaw * 10) / 10;
                 if (alpha <= 0) continue;
 
@@ -115,7 +121,7 @@ export const GreenhouseNeuroSynapse = {
             const projected = [];
             for (let i = 0; i < meshVertices.length; i++) {
                 const v = meshVertices[i];
-                const p = (window as any).GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
+                const p = GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
                 const poolV = this._getProjectedVertex(i);
                 poolV.x = p.x; poolV.y = p.y; poolV.depth = p.depth; poolV.scale = p.scale;
                 projected.push(poolV);
@@ -140,7 +146,7 @@ export const GreenhouseNeuroSynapse = {
             }
             facesWithDepth.sort((a, b) => b.depth - a.depth);
 
-            const alpha = (window as any).GreenhouseModels3DMath.applyDepthFog(0.8, facesWithDepth[0]?.depth || 1);
+            const alpha = GreenhouseModels3DMath.applyDepthFog(0.8, facesWithDepth[0]?.depth || 1);
 
             for (let i = 0; i < facesWithDepth.length; i++) {
                 const { vertices, origVertices } = facesWithDepth[i];
@@ -193,7 +199,7 @@ export const GreenhouseNeuroSynapse = {
             // --- Activity Signatures: Dynamic Particle Flow ---
             const activityLevel = Math.abs(conn.weight);
             const sparkCount = Math.floor(activityLevel * 2) + 1; // Fewer particles
-            const adhdActive = (window as any).GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+            const adhdActive = GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
 
             for (let s = 0; s < sparkCount; s++) {
                 const sparkOffset = s / sparkCount;
@@ -206,12 +212,12 @@ export const GreenhouseNeuroSynapse = {
                     z: mt * mt * conn.from.z + 2 * mt * t * conn.controlPoint.z + t * t * conn.to.z
                 };
 
-                const sparkProj = (window as any).GreenhouseModels3DMath.project3DTo2D(sparkP.x, sparkP.y, sparkP.z, camera, projection);
+                const sparkProj = GreenhouseModels3DMath.project3DTo2D(sparkP.x, sparkP.y, sparkP.z, camera, projection);
 
                 if (sparkProj.scale > 0) {
                     // Vary size and speed by weight (activityLevel)
                     const size = (2 + activityLevel * 4) * sparkProj.scale;
-                    const alphaRaw = (window as any).GreenhouseModels3DMath.applyDepthFog(1, sparkProj.depth);
+                    const alphaRaw = GreenhouseModels3DMath.applyDepthFog(1, sparkProj.depth);
 
                     ctx.save();
                     ctx.globalAlpha = alphaRaw;
@@ -254,9 +260,9 @@ export const GreenhouseNeuroSynapse = {
     },
 
     drawSynapsePiP(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, connection: any, synapseMeshes: any, isMainView: boolean = false, externalCamera: any = null) {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
-        const adhdActive = (window as any).GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
-        const adhdConfig = (window as any).GreenhouseNeuroApp?.ga?.adhdConfig;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const adhdActive = GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+        const adhdConfig = GreenhouseNeuroApp?.ga?.adhdConfig;
 
         // ADHD: Attentional Blink (1)
         if (adhdActive.has(1) && adhdConfig?.blinkCooldown > 0) {
@@ -267,8 +273,8 @@ export const GreenhouseNeuroSynapse = {
             return;
         }
 
-        if (!this.synapseCameraController && (window as any).NeuroSynapseCameraController) {
-            this.synapseCameraController = new (window as any).NeuroSynapseCameraController();
+        if (!this.synapseCameraController && NeuroSynapseCameraController) {
+            this.synapseCameraController = new NeuroSynapseCameraController();
         }
 
         if (!isMainView) {
@@ -325,7 +331,7 @@ export const GreenhouseNeuroSynapse = {
             const projectedVertices = [];
             for (let i = 0; i < meshVertices.length; i++) {
                 const v = meshVertices[i];
-                const p = (window as any).GreenhouseModels3DMath.project3DTo2D(v.x, v.y + offsetY, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                const p = GreenhouseModels3DMath.project3DTo2D(v.x, v.y + offsetY, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 const poolV = this._getProjectedVertex(i + 1000); // Offset pool for PIP
                 poolV.x = p.x; poolV.y = p.y; poolV.depth = p.depth; poolV.scale = p.scale;
                 projectedVertices.push(poolV);
@@ -346,7 +352,7 @@ export const GreenhouseNeuroSynapse = {
                     const worldV1 = { x: v1.x, y: v1.y + offsetY, z: v1.z };
                     const worldV2 = { x: v2.x, y: v2.y + offsetY, z: v2.z };
                     const worldV3 = { x: v3.x, y: v3.y + offsetY, z: v3.z };
-                    const normal = (window as any).GreenhouseModels3DMath.calculateFaceNormal(worldV1, worldV2, worldV3);
+                    const normal = GreenhouseModels3DMath.calculateFaceNormal(worldV1, worldV2, worldV3);
 
                     // Backface culling
                     if (p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y) + p1.x * (p2.y - p3.y) > 0) {
@@ -427,7 +433,7 @@ export const GreenhouseNeuroSynapse = {
         }
 
         const drawInternal = (obj: any, type: string) => {
-            const p = (window as any).GreenhouseModels3DMath.project3DTo2D(obj.x, obj.y + (type === 'post' ? 60 : -60), obj.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const p = GreenhouseModels3DMath.project3DTo2D(obj.x, obj.y + (type === 'post' ? 60 : -60), obj.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (p.scale > 0) {
                 if (type === 'vesicle') {
                     // ADHD: Dietary Omega-3 Fluidity (37)
@@ -531,7 +537,7 @@ export const GreenhouseNeuroSynapse = {
 
             p.life -= fadeRate * globalSlow;
 
-            const proj = (window as any).GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (proj.scale > 0 && p.life > 0) {
                 let bindingThreshold = 150;
                 if (adhdActive.has(77)) bindingThreshold = 180;
@@ -585,7 +591,7 @@ export const GreenhouseNeuroSynapse = {
         (ctx as any).shadowOffsetY = 1;
 
         // 1. Pre-Synaptic Terminal (Top)
-        const preLabelPos = (window as any).GreenhouseModels3DMath.project3DTo2D(0, -180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+        const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
         if (preLabelPos.scale > 0) {
             ctx.fillStyle = '#E0E0E0';
             // ADHD: EF Gating (10)
@@ -597,14 +603,14 @@ export const GreenhouseNeuroSynapse = {
         }
 
         // 2. Synaptic Cleft (Middle)
-        const cleftLabelPos = (window as any).GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+        const cleftLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
         if (cleftLabelPos.scale > 0) {
             ctx.fillStyle = 'rgba(160, 174, 192, 0.9)';
             ctx.fillText(t('synaptic_cleft').toUpperCase(), cleftLabelPos.x + x, cleftLabelPos.y + y);
         }
 
         // 3. Post-Synaptic Density (Bottom)
-        const postLabelPos = (window as any).GreenhouseModels3DMath.project3DTo2D(0, 180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+        const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
         if (postLabelPos.scale > 0) {
             ctx.fillStyle = '#D0D0D0';
             ctx.fillText(t('post_synaptic_density').toUpperCase(), postLabelPos.x + x, postLabelPos.y + y);
@@ -620,7 +626,7 @@ export const GreenhouseNeuroSynapse = {
             const px = Math.sin(i + Date.now() * 0.001) * 40;
             const py = (i - 2) * 40;
             const pz = Math.cos(i) * 40;
-            const proj = (window as any).GreenhouseModels3DMath.project3DTo2D(px, py, pz, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const proj = GreenhouseModels3DMath.project3DTo2D(px, py, pz, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (proj.scale > 0) {
                 ctx.beginPath();
                 ctx.arc(proj.x + x, proj.y + y, 15 * proj.scale, 0, Math.PI * 2);
@@ -636,11 +642,11 @@ export const GreenhouseNeuroSynapse = {
     },
 
     drawSynapticCleft(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, synapseCamera: Greenhouse.Camera) {
-        const adhdActive = (window as any).GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+        const adhdActive = GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
 
         // ADHD: Alpha-2 (31) - Monochromatic Highlight
         if (adhdActive.has(31)) {
-            const gatePos = (window as any).GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const gatePos = GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (gatePos.scale > 0) {
                 ctx.save();
                 ctx.strokeStyle = '#FFFFFF';
@@ -672,7 +678,7 @@ export const GreenhouseNeuroSynapse = {
         ];
 
         const projected = vertices.map(v => ({
-            proj: (window as any).GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 }),
+            proj: GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 }),
             world: v
         }));
 
@@ -694,7 +700,7 @@ export const GreenhouseNeuroSynapse = {
         });
 
         // Post-Synaptic Density (PSD) Detailed Mesh
-        const psdPos = (window as any).GreenhouseModels3DMath.project3DTo2D(0, 30, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+        const psdPos = GreenhouseModels3DMath.project3DTo2D(0, 30, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
         if (psdPos.scale > 0) {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.beginPath();
@@ -704,14 +710,14 @@ export const GreenhouseNeuroSynapse = {
     },
 
     checkSynapseHover(x: number, y: number, w: number, h: number, synapseCamera: Greenhouse.Camera, adhdActive: Set<number>) {
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
-        const data = (window as any).GreenhouseADHDData;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const data = GreenhouseADHDData;
         if (!data) return null;
 
         // Collision check using projected areas of pre-terminal, cleft, and post-terminal
-        const prePos = (window as any).GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
-        const postPos = (window as any).GreenhouseModels3DMath.project3DTo2D(0, 150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
-        const cleftPos = (window as any).GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+        const prePos = GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+        const postPos = GreenhouseModels3DMath.project3DTo2D(0, 150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+        const cleftPos = GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
 
         // Pre-Terminal (-200 range)
         const preDist = prePos.scale > 0 ? Math.sqrt(Math.pow(prePos.x - x, 2) + Math.pow(prePos.y - y, 2)) : Infinity;

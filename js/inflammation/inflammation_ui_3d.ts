@@ -1,8 +1,17 @@
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
+import { GreenhouseInflammationGeometry } from './inflammation_geometry.js';
+import { GreenhouseInflammationMacro } from './inflammation_macro.js';
+import { GreenhouseInflammationMicro } from './inflammation_micro.js';
+import { GreenhouseInflammationMolecular } from './inflammation_molecular.js';
+import { GreenhouseInflammationPathway } from './inflammation_pathway.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file inflammation_ui_3d.js
  * @description Coordinate 3D Visualization components; delegates to specialized mode modules.
  */
 
+var _exported_GreenhouseInflammationUI3D: any;
 (function () {
     'use strict';
 
@@ -24,8 +33,8 @@
 
         init(app) {
             this.app = app;
-            if (window.GreenhouseBrainMeshRealistic) {
-                this.brainShell = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            if (GreenhouseBrainMeshRealistic) {
+                this.brainShell = GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 this.originalRegionColors = {};
                 for (const key in this.brainShell.regions) {
                     const region = this.brainShell.regions[key];
@@ -39,9 +48,9 @@
                         region.centroid = { x: cx / region.vertices.length, y: cy / region.vertices.length, z: cz / region.vertices.length };
                     }
                 }
-            } else if (window.GreenhouseInflammationGeometry) {
+            } else if (GreenhouseInflammationGeometry) {
                 this.brainShell = { vertices: [], faces: [] };
-                window.GreenhouseInflammationGeometry.initializeBrainShell(this.brainShell);
+                GreenhouseInflammationGeometry.initializeBrainShell(this.brainShell);
                 this.originalRegionColors = {};
                 if (this.brainShell.regions) {
                     for (const key in this.brainShell.regions) {
@@ -65,13 +74,13 @@
 
         async loadPathways() {
             try {
-                const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata(this.app.baseUrl);
+                const data = await GreenhouseModelsUtil.PathwayService.loadMetadata(this.app.baseUrl);
                 this.availablePathways = data.pathways;
                 // Pre-load default pathway for inflammation
                 await this.fetchPathway('tryptophan');
             } catch (e) {
                 console.error("Inflammation UI: Failed to load pathway metadata", e);
-                if (window.GreenhouseInflammationPathway) window.GreenhouseInflammationPathway.error = "Metadata Load Failed";
+                if (GreenhouseInflammationPathway) GreenhouseInflammationPathway.error = "Metadata Load Failed";
             }
         },
 
@@ -84,7 +93,7 @@
             }
             const meta = this.availablePathways ? this.availablePathways.find(p => p.id === id) : null;
             if (!meta) {
-                if (window.GreenhouseInflammationPathway) window.GreenhouseInflammationPathway.error = "Pathway Not Found: " + id;
+                if (GreenhouseInflammationPathway) GreenhouseInflammationPathway.error = "Pathway Not Found: " + id;
                 return;
             }
 
@@ -93,37 +102,37 @@
                 return;
             }
 
-            if (window.GreenhouseInflammationPathway) {
-                window.GreenhouseInflammationPathway.isLoading = true;
-                window.GreenhouseInflammationPathway.error = null;
+            if (GreenhouseInflammationPathway) {
+                GreenhouseInflammationPathway.isLoading = true;
+                GreenhouseInflammationPathway.error = null;
             }
 
             let data;
             try {
                 if (meta.source.endsWith('.json')) {
-                    data = await window.GreenhouseModelsUtil.PathwayService.loadJSONPathway(meta.source, this.app.baseUrl);
+                    data = await GreenhouseModelsUtil.PathwayService.loadJSONPathway(meta.source, this.app.baseUrl);
                     if (data) {
                         // JSON format might already have compartments/nodes
                         this.pathwayCache[id] = data;
                         this.currentPathwayNodes = data.nodes || data.compartments;
                         this.currentPathwayEdges = data.edges || data.reactions;
                         this.currentPathwayId = id;
-                        if (window.GreenhouseInflammationPathway) window.GreenhouseInflammationPathway.isLoading = false;
+                        if (GreenhouseInflammationPathway) GreenhouseInflammationPathway.isLoading = false;
                         return;
                     }
                 } else {
-                    data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, this.app.baseUrl);
+                    data = await GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, this.app.baseUrl);
                 }
             } catch (e) {
                 console.error(`Inflammation UI: Error fetching pathway ${id}`, e);
-                if (window.GreenhouseInflammationPathway) {
-                    window.GreenhouseInflammationPathway.isLoading = false;
-                    window.GreenhouseInflammationPathway.error = "Fetch Failed";
+                if (GreenhouseInflammationPathway) {
+                    GreenhouseInflammationPathway.isLoading = false;
+                    GreenhouseInflammationPathway.error = "Fetch Failed";
                 }
                 return;
             }
 
-            if (window.GreenhouseInflammationPathway) window.GreenhouseInflammationPathway.isLoading = false;
+            if (GreenhouseInflammationPathway) GreenhouseInflammationPathway.isLoading = false;
 
             if (data) {
                 const nodesWithPos = data.nodes.map((n, i) => {
@@ -157,19 +166,19 @@
         },
 
         initMicroData() {
-            if (!window.GreenhouseInflammationGeometry) return;
+            if (!GreenhouseInflammationGeometry) return;
             this.neurons = [];
             for (let i = 0; i < 6; i++) {
                 const p1 = { x: -250 + i * 100, y: -150 + Math.random() * 100, z: (Math.random() - 0.5) * 200 };
                 const p2 = { x: -250 + i * 100, y: 150 - Math.random() * 100, z: (Math.random() - 0.5) * 200 };
                 const cp = { x: p1.x + (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 50, z: (Math.random() - 0.5) * 100 };
-                const mesh = window.GreenhouseInflammationGeometry.generateTubeMesh(p1, p2, cp, 4, 12);
+                const mesh = GreenhouseInflammationGeometry.generateTubeMesh(p1, p2, cp, 4, 12);
                 this.neurons.push({ p1, p2, cp, mesh, baseColor: '#A0AEC0' });
             }
             this.glia = [];
             for (let i = 0; i < 15; i++) {
                 const type = Math.random() > 0.4 ? 'astrocyte' : 'microglia';
-                const mesh = window.GreenhouseInflammationGeometry.generateGliaMesh(type, 0.5 + Math.random() * 0.5);
+                const mesh = GreenhouseInflammationGeometry.generateGliaMesh(type, 0.5 + Math.random() * 0.5);
                 this.glia.push({
                     x: (Math.random() - 0.5) * 600, y: (Math.random() - 0.5) * 500, z: (Math.random() - 0.5) * 400,
                     rotationX: Math.random() * Math.PI, rotationY: Math.random() * Math.PI,
@@ -204,8 +213,8 @@
                 const n1 = this.neurons[a.from];
                 const n2 = this.neurons[a.to];
                 // Detailed 3D Synapse (Pre and Post)
-                const preMesh = window.GreenhouseInflammationGeometry.createSynapseGeometry(15, 8, 'pre');
-                const postMesh = window.GreenhouseInflammationGeometry.createSynapseGeometry(18, 8, 'post');
+                const preMesh = GreenhouseInflammationGeometry.createSynapseGeometry(15, 8, 'pre');
+                const postMesh = GreenhouseInflammationGeometry.createSynapseGeometry(18, 8, 'post');
                 this.synapses.push({
                     x: n2.p1.x, y: n2.p1.y, z: n2.p1.z,
                     preMesh, postMesh,
@@ -222,7 +231,7 @@
 
         initMolecularData() {
             this.molecules = [];
-            const Geo = window.GreenhouseInflammationGeometry;
+            const Geo = GreenhouseInflammationGeometry;
             for (let i = 0; i < 25; i++) { // Significantly reduced for structural focus
                 const typeRoll = Math.random();
                 let type = 'ion';
@@ -279,16 +288,16 @@
                 if (this.currentPathwayId !== activePathId) {
                     this.fetchPathway(activePathId);
                 }
-                if (window.GreenhouseInflammationPathway) {
-                    window.GreenhouseInflammationPathway.render(ctx, state, camera, projection, this);
+                if (GreenhouseInflammationPathway) {
+                    GreenhouseInflammationPathway.render(ctx, state, camera, projection, this);
                 }
-            } else if (viewMode === 'macro' && window.GreenhouseInflammationMacro) {
-                window.GreenhouseInflammationMacro.render(ctx, state, camera, projection, this);
+            } else if (viewMode === 'macro' && GreenhouseInflammationMacro) {
+                GreenhouseInflammationMacro.render(ctx, state, camera, projection, this);
                 this.drawRegionConfidence(ctx, state, camera, projection);
-            } else if (viewMode === 'micro' && window.GreenhouseInflammationMicro) {
-                window.GreenhouseInflammationMicro.render(ctx, state, camera, projection, this);
-            } else if (viewMode === 'molecular' && window.GreenhouseInflammationMolecular) {
-                window.GreenhouseInflammationMolecular.render(ctx, state, camera, projection, this);
+            } else if (viewMode === 'micro' && GreenhouseInflammationMicro) {
+                GreenhouseInflammationMicro.render(ctx, state, camera, projection, this);
+            } else if (viewMode === 'molecular' && GreenhouseInflammationMolecular) {
+                GreenhouseInflammationMolecular.render(ctx, state, camera, projection, this);
                 if (state.factors.showBridgeOverlay) this.drawMolecularToMicroBridge(ctx, state, projection);
             }
         },
@@ -310,7 +319,7 @@
         },
 
         checkHover(mx, my, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const viewModeVal = this.app.engine.state.factors.viewMode || 0;
             const viewMode = ['macro', 'micro', 'molecular'][Math.round(viewModeVal)];
 
@@ -360,7 +369,7 @@
                     if (region.centroid) {
                         const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
                         const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
-                        if (dist < 50 * p.scale && p.depth < 0.7) return { id: 'brain_region', label: region.name, description: window.GreenhouseModelsUtil ? (window.GreenhouseModelsUtil.getRegionDescription(key) || 'Functional brain region.') : 'Brain Region', type: '3d' };
+                        if (dist < 50 * p.scale && p.depth < 0.7) return { id: 'brain_region', label: region.name, description: GreenhouseModelsUtil ? (GreenhouseModelsUtil.getRegionDescription(key) || 'Functional brain region.') : 'Brain Region', type: '3d' };
                     }
                 }
             }
@@ -368,7 +377,7 @@
         },
 
         drawRegionConfidence(ctx, state, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             if (!this.brainShell || !this.brainShell.regions) return;
 
             ctx.save();
@@ -405,5 +414,8 @@
         }
     };
 
-    window.GreenhouseInflammationUI3D = GreenhouseInflammationUI3D;
+    _exported_GreenhouseInflammationUI3D = GreenhouseInflammationUI3D;
 })();
+
+
+export var GreenhouseInflammationUI3D = _exported_GreenhouseInflammationUI3D;

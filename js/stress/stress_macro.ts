@@ -1,3 +1,6 @@
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseStressConfig } from './stress_config.js';
 /**
  * @file stress_macro.js
  * @description Macro-level (Brain) rendering logic for the Stress Dynamics Simulation.
@@ -5,10 +8,11 @@
  * Phase 3: Added Aura Metrics (Static), Dynamic Probes (Waveforms), and Contextual Zoom.
  */
 
+var _exported_GreenhouseStressMacro: any;
 (function () {
     'use strict';
 
-    const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => (GreenhouseModelsUtil && GreenhouseModelsUtil.t) ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressMacro = {
         orbitalRotation: 0,
@@ -20,7 +24,7 @@
         render(ctx, state, camera, projection, ui3d) {
             if (!ui3d.brainShell) return;
 
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const intensity = state.factors.stressorIntensity || 0;
             const load = state.metrics.allostaticLoad || 0;
 
@@ -93,7 +97,7 @@
         },
 
         drawGeneticScaffold(ctx, state, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const hasVariant = state.factors.comtValMet || state.factors.serotoninTransporter || state.factors.fkbp5Variant;
             if (!hasVariant) return;
 
@@ -148,7 +152,7 @@
         },
 
         drawSystemicFlow(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const hypothalamus = ui3d.brainShell.regions.hypothalamus.centroid || { x: 0, y: 0, z: 0 };
             const load = state.metrics.allostaticLoad || 0;
 
@@ -180,7 +184,7 @@
         },
 
         drawMentalHealthFactors(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const factors = state.factors;
             const activeFactors = Object.keys(factors).filter(k => factors[k] === 1 && k !== 'viewMode');
             const renderedLabels = [];
@@ -227,8 +231,8 @@
                     ctx.beginPath(); ctx.arc(p.x, p.y, (isHovered ? 8 : 5) * p.scale, 0, Math.PI * 2); ctx.fill();
                     ctx.shadowBlur = 0;
 
-                    const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
-                    const config = window.GreenhouseStressConfig;
+                    const t = (k) => (GreenhouseModelsUtil && GreenhouseModelsUtil.t) ? GreenhouseModelsUtil.t(k) : k;
+                    const config = GreenhouseStressConfig;
                     const factorMeta = config ? config.factors.find(f => f.id === fid) : null;
                     const label = factorMeta ? t(factorMeta.label) : fid.toUpperCase().replace(/([A-Z])/g, ' $1');
 
@@ -261,7 +265,7 @@
         },
 
         drawEliteBrain(ctx, shell, camera, projection, stressIntensity, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const hovered = ui3d.app.ui.hoveredElement;
             const lightDir = { x: 0.7, y: -0.6, z: 1.0 };
             const len = Math.sqrt(lightDir.x ** 2 + lightDir.y ** 2 + lightDir.z ** 2);
@@ -341,7 +345,7 @@
         },
 
         drawNeuralSparks(ctx, shell, camera, projection, intensity) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
 
             // Seed new sparks in active regions
             for (const key in shell.regions) {
@@ -386,7 +390,7 @@
         },
 
         drawVascularPulse(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const autonomic = state.metrics.autonomicBalance || 0;
             const intensity = state.factors.stressorIntensity || 0;
 
@@ -423,7 +427,7 @@
         },
 
         drawHUDLabels(ctx, ui3d, camera, projection, state) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const camForward = {
                 x: Math.sin(camera.rotationY) * Math.cos(camera.rotationX),
                 y: Math.sin(camera.rotationX),
@@ -554,5 +558,8 @@
         }
     };
 
-    window.GreenhouseStressMacro = GreenhouseStressMacro;
+    _exported_GreenhouseStressMacro = GreenhouseStressMacro;
 })();
+
+
+export var GreenhouseStressMacro = _exported_GreenhouseStressMacro;

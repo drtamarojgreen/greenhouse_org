@@ -1,3 +1,4 @@
+var _exported_GreenhouseNeuroConfig: any;
 "use strict";
 // docs/js/neuro_config.js
 // Modular Configuration System for Neuro Simulation
@@ -332,5 +333,8 @@
             }
         }
     };
-    window.GreenhouseNeuroConfig = GreenhouseNeuroConfig;
+    _exported_GreenhouseNeuroConfig = GreenhouseNeuroConfig;
 })();
+
+
+export var GreenhouseNeuroConfig = _exported_GreenhouseNeuroConfig;

@@ -1,6 +1,8 @@
+import { GreenhouseGeneticConfig } from './genetic_config.js';
 // docs/js/genetic/genetic_lighting.js
 // Enhanced PBR-lite Lighting System for Realistic 3D Rendering
 
+var _exported_GreenhouseGeneticLighting: any;
 (function () {
     'use strict';
 
@@ -9,7 +11,7 @@
         lights: [],
 
         init(config) {
-            this.config = config || window.GreenhouseGeneticConfig;
+            this.config = config || GreenhouseGeneticConfig;
             this.setupLights();
             console.log('GeneticLighting: PBR-lite System initialized');
         },
@@ -135,5 +137,8 @@
         }
     };
 
-    window.GreenhouseGeneticLighting = GreenhouseGeneticLighting;
+    _exported_GreenhouseGeneticLighting = GreenhouseGeneticLighting;
 })();
+
+
+export var GreenhouseGeneticLighting = _exported_GreenhouseGeneticLighting;

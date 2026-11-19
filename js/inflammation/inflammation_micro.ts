@@ -1,15 +1,18 @@
+import { GreenhouseInflammationApp } from './inflammation_app.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 /**
  * @file inflammation_micro.js
  * @description Scientifically precise micro-level simulation.
  * Visualizes the Neurovascular Unit (NVU), BBB infiltration, and phenotypic glial states.
  */
 
+var _exported_GreenhouseInflammationMicro: any;
 (function () {
     'use strict';
 
     const GreenhouseInflammationMicro = {
         render(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const tone = state.metrics.inflammatoryTone || 0;
             const bbb = state.metrics.bbbIntegrity || 1.0;
             const activation = state.metrics.microgliaActivation || 0;
@@ -100,7 +103,7 @@
         },
 
         drawVolumeBoundingBox(ctx, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const size = 600;
             const corners = [
                 {x:-size, y:-size, z:-size}, {x:size, y:-size, z:-size}, {x:size, y:size, z:-size}, {x:-size, y:size, z:-size},
@@ -159,7 +162,7 @@
         },
 
         drawNeuron(ctx, n, camera, projection, tone) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             ctx.beginPath();
             // Item 57: Improve neuron visual encoding (color + thickness)
             ctx.strokeStyle = tone > 0.5 ? `rgba(224, 224, 224, ${0.4 * (1 - tone)})` : `rgba(160, 174, 192, ${0.3 * (1 - tone)})`;
@@ -218,7 +221,7 @@
             });
 
             // Receptors (Item 50)
-            if (window.GreenhouseInflammationApp.engine.state.factors.showReceptors && g.receptors) {
+            if (GreenhouseInflammationApp.engine.state.factors.showReceptors && g.receptors) {
                 g.receptors.forEach(r => {
                     ctx.save();
                     ctx.rotate(r.angle + Date.now() * 0.001);
@@ -303,5 +306,8 @@
         }
     };
 
-    window.GreenhouseInflammationMicro = GreenhouseInflammationMicro;
+    _exported_GreenhouseInflammationMicro = GreenhouseInflammationMicro;
 })();
+
+
+export var GreenhouseInflammationMicro = _exported_GreenhouseInflammationMicro;

@@ -1,12 +1,21 @@
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseNeuroGeometry } from '../neuro/neuro_ui_3d_geometry.js';
+import { GreenhouseStressGeometry } from './stress_geometry.js';
+import { GreenhouseStressMacro } from './stress_macro.js';
+import { GreenhouseStressPathway } from './stress_pathway.js';
+import { GreenhouseStressSystemic } from './stress_systemic.js';
 /**
  * @file stress_ui_3d.js
  * @description Coordinate 3D Visualization components for Stress; delegates to specialized mode modules.
  */
 
+var _exported_GreenhouseStressUI3D: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressUI3D = {
         brainShell: null,
@@ -20,8 +29,8 @@
         init(app) {
             this.app = app;
             // Initialize Brain Shell for Macro View
-            if (window.GreenhouseBrainMeshRealistic) {
-                this.brainShell = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            if (GreenhouseBrainMeshRealistic) {
+                this.brainShell = GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 this.originalRegionColors = {};
                 for (const key in this.brainShell.regions) {
                     const region = this.brainShell.regions[key];
@@ -39,9 +48,9 @@
                         };
                     }
                 }
-            } else if (window.GreenhouseStressGeometry) {
+            } else if (GreenhouseStressGeometry) {
                 this.brainShell = { vertices: [], faces: [] };
-                window.GreenhouseStressGeometry.initializeBrainShell(this.brainShell);
+                GreenhouseStressGeometry.initializeBrainShell(this.brainShell);
 
                 // Cache original colors and calculate centroids
                 this.originalRegionColors = {};
@@ -67,7 +76,7 @@
             }
 
             // Initialize HPA Pathway nodes with meshes and regulators
-            const Geo = window.GreenhouseNeuroGeometry;
+            const Geo = GreenhouseNeuroGeometry;
             this.hpaNodes = [
                 { id: 'pfc', label: 'label_pfc', x: -80, y: 180, z: 20, color: '#E0E0E0', type: 'regulator', function: 'inhibitor', mesh: Geo.generateSphere(28, 12) },
                 { id: 'amygdala', label: 'label_amygdala', x: 80, y: 150, z: 0, color: '#A0AEC0', type: 'regulator', function: 'excitor', mesh: Geo.generateSphere(16, 12) },
@@ -83,8 +92,8 @@
 
         async loadPathways() {
             const baseUrl = (this.app && this.app.baseUrl) ? this.app.baseUrl : '';
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata(baseUrl);
-            this.availablePathways = data.pathways;
+            const data = await GreenhouseModelsUtil.PathwayService.loadMetadata(baseUrl);
+            this.availablePathways = (data && data.pathways) || [];
             // Pre-load HPA for seamless start
             await this.fetchPathway('hpa');
         },
@@ -109,7 +118,7 @@
             }
 
             const baseUrl = (this.app && this.app.baseUrl) ? this.app.baseUrl : '';
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, baseUrl);
+            const data = await GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, baseUrl);
 
             if (data) {
                 // Standardize node fields (already mapped by PathwayService.loadPathway/parseReactomeJSON)
@@ -184,18 +193,18 @@
                 if (this.currentPathwayId !== activePathId) {
                     this.fetchPathway(activePathId);
                 }
-                if (window.GreenhouseStressPathway) {
-                    window.GreenhouseStressPathway.render(ctx, state, camera, projection, this);
+                if (GreenhouseStressPathway) {
+                    GreenhouseStressPathway.render(ctx, state, camera, projection, this);
                 }
-            } else if (viewMode === 'macro' && window.GreenhouseStressMacro) {
-                window.GreenhouseStressMacro.render(ctx, state, camera, projection, this);
-            } else if (viewMode === 'systemic' && window.GreenhouseStressSystemic) {
-                window.GreenhouseStressSystemic.render(ctx, state, camera, projection, this);
+            } else if (viewMode === 'macro' && GreenhouseStressMacro) {
+                GreenhouseStressMacro.render(ctx, state, camera, projection, this);
+            } else if (viewMode === 'systemic' && GreenhouseStressSystemic) {
+                GreenhouseStressSystemic.render(ctx, state, camera, projection, this);
             }
         },
 
         checkHover(mx, my, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             if (!Math3D) return null;
 
             const viewModeVal = this.app.engine.state.factors.viewMode || 0;
@@ -221,8 +230,8 @@
                     }
                 }
             } else if (viewMode === 'systemic') {
-                if (window.GreenhouseStressSystemic && window.GreenhouseStressSystemic.checkHit) {
-                    const hit = window.GreenhouseStressSystemic.checkHit(mx, my, camera, projection);
+                if (GreenhouseStressSystemic && GreenhouseStressSystemic.checkHit) {
+                    const hit = GreenhouseStressSystemic.checkHit(mx, my, camera, projection);
                     if (hit) return hit;
                 }
                 // Fallback / Crystal Check
@@ -236,5 +245,8 @@
         }
     };
 
-    window.GreenhouseStressUI3D = GreenhouseStressUI3D;
+    _exported_GreenhouseStressUI3D = GreenhouseStressUI3D;
 })();
+
+
+export var GreenhouseStressUI3D = _exported_GreenhouseStressUI3D;

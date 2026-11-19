@@ -1,3 +1,5 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 /**
  * @file neuro_ui_3d_neuron.ts
  * @description Anatomically correct 3D Neuron rendering for Neuro simulation.
@@ -10,7 +12,7 @@ export const GreenhouseNeuroNeuron = {
 
     drawNeuron(ctx: CanvasRenderingContext2D, neuron: any, camera: Greenhouse.Camera, projection: Greenhouse.Projection, colorOverride?: string, pulseFreq: number = 0.005, isHovered: boolean = false): void {
         // Project Center for LOD and Culling
-        const p = (window as any).GreenhouseModels3DMath.project3DTo2D(neuron.x, neuron.y, neuron.z, camera, projection);
+        const p = GreenhouseModels3DMath.project3DTo2D(neuron.x, neuron.y, neuron.z, camera, projection);
         if (p.scale <= 0) return;
 
         const pyramidalRegions = ['pfc', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'hippocampus'];
@@ -80,7 +82,7 @@ export const GreenhouseNeuroNeuron = {
         });
 
         const projected = transformedVertices.map(v =>
-            (window as any).GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
+            GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
         );
 
         const facesWithDepth = mesh.faces.map(face => {
@@ -105,7 +107,7 @@ export const GreenhouseNeuroNeuron = {
         facesWithDepth.forEach(({ vertices, origVertices, depth }) => {
             const [v1, v2, v3] = vertices;
             const [ov1, ov2, ov3] = origVertices;
-            const alpha = (window as any).GreenhouseModels3DMath.applyDepthFog(1, depth);
+            const alpha = GreenhouseModels3DMath.applyDepthFog(1, depth);
 
             const dx1 = v2.x - v1.x;
             const dy1 = v2.y - v1.y;
@@ -177,7 +179,7 @@ export const GreenhouseNeuroNeuron = {
     },
 
     drawLODIcon(ctx: CanvasRenderingContext2D, p: any, neuron: any, type: string, colorOverride?: string) {
-        const alpha = (window as any).GreenhouseModels3DMath.applyDepthFog(0.6, p.depth);
+        const alpha = GreenhouseModels3DMath.applyDepthFog(0.6, p.depth);
         const size = 3 * p.scale;
 
         const colorStr = colorOverride || neuron.baseColor || '#ffffff';

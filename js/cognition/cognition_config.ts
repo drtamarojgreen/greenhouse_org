@@ -4,6 +4,7 @@
  * Focuses on the Cerebral Cortex and Executive Functions.
  */
 
+var _exported_GreenhouseCognitionConfig: any;
 (function () {
     'use strict';
 
@@ -326,5 +327,8 @@
         ]
     };
 
-    window.GreenhouseCognitionConfig = GreenhouseCognitionConfig;
+    _exported_GreenhouseCognitionConfig = GreenhouseCognitionConfig;
 })();
+
+
+export var GreenhouseCognitionConfig = _exported_GreenhouseCognitionConfig;

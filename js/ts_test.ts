@@ -3,18 +3,15 @@
  * @description A simple TypeScript file to verify TS integration with the Greenhouse environment.
  */
 
-interface Window {
-    GreenhouseUtils: any;
-    GreenhouseTSTest: any;
-}
+import { GreenhouseUtils } from './GreenhouseUtils.js';
 
 const GreenhouseTSTest = {
     init: function(): void {
         console.log('TS Test: Initializing.');
         const msg = 'typescript successful';
 
-        if ((window as any).GreenhouseUtils && typeof (window as any).GreenhouseUtils.displaySuccess === 'function') {
-            (window as any).GreenhouseUtils.displaySuccess(msg, 30000); // 30s duration for visibility
+        if (GreenhouseUtils && typeof GreenhouseUtils.displaySuccess === 'function') {
+            GreenhouseUtils.displaySuccess(msg, 30000); // 30s duration for visibility
         }
 
         // Always append a persistent element for robust verification
@@ -45,5 +42,8 @@ const GreenhouseTSTest = {
     }
 };
 
-(window as any).GreenhouseTSTest = GreenhouseTSTest;
-GreenhouseTSTest.init();
+if (typeof document !== 'undefined') {
+    GreenhouseTSTest.init();
+}
+
+export { GreenhouseTSTest };

@@ -1,3 +1,8 @@
+import { GreenhouseGeneticConfig } from './genetic_config.js';
+import { GreenhouseGeneticLighting } from './genetic_lighting.js';
+import { GreenhouseGeneticGeometry } from './genetic_ui_3d_geometry.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+var _exported_GreenhouseGeneticChromosome: any;
 (function () {
     'use strict';
 
@@ -27,12 +32,12 @@
                 };
             }
 
-            const config = window.GreenhouseGeneticConfig;
-            const lighting = window.GreenhouseGeneticLighting;
+            const config = GreenhouseGeneticConfig;
+            const lighting = GreenhouseGeneticLighting;
 
             // Generate or Retrieve Chromosome Mesh
-            if (!this.chromosomeMesh && window.GreenhouseGeneticGeometry) {
-                this.chromosomeMesh = window.GreenhouseGeneticGeometry.generateChromosomeMesh();
+            if (!this.chromosomeMesh && GreenhouseGeneticGeometry) {
+                this.chromosomeMesh = GreenhouseGeneticGeometry.generateChromosomeMesh();
             }
 
             if (this.chromosomeMesh) {
@@ -170,5 +175,8 @@
         }
     };
 
-    window.GreenhouseGeneticChromosome = GreenhouseGeneticChromosome;
+    _exported_GreenhouseGeneticChromosome = GreenhouseGeneticChromosome;
 })();
+
+
+export var GreenhouseGeneticChromosome = _exported_GreenhouseGeneticChromosome;

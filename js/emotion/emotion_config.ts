@@ -5,6 +5,7 @@
  * Focuses on the Limbic System and its role in emotional processing.
  */
 
+var _exported_GreenhouseEmotionConfig: any;
 (function () {
     'use strict';
 
@@ -166,5 +167,8 @@
         ]
     };
 
-    window.GreenhouseEmotionConfig = GreenhouseEmotionConfig;
+    _exported_GreenhouseEmotionConfig = GreenhouseEmotionConfig;
 })();
+
+
+export var GreenhouseEmotionConfig = _exported_GreenhouseEmotionConfig;

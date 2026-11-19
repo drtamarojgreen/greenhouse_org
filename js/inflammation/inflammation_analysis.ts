@@ -1,9 +1,11 @@
+import { GreenhouseInflammationApp } from './inflammation_app.js';
 /**
  * @file inflammation_analysis.js
  * @description Advanced analytical features for the Neuroinflammation Simulation.
  * Implements Matrix View, Temporal Summaries, and Data Export.
  */
 
+var _exported_GreenhouseInflammationAnalysis: any;
 (function () {
     'use strict';
 
@@ -115,8 +117,8 @@
             });
 
             // Item 77: Hover scrub
-            const mx = window.GreenhouseInflammationApp.interaction.mouseX;
-            const my = window.GreenhouseInflammationApp.interaction.mouseY;
+            const mx = GreenhouseInflammationApp.interaction.mouseX;
+            const my = GreenhouseInflammationApp.interaction.mouseY;
             if (mx >= x && mx <= x + 140 && my >= y && my <= y + 80) {
                 const scrubIdx = Math.floor(((mx - x) / 140) * Math.min(this.history.timestamp.length, this.timelineWindow));
                 const actualIdx = Math.max(0, this.history.timestamp.length - Math.min(this.history.timestamp.length, this.timelineWindow) + scrubIdx);
@@ -204,5 +206,8 @@
         }
     };
 
-    window.GreenhouseInflammationAnalysis = GreenhouseInflammationAnalysis;
+    _exported_GreenhouseInflammationAnalysis = GreenhouseInflammationAnalysis;
 })();
+
+
+export var GreenhouseInflammationAnalysis = _exported_GreenhouseInflammationAnalysis;

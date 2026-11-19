@@ -1,3 +1,8 @@
+import { Greenhouse, GreenhouseDNARepair } from './context.js';
+import { GreenhouseDNATooltip } from './dna/dna_tooltip.js';
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhouseModels3DMath } from './models_3d_math.js';
+import { GreenhouseModelsUtil } from './models_util.js';
 // [TypeScript Migration] Source migrated from dna_repair.js — behavior preserved.
 // docs/js/dna_repair_global.js
 // DNA Repair Simulation Module - Core Engine
@@ -5,31 +10,13 @@
 
 (async function () {
     'use strict';
-
-    let GreenhouseUtils;
     let resilienceObserver = null;
 
     // Ensure GreenhouseUtils is loaded before proceeding
-    const loadDependencies = async () => {
-        await new Promise<void>((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 240; // 12 seconds
-            const interval = setInterval(() => {
-                if (window.GreenhouseUtils) {
-                    clearInterval(interval);
-                    GreenhouseUtils = window.GreenhouseUtils;
-                    resolve();
-                } else if (attempts++ >= maxAttempts) {
-                    clearInterval(interval);
-                    reject(new Error('GreenhouseUtils load timeout'));
-                }
-            }, 50);
-        });
-    };
+    const loadDependencies = async () => {};
 
     // Use existing object if defined (by mechanisms, mutations, or buttons scripts)
-    const G = window.GreenhouseDNARepair || {};
-    (window as any).GreenhouseDNARepair = G;
+    const G = GreenhouseDNARepair;
 
     // Define Core Properties and Methods
     Object.assign(G, {
@@ -77,7 +64,7 @@
             wrapper.style.position = 'relative'; wrapper.style.backgroundColor = '#101015';
             container.appendChild(wrapper);
 
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
             if (this.createUI) this.createUI(wrapper);
 
             if (isMobile) {
@@ -102,16 +89,16 @@
             });
 
             this.generateDNA();
-            if (window.GreenhouseDNATooltip) window.GreenhouseDNATooltip.initialize();
+            if (GreenhouseDNATooltip) GreenhouseDNATooltip.initialize();
 
             this.isRunning = true;
             this.startSimulation('ber');
             this.animate();
 
             // Resilience using shared GreenhouseUtils
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'initializeDNARepairSimulation');
-                window.GreenhouseUtils.startSentinel(container, selector, this, 'initializeDNARepairSimulation');
+            if (GreenhouseUtils) {
+                GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'initializeDNARepairSimulation');
+                GreenhouseUtils.startSentinel(container, selector, this, 'initializeDNARepairSimulation');
             }
         },
 
@@ -139,7 +126,7 @@
         },
 
         refreshUIText() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             this.startSimulation(this.state.repairMode); // This updates currentModeText
             this.updateStats();
             const langBtn = document.getElementById('dna-lang-toggle');
@@ -147,7 +134,7 @@
         },
 
         updateStats() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             const counter = document.getElementById('dna-atp-counter');
             if (counter) counter.innerText = `${t('atp_consumed')}: ${Math.floor(this.state.atpConsumed)}`;
             const integrity = document.getElementById('dna-integrity-stat');
@@ -162,7 +149,7 @@
 
 
         startSimulation(mode) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             this.state.repairMode = mode;
             this.state.timer = 0; this.state.atpConsumed = 0;
             this.state.simulating = true; this.state.particles = [];
@@ -201,11 +188,11 @@
             this.canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
             window.addEventListener('mousemove', (e) => {
                 if (isDragging) { const dx = e.clientX - lastX; const dy = e.clientY - lastY; this.state.camera.rotationX += dy * 0.005; this.state.camera.x -= dx * 2; lastX = e.clientX; lastY = e.clientY; return; }
-                if (window.GreenhouseDNATooltip) {
+                if (GreenhouseDNATooltip) {
                     const rect = this.canvas.getBoundingClientRect();
                     const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
                     let hit = null; const cam = this.state.camera;
-                    const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+                    const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
                     for (let i = 0; i < this.state.basePairs.length; i++) {
                         const pair = this.state.basePairs[i]; if (pair.isBroken) continue;
                         const s1Y = Math.cos(pair.angle) * this.config.radius + pair.offsetY; const s1Z = Math.sin(pair.angle) * this.config.radius;
@@ -225,7 +212,7 @@
         animate() { if (!this.isRunning) return; this.update(); this.render(); requestAnimationFrame(() => this.animate()); },
 
         update() {
-            const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+            const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             const st = this.state; st.camera.rotationX += 0.005;
             if (st.simulating) {
                 st.timer++;
@@ -258,7 +245,7 @@
         render() {
             const ctx = this.ctx; const w = this.width; const h = this.height; const cam = this.state.camera;
             ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#101015'; ctx.fillRect(0, 0, w, h);
-            const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+            const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
             const radius = this.config.radius * (1 + (this.state.globalHelixUnwind || 0) * 1.5);
             const rotS = 1 - (this.state.globalHelixUnwind || 0) * 0.8;
             for (let i = 0; i < this.state.basePairs.length; i++) {
@@ -377,13 +364,11 @@
             ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'right'; ctx.fillText(this.currentModeText || '', w - 20, 30);
         }
     });
-
-    (window as any).Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeDNARepairSimulation = function (selector) { const container = document.querySelector(selector); if (container) G.initializeDNARepairSimulation(container); };
-    window.Greenhouse.setDNASimulationMode = function (mode) { G.startSimulation(mode); };
+    Greenhouse.initializeDNARepairSimulation = function (selector) { const container = document.querySelector(selector); if (container) G.initializeDNARepairSimulation(container); };
+    Greenhouse.setDNASimulationMode = function (mode) { G.startSimulation(mode); };
 
     function captureAttributes() {
-        if (window._greenhouseScriptAttributes) return { targetSelector: window._greenhouseScriptAttributes['target-selector-left'], baseUrl: window._greenhouseScriptAttributes['base-url'] };
+        if ((window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#dna-app-container', 'base-url': '/', 'target-selector-left': '#dna-app-container' })) return { targetSelector: (window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#dna-app-container', 'base-url': '/', 'target-selector-left': '#dna-app-container' })['target-selector-left'], baseUrl: (window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#dna-app-container', 'base-url': '/', 'target-selector-left': '#dna-app-container' })['base-url'] };
         const script = document.currentScript;
         if (script) return { targetSelector: script.getAttribute('data-target-selector-left'), baseUrl: script.getAttribute('data-base-url') };
         return { targetSelector: null, baseUrl: null };
@@ -391,21 +376,21 @@
 
     async function main() {
         try {
-            await loadDependencies();
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./dna/dna_repair_mechanisms.js');
+            await import('./dna/dna_repair_mutations.js');
+            await import('./dna/dna_repair_buttons.js');
+            await import('./dna/dna_replication.js');
+            await import('./models_3d_math.js');
+            await import('./dna/dna_tooltip.js');
+            
             const { targetSelector, baseUrl: attrBaseUrl } = captureAttributes();
             const baseUrl = attrBaseUrl || './';
             if (baseUrl !== null) {
                 // Load modular simulation components
-                await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-                await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna/dna_repair_mechanisms.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna/dna_repair_mutations.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna/dna_repair_buttons.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna/dna_replication.js', baseUrl);
 
                 // Load core dependencies
-                await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna/dna_tooltip.js', baseUrl);
             }
             if (targetSelector) {
                 const container = await GreenhouseUtils.waitForElement(targetSelector);

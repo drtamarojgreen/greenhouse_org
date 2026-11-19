@@ -1,7 +1,10 @@
+import { GreenhouseGeneticConfig } from './genetic_config.js';
 // docs/js/genetic_camera_controls.js
 // Enhanced Camera Controls for Genetic Simulation
 // Refactored to Class for multiple instances (Main View + PiPs)
 
+var _exported_GreenhouseGeneticCameraController: any;
+var _exported_GreenhouseGeneticCameraControls: any;
 (function () {
     'use strict';
 
@@ -9,7 +12,7 @@
         [key: string]: any;
         constructor(camera, config) {
             this.camera = camera;
-            this.config = config || window.GreenhouseGeneticConfig;
+            this.config = config || GreenhouseGeneticConfig;
 
             // State
             this.isDragging = false;
@@ -454,11 +457,16 @@
     }
 
     // Export Class
-    window.GreenhouseGeneticCameraController = GeneticCameraController;
+    _exported_GreenhouseGeneticCameraController = GeneticCameraController;
 
     // Backward compatibility singleton (optional, but good for safety)
-    window.GreenhouseGeneticCameraControls = {
+    _exported_GreenhouseGeneticCameraControls = {
         // This is a placeholder or we can instantiate one if needed immediately
         // But better to let the UI instantiate it.
     };
 })();
+
+
+export var GreenhouseGeneticCameraController = _exported_GreenhouseGeneticCameraController;
+
+export var GreenhouseGeneticCameraControls = _exported_GreenhouseGeneticCameraControls;

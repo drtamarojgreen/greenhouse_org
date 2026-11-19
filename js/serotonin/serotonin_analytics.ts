@@ -1,3 +1,5 @@
+import { GreenhouseSerotonin } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 // [TypeScript Migration] Source migrated from serotonin_analytics.js — behavior preserved.
 /**
  * @file serotonin_analytics.js
@@ -7,8 +9,7 @@
 (function () {
     'use strict';
 
-    const G = window.GreenhouseSerotonin || {};
-    (window as any).GreenhouseSerotonin = G;
+    const G = GreenhouseSerotonin;
 
     G.Analytics = {
         history: {
@@ -191,7 +192,7 @@
                     if (l.name === 'Serotonin') {
                         // Project 3D to 2D for heatmap center
                         const cam = G.state.camera;
-                        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+                        const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
                         const p = project(l.x, l.y, l.z, cam, { width: w, height: h, near: 10, far: 5000 });
                         if (p.scale > 0) {
                             ctx.fillStyle = '#D0D0D0';

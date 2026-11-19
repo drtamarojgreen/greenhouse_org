@@ -1,7 +1,5 @@
 /// <reference path="types/globals.d.ts" />
 
-declare var module: any;
-
 interface Note {
     content: string;
     type: string;
@@ -307,10 +305,5 @@ const GreenhouseModelsData = {
         return networkState; // Return the updated state
     }
 };
-
-(window as any).GreenhouseModelsData = GreenhouseModelsData;
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = GreenhouseModelsData;
-}
 
 export { GreenhouseModelsData };

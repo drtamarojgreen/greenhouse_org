@@ -1,3 +1,5 @@
+import { GreenhouseSerotonin } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
 // [TypeScript Migration] Source migrated from serotonin_receptors.js — behavior preserved.
 /**
  * @file serotonin_receptors.js
@@ -7,8 +9,7 @@
 (function () {
     'use strict';
 
-    const G = window.GreenhouseSerotonin || {};
-    (window as any).GreenhouseSerotonin = G;
+    const G = GreenhouseSerotonin;
 
     G.Receptors = {
         subtypes: {
@@ -365,8 +366,8 @@
         const cam = G.state ? G.state.camera : null;
 
         if (!ctx || !w || !h || !cam) return;
-        if (!window.GreenhouseModels3DMath) return;
-        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+        if (!GreenhouseModels3DMath) return;
+        const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
 
         if (G.state && G.state.receptors) {
             G.Receptors.renderReceptors(ctx, project, cam, w, h);

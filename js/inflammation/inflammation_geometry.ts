@@ -1,16 +1,18 @@
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
 /**
  * @file inflammation_geometry.js
  * @description Master-HD Brain Model specifically for Neuroinflammation.
  * Features realistic anatomical lobing and high-resolution smoothness.
  */
 
+var _exported_GreenhouseInflammationGeometry: any;
 (function () {
     'use strict';
 
     const GreenhouseInflammationGeometry = {
         initializeBrainShell(brainShell) {
-            if (window.GreenhouseBrainMeshRealistic) {
-                const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            if (GreenhouseBrainMeshRealistic) {
+                const realisticBrain = GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 brainShell.vertices = realisticBrain.vertices;
                 brainShell.faces = realisticBrain.faces.map(face => ({ ...face, region: null }));
                 brainShell.regions = realisticBrain.regions;
@@ -388,5 +390,8 @@
         }
     };
 
-    window.GreenhouseInflammationGeometry = GreenhouseInflammationGeometry;
+    _exported_GreenhouseInflammationGeometry = GreenhouseInflammationGeometry;
 })();
+
+
+export var GreenhouseInflammationGeometry = _exported_GreenhouseInflammationGeometry;

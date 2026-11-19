@@ -1,3 +1,5 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseNeuroConfig } from './neuro_config.js';
 /**
  * @file neuro_camera_controls.ts
  * @description Enhanced Camera Controls with Pan, Zoom, and Rotate for Neuro simulation.
@@ -34,7 +36,7 @@ export const GreenhouseNeuroCameraControls = {
     init(canvas: HTMLCanvasElement, camera: Greenhouse.Camera, config?: any) {
         this.canvas = canvas;
         this.camera = camera;
-        this.config = config || (window as any).GreenhouseNeuroConfig;
+        this.config = config || GreenhouseNeuroConfig;
 
         this.setupMouseControls();
         this.setupTouchControls();

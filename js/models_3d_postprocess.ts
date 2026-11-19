@@ -158,4 +158,4 @@ const GreenhousePostProcessor = {
     }
 };
 
-(window as any).GreenhousePostProcessor = GreenhousePostProcessor;
+export { GreenhousePostProcessor };

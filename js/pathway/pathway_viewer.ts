@@ -1,6 +1,13 @@
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhousePathwayCameraControls } from './pathway_camera_controls.js';
+import { GreenhousePathwayBrain } from './pathway_ui_3d_brain.js';
+import { GreenhousePathwayGeometry } from './pathway_ui_3d_geometry.js';
 // docs/js/pathway_viewer.js
 // Core viewer for the 3D pathway visualization, using the native 3D engine.
 
+var _exported_GreenhousePathwayViewer: any;
 (function () {
     'use strict';
 
@@ -379,8 +386,8 @@
                 }
             };
 
-            if (window.GreenhousePathwayCameraControls) {
-                this.cameraControls = Object.create(window.GreenhousePathwayCameraControls);
+            if (GreenhousePathwayCameraControls) {
+                this.cameraControls = Object.create(GreenhousePathwayCameraControls);
                 this.cameraControls.init(this.canvas, this.camera, fullConfig);
             }
 
@@ -395,9 +402,9 @@
             this.initialized = true;
 
             // 3. Resilience Pattern: Enable shared GreenhouseUtils recovery
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, containerSelector, this, 'init');
-                window.GreenhouseUtils.startSentinel(container, containerSelector, this, 'init');
+            if (GreenhouseUtils) {
+                GreenhouseUtils.observeAndReinitializeApplication(container, containerSelector, this, 'init');
+                GreenhouseUtils.startSentinel(container, containerSelector, this, 'init');
             }
 
             this.startAnimation();
@@ -493,8 +500,8 @@
         },
 
         setupUI(container) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+            const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
             if (isMobile) {
                 const testControls = document.getElementById('test-controls');
                 if (testControls) testControls.style.display = 'none';
@@ -606,8 +613,8 @@
                 font-size: ${isMobile ? '16px' : '14px'};
             `;
             langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) {
-                    window.GreenhouseModelsUtil.toggleLanguage();
+                if (GreenhouseModelsUtil) {
+                    GreenhouseModelsUtil.toggleLanguage();
                 }
             };
             btnGroup.appendChild(langBtn);
@@ -629,9 +636,9 @@
             this.brainShell = { vertices: [], faces: [] };
             this.torsoShell = { vertices: [], faces: [] };
 
-            if (window.GreenhousePathwayGeometry) {
-                window.GreenhousePathwayGeometry.initializeBrainShell(this.brainShell);
-                window.GreenhousePathwayGeometry.initializeTorsoShell(this.torsoShell);
+            if (GreenhousePathwayGeometry) {
+                GreenhousePathwayGeometry.initializeBrainShell(this.brainShell);
+                GreenhousePathwayGeometry.initializeTorsoShell(this.torsoShell);
             }
         },
 
@@ -683,7 +690,7 @@
         },
 
         refreshUIText() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             const pLabel = document.getElementById('pathway-systemic-label');
             if (pLabel) pLabel.textContent = t('systemic_pathway');
 
@@ -701,7 +708,7 @@
         },
 
         updateGeneSelector() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             const selector = document.getElementById('pathway-selector') as HTMLSelectElement | null;
             if (selector && this.pathwayData) {
                 const currentVal = selector.value;
@@ -739,19 +746,19 @@
             // Draw Subtle Grid for spatial orientation
             this.drawReferenceGrid(ctx, w, h);
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             const highlightedNode = this.pathwayData ? this.pathwayData.find(n => n.id === this.highlightedNodeId) : null;
             const activeRegion = highlightedNode ? highlightedNode.region : null;
 
             // Draw Connection Pillar (Spinal Cord base)
             this.drawCentralNervousSystemPillar(ctx, w, h);
 
-            if (this.brainShell && window.GreenhousePathwayBrain) {
-                window.GreenhousePathwayBrain.drawBrain(ctx, this.brainShell, this.camera, this.projection, w, h, { activeRegion });
+            if (this.brainShell && GreenhousePathwayBrain) {
+                GreenhousePathwayBrain.drawBrain(ctx, this.brainShell, this.camera, this.projection, w, h, { activeRegion });
             }
 
-            if (this.torsoShell && window.GreenhousePathwayBrain) {
-                window.GreenhousePathwayBrain.drawTorso(ctx, this.torsoShell, this.camera, this.projection, w, h, { activeRegion });
+            if (this.torsoShell && GreenhousePathwayBrain) {
+                GreenhousePathwayBrain.drawTorso(ctx, this.torsoShell, this.camera, this.projection, w, h, { activeRegion });
             }
 
             if (this.pathwayData) {
@@ -766,7 +773,7 @@
             }
 
             // Draw Interaction PiP if a node is selected
-            if (highlightedNode && window.GreenhousePathwayBrain) {
+            if (highlightedNode && GreenhousePathwayBrain) {
                 const pipW = 300;
                 const pipH = 250;
                 const pipX = w - pipW - 20;
@@ -778,7 +785,7 @@
                 ctx.rect(0, 0, pipW, pipH);
                 ctx.clip(); // Ensure PiP content stays inside bounds
 
-                window.GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, t(highlightedNode.name), highlightedNode.link);
+                GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, t(highlightedNode.name), highlightedNode.link);
 
                 ctx.restore();
             }
@@ -883,7 +890,7 @@
             if (!this.pathwayData) return;
 
             const types = [...new Set(this.pathwayData.map(n => n.type))];
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
             const legendX = 20;
             const legendY = isMobile ? 120 : h - (types.length * 25) - 80;
 
@@ -927,9 +934,9 @@
         },
 
         drawPathwayGraph() {
-            if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
+            if (!this.pathwayData || !GreenhouseModels3DMath) return;
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             const time = Date.now() * 0.001; // Animation clock
 
             const projectedNodes = this.pathwayData.map(node => ({
@@ -1050,5 +1057,8 @@
         }
     };
 
-    window.GreenhousePathwayViewer = GreenhousePathwayViewer;
+    _exported_GreenhousePathwayViewer = GreenhousePathwayViewer;
 })();
+
+
+export var GreenhousePathwayViewer = _exported_GreenhousePathwayViewer;

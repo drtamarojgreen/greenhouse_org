@@ -1,7 +1,12 @@
+import { GreenhouseGeneticConfig } from './genetic_config.js';
+import { GreenhouseGeneticGeometry } from './genetic_ui_3d_geometry.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+var _exported_GreenhouseGeneticProtein: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseGeneticProtein = {
         isGPCR(symbol) {
@@ -10,7 +15,7 @@
         },
 
         drawProteinView(ctx, x, y, w, h, activeGene, proteinCache, drawPiPFrameCallback, cameraState) {
-            const config = window.GreenhouseGeneticConfig || {};
+            const config = GreenhouseGeneticConfig || {};
             const mat = config.materials?.protein || {};
 
             if (drawPiPFrameCallback) {
@@ -41,8 +46,8 @@
 
             // Initialize Protein Cache if needed
             let protein = proteinCache[activeGene.id];
-            if (!protein && window.GreenhouseGeneticGeometry) {
-                protein = window.GreenhouseGeneticGeometry.generateProteinChain(activeGene.id);
+            if (!protein && GreenhouseGeneticGeometry) {
+                protein = GreenhouseGeneticGeometry.generateProteinChain(activeGene.id);
                 proteinCache[activeGene.id] = protein;
             }
 
@@ -212,10 +217,10 @@
 
         drawGPCRSignaling(ctx, x, y, w, h, activeGene, camera) {
             const time = Date.now() * 0.001;
-            const geo = window.GreenhouseGeneticGeometry;
+            const geo = GreenhouseGeneticGeometry;
             if (!geo) return;
 
-            const config = window.GreenhouseGeneticConfig || {};
+            const config = GreenhouseGeneticConfig || {};
             const mat = config.materials?.protein || {};
 
             ctx.save();
@@ -422,5 +427,8 @@
         }
     };
 
-    window.GreenhouseGeneticProtein = GreenhouseGeneticProtein;
+    _exported_GreenhouseGeneticProtein = GreenhouseGeneticProtein;
 })();
+
+
+export var GreenhouseGeneticProtein = _exported_GreenhouseGeneticProtein;

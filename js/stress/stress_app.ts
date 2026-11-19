@@ -1,13 +1,21 @@
+import { GreenhouseBioStatus, GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseStressConfig } from './stress_config.js';
+import { GreenhouseStressControls } from './stress_controls.js';
+import { GreenhouseStressPathwayButtons } from './stress_pathway.js';
+import { GreenhouseStressSystemic } from './stress_systemic.js';
+import { GreenhouseStressTooltips } from './stress_tooltips.js';
+import { GreenhouseStressUI3D } from './stress_ui_3d.js';
 /**
  * @file stress_app.js
  * @description Main application logic for the Stress Dynamics Simulation.
  * Implements binary factor logic (Checkboxes) and updated physiological equations.
  */
 
+var _exported_GreenhouseStressApp: any;
 (function () {
     'use strict';
 
-    const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => (GreenhouseModelsUtil && GreenhouseModelsUtil.t) ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressApp = {
         engine: null,
@@ -47,9 +55,9 @@
             this.projection.width = this.canvas.width;
             this.projection.height = this.canvas.height;
 
-            const config = window.GreenhouseStressConfig;
+            const config = GreenhouseStressConfig;
 
-            this.engine = new window.GreenhouseModelsUtil.SimulationEngine({
+            this.engine = new GreenhouseModelsUtil.SimulationEngine({
                 initialFactors: config.factors.reduce((acc, f) => {
                     acc[f.id] = f.defaultValue;
                     return acc;
@@ -65,9 +73,9 @@
                 updateFn: (state, dt) => this.updateModel(state, dt)
             });
 
-            this.clock = new window.GreenhouseModelsUtil.DiurnalClock();
+            this.clock = new GreenhouseModelsUtil.DiurnalClock();
 
-            if (window.GreenhouseStressUI3D) window.GreenhouseStressUI3D.init(this);
+            if (GreenhouseStressUI3D) GreenhouseStressUI3D.init(this);
 
             // Initialize Category State (Expanded 12-node hierarchy)
             this.ui.categories = [
@@ -132,7 +140,7 @@
         },
 
         setupUI() {
-            const config = window.GreenhouseStressConfig;
+            const config = GreenhouseStressConfig;
             this.ui.checkboxes = [];
 
             // Group factors by category for easier rendering logic
@@ -156,7 +164,7 @@
 
         setupPathwayUI() {
             this.ui.pathwayButtons = [];
-            const ui3d = window.GreenhouseStressUI3D;
+            const ui3d = GreenhouseStressUI3D;
             if (ui3d && ui3d.availablePathways) {
                 // Organize pathways in a 2-row grid for better space utilization
                 const buttonsPerRow = 4;
@@ -194,14 +202,14 @@
             const my = e.clientY - rect.top;
 
             // 0. Check Systemic Scrubber Interaction
-            if (Math.round(this.engine.state.factors.viewMode) === 2 && window.GreenhouseStressSystemic) {
+            if (Math.round(this.engine.state.factors.viewMode) === 2 && GreenhouseStressSystemic) {
                 const sw = this.canvas.width;
                 const sh = this.canvas.height;
                 const scrubberW = 400;
                 const scrubberX = (sw - scrubberW) / 2;
                 const scrubberY = sh - 40;
                 if (mx >= scrubberX && mx <= scrubberX + scrubberW && my >= scrubberY - 10 && my <= scrubberY + 20) {
-                    window.GreenhouseStressSystemic.timelineT = (mx - scrubberX) / scrubberW;
+                    GreenhouseStressSystemic.timelineT = (mx - scrubberX) / scrubberW;
                     this.interaction.isScrubbing = true;
                     return;
                 }
@@ -246,8 +254,8 @@
             }
 
             // 5. Check 3D Interactions (Systemic View)
-            if (window.GreenhouseStressUI3D) {
-                const hit3D = window.GreenhouseStressUI3D.checkHover(mx, my, this.camera, this.projection);
+            if (GreenhouseStressUI3D) {
+                const hit3D = GreenhouseStressUI3D.checkHover(mx, my, this.camera, this.projection);
                 if (hit3D && hit3D.type === 'category_node') {
                     const catId = hit3D.id.replace('cat_', '');
                     this.ui.categories.forEach(c => c.isOpen = (c.id === catId));
@@ -265,8 +273,8 @@
             this.ui.lockedTooltip = null; // Clear lock on clicking elsewhere
 
             // 6. Check Pathway Overlay Buttons (Graph Toggle)
-            if (window.GreenhouseStressPathwayButtons) {
-                const buttons = window.GreenhouseStressPathwayButtons;
+            if (GreenhouseStressPathwayButtons) {
+                const buttons = GreenhouseStressPathwayButtons;
                 for (const b of buttons) {
                     if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
                         if (typeof b.action === 'function') b.action(this.engine.state);
@@ -313,11 +321,11 @@
             this.ui.hoveredElement = null;
             this.canvas.style.cursor = 'default';
 
-            if (this.interaction.isScrubbing && window.GreenhouseStressSystemic) {
+            if (this.interaction.isScrubbing && GreenhouseStressSystemic) {
                 const sw = this.canvas.width;
                 const scrubberW = 400;
                 const scrubberX = (sw - scrubberW) / 2;
-                window.GreenhouseStressSystemic.timelineT = Math.min(1, Math.max(0, (mx - scrubberX) / scrubberW));
+                GreenhouseStressSystemic.timelineT = Math.min(1, Math.max(0, (mx - scrubberX) / scrubberW));
                 return;
             }
 
@@ -360,8 +368,8 @@
             }
 
             // Check Pathway Overlay Buttons (Graph Toggle)
-            if (!this.ui.hoveredElement && window.GreenhouseStressPathwayButtons) {
-                const buttons = window.GreenhouseStressPathwayButtons;
+            if (!this.ui.hoveredElement && GreenhouseStressPathwayButtons) {
+                const buttons = GreenhouseStressPathwayButtons;
                 for (const b of buttons) {
                     if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
                         this.ui.hoveredElement = { ...b, type: 'button_overlay' }; break;
@@ -380,8 +388,8 @@
                 }
             }
 
-            if (!this.ui.hoveredElement && window.GreenhouseStressUI3D) {
-                this.ui.hoveredElement = window.GreenhouseStressUI3D.checkHover(mx, my, this.camera, this.projection);
+            if (!this.ui.hoveredElement && GreenhouseStressUI3D) {
+                this.ui.hoveredElement = GreenhouseStressUI3D.checkHover(mx, my, this.camera, this.projection);
             }
 
             if (this.interaction.isDragging) {
@@ -402,7 +410,7 @@
             const f = state.factors;
             const m = state.metrics;
             const h = state.history;
-            const Util = window.GreenhouseModelsUtil;
+            const Util = GreenhouseModelsUtil;
 
             // 1. Advance Clock
             if (this.clock) {
@@ -417,7 +425,7 @@
                 interv: 0, therapy: 0, lifestyle: 0, system: 0
             };
 
-            const config = window.GreenhouseStressConfig;
+            const config = GreenhouseStressConfig;
             config.factors.forEach(fact => {
                 if (f[fact.id] === 1) { // If active
                     if (scores[fact.category] !== undefined) {
@@ -544,8 +552,8 @@
             }
 
             // 11. Inter-Model Sync
-            if (window.GreenhouseBioStatus) {
-                window.GreenhouseBioStatus.sync('stress', {
+            if (GreenhouseBioStatus) {
+                GreenhouseBioStatus.sync('stress', {
                     load: m.allostaticLoad,
                     hpa: m.hpaSensitivity,
                     autonomic: m.autonomicBalance,
@@ -583,7 +591,7 @@
             ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, w, h);
 
             if (!this.interaction.isDragging) this.camera.rotationY += 0.001;
-            if (window.GreenhouseStressUI3D) window.GreenhouseStressUI3D.render(ctx, state, this.camera, this.projection);
+            if (GreenhouseStressUI3D) GreenhouseStressUI3D.render(ctx, state, this.camera, this.projection);
 
             this.drawUI(ctx, w, h, state);
         },
@@ -616,8 +624,8 @@
             if (this.ui.categories) {
                 this.ui.categories.forEach(cat => {
                     // Draw Header (the actual clickable accordion part)
-                    if (window.GreenhouseStressControls) {
-                        window.GreenhouseStressControls.drawCategoryHeader(ctx, this, cat);
+                    if (GreenhouseStressControls) {
+                        GreenhouseStressControls.drawCategoryHeader(ctx, this, cat);
                     }
 
                     // Checkboxes if open (Panel first)
@@ -646,15 +654,15 @@
                             c.x = cat.x + 10 + (col * 190);
                             c.y = cat.y + 40 + (row * 25); // Increased spacing
 
-                            if (window.GreenhouseStressControls) {
-                                window.GreenhouseStressControls.drawCheckbox(ctx, this, c, state);
+                            if (GreenhouseStressControls) {
+                                GreenhouseStressControls.drawCheckbox(ctx, this, c, state);
                             }
                         });
                     }
                 });
             }
 
-            this.ui.buttons.forEach(b => window.GreenhouseStressControls && window.GreenhouseStressControls.drawButton(ctx, this, b, state));
+            this.ui.buttons.forEach(b => GreenhouseStressControls && GreenhouseStressControls.drawButton(ctx, this, b, state));
 
             // Draw Pathway Buttons if in mode 1
             if (Math.round(state.factors.viewMode) === 1 && this.ui.pathwayButtons) {
@@ -663,15 +671,15 @@
                 ctx.font = 'bold 11px Quicksand, sans-serif';
                 ctx.fillText(t('stress_ui_select_pathway_caps'), 40, 95);
 
-                this.ui.pathwayButtons.forEach(b => window.GreenhouseStressControls && window.GreenhouseStressControls.drawButton(ctx, this, b, state));
+                this.ui.pathwayButtons.forEach(b => GreenhouseStressControls && GreenhouseStressControls.drawButton(ctx, this, b, state));
             }
 
             // Tooltips (Item 3: Locked or Hovered)
-            if (window.GreenhouseStressTooltips) {
+            if (GreenhouseStressTooltips) {
                 if (this.ui.lockedTooltip) {
-                    window.GreenhouseStressTooltips.draw(ctx, this, this.ui.lockedTooltip.x, this.ui.lockedTooltip.y, true);
+                    GreenhouseStressTooltips.draw(ctx, this, this.ui.lockedTooltip.x, this.ui.lockedTooltip.y, true);
                 } else if (this.ui.hoveredElement && this.ui.hoveredElement.type !== 'header') {
-                    window.GreenhouseStressTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
+                    GreenhouseStressTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
                 }
             }
         },
@@ -686,5 +694,8 @@
         }
     };
 
-    window.GreenhouseStressApp = GreenhouseStressApp;
+    _exported_GreenhouseStressApp = GreenhouseStressApp;
 })();
+
+
+export var GreenhouseStressApp = _exported_GreenhouseStressApp;

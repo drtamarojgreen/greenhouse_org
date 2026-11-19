@@ -1,6 +1,7 @@
 // docs/js/pathway_layout.js
 // Algorithm for generating a 3D layout from 2D KGML data.
 
+var _exported_PathwayLayout: any;
 (function() {
     'use strict';
 
@@ -45,7 +46,10 @@
         }
     };
 
-    window.PathwayLayout = PathwayLayout;
+    _exported_PathwayLayout = PathwayLayout;
     console.log('PathwayLayout loaded.');
 
 })();
+
+
+export var PathwayLayout = _exported_PathwayLayout;

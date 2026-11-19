@@ -1,3 +1,7 @@
+import { Greenhouse, GreenhouseSerotonin } from './context.js';
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhouseModels3DMath } from './models_3d_math.js';
+import { GreenhouseModelsUtil } from './models_util.js';
 // [TypeScript Migration] Source migrated from serotonin.js — behavior preserved.
 /**
  * @file serotonin.js
@@ -7,27 +11,9 @@
 (async function () {
     'use strict';
 
-    let GreenhouseUtils;
+    const loadDependencies = async () => {};
 
-    const loadDependencies = async () => {
-        await new Promise<void>((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 240;
-            const interval = setInterval(() => {
-                if (window.GreenhouseUtils) {
-                    clearInterval(interval);
-                    GreenhouseUtils = window.GreenhouseUtils;
-                    resolve();
-                } else if (attempts++ >= maxAttempts) {
-                    clearInterval(interval);
-                    reject(new Error('GreenhouseUtils load timeout'));
-                }
-            }, 50);
-        });
-    };
-
-    const G = window.GreenhouseSerotonin || {};
-    (window as any).GreenhouseSerotonin = G;
+    const G = GreenhouseSerotonin;
 
     // Define core properties and placeholders
     const coreProperties = {
@@ -98,9 +84,9 @@
             this.animate();
 
             // Resilience using shared GreenhouseUtils
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'initialize');
-                window.GreenhouseUtils.startSentinel(container, selector, this, 'initialize');
+            if (GreenhouseUtils) {
+                GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'initialize');
+                GreenhouseUtils.startSentinel(container, selector, this, 'initialize');
             }
         },
 
@@ -191,8 +177,8 @@
                 return;
             }
 
-            if (!this.ctx || !window.GreenhouseModels3DMath) return;
-            const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+            if (!this.ctx || !GreenhouseModels3DMath) return;
+            const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
             const cam = this.state.camera;
             const w = this.width;
             const h = this.height;
@@ -213,8 +199,8 @@
         },
 
         updateContextualCursor(mx, my) {
-            if (!this.ctx || !window.GreenhouseModels3DMath) return;
-            const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+            if (!this.ctx || !GreenhouseModels3DMath) return;
+            const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
             const cam = this.state.camera;
             const w = this.width;
             const h = this.height;
@@ -346,7 +332,7 @@
             ctx.strokeStyle = '#888';
             ctx.lineWidth = 2;
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
             if (r.architecture === 'Pentameric') {
                 // Pentameric schematic (cross-section)
@@ -509,8 +495,8 @@
             ctx.save();
             ctx.translate(offsetX, offsetY);
 
-            if (!window.GreenhouseModels3DMath) return;
-            const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+            if (!GreenhouseModels3DMath) return;
+            const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
 
             // Draw receptor helices (Only draw original placeholder if modular receptors haven't initialized)
             if (!this.state.receptors || this.state.receptors.length === 0) {
@@ -566,17 +552,15 @@
         }
     };
     Object.assign(G, coreProperties);
-
-    (window as any).Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeSerotoninSimulation = function (selector) {
+    Greenhouse.initializeSerotoninSimulation = function (selector) {
         const container = document.querySelector(selector);
         if (container) G.initialize(container);
     };
 
     function captureAttributes() {
-        const attr = window._greenhouseScriptAttributes || {};
+        const attr = (window._greenhouseScriptAttributes || { baseUrl: '/', targetSelector: '#serotonin-app-container', 'base-url': '/', 'target-selector-left': '#serotonin-app-container' }) || {};
         const script = document.currentScript;
-        const utils = window.GreenhouseUtils;
+        const utils = GreenhouseUtils;
 
         const targetSelector = attr['target-selector-left'] || (script ? script.getAttribute('data-target-selector-left') : null) || (utils ? utils.appState.targetSelectorLeft : null);
         const baseUrl = attr['base-url'] || (script ? script.getAttribute('data-base-url') : null) || (utils ? utils.appState.baseUrl : null);
@@ -598,7 +582,7 @@
                 }
             });
 
-            await loadDependencies();
+            
 
             // Capture attributes after dependencies are loaded to ensure GreenhouseUtils is available as a fallback
             const attributes = captureAttributes();
@@ -606,17 +590,17 @@
             const baseUrl = attrBaseUrl || './';
 
             // Load modular simulation components
-            await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin/serotonin_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin/serotonin_legend.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin/serotonin_tooltips.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin/serotonin_receptors.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin/serotonin_kinetics.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin/serotonin_signaling.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin/serotonin_transport.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin/serotonin_analytics.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./serotonin/serotonin_controls.js');
+            await import('./serotonin/serotonin_legend.js');
+            await import('./serotonin/serotonin_tooltips.js');
+            await import('./serotonin/serotonin_receptors.js');
+            await import('./serotonin/serotonin_kinetics.js');
+            await import('./serotonin/serotonin_signaling.js');
+            await import('./serotonin/serotonin_transport.js');
+            await import('./serotonin/serotonin_analytics.js');
+            await import('./models_3d_math.js');
 
             if (targetSelector) {
                 const container = document.querySelector(targetSelector);

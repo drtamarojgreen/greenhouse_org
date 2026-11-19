@@ -1,19 +1,25 @@
+import { GreenhouseGraphParser } from '../graph_parser.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseModelGraphViewer } from '../model_graph_viewer.js';
 /**
  * @file stress_pathway.js
  * @description Scientifically comprehensive HPA-Axis and Dynamic Pathway Visualization.
  * Renders Reactome-sourced pathways integrated from the shared data bridge.
  */
 
+var _exported_GreenhouseStressPathwayButtons: any;
+var _exported_GreenhouseStressPathway: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressPathway = {
         bursts: [], // {x, y, targetX, targetY, life, type}
 
         render(ctx, state, camera, projection, ui3d) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const f = state.factors;
             const time = state.time || 0;
             const activePathId = f.activePathway || 'hpa';
@@ -25,17 +31,17 @@
 
             // --- GRAPH VISUALIZATION INTEGRATION ---
             // If the Graph Viewer is available and active, render it INSTEAD or ON TOP
-            const GraphViewer = window.GreenhouseModelGraphViewer;
+            const GraphViewer = GreenhouseModelGraphViewer;
 
             // Auto-load data if present but not initialized
-            if (GraphViewer && (!GraphViewer.graphData) && window.GreenhouseGraphParser) {
+            if (GraphViewer && (!GraphViewer.graphData) && GreenhouseGraphParser) {
                 if (typeof GraphViewer.initDataOnly === 'function') GraphViewer.initDataOnly();
                 // Ensure data is fetching if not already started
-                if (!window.GreenhouseGraphParser.isLoaded) {
-                    if (!window.GreenhouseGraphParser._setupStarted) {
-                        window.GreenhouseGraphParser._setupStarted = true;
+                if (!GreenhouseGraphParser.isLoaded) {
+                    if (!GreenhouseGraphParser._setupStarted) {
+                        GreenhouseGraphParser._setupStarted = true;
                         const baseUrl = (ui3d.app && ui3d.app.baseUrl) ? ui3d.app.baseUrl : '';
-                        window.GreenhouseGraphParser.init('endpoints/graph.csv', 50, baseUrl);
+                        GreenhouseGraphParser.init('endpoints/graph.csv', 50, baseUrl);
                     }
                 }
             }
@@ -142,8 +148,8 @@
             ctx.textAlign = 'center';
             ctx.fillText(isGraphActive ? "EXIT GRAPH VIEW" : "TOPIC GRAPH", x + w / 2, y + 19);
 
-            if (!window.GreenhouseStressPathwayButtons) window.GreenhouseStressPathwayButtons = [];
-            window.GreenhouseStressPathwayButtons = [{
+            if (!GreenhouseStressPathwayButtons) GreenhouseStressPathwayButtons = [];
+            _exported_GreenhouseStressPathwayButtons = [{
                 id: 'toggle_graph',
                 x: x, y: y, w: w, h: h,
                 action: (state) => {
@@ -204,7 +210,7 @@
         },
 
         drawGlandMesh(ctx, node, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
+            const Math3D = GreenhouseModels3DMath;
             const color = node.color || '#E0E0E0';
 
             ctx.save();
@@ -227,5 +233,10 @@
         }
     };
 
-    window.GreenhouseStressPathway = GreenhouseStressPathway;
+    _exported_GreenhouseStressPathway = GreenhouseStressPathway;
 })();
+
+
+export var GreenhouseStressPathwayButtons = _exported_GreenhouseStressPathwayButtons;
+
+export var GreenhouseStressPathway = _exported_GreenhouseStressPathway;

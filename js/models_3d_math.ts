@@ -1,3 +1,4 @@
+import { Greenhouse } from './context.js';
 /**
  * @file models_3d_math.ts
  * @description 3D Mathematics Foundation for Models Canvas.
@@ -212,5 +213,3 @@ export const GreenhouseModels3DMath = {
         return ambientLight + (1 - ambientLight) * diffuse;
     }
 };
-
-(window as any).GreenhouseModels3DMath = GreenhouseModels3DMath;

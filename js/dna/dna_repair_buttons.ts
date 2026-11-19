@@ -1,16 +1,17 @@
+import { GreenhouseDNARepair } from '../context.js';
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 // docs/js/dna_repair_buttons.js
 // DNA Repair Simulation Module - UI and Buttons
 // Handles creation of control bars and info overlays
 
 (function () {
     'use strict';
-
-    window.GreenhouseDNARepair = window.GreenhouseDNARepair || {};
-    const G = window.GreenhouseDNARepair;
+    const G = GreenhouseDNARepair;
 
     G.createUI = function (wrapper) {
-        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+        const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
         const controls = document.createElement('div');
         controls.className = 'dna-controls-bar';
         if (isMobile) {
@@ -51,8 +52,8 @@
         langBtn.style.maxWidth = 'fit-content';
         langBtn.innerText = t('btn_language');
         langBtn.onclick = () => {
-            if (window.GreenhouseModelsUtil) {
-                window.GreenhouseModelsUtil.toggleLanguage();
+            if (GreenhouseModelsUtil) {
+                GreenhouseModelsUtil.toggleLanguage();
             }
         };
         controls.appendChild(langBtn);

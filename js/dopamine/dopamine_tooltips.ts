@@ -1,3 +1,6 @@
+import { GreenhouseDopamine } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file dopamine_tooltips.js
  * @description Tooltip logic for Dopamine Simulation.
@@ -5,8 +8,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = GreenhouseDopamine;
 
     G.initTooltips = function (container) {
         this.tooltipEl = document.createElement('div');
@@ -33,8 +35,8 @@
     };
 
     G.handleHover = function (x, y) {
-        if (!window.GreenhouseModels3DMath) return;
-        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+        if (!GreenhouseModels3DMath) return;
+        const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
         const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
@@ -351,7 +353,7 @@
             this.tooltipEl.style.top = `${y + 10}px`;
             this.tooltipEl.style.display = 'block';
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
             if (found.type === 'receptor') {
                 const r = found.data;

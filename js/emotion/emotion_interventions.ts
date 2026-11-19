@@ -1,3 +1,4 @@
+import { GreenhouseEmotionConfig } from './emotion_config.js';
 /**
  * @file emotion_interventions.js
  * @description Therapeutic and Pharmacological enhancements for the Emotion Simulation.
@@ -63,8 +64,8 @@
         { id: 75, name: 'emotion_enh_75_name', description: 'emotion_enh_75_desc', regions: ['thalamus'], wellnessFocus: 'emotion_enh_75_wellness', conditionMapping: 'emotion_enh_75_cond' }
     ];
 
-    if (window.GreenhouseEmotionConfig) {
-        window.GreenhouseEmotionConfig.therapeuticInterventions = therapeuticInterventions;
-        window.GreenhouseEmotionConfig.medicationTreatments = medicationTreatments;
+    if (GreenhouseEmotionConfig) {
+        GreenhouseEmotionConfig.therapeuticInterventions = therapeuticInterventions;
+        GreenhouseEmotionConfig.medicationTreatments = medicationTreatments;
     }
 })();

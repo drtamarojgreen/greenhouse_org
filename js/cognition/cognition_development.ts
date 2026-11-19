@@ -1,14 +1,17 @@
+import { GreenhouseCognitionDrawingUtils } from './cognition_drawing_utils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file cognition_development.js
  * @description Cognitive Development features for the Cognition model.
  * Covers Enhancements 31-55.
  */
 
+var _exported_GreenhouseCognitionDevelopment: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-    const utils = () => window.GreenhouseCognitionDrawingUtils;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+    const utils = () => GreenhouseCognitionDrawingUtils;
 
     const GreenhouseCognitionDevelopment = {
         init(app) {
@@ -214,7 +217,7 @@
 
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
+            if (!activeEnhancement || !GreenhouseCognitionDrawingUtils) return;
 
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
@@ -249,5 +252,8 @@
         }
     };
 
-    window.GreenhouseCognitionDevelopment = GreenhouseCognitionDevelopment;
+    _exported_GreenhouseCognitionDevelopment = GreenhouseCognitionDevelopment;
 })();
+
+
+export var GreenhouseCognitionDevelopment = _exported_GreenhouseCognitionDevelopment;

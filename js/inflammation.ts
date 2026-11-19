@@ -1,3 +1,5 @@
+import { GreenhouseUtils } from './GreenhouseUtils.js';
+import { GreenhouseInflammationApp } from './inflammation/inflammation_app.js';
 // [TypeScript Migration] Source migrated from inflammation.js — behavior preserved.
 /**
  * @file inflammation.js
@@ -8,32 +10,7 @@
     'use strict';
     console.log('Inflammation App: Loader execution started.');
 
-    let GreenhouseUtils;
-
-    const loadDependencies = async () => {
-        if (window.GreenhouseDependencyManager) {
-            try {
-                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-            } catch (error) {
-                console.error('Inflammation App: Dependency manager timeout:', error);
-            }
-        } else {
-            await new Promise<void>((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 240;
-                const interval = setInterval(() => {
-                    if (window.GreenhouseUtils) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (attempts++ >= maxAttempts) {
-                        clearInterval(interval);
-                        reject(new Error('GreenhouseUtils load timeout'));
-                    }
-                }, 50);
-            });
-        }
-        GreenhouseUtils = window.GreenhouseUtils;
-    };
+    const loadDependencies = async () => {};
 
     const captureScriptAttributes = () => {
         const scriptElement = document.currentScript || document.querySelector('script[src*="inflammation.js"]');
@@ -49,38 +26,38 @@
 
     async function main() {
         try {
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./models_3d_math.js');
+            await import('./brain_mesh_realistic.js');
+            await import('./neuro/neuro_ui_3d_geometry.js');
+            await import('./inflammation/inflammation_geometry.js');
+            await import('./neuro/neuro_ui_3d_brain.js');
+            await import('./neuro/neuro_ui_3d_neuron.js');
+            await import('./inflammation/inflammation_config.js');
+            await import('./inflammation/inflammation_pathway.js');
+            await import('./inflammation/inflammation_ui_3d.js');
+            await import('./inflammation/inflammation_signaling.js');
+            await import('./inflammation/inflammation_macro.js');
+            await import('./inflammation/inflammation_micro.js');
+            await import('./inflammation/inflammation_molecular.js');
+            await import('./inflammation/inflammation_tooltips.js');
+            await import('./inflammation/inflammation_controls.js');
+            await import('./inflammation/inflammation_analysis.js');
+            await import('./inflammation/inflammation_test_harness.js');
+            await import('./inflammation/inflammation_app.js');
             const { baseUrl, targetSelector } = captureScriptAttributes();
-            await loadDependencies();
+            
 
-            if (!window.GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
+            if (!GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
 
             // Load dependencies sequentially
-            await window.GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_geometry.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_geometry.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_brain.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_neuron.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_config.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_pathway.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_ui_3d.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_signaling.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_macro.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_micro.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_molecular.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_tooltips.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_controls.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_analysis.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_test_harness.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation/inflammation_app.js', baseUrl);
 
-            if (window.GreenhouseInflammationApp) {
-                window.GreenhouseInflammationApp.init(targetSelector, baseUrl);
+            if (GreenhouseInflammationApp) {
+                GreenhouseInflammationApp.init(targetSelector, baseUrl);
 
-                if (window.GreenhouseUtils.renderModelsTOC) {
-                    window.GreenhouseUtils.renderModelsTOC(targetSelector);
+                if (GreenhouseUtils.renderModelsTOC) {
+                    GreenhouseUtils.renderModelsTOC(targetSelector);
                 }
             } else {
                 throw new Error("GreenhouseInflammationApp failed to load.");

@@ -1,3 +1,5 @@
+import { GreenhouseCognitionApp } from './cognition/cognition_app.js';
+import { GreenhouseUtils } from './GreenhouseUtils.js';
 // [TypeScript Migration] Source migrated from cognition.js — behavior preserved.
 /**
  * @file cognition.js
@@ -8,32 +10,7 @@
     'use strict';
     console.log('Cognition App: Loader execution started.');
 
-    let GreenhouseUtils;
-
-    const loadDependencies = async () => {
-        if (window.GreenhouseDependencyManager) {
-            try {
-                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-            } catch (error) {
-                console.error('Cognition App: Dependency manager timeout:', error);
-            }
-        } else {
-            await new Promise<void>((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 240;
-                const interval = setInterval(() => {
-                    if (window.GreenhouseUtils) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (attempts++ >= maxAttempts) {
-                        clearInterval(interval);
-                        reject(new Error('GreenhouseUtils load timeout'));
-                    }
-                }, 50);
-            });
-        }
-        GreenhouseUtils = window.GreenhouseUtils;
-    };
+    const loadDependencies = async () => {};
 
     const captureScriptAttributes = () => {
         const scriptElement = document.currentScript || document.querySelector('script[src*="cognition.js"]');
@@ -49,32 +26,31 @@
 
     async function main() {
         try {
+            await import('./models_lang.js');
+            await import('./models_util.js');
+            await import('./models_3d_math.js');
+            await import('./brain_mesh_realistic.js');
+            await import('./cognition/cognition_ui_3d_brain.js');
+            await import('./cognition/cognition_drawing_utils.js');
+            await import('./cognition/cognition_config.js');
+            await import('./cognition/cognition_analytics.js');
+            await import('./cognition/cognition_theories.js');
+            await import('./cognition/cognition_development.js');
+            await import('./cognition/cognition_interventions.js');
+            await import('./cognition/cognition_medications.js');
+            await import('./cognition/cognition_research.js');
+            await import('./cognition/cognition_educational.js');
+            await import('./cognition/cognition_app.js');
             const { baseUrl, targetSelector } = captureScriptAttributes();
-            await loadDependencies();
+            
 
-            if (!window.GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
+            if (!GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
 
-            await window.GreenhouseUtils.loadScript('models_lang.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_ui_3d_brain.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_drawing_utils.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_config.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_analytics.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_theories.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_development.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_interventions.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_medications.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_research.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_educational.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition/cognition_app.js', baseUrl);
+            if (GreenhouseCognitionApp) {
+                GreenhouseCognitionApp.init(targetSelector);
 
-            if (window.GreenhouseCognitionApp) {
-                window.GreenhouseCognitionApp.init(targetSelector);
-
-                if (window.GreenhouseUtils.renderModelsTOC) {
-                    window.GreenhouseUtils.renderModelsTOC(targetSelector);
+                if (GreenhouseUtils.renderModelsTOC) {
+                    GreenhouseUtils.renderModelsTOC(targetSelector);
                 }
             } else {
                 throw new Error("GreenhouseCognitionApp failed to load.");

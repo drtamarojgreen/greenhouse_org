@@ -1,3 +1,16 @@
+import { Greenhouse } from '../context.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
+import { GreenhouseADHDData } from './neuro_adhd_data.js';
+import { GreenhouseNeuroApp } from './neuro_app.js';
+import { GreenhouseNeuroCameraControls } from './neuro_camera_controls.js';
+import { GreenhouseNeuroConfig } from './neuro_config.js';
+import { GreenhouseNeuroLighting } from './neuro_lighting.js';
+import { GreenhouseNeuroBrain } from './neuro_ui_3d_brain.js';
+import { GreenhouseNeuroGeometry } from './neuro_ui_3d_geometry.js';
+import { GreenhouseNeuroNeuron } from './neuro_ui_3d_neuron.js';
+import { GreenhouseNeuroStats } from './neuro_ui_3d_stats.js';
+import { GreenhouseNeuroSynapse } from './neuro_ui_3d_synapse.js';
 /**
  * @file neuro_ui_3d_enhanced.ts
  * @description Enhanced 3D Visualization for Neuro GA with Modular Configuration for Neuro simulation.
@@ -55,7 +68,7 @@ export const GreenhouseNeuroUI3D = {
         }
 
         // Initialize configuration
-        this.config = (window as any).GreenhouseNeuroConfig;
+        this.config = GreenhouseNeuroConfig;
         if (!this.config) {
             console.error('NeuroUI3D: Configuration not loaded');
             return;
@@ -117,15 +130,15 @@ export const GreenhouseNeuroUI3D = {
         this.projection.height = this.canvas.height;
 
         // Initialize camera controls
-        if ((window as any).GreenhouseNeuroCameraControls) {
-            this.cameraControls = Object.create((window as any).GreenhouseNeuroCameraControls);
+        if (GreenhouseNeuroCameraControls) {
+            this.cameraControls = Object.create(GreenhouseNeuroCameraControls);
             this.cameraControls.init(this.canvas, this.camera, this.config);
             console.log('NeuroUI3D: Camera controls initialized');
         }
 
         // Initialize lighting system
-        if ((window as any).GreenhouseNeuroLighting) {
-            this.lighting = Object.create((window as any).GreenhouseNeuroLighting);
+        if (GreenhouseNeuroLighting) {
+            this.lighting = Object.create(GreenhouseNeuroLighting);
             this.lighting.init(this.config);
             console.log('NeuroUI3D: Lighting system initialized');
         }
@@ -226,7 +239,7 @@ export const GreenhouseNeuroUI3D = {
     },
 
     addExplanation(container: HTMLElement) {
-        const util = (window as any).GreenhouseModelsUtil;
+        const util = GreenhouseModelsUtil;
         if (!util) return;
 
         const section = document.createElement('div');
@@ -243,7 +256,7 @@ export const GreenhouseNeuroUI3D = {
     },
 
     addStartOverlay(container: HTMLElement) {
-        const util = (window as any).GreenhouseModelsUtil;
+        const util = GreenhouseModelsUtil;
         const overlay = document.createElement('div');
         overlay.id = 'neuro-start-overlay';
         overlay.style.position = 'absolute';
@@ -270,7 +283,7 @@ export const GreenhouseNeuroUI3D = {
         btn.onclick = () => {
             this.isPlaying = true;
             overlay.style.display = 'none';
-            if ((window as any).GreenhouseNeuroApp) (window as any).GreenhouseNeuroApp.startSimulation();
+            if (GreenhouseNeuroApp) GreenhouseNeuroApp.startSimulation();
         };
 
         overlay.appendChild(btn);
@@ -390,15 +403,15 @@ export const GreenhouseNeuroUI3D = {
     },
 
     generateTubeMesh(p1: Greenhouse.Point3D, p2: Greenhouse.Point3D, cp: Greenhouse.Point3D, radius: number, segments: number) {
-        if ((window as any).GreenhouseNeuroGeometry) {
-            return (window as any).GreenhouseNeuroGeometry.generateTubeMesh(p1, p2, cp, radius, segments);
+        if (GreenhouseNeuroGeometry) {
+            return GreenhouseNeuroGeometry.generateTubeMesh(p1, p2, cp, radius, segments);
         }
         return { vertices: [], faces: [] };
     },
 
     logEvent(messageKey: string) {
-        if ((window as any).GreenhouseNeuroStats) {
-            (window as any).GreenhouseNeuroStats.logEvent(messageKey);
+        if (GreenhouseNeuroStats) {
+            GreenhouseNeuroStats.logEvent(messageKey);
         }
     },
 
@@ -427,7 +440,7 @@ export const GreenhouseNeuroUI3D = {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        const ga = (window as any).GreenhouseNeuroApp?.ga;
+        const ga = GreenhouseNeuroApp?.ga;
         const adhd = ga?.adhdConfig;
 
         // ADHD: Time Perception Distortion (Enhancement 12)
@@ -496,11 +509,11 @@ export const GreenhouseNeuroUI3D = {
 
         // Draw Main View (Synapse)
         if (this.selectedConnection) {
-            if ((window as any).GreenhouseNeuroSynapse) {
-                (window as any).GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, this.canvas.width, this.canvas.height, this.selectedConnection, this.synapseMeshes, true);
+            if (GreenhouseNeuroSynapse) {
+                GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, this.canvas.width, this.canvas.height, this.selectedConnection, this.synapseMeshes, true);
             }
         } else {
-            const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+            const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
             ctx.fillStyle = '#111';
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             ctx.fillStyle = '#666';
@@ -570,17 +583,17 @@ export const GreenhouseNeuroUI3D = {
         ctx.filter = 'none'; // Reset filter
 
         // --- Draw UI Overlay (High Quality Canvas UI) ---
-        if ((window as any).GreenhouseNeuroApp && (window as any).GreenhouseNeuroApp.drawUI) {
-            (window as any).GreenhouseNeuroApp.drawUI(ctx, this.canvas.width, this.canvas.height);
+        if (GreenhouseNeuroApp && GreenhouseNeuroApp.drawUI) {
+            GreenhouseNeuroApp.drawUI(ctx, this.canvas.width, this.canvas.height);
         }
     },
 
     drawTargets(ctx: CanvasRenderingContext2D, w: number, h: number) {
-        const ga = (window as any).GreenhouseNeuroApp?.ga;
+        const ga = GreenhouseNeuroApp?.ga;
         if (!ga || !ga.targetPoints) return;
 
         ga.targetPoints.forEach((target: Greenhouse.Point3D, i: number) => {
-            const proj = (window as any).GreenhouseModels3DMath.project3DTo2D(target.x, target.y, target.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
+            const proj = GreenhouseModels3DMath.project3DTo2D(target.x, target.y, target.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
             if (proj.scale > 0) {
                 const age = ga.adhdConfig.targetAges[i] || 0;
 
@@ -610,7 +623,7 @@ export const GreenhouseNeuroUI3D = {
 
     drawAmygdalaSpike(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
         const amygCenter = { x: -30, y: 150, z: 50 }; // Approximate Amygdala world coords
-        const proj = (window as any).GreenhouseModels3DMath.project3DTo2D(amygCenter.x, amygCenter.y, amygCenter.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
+        const proj = GreenhouseModels3DMath.project3DTo2D(amygCenter.x, amygCenter.y, amygCenter.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
 
         if (proj.scale > 0) {
             ctx.save();
@@ -665,7 +678,7 @@ export const GreenhouseNeuroUI3D = {
     drawExecutiveAssistant(ctx: CanvasRenderingContext2D, ga: any) {
         const target = ga?.targetPoints[0];
         if (!target) return;
-        const proj = (window as any).GreenhouseModels3DMath.project3DTo2D(target.x, target.y, target.z, this.camera, this.projection);
+        const proj = GreenhouseModels3DMath.project3DTo2D(target.x, target.y, target.z, this.camera, this.projection);
         if (proj.scale > 0) {
             ctx.save();
             ctx.strokeStyle = '#E0E0E0';
@@ -760,7 +773,7 @@ export const GreenhouseNeuroUI3D = {
     drawGatingVisuals(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
         // Draw a "gate" over the PFC region in the network view
         const pfcCenter = { x: 50, y: 100, z: 200 }; // Approximate PFC world coords
-        const proj = (window as any).GreenhouseModels3DMath.project3DTo2D(pfcCenter.x, pfcCenter.y, pfcCenter.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
+        const proj = GreenhouseModels3DMath.project3DTo2D(pfcCenter.x, pfcCenter.y, pfcCenter.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
 
         if (proj.scale > 0) {
             ctx.save();
@@ -779,7 +792,7 @@ export const GreenhouseNeuroUI3D = {
     },
 
     drawNoiseParticles(ctx: CanvasRenderingContext2D) {
-        const ga = (window as any).GreenhouseNeuroApp?.ga;
+        const ga = GreenhouseNeuroApp?.ga;
         const adhd = ga?.adhdConfig;
 
         // ADHD: Digital Detox Mode (Enhancement 39)
@@ -836,7 +849,7 @@ export const GreenhouseNeuroUI3D = {
         ctx.rect(0, 0, w, h);
         ctx.clip();
 
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
         ctx.fillStyle = pipConfig.borderColor;
         ctx.font = '800 10px Quicksand, sans-serif';
         ctx.textBaseline = 'top';
@@ -845,7 +858,7 @@ export const GreenhouseNeuroUI3D = {
         this.drawGrid(ctx);
         this.drawTargets(ctx, w, h);
 
-        if (!(window as any).GreenhouseModels3DMath) {
+        if (!GreenhouseModels3DMath) {
             ctx.restore();
             this.projection.width = origW;
             this.projection.height = origH;
@@ -859,7 +872,7 @@ export const GreenhouseNeuroUI3D = {
         this.drawConnections(ctx, w, h);
 
         const sortedNeurons = this.neurons.map(n => {
-            const p = (window as any).GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+            const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
             return { neuron: n, projected: p };
         }).filter(item => item.projected.scale > 0)
             .sort((a, b) => b.projected.depth - a.projected.depth);
@@ -868,14 +881,14 @@ export const GreenhouseNeuroUI3D = {
             this.drawNeuron(ctx, item.neuron, this.camera, this.projection);
         });
 
-        if ((window as any).GreenhouseNeuroStats) {
+        if (GreenhouseNeuroStats) {
             const labeledNeurons = sortedNeurons.map(item => ({
                 ...item.neuron,
                 x: item.projected.x,
                 y: item.projected.y,
                 region: item.neuron.region
             }));
-            (window as any).GreenhouseNeuroStats.drawLabels(ctx, labeledNeurons);
+            GreenhouseNeuroStats.drawLabels(ctx, labeledNeurons);
         }
 
         ctx.restore();
@@ -886,11 +899,11 @@ export const GreenhouseNeuroUI3D = {
 
     initializeBrainShell() {
         this.brainShell = { vertices: [], faces: [] };
-        if ((window as any).GreenhouseNeuroGeometry) {
-            (window as any).GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
+        if (GreenhouseNeuroGeometry) {
+            GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
 
             // ADHD: PFC Thinning (Enhancement 72)
-            const ga = (window as any).GreenhouseNeuroApp?.ga;
+            const ga = GreenhouseNeuroApp?.ga;
             if (ga?.adhdConfig?.activeEnhancements.has(72)) {
                 const pfcIndices = this.getRegionVertices('pfc');
                 pfcIndices.forEach(idx => {
@@ -902,24 +915,24 @@ export const GreenhouseNeuroUI3D = {
     },
 
     getRegionVertices(regionKey: string) {
-        if ((window as any).GreenhouseNeuroGeometry) {
-            return (window as any).GreenhouseNeuroGeometry.getRegionVertices(this.brainShell, regionKey);
+        if (GreenhouseNeuroGeometry) {
+            return GreenhouseNeuroGeometry.getRegionVertices(this.brainShell, regionKey);
         }
         return [];
     },
 
     drawBrainShell(ctx: CanvasRenderingContext2D, offset: number, w: number, h: number) {
-        if ((window as any).GreenhouseNeuroBrain) {
+        if (GreenhouseNeuroBrain) {
             ctx.save();
             ctx.translate(offset || 0, 0);
-            (window as any).GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height, null);
+            GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height, null);
             ctx.restore();
         }
     },
 
     drawNeuron(ctx: CanvasRenderingContext2D, neuron: any, camera: Greenhouse.Camera, projection: Greenhouse.Projection) {
-        if ((window as any).GreenhouseNeuroNeuron) {
-            const ga = (window as any).GreenhouseNeuroApp?.ga;
+        if (GreenhouseNeuroNeuron) {
+            const ga = GreenhouseNeuroApp?.ga;
             const adhd = ga?.adhdConfig;
 
             // ADHD: Hyperactive Firing Mode (Enhancement 3) / Binaural Beat Sync (Enhancement 38)
@@ -968,7 +981,7 @@ export const GreenhouseNeuroUI3D = {
 
             ctx.save();
             ctx.globalAlpha *= alphaOverride;
-            (window as any).GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq, isHovered);
+            GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq, isHovered);
             ctx.restore();
 
             if (adhd?.activeEnhancements.has(53) && (neuron.region === 'striatum' || neuron.region === 'brainstem')) {
@@ -978,8 +991,8 @@ export const GreenhouseNeuroUI3D = {
     },
 
     drawConnections(ctx: CanvasRenderingContext2D, w: number, h: number) {
-        if ((window as any).GreenhouseNeuroSynapse) {
-            const ga = (window as any).GreenhouseNeuroApp?.ga;
+        if (GreenhouseNeuroSynapse) {
+            const ga = GreenhouseNeuroApp?.ga;
             const adhd = ga?.adhdConfig;
 
             // ADHD: Basal Ganglia Feedback Error (Enhancement 75)
@@ -1000,16 +1013,16 @@ export const GreenhouseNeuroUI3D = {
 
             ctx.save();
             ctx.scale(scale, scale);
-            (window as any).GreenhouseNeuroSynapse.drawConnections(ctx, this.connections, this.neurons, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height);
+            GreenhouseNeuroSynapse.drawConnections(ctx, this.connections, this.neurons, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height);
             ctx.restore();
         }
     },
 
     drawGrid(ctx: CanvasRenderingContext2D) {
-        const util = (window as any).GreenhouseModelsUtil;
-        if (!(window as any).GreenhouseModels3DMath) return;
+        const util = GreenhouseModelsUtil;
+        if (!GreenhouseModels3DMath) return;
 
-        const ga = (window as any).GreenhouseNeuroApp?.ga;
+        const ga = GreenhouseNeuroApp?.ga;
         // ADHD: Environmental Scaffolding (Enhancement 45)
         const scaffolding = ga?.adhdConfig?.activeEnhancements.has(45);
 
@@ -1024,8 +1037,8 @@ export const GreenhouseNeuroUI3D = {
         ctx.font = this.config.get('ui.labelFont') || '10px Arial';
 
         for (let x = -size; x <= size; x += step) {
-            const p1 = (window as any).GreenhouseModels3DMath.project3DTo2D(x, y, -size, this.camera, this.projection);
-            const p2 = (window as any).GreenhouseModels3DMath.project3DTo2D(x, y, size, this.camera, this.projection);
+            const p1 = GreenhouseModels3DMath.project3DTo2D(x, y, -size, this.camera, this.projection);
+            const p2 = GreenhouseModels3DMath.project3DTo2D(x, y, size, this.camera, this.projection);
             if (p1.scale > 0 && p2.scale > 0) {
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
@@ -1034,8 +1047,8 @@ export const GreenhouseNeuroUI3D = {
             }
         }
         for (let z = -size; z <= size; z += step) {
-            const p1 = (window as any).GreenhouseModels3DMath.project3DTo2D(-size, y, z, this.camera, this.projection);
-            const p2 = (window as any).GreenhouseModels3DMath.project3DTo2D(size, y, z, this.camera, this.projection);
+            const p1 = GreenhouseModels3DMath.project3DTo2D(-size, y, z, this.camera, this.projection);
+            const p2 = GreenhouseModels3DMath.project3DTo2D(size, y, z, this.camera, this.projection);
             if (p1.scale > 0 && p2.scale > 0) {
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
@@ -1044,9 +1057,9 @@ export const GreenhouseNeuroUI3D = {
             }
         }
 
-        const origin = (window as any).GreenhouseModels3DMath.project3DTo2D(0, y, 0, this.camera, this.projection);
-        const xAxis = (window as any).GreenhouseModels3DMath.project3DTo2D(size, y, 0, this.camera, this.projection);
-        const zAxis = (window as any).GreenhouseModels3DMath.project3DTo2D(0, y, size, this.camera, this.projection);
+        const origin = GreenhouseModels3DMath.project3DTo2D(0, y, 0, this.camera, this.projection);
+        const xAxis = GreenhouseModels3DMath.project3DTo2D(size, y, 0, this.camera, this.projection);
+        const zAxis = GreenhouseModels3DMath.project3DTo2D(0, y, size, this.camera, this.projection);
 
         if (origin.scale > 0) {
             if (xAxis.scale > 0) ctx.fillText(util ? util.t('X-Axis') : 'X-Axis', xAxis.x, xAxis.y);
@@ -1115,7 +1128,7 @@ export const GreenhouseNeuroUI3D = {
         let minNeuronDist = 15;
 
         this.neurons.forEach(n => {
-            const p = (window as any).GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+            const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
             if (p.scale > 0) {
                 const dx = localMouseX - p.x;
                 const dy = localMouseY - p.y;
@@ -1141,7 +1154,7 @@ export const GreenhouseNeuroUI3D = {
         this.connections.forEach(conn => {
             if (!conn.controlPoint) return;
 
-            const p = (window as any).GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
+            const p = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
 
             if (p.scale > 0) {
                 const dx = localMouseX - p.x;
@@ -1211,7 +1224,7 @@ export const GreenhouseNeuroUI3D = {
         // Mouse down handler
         this.canvas.addEventListener('mousedown', (e: MouseEvent) => {
             // Check if synapse camera controller exists and if click is in main view
-            if ((window as any).GreenhouseNeuroSynapse && (window as any).GreenhouseNeuroSynapse.synapseCameraController) {
+            if (GreenhouseNeuroSynapse && GreenhouseNeuroSynapse.synapseCameraController) {
                 const rect = this.canvas.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
@@ -1234,34 +1247,34 @@ export const GreenhouseNeuroUI3D = {
 
                     if (mouseX >= resetBtnX && mouseX <= resetBtnX + resetBtnW &&
                         mouseY >= resetBtnY && mouseY <= resetBtnY + resetBtnH) {
-                        (window as any).GreenhouseNeuroSynapse.synapseCameraController.reset();
+                        GreenhouseNeuroSynapse.synapseCameraController.reset();
                         return;
                     }
 
                     // Handle camera interaction
                     const bounds = { x: 0, y: 0, w: this.canvas.width, h: this.canvas.height };
-                    (window as any).GreenhouseNeuroSynapse.synapseCameraController.handleMouseDown(e, this.canvas, bounds);
+                    GreenhouseNeuroSynapse.synapseCameraController.handleMouseDown(e, this.canvas, bounds);
                 }
             }
         });
 
         // Mouse move handler
         window.addEventListener('mousemove', (e: MouseEvent) => {
-            if ((window as any).GreenhouseNeuroSynapse && (window as any).GreenhouseNeuroSynapse.synapseCameraController) {
-                (window as any).GreenhouseNeuroSynapse.synapseCameraController.handleMouseMove(e, this.canvas);
+            if (GreenhouseNeuroSynapse && GreenhouseNeuroSynapse.synapseCameraController) {
+                GreenhouseNeuroSynapse.synapseCameraController.handleMouseMove(e, this.canvas);
             }
         });
 
         // Mouse up handler
         window.addEventListener('mouseup', () => {
-            if ((window as any).GreenhouseNeuroSynapse && (window as any).GreenhouseNeuroSynapse.synapseCameraController) {
-                (window as any).GreenhouseNeuroSynapse.synapseCameraController.handleMouseUp();
+            if (GreenhouseNeuroSynapse && GreenhouseNeuroSynapse.synapseCameraController) {
+                GreenhouseNeuroSynapse.synapseCameraController.handleMouseUp();
             }
         });
 
         // Wheel handler
         this.canvas.addEventListener('wheel', (e: WheelEvent) => {
-            if ((window as any).GreenhouseNeuroSynapse && (window as any).GreenhouseNeuroSynapse.synapseCameraController) {
+            if (GreenhouseNeuroSynapse && GreenhouseNeuroSynapse.synapseCameraController) {
                 const rect = this.canvas.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
@@ -1277,7 +1290,7 @@ export const GreenhouseNeuroUI3D = {
                 // If NOT in PiP area, handle synapse camera zoom
                 if (mouseX < pipX || mouseX > pipX + pipW || mouseY < pipY || mouseY > pipH + pipY) {
                     const bounds = { x: 0, y: 0, w: this.canvas.width, h: this.canvas.height };
-                    (window as any).GreenhouseNeuroSynapse.synapseCameraController.handleWheel(e, this.canvas, bounds);
+                    GreenhouseNeuroSynapse.synapseCameraController.handleWheel(e, this.canvas, bounds);
                 }
             }
         }, { passive: false });
@@ -1286,7 +1299,7 @@ export const GreenhouseNeuroUI3D = {
     },
 
     handleTooltipMove(e: MouseEvent) {
-        const ga = (window as any).GreenhouseNeuroApp?.ga;
+        const ga = GreenhouseNeuroApp?.ga;
         const activeEnhancements = ga?.adhdConfig?.activeEnhancements;
         if (!this.tooltipEl || !activeEnhancements || !activeEnhancements.size) return;
 
@@ -1294,8 +1307,8 @@ export const GreenhouseNeuroUI3D = {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        const t = (k: string) => (window as any).GreenhouseModelsUtil ? (window as any).GreenhouseModelsUtil.t(k) : k;
-        const data = (window as any).GreenhouseADHDData;
+        const t = (k: string) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+        const data = GreenhouseADHDData;
         if (!data) return;
 
         let tooltipContent = "";
@@ -1303,14 +1316,14 @@ export const GreenhouseNeuroUI3D = {
         // Check for hits on ADHD specific visualizations
 
         // Check Synapse View components if in main view
-        if (!tooltipContent && (window as any).GreenhouseNeuroSynapse && this.selectedConnection) {
+        if (!tooltipContent && GreenhouseNeuroSynapse && this.selectedConnection) {
             const pipConfig = this.config.get('pip');
             // If NOT in PiP area, we are in main view
             if (x < this.canvas.width - pipConfig.width - 20 || y < this.canvas.height - pipConfig.height - 20) {
-                 const synapseCamera = (window as any).GreenhouseNeuroSynapse.synapseCameraController?.getCamera() || {
+                 const synapseCamera = GreenhouseNeuroSynapse.synapseCameraController?.getCamera() || {
                     x: 0, y: 0, z: -200, rotationX: 0.2, rotationY: 0, rotationZ: 0, fov: 400
                  };
-                 tooltipContent = (window as any).GreenhouseNeuroSynapse.checkSynapseHover(x, y, this.canvas.width, this.canvas.height, synapseCamera, activeEnhancements);
+                 tooltipContent = GreenhouseNeuroSynapse.checkSynapseHover(x, y, this.canvas.width, this.canvas.height, synapseCamera, activeEnhancements);
             }
         }
 
@@ -1329,7 +1342,7 @@ export const GreenhouseNeuroUI3D = {
             // This is a global effect, but we can show it when hovering the main view
             const pipConfig = this.config.get('pip');
             if (x < this.canvas.width - pipConfig.width - 20) {
-                 const fatigue = (window as any).GreenhouseNeuroApp?.ga?.adhdConfig?.fatigue || 0;
+                 const fatigue = GreenhouseNeuroApp?.ga?.adhdConfig?.fatigue || 0;
                  if (fatigue > 0.5) {
                     tooltipContent = `<strong>${t(`adhd_enh_19_name`)}</strong><br>${t(`adhd_enh_19_desc`)}`;
                  }
@@ -1378,9 +1391,9 @@ export const GreenhouseNeuroUI3D = {
     },
 
     generateSynapseMeshes() {
-        if ((window as any).GreenhouseNeuroGeometry) {
-            const pre = (window as any).GreenhouseNeuroGeometry.createSynapseGeometry(80, 20, 'pre');
-            const post = (window as any).GreenhouseNeuroGeometry.createSynapseGeometry(80, 20, 'post');
+        if (GreenhouseNeuroGeometry) {
+            const pre = GreenhouseNeuroGeometry.createSynapseGeometry(80, 20, 'pre');
+            const post = GreenhouseNeuroGeometry.createSynapseGeometry(80, 20, 'post');
 
             post.vertices.forEach((v: any) => {
                 v.y *= -1;

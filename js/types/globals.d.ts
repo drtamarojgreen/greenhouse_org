@@ -86,6 +86,8 @@ declare interface Window {
     LabelingSystem: any;
     PathwayLayout: any;
     React: any;
+    __REACT_DEVTOOLS_GLOBAL_HOOK__?: any;
+    MSStream?: any;
     ReactomeParser: any;
     TechApp: any;
     V8GraphRenderer: any;

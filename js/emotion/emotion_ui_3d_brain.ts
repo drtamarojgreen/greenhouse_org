@@ -1,3 +1,6 @@
+import { GreenhouseBrainMeshRealistic } from '../brain_mesh_realistic.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+var _exported_GreenhouseEmotionBrain: any;
 (function () {
     'use strict';
 
@@ -7,12 +10,12 @@
          * Wraps the base GreenhouseBrainMeshRealistic generator and overlays granular regions.
          */
         generateEnhancedBrain() {
-            if (!window.GreenhouseBrainMeshRealistic) {
+            if (!GreenhouseBrainMeshRealistic) {
                 console.error('GreenhouseBrainMeshRealistic not found.');
                 return null;
             }
 
-            const brain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            const brain = GreenhouseBrainMeshRealistic.generateRealisticBrain();
 
             // Overlay granular emotion regions
             this.enhanceRegions(brain);
@@ -397,5 +400,8 @@
         }
     };
 
-    window.GreenhouseEmotionBrain = GreenhouseEmotionBrain;
+    _exported_GreenhouseEmotionBrain = GreenhouseEmotionBrain;
 })();
+
+
+export var GreenhouseEmotionBrain = _exported_GreenhouseEmotionBrain;

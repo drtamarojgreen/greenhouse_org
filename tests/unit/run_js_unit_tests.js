@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
 const { setupMockEnvironment, MockElement } = require('./browser_mocks');
 const { setupGreenhouseMocks } = require('./greenhouse_mocks');
 
@@ -25,38 +26,34 @@ console.warn = () => {};
 setupMockEnvironment();
 setupGreenhouseMocks();
 
-process.on('unhandledRejection', (reason, promise) => {});
+process.on('unhandledRejection', () => {});
 
 const ROOT = path.resolve(__dirname, '../../');
-require(path.join(ROOT, 'docs/js/assertion_library.js'));
-require(path.join(ROOT, 'docs/js/test_framework.js'));
+const PUBLIC_JS = path.join(ROOT, 'public/js');
 
-// Monkey-patch TestFramework for reporting and data preservation
-if (global.TestFramework) {
+function configureTestFramework() {
+    if (!global.TestFramework) return;
     const originalRunSuite = global.TestFramework.runSuite;
     const originalRunTest = global.TestFramework.runTest;
     const originalDescribe = global.TestFramework.describe;
 
-    // Support nested describe hooks
     global.TestFramework.describe = function(name, fn) {
         const parentSuite = this.currentSuite;
         const suite = originalDescribe.call(this, name, fn);
         if (parentSuite) {
             suite.beforeEach = [...parentSuite.beforeEach, ...suite.beforeEach];
-            suite.afterEach = [...parentSuite.afterEach, ...parentSuite.afterEach];
+            suite.afterEach = [...parentSuite.afterEach, ...suite.afterEach];
             suite.beforeAll = [...parentSuite.beforeAll, ...suite.beforeAll];
-            suite.afterAll = [...parentSuite.afterAll, ...parentSuite.afterAll];
+            suite.afterAll = [...parentSuite.afterAll, ...suite.afterAll];
         }
         return suite;
     };
 
     global.TestFramework.runSuite = async function(suite) {
-        // Only log if it has direct tests or we want to see everything
         if (suite.tests.length > 0) {
             global.__originalConsole.log(`Running suite: ${suite.name}`);
         }
         const result = await originalRunSuite.call(this, suite);
-        // Ensure tests are included in the results for the summary reporter
         const suiteResult = (this.results.suites || []).find(s => s.name === suite.name);
         if (suiteResult) {
             suiteResult.tests = suite.tests;
@@ -65,9 +62,7 @@ if (global.TestFramework) {
     };
 
     global.TestFramework.runTest = async function(test, suite) {
-        // Safety: Ensure test has access to current config mock during execution
         injectDefensiveConfig();
-
         const result = await originalRunTest.call(this, test, suite);
         if (test.result === 'passed') {
             global.__originalConsole.log(`  ✓ ${test.name}`);
@@ -78,79 +73,72 @@ if (global.TestFramework) {
     };
 }
 
-// --- 3. Module Loading Logic ---
-function loadModule(m) {
-    const fullPath = path.join(ROOT, m.startsWith('docs/js') ? m : path.join('docs/js', m));
-    if (fs.existsSync(fullPath)) {
-        // Prepare environment for loader execution
-        const script = new MockElement('script');
-        script.setAttribute('data-base-url', '/');
-        script.setAttribute('data-target-selector-left', '#container');
-        script.setAttribute('data-target-selector', '#container');
-        script.setAttribute('data-genetic-selectors', JSON.stringify({ genetic: '#container' }));
-        script.setAttribute('data-scheduler-selectors', JSON.stringify({ dashboardLeft: '#container', dashboardRight: '#container' }));
-        global.document.currentScript = script;
+async function loadModule(m) {
+    const cleanRel = m.replace(/^docs\/js\//, '').replace(/^public\/js\//, '');
+    const fullPath = path.join(PUBLIC_JS, cleanRel);
+    if (!fs.existsSync(fullPath)) return;
 
-        // Populate window attributes so main() can finish and define exports
-        global.window._greenhouseScriptAttributes = {
-            'base-url': '/',
-            'target-selector-left': '#container',
-            'target-selector': '#container',
-            'data-genetic-selectors': JSON.stringify({ genetic: '#container' })
+    const script = new MockElement('script');
+    script.setAttribute('data-base-url', '/');
+    script.setAttribute('data-target-selector-left', '#container');
+    script.setAttribute('data-target-selector', '#container');
+    script.setAttribute('data-genetic-selectors', JSON.stringify({ genetic: '#container' }));
+    script.setAttribute('data-scheduler-selectors', JSON.stringify({ dashboardLeft: '#container', dashboardRight: '#container' }));
+    global.document.currentScript = script;
+
+    global.window._greenhouseScriptAttributes = {
+        'base-url': '/',
+        'target-selector-left': '#container',
+        'target-selector': '#container',
+        'data-genetic-selectors': JSON.stringify({ genetic: '#container' })
+    };
+
+    if (global.window) {
+        global.window.requestAnimationFrame = (cb) => {
+            if (global.__is_loading_modules__) return 0;
+            return global.__originalTimers.setTimeout(cb, 16);
         };
-        let code = fs.readFileSync(fullPath, 'utf8');
-        // Strip exports for Node.js eval
-        code = code.replace(/^export /gm, '');
-        try {
-            global.__is_loading_modules__ = true;
-            eval(code);
-        } catch (e) {
-            global.__originalConsole.error(`Error evaluating ${m}:`, e.message);
-        } finally {
-            global.__is_loading_modules__ = false;
-        }
-
-        // RE-MOCK loadScript immediately after GreenhouseUtils.js might have overwritten it
-        forceMockLoadScript();
-
-        // Prevent auto-init animations and side-effects during load
-        if (global.window) {
-            global.window.requestAnimationFrame = (cb) => {
-                if (global.__is_loading_modules__) return 0;
-                return global.__originalTimers.setTimeout(cb, 16);
-            };
-            global.window.setInterval = (cb, ms) => {
-                if (global.__is_loading_modules__) return 0;
-                return global.__originalTimers.setInterval(cb, ms);
-            };
-            global.window.setTimeout = (cb, ms) => {
-                if (global.__is_loading_modules__) return 0; // Block timers during load
-                return global.__originalTimers.setTimeout(cb, ms);
-            };
-        }
-
-        // Safety Inject: Ensure all controllers and configs are robust
-        injectDefensiveConfig();
-
-        // Define GreenhouseDNARepair and RNARepairSimulation early if not defined
-        // to avoid null reference in test_dna_logic.js
-        if (!global.GreenhouseDNARepair || !global.GreenhouseDNARepair.state) {
-            global.GreenhouseDNARepair = global.GreenhouseDNARepair || {};
-            global.GreenhouseDNARepair.state = {
-                basePairs: [],
-                particles: [],
-                camera: { rotationX: 0, x: 0, y: 0, z: -250 }
-            };
-            global.GreenhouseDNARepair.config = { helixLength: 60 };
-        }
-
-        // Also ensure it is on window
-        if (global.window) {
-            global.window.GreenhouseDNARepair = global.GreenhouseDNARepair;
-        }
-        if (!global.RNARepairSimulation) global.RNARepairSimulation = { state: { rnaStrand: [] } };
-        if (global.window && !global.window.RNARepairSimulation) global.window.RNARepairSimulation = global.RNARepairSimulation;
+        global.window.setInterval = (cb, ms) => {
+            if (global.__is_loading_modules__) return 0;
+            return global.__originalTimers.setInterval(cb, ms);
+        };
+        global.window.setTimeout = (cb, ms) => {
+            if (global.__is_loading_modules__) return 0;
+            return global.__originalTimers.setTimeout(cb, ms);
+        };
     }
+
+    try {
+        global.__is_loading_modules__ = true;
+        const exported = await import(pathToFileURL(fullPath).href);
+        for (const [key, value] of Object.entries(exported)) {
+            if (value !== undefined) {
+                global[key] = value;
+                if (global.window) global.window[key] = value;
+            }
+        }
+    } catch (e) {
+        global.__originalConsole.error(`Error importing ${cleanRel}:`, e.message);
+    } finally {
+        global.__is_loading_modules__ = false;
+    }
+
+    injectDefensiveConfig();
+
+    if (!global.GreenhouseDNARepair || !global.GreenhouseDNARepair.state) {
+        global.GreenhouseDNARepair = global.GreenhouseDNARepair || {};
+        global.GreenhouseDNARepair.state = {
+            basePairs: [],
+            particles: [],
+            camera: { rotationX: 0, x: 0, y: 0, z: -250 }
+        };
+        global.GreenhouseDNARepair.config = global.GreenhouseDNARepair.config || { helixLength: 60 };
+    }
+    if (global.window) {
+        global.window.GreenhouseDNARepair = global.GreenhouseDNARepair;
+    }
+    if (!global.RNARepairSimulation) global.RNARepairSimulation = { state: { rnaStrand: [] } };
+    if (global.window && !global.window.RNARepairSimulation) global.window.RNARepairSimulation = global.RNARepairSimulation;
 }
 
 function injectDefensiveConfig(targetConfig) {
@@ -163,9 +151,9 @@ function injectDefensiveConfig(targetConfig) {
         global.window?.GreenhouseNeuroConfig
     ];
 
-    const getImpl = function(path) {
-        if (!path || typeof path !== 'string') return undefined;
-        const keys = path.split('.');
+    const getImpl = function(p) {
+        if (!p || typeof p !== 'string') return undefined;
+        const keys = p.split('.');
         let val = this;
         for (const k of keys) {
             if (val && typeof val === 'object' && k in val) val = val[k];
@@ -180,15 +168,12 @@ function injectDefensiveConfig(targetConfig) {
         }
     });
 
-    // Alias for LabelingSystem
     if (global.GreenhouseLabelingSystem) global.LabelingSystem = global.GreenhouseLabelingSystem;
-    if (global.window && global.window.GreenhouseLabelingSystem) global.window.LabelingSystem = global.window.GreenhouseLabelingSystem;
+    if (global.window && global.window.GreenhouseLabelingSystem) global.window.LabelingSystem = global.GreenhouseLabelingSystem;
 
-    // Standard structures
     const defaultCamera = { x: 0, y: 0, z: -600, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 600 };
     const defaultProjection = { width: 800, height: 600, near: 10, far: 5000 };
 
-    // App-specific defensive patching
     const apps = [
         'GreenhouseNeuroApp', 'GreenhouseStressApp', 'GreenhouseInflammationApp',
         'GreenhouseCognitionApp', 'GreenhouseEmotionApp', 'GreenhouseNeuroUI3D'
@@ -217,7 +202,6 @@ function injectDefensiveConfig(targetConfig) {
                 if (!app.state.factors) app.state.factors = {};
             }
 
-            // Silence drawUI to prevent background errors during logic tests
             if (typeof app.drawUI === 'function' && !app.drawUI.__mocked) {
                 const original = app.drawUI;
                 app.drawUI = function() {
@@ -228,7 +212,6 @@ function injectDefensiveConfig(targetConfig) {
         }
     });
 
-    // Prototype patching
     const classes = [
         'GreenhouseGeneticCameraController',
         'GreenhouseGeneticPiPControls',
@@ -270,9 +253,7 @@ function injectDefensiveConfig(targetConfig) {
                         }
                         try {
                             return originalMethod.apply(this, arguments);
-                        } catch (e) {
-                            // Silently ignore prototype method errors in tests
-                        }
+                        } catch (e) {}
                     };
                     proto[methodName].__patched = true;
                 }
@@ -281,32 +262,8 @@ function injectDefensiveConfig(targetConfig) {
     });
 }
 
-// Ensure loadScript is always a no-op mock that resolves immediately
-function forceMockLoadScript() {
-    const mock = () => Promise.resolve();
-    const targets = [
-        global.GreenhouseUtils,
-        global.window?.GreenhouseUtils,
-        global.GreenhouseModelsUtil,
-        global.window?.GreenhouseModelsUtil
-    ];
-    targets.forEach(obj => {
-        if (obj) {
-            try {
-                Object.defineProperty(obj, 'loadScript', {
-                    value: mock,
-                    writable: true,
-                    configurable: true,
-                    enumerable: true
-                });
-            } catch (e) {
-                obj.loadScript = mock;
-            }
-        }
-    });
-}
-
 const modules = [
+    'context.js',
     'GreenhouseDependencyManager.js',
     'GreenhouseUtils.js',
     'performance_profiler.js',
@@ -343,15 +300,12 @@ const modules = [
     'cognition/cognition_ui_3d_brain.js', 'cognition/cognition_app.js', 'cognition.js',
     'emotion/emotion_config.js', 'emotion/emotion_theories.js', 'emotion/emotion_regions.js',
     'emotion/emotion_ui_3d_brain.js', 'emotion/emotion_app.js', 'emotion.js',
-    'GreenhouseDashboardApp.js', 'scheduler.js', 'schedulerUI.js',
+    'GreenhouseDashboardApp.js', 'schedulerUI.js', 'scheduler.js',
     'quizzes.js', 'inspiration.js', 'labeling_system.js', 'models_toc.js',
     'reactome_parser.js', 'GreenhouseReactCompatibility.js', 'V8GraphRenderer.js',
     'dna/dna_repair_mechanisms.js', 'dna/dna_repair_mutations.js', 'dna/dna_repair_buttons.js', 'dna/dna_replication.js', 'dna/dna_tooltip.js', 'dna_repair.js',
     'rna/rna_display.js', 'rna/rna_legend.js', 'rna/rna_repair_atp.js', 'rna/rna_repair_enzymes.js', 'rna/rna_repair_physics.js', 'rna/rna_tooltip.js', 'rna_repair.js'
 ];
-
-modules.forEach(loadModule);
-setupGreenhouseMocks();
 
 function getAllTestFiles(dir, files_ = []) {
     const fsFiles = fs.readdirSync(dir);
@@ -367,6 +321,15 @@ function getAllTestFiles(dir, files_ = []) {
 }
 
 async function runTests() {
+    await loadModule('assertion_library.js');
+    await loadModule('test_framework.js');
+    configureTestFramework();
+
+    for (const mod of modules) {
+        await loadModule(mod);
+    }
+    setupGreenhouseMocks();
+
     global.__originalConsole.log("--- Starting Consolidated JavaScript Unit Tests ---");
     const testFiles = getAllTestFiles(__dirname);
     for (const file of testFiles) {
@@ -387,7 +350,6 @@ async function runTests() {
 
     global.__originalConsole.log(`\nSummary - Passed: ${results.passed}, Failed: ${results.failed}, Total: ${results.total}`);
     if (results.failed > 0) {
-        // Output detailed failures
         (results.suites || []).forEach(suite => {
             (suite.tests || []).forEach(test => {
                 if (test.result === 'failed') {
@@ -401,6 +363,6 @@ async function runTests() {
 }
 
 runTests().catch(e => {
-    console.error('Test Runner Error:', e);
+    global.__originalConsole.error('Test Runner Error:', e);
     process.exit(1);
 });

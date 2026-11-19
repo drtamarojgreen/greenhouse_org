@@ -1,14 +1,17 @@
+import { GreenhouseCognitionDrawingUtils } from './cognition_drawing_utils.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file cognition_research.js
  * @description Research-oriented features for the Cognition model.
  * Covers Enhancements 151-175.
  */
 
+var _exported_GreenhouseCognitionResearch: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-    const utils = () => window.GreenhouseCognitionDrawingUtils;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
+    const utils = () => GreenhouseCognitionDrawingUtils;
 
     const GreenhouseCognitionResearch = {
         init(app) {
@@ -91,7 +94,7 @@
 
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
+            if (!activeEnhancement || !GreenhouseCognitionDrawingUtils) return;
 
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
@@ -112,5 +115,8 @@
         }
     };
 
-    window.GreenhouseCognitionResearch = GreenhouseCognitionResearch;
+    _exported_GreenhouseCognitionResearch = GreenhouseCognitionResearch;
 })();
+
+
+export var GreenhouseCognitionResearch = _exported_GreenhouseCognitionResearch;

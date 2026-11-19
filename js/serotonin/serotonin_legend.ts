@@ -1,3 +1,4 @@
+import { GreenhouseSerotonin } from '../context.js';
 // [TypeScript Migration] Source migrated from serotonin_legend.js — behavior preserved.
 /**
  * @file serotonin_legend.js
@@ -6,8 +7,7 @@
 
 (function () {
     'use strict';
-    const G = window.GreenhouseSerotonin || {};
-    (window as any).GreenhouseSerotonin = G;
+    const G = GreenhouseSerotonin;
 
     G.Legend = {
         visible: true,

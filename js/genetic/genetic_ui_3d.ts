@@ -1,12 +1,29 @@
+import { GreenhouseGeneticCameraController } from './genetic_camera_controls.js';
+import { GreenhouseGeneticConfig } from './genetic_config.js';
+import { GreenhouseGeneticLighting } from './genetic_lighting.js';
+import { GreenhouseGeneticPiPControls } from './genetic_pip_controls.js';
+import { GreenhouseGeneticBrain } from './genetic_ui_3d_brain.js';
+import { GreenhouseGeneticChromosome } from './genetic_ui_3d_chromosome.js';
+import { GreenhouseGeneticDNA } from './genetic_ui_3d_dna.js';
+import { GreenhouseGeneticGene } from './genetic_ui_3d_gene.js';
+import { GreenhouseGeneticGeometry } from './genetic_ui_3d_geometry.js';
+import { GreenhouseGeneticProtein } from './genetic_ui_3d_protein.js';
+import { GreenhouseGeneticStats } from './genetic_ui_3d_stats.js';
+import { GreenhouseGenetic } from '../genetic.js';
+import { GreenhouseUtils } from '../GreenhouseUtils.js';
+import { GreenhouseModels3DMath } from '../models_3d_math.js';
+import { GreenhousePostProcessor } from '../models_3d_postprocess.js';
+import { GreenhouseModelsUtil } from '../models_util.js';
 // docs/js/genetic/genetic_ui_3d.js
 // Enhanced 3D Visualization for Genetic Algorithm
 
+var _exported_GreenhouseGeneticUI3D: any;
 (function () {
     'use strict';
 
     const GENE_SYMBOLS = ["BDNF", "SLC6A4", "DRD2", "HTR2A", "COMT", "DISC1", "NRG1", "DAOA", "GRIN2A", "GRIK2", "HOMER1", "NTRK2", "SHANK3", "OXTR", "MAOA", "CHRNA7", "GABRA1", "SYP", "MBP", "APOE", "TREM2", "CACNA1C", "FOXP2"];
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseGeneticUI3D = {
         container: null,
@@ -37,8 +54,8 @@
             this.container = container;
             this.camera = this.cameras[0];
 
-            if (window.GreenhouseGeneticPiPControls) window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig, this.cameras);
-            if (window.GreenhouseGeneticCameraController) this.mainCameraController = new window.GreenhouseGeneticCameraController(this.camera, window.GreenhouseGeneticConfig);
+            if (GreenhouseGeneticPiPControls) GreenhouseGeneticPiPControls.init(GreenhouseGeneticConfig, this.cameras);
+            if (GreenhouseGeneticCameraController) this.mainCameraController = new GreenhouseGeneticCameraController(this.camera, GreenhouseGeneticConfig);
 
             this.setupDOM();
             this.resize();
@@ -79,8 +96,8 @@
             this.ctx = this.canvas.getContext('2d');
 
             // Initialize Post-Processor
-            if (window.GreenhousePostProcessor) {
-                window.GreenhousePostProcessor.init(this.canvas);
+            if (GreenhousePostProcessor) {
+                GreenhousePostProcessor.init(this.canvas);
             }
 
             // Add Start Overlay
@@ -91,8 +108,8 @@
         },
 
         addExplanation(container) {
-            const util = window.GreenhouseModelsUtil;
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const util = GreenhouseModelsUtil;
+            const isMobile = GreenhouseUtils && GreenhouseUtils.isMobileUser();
             if (!util || isMobile) return;
 
             const section = document.createElement('div');
@@ -115,7 +132,7 @@
             const btn = document.createElement('button');
             btn.textContent = t('Start Simulation');
             btn.style.cssText = 'padding:15px 30px;font-size:18px;cursor:pointer;background:#E0E0E0;border:none;border-radius:5px;font-weight:bold;';
-            btn.onclick = () => { this.isEvolving = true; overlay.style.display = 'none'; if (window.GreenhouseGenetic) window.GreenhouseGenetic.startSimulation(); };
+            btn.onclick = () => { this.isEvolving = true; overlay.style.display = 'none'; if (GreenhouseGenetic) GreenhouseGenetic.startSimulation(); };
             overlay.appendChild(btn);
             container.style.position = 'relative';
             container.appendChild(overlay);
@@ -135,19 +152,19 @@
 
         setupInteraction() {
             this.canvas.addEventListener('mousedown', e => {
-                if (window.GreenhouseGeneticPiPControls?.handleMouseDown(e, this.canvas)) return;
+                if (GreenhouseGeneticPiPControls?.handleMouseDown(e, this.canvas)) return;
                 this.mainCameraController?.handleMouseDown(e);
             });
             window.addEventListener('mouseup', () => {
-                window.GreenhouseGeneticPiPControls?.handleMouseUp();
+                GreenhouseGeneticPiPControls?.handleMouseUp();
                 this.mainCameraController?.handleMouseUp();
             });
             window.addEventListener('mousemove', e => {
-                if (window.GreenhouseGeneticPiPControls?.handleMouseMove(e)) return;
+                if (GreenhouseGeneticPiPControls?.handleMouseMove(e)) return;
                 this.mainCameraController?.handleMouseMove(e);
             });
             this.canvas.addEventListener('wheel', e => {
-                if (window.GreenhouseGeneticPiPControls?.handleWheel(e, this.canvas)) return;
+                if (GreenhouseGeneticPiPControls?.handleWheel(e, this.canvas)) return;
                 e.preventDefault();
                 this.mainCameraController?.handleWheel(e);
             }, { passive: false });
@@ -158,17 +175,17 @@
             const net = this.algo.bestNetwork;
             if (!this.brainShell) {
                 this.brainShell = { vertices: [], faces: [] };
-                window.GreenhouseGeneticGeometry?.initializeBrainShell(this.brainShell);
+                GreenhouseGeneticGeometry?.initializeBrainShell(this.brainShell);
             }
             this.neurons3D = net.nodes.map((node, i) => {
                 const isGenotype = i < net.nodes.length / 2;
                 if (isGenotype) {
-                    const helixData = window.GreenhouseGeneticGeometry?.generateHelixPoints(i, net.nodes.length, -400);
+                    const helixData = GreenhouseGeneticGeometry?.generateHelixPoints(i, net.nodes.length, -400);
                     return { ...node, x: helixData.x, y: helixData.y, z: helixData.z, type: 'gene', strand: helixData.strandIndex, label: GENE_SYMBOLS[i % GENE_SYMBOLS.length], baseColor: '#E0E0E0' };
                 } else {
                     const regionKeys = ['pfc', 'amygdala', 'hippocampus', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'cerebellum', 'brainstem'];
                     const regionKey = regionKeys[i % regionKeys.length];
-                    const vertices = window.GreenhouseGeneticGeometry?.getRegionVertices(this.brainShell, regionKey) || [];
+                    const vertices = GreenhouseGeneticGeometry?.getRegionVertices(this.brainShell, regionKey) || [];
                     const v = this.brainShell.vertices[vertices[i % vertices.length]] || { x: 0, y: 0, z: 0 };
                     return { ...node, x: v.x * 0.8, y: v.y * 0.8, z: v.z * 0.8, type: 'neuron', region: regionKey, baseColor: '#E0E0E0' };
                 }
@@ -178,7 +195,7 @@
         startAnimation() {
             const animate = () => {
                 this.mainCameraController?.update();
-                window.GreenhouseGeneticPiPControls?.update();
+                GreenhouseGeneticPiPControls?.update();
                 this.render();
                 requestAnimationFrame(animate);
             };
@@ -188,8 +205,8 @@
         render() {
             if (!this.ctx || !this.canvas) return;
             const ctx = this.ctx;
-            const config = window.GreenhouseGeneticConfig;
-            const post = window.GreenhousePostProcessor;
+            const config = GreenhouseGeneticConfig;
+            const post = GreenhousePostProcessor;
 
             // 1. Prepare Frame (e.g. TAA Jitter)
             let jitter = { x: 0, y: 0 };
@@ -256,47 +273,47 @@
             let proteinState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
             let targetState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
 
-            if (window.GreenhouseGeneticPiPControls) {
-                helixState = window.GreenhouseGeneticPiPControls.getState('helix');
-                microState = window.GreenhouseGeneticPiPControls.getState('micro');
-                proteinState = window.GreenhouseGeneticPiPControls.getState('protein');
-                targetState = window.GreenhouseGeneticPiPControls.getState('target');
+            if (GreenhouseGeneticPiPControls) {
+                helixState = GreenhouseGeneticPiPControls.getState('helix');
+                microState = GreenhouseGeneticPiPControls.getState('micro');
+                proteinState = GreenhouseGeneticPiPControls.getState('protein');
+                targetState = GreenhouseGeneticPiPControls.getState('target');
             }
 
             const geneLabel = (activeGene && activeGene.label) ? ` (${t(activeGene.label)})` : "";
 
             // 2. PiP 1: DNA Double Helix - Top Left
             this.drawDNAHelixPiP(ctx, leftPipX, gap, pipW, pipH, helixState, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_dna') + geneLabel));
-            if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.drawControls(ctx, leftPipX, gap, pipW, pipH, 'helix');
+            if (GreenhouseGeneticPiPControls) {
+                GreenhouseGeneticPiPControls.drawControls(ctx, leftPipX, gap, pipW, pipH, 'helix');
             }
 
             // 3. PiP 2: Micro View (Gene Structure) - Top Right
             this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene,
                 this.activeGeneIndex, this.neuronMeshes, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_micro') + geneLabel), microState);
-            if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
+            if (GreenhouseGeneticPiPControls) {
+                GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
             }
 
             // 4. PiP 3: Protein View - Middle Right
             const proteinY = gap + pipH + gap;
             this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene,
                 this.proteinCache, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_protein') + geneLabel), proteinState);
-            if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
+            if (GreenhouseGeneticPiPControls) {
+                GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
             }
 
             // 5. PiP 4: Target View (Brain Region) - Bottom Right
             const targetY = gap + pipH + gap + pipH + gap;
             this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene,
                 this.activeGeneIndex, this.brainShell, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_target') + geneLabel), { ...targetState, activeGene: activeGene });
-            if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
+            if (GreenhouseGeneticPiPControls) {
+                GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
 
             // Draw Stats / Labels
-            if (window.GreenhouseGeneticStats) {
-                window.GreenhouseGeneticStats.drawOverlayInfo(ctx, w, activeGene);
+            if (GreenhouseGeneticStats) {
+                GreenhouseGeneticStats.drawOverlayInfo(ctx, w, activeGene);
 
                 // Project brain neurons for label placement
                 const projectedBrainNeurons = this.neurons3D
@@ -307,7 +324,7 @@
                     })
                     .filter(p => p.scale > 0);
 
-                window.GreenhouseGeneticStats.drawLabels(ctx, projectedBrainNeurons);
+                GreenhouseGeneticStats.drawLabels(ctx, projectedBrainNeurons);
             }
 
             // --- Apply Advanced Post-Processing ---
@@ -316,14 +333,14 @@
             }
 
             // Draw Manual Controls
-            if (window.GreenhouseGeneticStats) {
-                window.GreenhouseGeneticStats.drawControls(ctx, w, h);
+            if (GreenhouseGeneticStats) {
+                GreenhouseGeneticStats.drawControls(ctx, w, h);
             }
         },
 
         drawMacroView(ctx, w, h) {
-            if (window.GreenhouseGeneticDNA) {
-                this.projectedGenes = window.GreenhouseGeneticDNA.drawMacroView(
+            if (GreenhouseGeneticDNA) {
+                this.projectedGenes = GreenhouseGeneticDNA.drawMacroView(
                     ctx, w, h, this.camera, this.projection, this.neurons3D, this.activeGeneIndex, this.brainShell,
                     this.drawNeuron.bind(this), // Callback for drawing individual genes/neurons
                     this.drawBrainShell.bind(this) // Callback for drawing brain shell
@@ -337,14 +354,14 @@
             ctx.rect(x, y, w, h);
             ctx.clip();
 
-            if (window.GreenhouseGeneticGene) {
-                window.GreenhouseGeneticGene.drawMicroView(
+            if (GreenhouseGeneticGene) {
+                GreenhouseGeneticGene.drawMicroView(
                     ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes,
                     drawPiPFrameCallback, cameraState
                 );
-            } else if (window.GreenhouseGeneticChromosome) {
+            } else if (GreenhouseGeneticChromosome) {
                 // Fallback or alternative view
-                window.GreenhouseGeneticChromosome.drawChromosome(
+                GreenhouseGeneticChromosome.drawChromosome(
                     ctx, x, y, w, h, activeGene,
                     drawPiPFrameCallback
                 );
@@ -357,8 +374,8 @@
             ctx.beginPath();
             ctx.rect(x, y, w, h);
             ctx.clip();
-            if (window.GreenhouseGeneticBrain) {
-                window.GreenhouseGeneticBrain.drawTargetView(
+            if (GreenhouseGeneticBrain) {
+                GreenhouseGeneticBrain.drawTargetView(
                     ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell,
                     drawPiPFrameCallback, cameraState
                 );
@@ -371,8 +388,8 @@
             ctx.beginPath();
             ctx.rect(x, y, w, h);
             ctx.clip();
-            if (window.GreenhouseGeneticProtein) {
-                window.GreenhouseGeneticProtein.drawProteinView(
+            if (GreenhouseGeneticProtein) {
+                GreenhouseGeneticProtein.drawProteinView(
                     ctx, x, y, w, h, activeGene, proteinCache,
                     drawPiPFrameCallback, cameraState
                 );
@@ -381,8 +398,8 @@
         },
 
         generateProteinChain(seed) {
-            if (window.GreenhouseGeneticGeometry) {
-                return window.GreenhouseGeneticGeometry.generateProteinChain(seed);
+            if (GreenhouseGeneticGeometry) {
+                return GreenhouseGeneticGeometry.generateProteinChain(seed);
             }
             return { vertices: [] };
         },
@@ -468,13 +485,13 @@
             const pipX = w - pipW - gap;
 
             // Check for Protein Click (Middle Right)
-            if (window.GreenhouseGeneticProtein) {
+            if (GreenhouseGeneticProtein) {
                 const protX = pipX;
                 const protY = gap + pipH + gap;
                 const protW = pipW;
                 const protH = pipH;
 
-                const protHit = window.GreenhouseGeneticProtein.hitTest(
+                const protHit = GreenhouseGeneticProtein.hitTest(
                     mouseX, mouseY, protX, protY, protW, protH,
                     this.neurons3D[this.activeGeneIndex], this.proteinCache
                 );
@@ -523,12 +540,12 @@
         neuronMeshes: {}, // Cache for generated neuron meshes
         drawNeuron(ctx, p) {
             if (p.type === 'gene') {
-                if (window.GreenhouseGeneticGene) {
-                    window.GreenhouseGeneticGene.drawNeuron(ctx, p);
+                if (GreenhouseGeneticGene) {
+                    GreenhouseGeneticGene.drawNeuron(ctx, p);
                 }
             } else {
-                if (window.GreenhouseGeneticBrain) {
-                    window.GreenhouseGeneticBrain.drawNeuron(ctx, p, this.neuronMeshes, this.camera, this.projection);
+                if (GreenhouseGeneticBrain) {
+                    GreenhouseGeneticBrain.drawNeuron(ctx, p, this.neuronMeshes, this.camera, this.projection);
                 }
             }
         },
@@ -567,37 +584,37 @@
 
         initializeBrainShell() {
             this.brainShell = { vertices: [], faces: [] };
-            if (window.GreenhouseGeneticGeometry) {
-                window.GreenhouseGeneticGeometry.initializeBrainShell(this.brainShell);
+            if (GreenhouseGeneticGeometry) {
+                GreenhouseGeneticGeometry.initializeBrainShell(this.brainShell);
             }
         },
 
         getRegionVertices(regionKey) {
-            if (window.GreenhouseGeneticGeometry) {
-                return window.GreenhouseGeneticGeometry.getRegionVertices(this.brainShell, regionKey);
+            if (GreenhouseGeneticGeometry) {
+                return GreenhouseGeneticGeometry.getRegionVertices(this.brainShell, regionKey);
             }
             return [];
         },
 
         drawBrainShell(ctx, offsetX = 0) {
-            if (window.GreenhouseGeneticBrain) {
+            if (GreenhouseGeneticBrain) {
                 const activeGene = this.neurons3D[this.activeGeneIndex];
                 ctx.save();
                 ctx.translate(offsetX, 0);
-                window.GreenhouseGeneticBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height, activeGene);
+                GreenhouseGeneticBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height, activeGene);
                 ctx.restore();
             }
         },
 
         drawSignalFlow(ctx, projectedNeurons) {
-            if (window.GreenhouseGeneticStats) {
-                window.GreenhouseGeneticStats.drawSignalFlow(ctx, this.isEvolving);
+            if (GreenhouseGeneticStats) {
+                GreenhouseGeneticStats.drawSignalFlow(ctx, this.isEvolving);
             }
         },
 
         drawGrid(ctx) {
-            const util = window.GreenhouseModelsUtil;
-            if (!window.GreenhouseModels3DMath) return;
+            const util = GreenhouseModelsUtil;
+            if (!GreenhouseModels3DMath) return;
 
             const size = 1000;
             const step = 200;
@@ -642,16 +659,16 @@
         },
 
         drawLabels(ctx, projectedNeurons) {
-            if (window.GreenhouseGeneticStats) {
+            if (GreenhouseGeneticStats) {
                 // Use captured projectedGenes if available, otherwise use passed arg (which might be empty)
                 const data = this.projectedGenes || projectedNeurons;
-                window.GreenhouseGeneticStats.drawLabels(ctx, data);
+                GreenhouseGeneticStats.drawLabels(ctx, data);
             }
         },
 
         drawEventLog(ctx) {
-            if (window.GreenhouseGeneticStats) {
-                window.GreenhouseGeneticStats.drawEventLog(ctx, this.canvas.height);
+            if (GreenhouseGeneticStats) {
+                GreenhouseGeneticStats.drawEventLog(ctx, this.canvas.height);
             }
         },
 
@@ -706,7 +723,7 @@
             }
 
             // Draw DNA using genetic_ui_3d_dna module
-            if (window.GreenhouseGeneticDNA) {
+            if (GreenhouseGeneticDNA) {
                 ctx.save();
                 ctx.translate(x, y);
                 ctx.beginPath();
@@ -737,7 +754,7 @@
 
                 // Draw genes
                 projectedGenes.forEach(p => {
-                    const config = window.GreenhouseGeneticConfig;
+                    const config = GreenhouseGeneticConfig;
                     const baseColors = config ? config.get('materials.dna.baseColors') : null;
 
                     // Determine base pair type
@@ -805,8 +822,8 @@
         drawDNAConnections(ctx, dnaGenes, camera, projection, w, h) {
             if (dnaGenes.length < 2) return;
 
-            const config = window.GreenhouseGeneticConfig;
-            const lighting = window.GreenhouseGeneticLighting;
+            const config = GreenhouseGeneticConfig;
+            const lighting = GreenhouseGeneticLighting;
 
             // Draw base pairs (rungs)
             for (let i = 0; i < dnaGenes.length; i += 2) {
@@ -1034,13 +1051,13 @@
             ctx.restore();
         },
         drawConnections(ctx) {
-            if (!this.connections3D || this.connections3D.length === 0 || !window.GreenhouseModels3DMath || !window.GreenhouseGeneticLighting) {
+            if (!this.connections3D || this.connections3D.length === 0 || !GreenhouseModels3DMath || !GreenhouseGeneticLighting) {
                 return;
             }
 
             ctx.save();
 
-            const lightDirection = window.GreenhouseGeneticLighting.getDirectionalLight();
+            const lightDirection = GreenhouseGeneticLighting.getDirectionalLight();
 
             // Sort connections by the average depth of their endpoints.
             // This is an approximation for correct transparency, but much better than nothing.
@@ -1117,5 +1134,8 @@
 
     };
 
-    window.GreenhouseGeneticUI3D = GreenhouseGeneticUI3D;
+    _exported_GreenhouseGeneticUI3D = GreenhouseGeneticUI3D;
 })();
+
+
+export var GreenhouseGeneticUI3D = _exported_GreenhouseGeneticUI3D;

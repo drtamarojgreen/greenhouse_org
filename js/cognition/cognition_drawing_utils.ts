@@ -1,12 +1,14 @@
+import { GreenhouseModelsUtil } from '../models_util.js';
 /**
  * @file cognition_drawing_utils.js
  * @description Shared drawing utilities for the Cognition Simulation Model.
  */
 
+var _exported_GreenhouseCognitionDrawingUtils: any;
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => GreenhouseModelsUtil ? GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseCognitionDrawingUtils = {
         /**
@@ -417,5 +419,8 @@
         }
     };
 
-    window.GreenhouseCognitionDrawingUtils = GreenhouseCognitionDrawingUtils;
+    _exported_GreenhouseCognitionDrawingUtils = GreenhouseCognitionDrawingUtils;
 })();
+
+
+export var GreenhouseCognitionDrawingUtils = _exported_GreenhouseCognitionDrawingUtils;

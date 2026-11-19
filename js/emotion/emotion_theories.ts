@@ -1,3 +1,4 @@
+import { GreenhouseEmotionConfig } from './emotion_config.js';
 /**
  * @file emotion_theories.js
  * @description Advanced Theories on Emotional Regulation and Resilience.
@@ -35,7 +36,7 @@
         { id: 100, name: 'emotion_enh_100_name', description: 'emotion_enh_100_desc', regions: ['prefrontalCortex', 'amygdala'], wellnessFocus: 'emotion_enh_100_wellness', conditionMapping: 'emotion_enh_100_cond' }
     ];
 
-    if (window.GreenhouseEmotionConfig) {
-        window.GreenhouseEmotionConfig.advancedTheories = advancedTheories;
+    if (GreenhouseEmotionConfig) {
+        GreenhouseEmotionConfig.advancedTheories = advancedTheories;
     }
 })();
