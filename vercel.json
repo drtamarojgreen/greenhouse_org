@@ -4,8 +4,7 @@
   "buildCommand": "npm run build",
   "functions": {
     "app.js": {
-      "includeFiles": "public/endpoints/**",
-      "excludeFiles": "public/{site,js,css,images,assets}/**"
+      "includeFiles": "public/**"
     }
   }
 }
